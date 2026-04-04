@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>闇鍋パズル</title>
+</head>
+<body>
+<h2>🍲 魔界の闇鍋パズル</h2>
+<p>残り<span id="time">30</span>秒 / スコア:<span id="score">0</span></p>
+<p id="msg" style="color:red; font-weight:bold;">素材を2つ選んで合成しろ！</p>
+<button onclick="pick('目玉')" style="padding:10px; font-size:16px;">👁️目玉</button>
+<button onclick="pick('毒草')" style="padding:10px; font-size:16px;">🌿毒草</button>
+<button onclick="pick('トカゲ')" style="padding:10px; font-size:16px;">🦎トカゲ</button>
+<br><br>
+<button onclick="mix()" style="padding:15px; font-size:20px; background:orange;">【鍋に入れて合成！】</button>
+<h3>📖 ヤバいアイテム図鑑</h3>
+<ul id="zukan"></ul>
+<script>
+let timer = 30, score = 0, materials = [];
+let zukanList = new Set();
+let countdown = setInterval(() => {
+  if(timer > 0) {
+    timer--;
+    document.getElementById('time').innerText = timer;
+  }
+}, 1000);
+
+function pick(item) {
+  if(materials.length < 2) {
+    materials.push(item);
+    document.getElementById('msg').innerText = "選択中: " + materials.join(" ＋ ");
+  }
+}
+
+function mix() {
+  if(timer <= 0) return alert('時間切れ！ブラウザを更新して再挑戦！');
+  if(materials.length < 2) return alert('素材を2つ選んでね！');
+  let recipe = materials.sort().join('＋');
+  let resultItem = '';
+  if(recipe === '毒草＋目玉') {
+    resultItem = '🟢普通の回復薬';
+    score += 10;
+  }
+  else if(recipe === 'トカゲ＋目玉') {
+    resultItem = '🏃‍♂️走る目玉（図鑑登録！）';
+    zukanList.add('🏃‍♂️走る目玉');
+  }
+  else {
+    resultItem = '🗑️謎のドロドロ（図鑑登録！）';
+    zukanList.add('🗑️謎のドロドロ');
+  }
+  document.getElementById('msg').innerText = "結果：" + resultItem + " ができた！";
+  document.getElementById('score').innerText = score;
+  document.getElementById('zukan').innerHTML = Array.from(zukanList).map(i => "<li>" + i + "</li>").join('');
+  materials = [];
+}
+</script>
+</body>
+</html>

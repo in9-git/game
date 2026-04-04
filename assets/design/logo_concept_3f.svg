@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <defs>
+    <linearGradient id="swf" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="45%" stop-color="#FF6B00"/>
+      <stop offset="100%" stop-color="#ff4081"/>
+    </linearGradient>
+    <filter id="glf">
+      <feGaussianBlur stdDeviation="10" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glf2">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="800" height="400" fill="#0a0a12"/>
+
+  <!-- ========== MEGA SWOOSH - "나이키 법무팀 즉시출동" 에디션 ========== -->
+  <!-- Outer edge (bottom curve) -->
+  <!-- Inner edge (top curve, tighter) -->
+  <!-- The key: heel is VERY thick (40-50px), tip is 0px -->
+  <path d="M 80,215
+           C 70,235 68,258 78,270
+           C 88,282 110,280 145,268
+           C 195,250 260,220 340,188
+           C 430,152 530,110 610,78
+           C 670,56 715,38 740,22
+
+           C 720,32 690,46 645,62
+           C 570,90 480,125 390,158
+           C 305,190 235,218 180,240
+           C 140,256 115,264 100,260
+           C 86,256 78,245 80,232
+           Z"
+        fill="url(#swf)" filter="url(#glf)"/>
+
+  <!-- Finger touch point -->
+  <circle cx="80" cy="252" r="7" fill="#7c3aed"/>
+  <circle cx="80" cy="252" r="15" fill="none" stroke="#7c3aed" stroke-width="2" opacity="0.5"/>
+  <circle cx="80" cy="252" r="26" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.2"/>
+
+  <!-- Text: exactly Nike ad layout -->
+  <!-- Nike uses left-aligned text in many ads, but centered is also iconic -->
+  <text x="400" y="350" text-anchor="middle"
+        font-family="'Futura', 'Helvetica Neue', 'Arial Black', sans-serif"
+        font-size="76" font-weight="900" font-style="italic"
+        fill="white" letter-spacing="-3" filter="url(#glf2)">
+    Just play it.
+  </text>
+
+  <text x="400" y="388" text-anchor="middle"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="13" font-weight="300"
+        fill="#555" letter-spacing="5">
+    game.in-9.com
+  </text>
+</svg>

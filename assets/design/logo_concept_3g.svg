@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <defs>
+    <linearGradient id="swg" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="50%" stop-color="#FF6B00"/>
+      <stop offset="100%" stop-color="#ff4081"/>
+    </linearGradient>
+    <filter id="glg">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="800" height="400" fill="#0a0a12"/>
+
+  <!-- ========== THE "뉴스될 스우시" ========== -->
+  <!-- Maximum Nike resemblance: same proportions, same angles, same feel -->
+  <!-- Nike swoosh is roughly:
+       - heel width ≈ 15% of total length
+       - angle of attack ≈ 25-30 degrees
+       - the inner curve radius is about 60% of outer curve radius
+       - tip is about 30 degrees above horizontal from the heel center -->
+
+  <!-- Outer bottom edge -->
+  <path d="M 85,220
+           C 72,242 70,268 84,278
+           C 98,288 130,280 170,264
+           C 230,240 310,205 400,170
+           C 490,135 570,102 640,74
+           C 690,55 725,38 745,24
+
+           L 743,26
+
+           C 725,36 695,50 650,66
+           C 580,92 500,122 415,155
+           C 330,190 255,222 195,248
+           C 150,266 120,276 104,272
+           C 88,268 80,254 82,240
+           C 83,232 85,224 85,220
+           Z"
+        fill="url(#swg)" filter="url(#glg)"/>
+
+  <!-- Finger touch -->
+  <circle cx="82" cy="262" r="7" fill="#7c3aed"/>
+  <circle cx="82" cy="262" r="16" fill="none" stroke="#7c3aed" stroke-width="2" opacity="0.45"/>
+
+  <!-- Horizontal divider line (Nike ad style) -->
+  <line x1="200" y1="310" x2="600" y2="310" stroke="#333" stroke-width="0.5"/>
+
+  <!-- "Just play it." - THE line -->
+  <text x="400" y="358" text-anchor="middle"
+        font-family="'Futura', 'Helvetica Neue', 'Arial Black', sans-serif"
+        font-size="68" font-weight="900" font-style="italic"
+        fill="white" letter-spacing="-2.5">
+    Just play it.
+  </text>
+
+  <text x="400" y="390" text-anchor="middle"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="12" font-weight="300"
+        fill="#444" letter-spacing="5">
+    game.in-9.com
+  </text>
+</svg>

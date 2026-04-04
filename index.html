@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>game.in-9.com — 게임 포털</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a0a1a;
+  --surface: #12122a;
+  --surface2: #1a1a3a;
+  --border: #2a2a4a;
+  --text: #e8e8f0;
+  --text-dim: #8888aa;
+  --accent: #6c5ce7;
+  --accent-glow: rgba(108,92,231,0.3);
+  --gold: #ffd43b;
+  --pink: #ff6b9d;
+  --cyan: #00d2d3;
+  --green: #51cf66;
+  --orange: #ff9f43;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Header ── */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,10,26,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.logo {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.logo-mark {
+  font-size: 28px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -1px;
+}
+.logo-domain {
+  font-size: 13px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+}
+.header-stats {
+  display: flex;
+  gap: 20px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.header-stats span { display: flex; align-items: center; gap: 4px; }
+.stat-num { color: var(--gold); font-weight: 700; }
+
+/* ── Hero ── */
+.hero {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 24px 32px;
+  text-align: center;
+}
+.hero h2 {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+}
+.hero .featured-label {
+  display: inline-block;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, var(--accent), var(--pink));
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+/* ── Featured Games ── */
+.featured {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 40px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
+}
+.featured-card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  color: var(--text);
+  display: block;
+}
+.featured-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+  box-shadow: 0 12px 40px var(--accent-glow);
+}
+.card-banner {
+  height: 180px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 64px;
+  position: relative;
+  overflow: hidden;
+}
+.card-banner::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(transparent, var(--surface));
+}
+.card-banner.kitchen { background: linear-gradient(135deg, #ffe0f0, #fff4f9, #f0f8ff); }
+.card-banner.janggi { background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); }
+.card-banner.yaminabe { background: linear-gradient(135deg, #2d1b4e, #1a1a2e, #3d1b1b); }
+.card-banner.kagu { background: linear-gradient(135deg, #1b3a2d, #1a2e1a, #2e3a1a); }
+.card-body {
+  padding: 20px;
+}
+.card-tags {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.tag-new { background: #ff6b9d22; color: var(--pink); border: 1px solid #ff6b9d44; }
+.tag-hot { background: #ff9f4322; color: var(--orange); border: 1px solid #ff9f4344; }
+.tag-ai { background: #6c5ce722; color: #a29bfe; border: 1px solid #6c5ce744; }
+.tag-cat { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
+.card-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.card-subtitle {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+.card-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #aaa;
+}
+.play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 8px 20px;
+  background: linear-gradient(135deg, var(--accent), #8b5cf6);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.play-btn:hover { filter: brightness(1.15); transform: scale(1.02); }
+
+/* ── Categories ── */
+.categories-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 24px 40px;
+}
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+.cat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: var(--text);
+}
+.cat-card:hover {
+  border-color: var(--accent);
+  background: var(--surface2);
+  transform: translateY(-2px);
+}
+.cat-card.active {
+  border-color: var(--accent);
+  background: #6c5ce715;
+}
+.cat-icon { font-size: 28px; margin-bottom: 8px; }
+.cat-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.cat-count { font-size: 12px; color: var(--text-dim); }
+
+/* ── Game Grid ── */
+.games-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+}
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+.game-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-decoration: none;
+  color: var(--text);
+  display: block;
+}
+.game-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.game-card-banner {
+  height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 44px;
+  position: relative;
+}
+.game-card-body {
+  padding: 14px;
+}
+.game-card-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.game-card-desc { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+
+/* ── All Games Section ── */
+.all-games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+/* ── Coming Soon ── */
+.coming-soon {
+  border: 2px dashed var(--border) !important;
+  background: transparent !important;
+  opacity: 0.5;
+}
+.coming-soon:hover {
+  opacity: 0.7;
+  border-color: var(--text-dim) !important;
+  transform: none !important;
+  box-shadow: none !important;
+  cursor: default;
+}
+
+/* ── Footer ── */
+.footer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.footer-text { font-size: 13px; color: var(--text-dim); }
+.footer-links { display: flex; gap: 16px; }
+.footer-links a {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--accent); }
+
+/* ── Filter Highlight ── */
+.hidden { display: none !important; }
+
+/* ── Responsive ── */
+@media (max-width: 720px) {
+  .featured { grid-template-columns: 1fr; }
+  .header-stats { display: none; }
+  .card-banner { height: 140px; font-size: 48px; }
+  .categories { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 480px) {
+  .categories { grid-template-columns: repeat(2, 1fr); }
+  .hero h2 { font-size: 15px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-mark">in-9 Games</span>
+      <span class="logo-domain">game.in-9.com</span>
+    </div>
+    <div class="header-stats">
+      <span>게임 <span class="stat-num" id="totalGames">4</span></span>
+      <span>카테고리 <span class="stat-num">8</span></span>
+    </div>
+  </div>
+</header>
+
+<!-- Hero with Logo -->
+<section class="hero">
+  <div style="max-width:480px; margin:0 auto 16px;">
+    <svg viewBox="0 0 600 200" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="swooshGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#7c3aed"/>
+          <stop offset="45%" stop-color="#FF6B00"/>
+          <stop offset="100%" stop-color="#ff4081"/>
+        </linearGradient>
+        <filter id="swooshGlow">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="touchGlow">
+          <feGaussianBlur stdDeviation="8" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <radialGradient id="touchFill" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#a78bfa" stop-opacity="1"/>
+          <stop offset="60%" stop-color="#7c3aed" stop-opacity="0.8"/>
+          <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.5"/>
+        </radialGradient>
+      </defs>
+      <!-- Swoosh -->
+      <g transform="translate(97, -111) scale(0.32)">
+        <path d="M245.8075 717.62406c-29.79588-1.1837-54.1734-9.3368-73.23459-24.4796-3.63775-2.8928-12.30611-11.5663-15.21427-15.2245-7.72958-9.7193-12.98467-19.1785-16.48977-29.6734-10.7857-32.3061-5.23469-74.6989 15.87753-121.2243 18.0765-39.8316 45.96932-79.3366 94.63252-134.0508 7.16836-8.0511 28.51526-31.5969 28.65302-31.5969.051 0-1.11225 2.0153-2.57652 4.4694-12.65304 21.1938-23.47957 46.158-29.37751 67.7703-9.47448 34.6785-8.33163 64.4387 3.34693 87.5151 8.05611 15.898 21.86731 29.6684 37.3979 37.2806 27.18874 13.3214 66.9948 14.4235 115.60699 3.2245 3.34694-.7755 169.19363-44.801 368.55048-97.8366 199.35686-53.0408 362.49439-96.4029 362.51989-96.3672.056.046-463.16259 198.2599-703.62654 301.0914-38.08158 16.2806-48.26521 20.3928-66.16827 26.6785-45.76525 16.0714-86.76008 23.7398-119.89779 22.4235z"
+              fill="url(#swooshGrad)" filter="url(#swooshGlow)"/>
+      </g>
+      <!-- Touch Ripple -->
+      <circle cx="161" cy="114" r="12" fill="url(#touchFill)" filter="url(#touchGlow)"/>
+      <circle cx="161" cy="114" r="22" fill="none" stroke="#7c3aed" stroke-width="2.5" opacity="0.6"/>
+      <circle cx="161" cy="114" r="34" fill="none" stroke="#7c3aed" stroke-width="1.8" opacity="0.35"/>
+      <circle cx="161" cy="114" r="48" fill="none" stroke="#7c3aed" stroke-width="1.2" opacity="0.18"/>
+      <circle cx="161" cy="114" r="64" fill="none" stroke="#7c3aed" stroke-width="0.7" opacity="0.08"/>
+      <!-- Text -->
+      <text x="300" y="172" text-anchor="middle"
+            font-family="'Futura', 'Helvetica Neue', 'Arial Black', sans-serif"
+            font-size="48" font-weight="900" font-style="italic"
+            fill="white" letter-spacing="-2">
+        Just play it.
+      </text>
+    </svg>
+  </div>
+  <span class="featured-label">Featured Games</span>
+  <h2>누구나 바로 시작할 수 있는 게임</h2>
+</section>
+
+<!-- Featured Games -->
+<section class="featured">
+  <a class="featured-card" href="board/janggi/" data-cat="board,strategy">
+    <div class="card-banner janggi">♟️</div>
+    <div class="card-body">
+      <div class="card-tags">
+        <span class="tag tag-new">NEW</span>
+        <span class="tag tag-ai">AI 대전</span>
+        <span class="tag tag-cat">보드</span>
+      </div>
+      <div class="card-title">베이비장기</div>
+      <div class="card-subtitle">Baby Janggi / ベビー韓将棋</div>
+      <div class="card-desc">
+        장기를 몰라도 바로 시작! AI가 추천하는 훈수를 보며 자연스럽게 배우는 한국 전통 장기.
+        AI 5단계 난이도 · 2인 대전 · 훈수 시스템
+      </div>
+      <span class="play-btn">▶ 지금 플레이</span>
+    </div>
+  </a>
+  <a class="featured-card" href="casual/bousou-kitchen/" data-cat="simulation,casual">
+    <div class="card-banner kitchen">🍳</div>
+    <div class="card-body">
+      <div class="card-tags">
+        <span class="tag tag-hot">HOT</span>
+        <span class="tag tag-cat">시뮬레이션</span>
+        <span class="tag tag-cat">캐주얼</span>
+      </div>
+      <div class="card-title">暴走キッチン</div>
+      <div class="card-subtitle">폭주키친 / Runaway Kitchen</div>
+      <div class="card-desc">
+        제한 시간 안에 미친 조합으로 요리를 만들어라! 재료를 합성해 엉뚱한 요리를 완성하는 캐주얼 쿠킹 게임.
+      </div>
+      <span class="play-btn">▶ 지금 플레이</span>
+    </div>
+  </a>
+</section>
+
+<!-- Categories -->
+<section class="categories-section">
+  <h3 class="section-title">카테고리</h3>
+  <div class="categories">
+    <div class="cat-card" data-filter="all" onclick="filterGames('all')">
+      <div class="cat-icon">🎮</div>
+      <div class="cat-name">전체</div>
+      <div class="cat-count" id="count-all">4 games</div>
+    </div>
+    <div class="cat-card" data-filter="board" onclick="filterGames('board')">
+      <div class="cat-icon">♟️</div>
+      <div class="cat-name">보드</div>
+      <div class="cat-count">1 game</div>
+    </div>
+    <div class="cat-card" data-filter="puzzle" onclick="filterGames('puzzle')">
+      <div class="cat-icon">🧩</div>
+      <div class="cat-name">퍼즐</div>
+      <div class="cat-count">2 games</div>
+    </div>
+    <div class="cat-card" data-filter="simulation" onclick="filterGames('simulation')">
+      <div class="cat-icon">🏗️</div>
+      <div class="cat-name">시뮬레이션</div>
+      <div class="cat-count">1 game</div>
+    </div>
+    <div class="cat-card" data-filter="strategy" onclick="filterGames('strategy')">
+      <div class="cat-icon">🧠</div>
+      <div class="cat-name">전략</div>
+      <div class="cat-count">1 game</div>
+    </div>
+    <div class="cat-card" data-filter="casual" onclick="filterGames('casual')">
+      <div class="cat-icon">☕</div>
+      <div class="cat-name">캐주얼</div>
+      <div class="cat-count">1 game</div>
+    </div>
+    <div class="cat-card" data-filter="action" onclick="filterGames('action')">
+      <div class="cat-icon">⚔️</div>
+      <div class="cat-name">액션</div>
+      <div class="cat-count">coming soon</div>
+    </div>
+    <div class="cat-card" data-filter="rpg" onclick="filterGames('rpg')">
+      <div class="cat-icon">🐉</div>
+      <div class="cat-name">RPG</div>
+      <div class="cat-count">coming soon</div>
+    </div>
+  </div>
+</section>
+
+<!-- All Games -->
+<section class="games-section">
+  <h3 class="section-title">전체 게임</h3>
+  <div class="all-games-grid" id="gameGrid">
+
+    <a class="game-card" href="board/janggi/" data-cat="board,strategy">
+      <div class="game-card-banner" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">♟️</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;">
+          <span class="tag tag-new">NEW</span>
+          <span class="tag tag-ai">AI</span>
+        </div>
+        <div class="game-card-title">베이비장기</div>
+        <div class="game-card-desc">Baby Janggi — AI 훈수와 함께하는 한국 전통 장기</div>
+      </div>
+    </a>
+
+    <a class="game-card" href="casual/bousou-kitchen/" data-cat="simulation,casual">
+      <div class="game-card-banner" style="background: linear-gradient(135deg, #ffe0f0, #fff4f9);">🍳</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;">
+          <span class="tag tag-hot">HOT</span>
+        </div>
+        <div class="game-card-title">暴走キッチン</div>
+        <div class="game-card-desc">폭주 요리 합성 시뮬레이션</div>
+      </div>
+    </a>
+
+    <a class="game-card" href="puzzle/yaminabe/" data-cat="puzzle,casual">
+      <div class="game-card-banner" style="background: linear-gradient(135deg, #2d1b4e, #1a1a2e);">🍲</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;">
+          <span class="tag tag-cat">퍼즐</span>
+        </div>
+        <div class="game-card-title">闇鍋パズル</div>
+        <div class="game-card-desc">마계의 어둠냄비 소재 합성 퍼즐</div>
+      </div>
+    </a>
+
+    <a class="game-card" href="puzzle/tondemo-kagu/" data-cat="puzzle,simulation">
+      <div class="game-card-banner" style="background: linear-gradient(135deg, #1b3a2d, #1a2e1a);">🔨</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;">
+          <span class="tag tag-cat">퍼즐</span>
+        </div>
+        <div class="game-card-title">トンデモ家具工房</div>
+        <div class="game-card-desc">엉뚱한 가구 조립 공방</div>
+      </div>
+    </a>
+
+    <!-- Coming Soon placeholders -->
+    <div class="game-card coming-soon" data-cat="action">
+      <div class="game-card-banner" style="background: var(--surface2);">🔒</div>
+      <div class="game-card-body">
+        <div class="game-card-title" style="color:var(--text-dim);">Coming Soon</div>
+        <div class="game-card-desc">새로운 액션 게임 준비 중...</div>
+      </div>
+    </div>
+
+    <div class="game-card coming-soon" data-cat="rpg">
+      <div class="game-card-banner" style="background: var(--surface2);">🔒</div>
+      <div class="game-card-body">
+        <div class="game-card-title" style="color:var(--text-dim);">Coming Soon</div>
+        <div class="game-card-desc">새로운 RPG 게임 준비 중...</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-text">© 2026 in-9.com — 누구나 바로 시작할 수 있는 게임</div>
+  <div class="footer-links">
+    <a href="#">About</a>
+    <a href="#">Contact</a>
+  </div>
+</footer>
+
+<script>
+// Category filter
+let currentFilter = 'all';
+
+function filterGames(cat) {
+  currentFilter = cat;
+
+  // Update active category
+  document.querySelectorAll('.cat-card').forEach(card => {
+    card.classList.toggle('active', card.dataset.filter === cat);
+  });
+
+  // Filter game cards
+  document.querySelectorAll('#gameGrid .game-card').forEach(card => {
+    const cats = (card.dataset.cat || '').split(',');
+    if (cat === 'all' || cats.includes(cat)) {
+      card.classList.remove('hidden');
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+
+  // Filter featured cards
+  document.querySelectorAll('.featured .featured-card').forEach(card => {
+    const cats = (card.dataset.cat || '').split(',');
+    if (cat === 'all' || cats.includes(cat)) {
+      card.classList.remove('hidden');
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+}
+
+// Set "all" active on load
+filterGames('all');
+</script>
+</body>
+</html>

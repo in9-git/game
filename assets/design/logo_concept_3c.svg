@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 240" width="600" height="240">
+  <defs>
+    <linearGradient id="swoosh3c" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6c5ce7"/>
+      <stop offset="40%" stop-color="#8b5cf6"/>
+      <stop offset="70%" stop-color="#FF6B00"/>
+      <stop offset="100%" stop-color="#ff6b9d"/>
+    </linearGradient>
+    <filter id="glow3c">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e8e8f0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="600" height="240" fill="#0a0a1a" rx="16"/>
+
+  <!-- BIG filled swoosh - very Nike, swooping under the text -->
+  <path d="M 60,105
+           C 100,112 160,118 220,95
+           C 290,68 370,38 450,35
+           C 500,33 535,20 555,8
+           C 540,14 510,24 470,28
+           C 390,36 310,50 240,72
+           C 180,90 130,100 80,94
+           Z"
+        fill="url(#swoosh3c)" opacity="0.88" filter="url(#glow3c)"/>
+
+  <!-- Secondary swoosh trail (speed lines) -->
+  <path d="M 500,26 C 520,18 540,12 555,8"
+        stroke="#ff6b9d" stroke-width="2" fill="none" opacity="0.4" stroke-linecap="round"/>
+  <path d="M 510,32 C 530,24 545,18 558,14"
+        stroke="#ff6b9d" stroke-width="1" fill="none" opacity="0.2" stroke-linecap="round"/>
+
+  <!-- Fingertip touch -->
+  <circle cx="68" cy="100" r="6" fill="#6c5ce7" opacity="0.9"/>
+  <circle cx="68" cy="100" r="12" fill="none" stroke="#6c5ce7" stroke-width="1.5" opacity="0.35"/>
+
+  <!-- "Just play it." - large, commanding -->
+  <text x="300" y="168" text-anchor="middle"
+        font-family="'Helvetica Neue', 'Arial Black', Impact, sans-serif"
+        font-size="54" font-weight="900" font-style="italic"
+        fill="url(#textGrad)" letter-spacing="-1.5">
+    Just play it.
+  </text>
+
+  <!-- Period dot accent in orange -->
+  <circle cx="472" cy="158" r="4" fill="#FF6B00" opacity="0.8"/>
+
+  <!-- Tagline -->
+  <text x="300" y="198" text-anchor="middle"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="11" font-weight="400"
+        fill="#888" letter-spacing="3">
+    ANYONE CAN START. RIGHT NOW.
+  </text>
+
+  <text x="300" y="224" text-anchor="middle"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="11" font-weight="300"
+        fill="#444" letter-spacing="3">
+    game.in-9.com
+  </text>
+</svg>

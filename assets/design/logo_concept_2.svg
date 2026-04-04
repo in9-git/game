@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 220" width="600" height="220">
+  <defs>
+    <linearGradient id="swoosh2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF6B00"/>
+      <stop offset="70%" stop-color="#FF4500"/>
+      <stop offset="100%" stop-color="#FF2200"/>
+    </linearGradient>
+    <filter id="glow2">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="600" height="220" fill="#0a0a1a" rx="16"/>
+
+  <!-- Main swoosh - thicker, more Nike-like, aggressive curve -->
+  <path d="M 80,90 Q 150,100 200,75 Q 280,30 380,50 Q 440,60 500,25"
+        stroke="url(#swoosh2)" stroke-width="12" fill="none" stroke-linecap="round"
+        filter="url(#glow2)"/>
+
+  <!-- Touch point with ripple -->
+  <circle cx="80" cy="90" r="8" fill="#FF6B00"/>
+  <circle cx="80" cy="90" r="14" fill="none" stroke="#FF6B00" stroke-width="2" opacity="0.4"/>
+
+  <!-- Arrow tip at the end (speed/direction) -->
+  <path d="M 490,29 L 510,22 L 498,38" fill="#FF4500" opacity="0.8"/>
+
+  <!-- "Just play it." bold italic -->
+  <text x="300" y="155" text-anchor="middle"
+        font-family="'Impact', 'Arial Black', sans-serif"
+        font-size="52" font-weight="900" font-style="italic"
+        fill="white" letter-spacing="1">
+    Just play it.
+  </text>
+
+  <!-- Underline accent -->
+  <line x1="135" y1="165" x2="465" y2="165" stroke="#FF6B00" stroke-width="2" opacity="0.4"/>
+
+  <text x="300" y="198" text-anchor="middle"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="13" font-weight="300"
+        fill="#666" letter-spacing="4">
+    GAME.IN-9.COM
+  </text>
+</svg>

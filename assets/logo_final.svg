@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 240" width="600" height="240">
+  <defs>
+    <linearGradient id="swooshGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="45%" stop-color="#FF6B00"/>
+      <stop offset="100%" stop-color="#ff4081"/>
+    </linearGradient>
+    <filter id="swooshGlow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="touchGlow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <radialGradient id="touchFill" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="1"/>
+      <stop offset="60%" stop-color="#7c3aed" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.5"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="600" height="240" fill="#0a0a12" rx="16"/>
+
+  <!-- REAL NIKE SWOOSH — original Wikimedia path, scaled down -->
+  <g transform="translate(97, -91) scale(0.32)">
+    <path d="M245.8075 717.62406c-29.79588-1.1837-54.1734-9.3368-73.23459-24.4796-3.63775-2.8928-12.30611-11.5663-15.21427-15.2245-7.72958-9.7193-12.98467-19.1785-16.48977-29.6734-10.7857-32.3061-5.23469-74.6989 15.87753-121.2243 18.0765-39.8316 45.96932-79.3366 94.63252-134.0508 7.16836-8.0511 28.51526-31.5969 28.65302-31.5969.051 0-1.11225 2.0153-2.57652 4.4694-12.65304 21.1938-23.47957 46.158-29.37751 67.7703-9.47448 34.6785-8.33163 64.4387 3.34693 87.5151 8.05611 15.898 21.86731 29.6684 37.3979 37.2806 27.18874 13.3214 66.9948 14.4235 115.60699 3.2245 3.34694-.7755 169.19363-44.801 368.55048-97.8366 199.35686-53.0408 362.49439-96.4029 362.51989-96.3672.056.046-463.16259 198.2599-703.62654 301.0914-38.08158 16.2806-48.26521 20.3928-66.16827 26.6785-45.76525 16.0714-86.76008 23.7398-119.89779 22.4235z"
+          fill="url(#swooshGrad)" filter="url(#swooshGlow)"/>
+  </g>
+
+  <!-- TOUCH RIPPLE — big, glowing, "finger just tapped here" -->
+  <!-- Heel of swoosh at approximately (161, 134) -->
+  <circle cx="161" cy="134" r="12" fill="url(#touchFill)" filter="url(#touchGlow)"/>
+  <circle cx="161" cy="134" r="22" fill="none" stroke="#7c3aed" stroke-width="2.5" opacity="0.6"/>
+  <circle cx="161" cy="134" r="34" fill="none" stroke="#7c3aed" stroke-width="1.8" opacity="0.35"/>
+  <circle cx="161" cy="134" r="48" fill="none" stroke="#7c3aed" stroke-width="1.2" opacity="0.18"/>
+  <circle cx="161" cy="134" r="64" fill="none" stroke="#7c3aed" stroke-width="0.7" opacity="0.08"/>
+
+  <!-- "Just play it." -->
+  <text x="300" y="192" text-anchor="middle"
+        font-family="'Futura', 'Helvetica Neue', 'Arial Black', sans-serif"
+        font-size="48" font-weight="900" font-style="italic"
+        fill="white" letter-spacing="-2">
+    Just play it.
+  </text>
+
+  <text x="300" y="224" text-anchor="middle"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="11" font-weight="300"
+        fill="#444" letter-spacing="4">
+    game.in-9.com
+  </text>
+</svg>

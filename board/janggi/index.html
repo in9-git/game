@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="ko" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="google" content="notranslate">
+<title>베이비장기 - Baby Janggi</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  width: 100%;
+  max-width: 520px;
+}
+h1 {
+  font-size: 24px;
+  font-weight: 300;
+  letter-spacing: 4px;
+  color: #e0e0e0;
+}
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+}
+.status {
+  font-size: 15px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #16213e;
+  flex: 1;
+  text-align: center;
+}
+.status.cho-turn { color: #ff6b6b; border: 1px solid #ff6b6b33; }
+.status.han-turn { color: #51cf66; border: 1px solid #51cf6633; }
+.status.game-over { color: #ffd43b; border: 1px solid #ffd43b33; }
+button {
+  background: #16213e;
+  color: #e0e0e0;
+  border: 1px solid #333;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+button:hover { background: #1a3a5c; border-color: #4a9eff; }
+button.active { background: #1a3a5c; border-color: #4a9eff; color: #4a9eff; }
+select {
+  background: #16213e;
+  color: #e0e0e0;
+  border: 1px solid #333;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.board-container {
+  position: relative;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 47px,
+      rgba(139,100,20,0.08) 47px,
+      rgba(139,100,20,0.08) 49px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 47px,
+      rgba(139,100,20,0.08) 47px,
+      rgba(139,100,20,0.08) 49px
+    ),
+    repeating-linear-gradient(
+      105deg,
+      rgba(180,130,40,0.12) 0px,
+      transparent 3px,
+      rgba(160,110,20,0.08) 6px,
+      transparent 9px,
+      rgba(180,130,40,0.1) 14px,
+      transparent 17px
+    ),
+    linear-gradient(160deg, #e8c06a 0%, #c8952a 30%, #d4a845 55%, #bf8f28 80%, #c9a040 100%);
+  border-radius: 8px;
+  padding: 22px;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,220,100,0.3),
+    inset 0 -2px 4px rgba(0,0,0,0.2);
+  border: 3px solid #7a5010;
+  outline: 6px solid #5a3a08;
+  outline-offset: -3px;
+}
+.board {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(10, 1fr);
+  width: 432px;
+  height: 480px;
+}
+.board-lines {
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  width: 432px;
+  height: 480px;
+  pointer-events: none;
+}
+.cell {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 1;
+  width: 48px;
+  height: 48px;
+}
+.piece {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  z-index: 2;
+  user-select: none;
+}
+.piece img {
+  width: 44px;
+  height: 39px;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.4));
+}
+.piece.cho {}
+.piece.han {}
+.piece.selected {
+  filter: drop-shadow(0 0 6px #ffd43b) drop-shadow(0 0 12px rgba(255,212,59,0.5));
+  transform: scale(1.15);
+}
+.piece.selected img {
+  filter: drop-shadow(0 0 4px #ffd43b);
+}
+.piece.recommended {
+  animation: recommendPulse 1.5s ease-in-out infinite;
+}
+@keyframes recommendPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px #ffd43b) drop-shadow(0 0 8px rgba(255,212,59,0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px #ffd43b) drop-shadow(0 0 20px rgba(255,212,59,0.6));
+  }
+}
+.move-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(255, 212, 59, 0.5);
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
+.move-dot.capture {
+  width: 42px;
+  height: 42px;
+  background: transparent;
+  border: 3px solid rgba(255, 212, 59, 0.6);
+}
+.recommend-ghost {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  animation: ghostPulse 1.8s ease-in-out infinite;
+}
+.recommend-ghost img {
+  width: 44px;
+  height: 39px;
+  object-fit: contain;
+}
+@keyframes ghostPulse {
+  0%, 100% {
+    opacity: 0.38;
+    filter: drop-shadow(0 0 4px rgba(255,212,59,0.5));
+  }
+  50% {
+    opacity: 0.58;
+    filter: drop-shadow(0 0 10px rgba(255,212,59,0.75));
+  }
+}
+.captures-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  align-items: stretch;
+}
+.captured-area {
+  display: flex;
+  gap: 2px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  min-height: 34px;
+  padding: 5px 8px;
+  background: #16213e;
+  border-radius: 8px;
+  flex: 1;
+  align-items: center;
+}
+.captured-area::-webkit-scrollbar { height: 3px; }
+.captured-area::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+.captured-piece { display: inline-flex; align-items: center; }
+.captured-piece.cho img { filter: drop-shadow(0 0 2px rgba(255,135,135,0.5)); }
+.captured-piece.han img { filter: drop-shadow(0 0 2px rgba(105,219,124,0.5)); }
+.thinking {
+  display: inline-block;
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+.modal {
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  max-width: 360px;
+}
+.modal h2 { font-size: 24px; margin-bottom: 12px; font-weight: 300; }
+.modal p { margin-bottom: 20px; color: #aaa; }
+.modal button { font-size: 15px; padding: 10px 24px; }
+.piece.last-moved {
+  filter: drop-shadow(0 0 5px rgba(74,158,255,0.9)) drop-shadow(0 0 10px rgba(74,158,255,0.5));
+}
+@keyframes checkFlash {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(255,60,60,1)) drop-shadow(0 0 14px rgba(255,0,0,0.7)); transform: scale(1.0); }
+  50%       { filter: drop-shadow(0 0 18px rgba(255,80,80,1)) drop-shadow(0 0 32px rgba(255,0,0,1));  transform: scale(1.12); }
+}
+.piece.in-check {
+  animation: checkFlash 0.55s ease-in-out 4;
+}
+.animated-piece {
+  position: absolute;
+  z-index: 50;
+  pointer-events: none;
+}
+.animated-piece img {
+  width: 44px;
+  height: 39px;
+  object-fit: contain;
+  filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.4));
+}
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+.home-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #16213e;
+  color: #aaa;
+  border: 1px solid #333;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  text-decoration: none;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.home-btn:hover { background: #1a3a5c; border-color: #4a9eff; color: #e0e0e0; }
+.lang-btn {
+  background: #16213e;
+  color: #e0e0e0;
+  border: 1px solid #555;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  letter-spacing: 1px;
+}
+.lang-btn:hover { background: #1a3a5c; border-color: #4a9eff; }
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.controls-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.btn-start {
+  background: #1a4a2e;
+  color: #69db7c;
+  border: 1px solid #2d8a4e;
+  padding: 10px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: all 0.2s;
+  letter-spacing: 1px;
+}
+.btn-start:hover { background: #22633d; border-color: #51cf66; }
+.btn-stop {
+  background: #3a1a1a;
+  color: #ff8787;
+  border: 1px solid #8a2d2d;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: all 0.2s;
+  letter-spacing: 1px;
+}
+.btn-stop:hover { background: #5a2020; border-color: #ff6b6b; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ============================================
+// CONSTANTS
+// ============================================
+const COLS = 9, ROWS = 10;
+const CHO = 'cho', HAN = 'han';
+const TYPES = { KING: 'king', GUARD: 'guard', HORSE: 'horse', ELEPHANT: 'elephant', CHARIOT: 'chariot', CANNON: 'cannon', SOLDIER: 'soldier' };
+
+const PIECE_NAMES = {
+  cho: { king: '楚', guard: '士', horse: '馬', elephant: '象', chariot: '車', cannon: '包', soldier: '兵' },
+  han: { king: '漢', guard: '仕', horse: '馬', elephant: '象', chariot: '車', cannon: '砲', soldier: '卒' }
+};
+
+const PIECE_IMAGES = {
+  cho: {
+    king: 'https://upload.wikimedia.org/wikipedia/commons/0/01/Green_King.png',
+    chariot: 'https://upload.wikimedia.org/wikipedia/commons/0/03/Green_Cha.png',
+    cannon: 'https://upload.wikimedia.org/wikipedia/commons/3/32/Green_Po.png',
+    horse: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Green_Ma.png',
+    elephant: 'https://upload.wikimedia.org/wikipedia/commons/0/07/Green_Sang.png',
+    guard: 'https://upload.wikimedia.org/wikipedia/commons/d/de/Green_Sa.png',
+    soldier: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Green_Zol.png'
+  },
+  han: {
+    king: 'https://upload.wikimedia.org/wikipedia/commons/b/bb/Red_King.png',
+    chariot: 'https://upload.wikimedia.org/wikipedia/commons/f/f6/Red_Cha.png',
+    cannon: 'https://upload.wikimedia.org/wikipedia/commons/f/f4/Red_Po.png',
+    horse: 'https://upload.wikimedia.org/wikipedia/commons/6/6a/Red_Ma.png',
+    elephant: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Red_Sang.png',
+    guard: 'https://upload.wikimedia.org/wikipedia/commons/e/e8/Red_Sa.png',
+    soldier: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/Red_Byung.png'
+  }
+};
+
+const PIECE_VALUES = { king: 0, chariot: 13, cannon: 7, horse: 5, elephant: 3, guard: 3, soldier: 2 };
+
+const DIFFICULTIES = [
+  { name: '입문',  depth: 1, random: 0.4 },
+  { name: '초급',  depth: 2, random: 0.15 },
+  { name: '중급',  depth: 3, random: 0.05 },
+  { name: '고급',  depth: 4, random: 0 },
+  { name: '최고수', depth: 5, random: 0 }
+];
+
+// Palace boundaries
+function inPalace(col, row, team) {
+  if (col < 3 || col > 5) return false;
+  if (team === HAN) return row >= 0 && row <= 2;
+  return row >= 7 && row <= 9;
+}
+
+function inAnyPalace(col, row) {
+  if (col < 3 || col > 5) return false;
+  return (row >= 0 && row <= 2) || (row >= 7 && row <= 9);
+}
+
+// Palace diagonal connections
+const PALACE_DIAG = [
+  [[3,0],[4,1]], [[4,1],[5,2]], [[5,0],[4,1]], [[4,1],[3,2]],
+  [[3,7],[4,8]], [[4,8],[5,9]], [[5,7],[4,8]], [[4,8],[3,9]]
+];
+
+function palaceDiagConnected(c1, r1, c2, r2) {
+  return PALACE_DIAG.some(([[a,b],[c,d]]) =>
+    (a===c1 && b===r1 && c===c2 && d===r2) || (a===c2 && b===r2 && c===c1 && d===r1));
+}
+
+function inBounds(c, r) { return c >= 0 && c < COLS && r >= 0 && r < ROWS; }
+
+// ============================================
+// SOUND ENGINE
+// ============================================
+let audioContext = null;
+
+function initAudioContext() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioContext;
+}
+
+// 나무 장기알이 나무판에 닿는 소리 — noise burst + bandpass filter
+function playWoodKnock(volume = 0.6, pitchMod = 1.0) {
+  const ctx = initAudioContext();
+  const now = ctx.currentTime;
+  const bufLen = ctx.sampleRate * 0.08;
+  const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1);
+
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+
+  // 나무 공명 대역 bandpass
+  const bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = 1200 * pitchMod;
+  bp.Q.value = 3.5;
+
+  // 저음 thump (판 울림)
+  const lp = ctx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 280;
+
+  const gainMain = ctx.createGain();
+  gainMain.gain.setValueAtTime(volume, now);
+  gainMain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+
+  const gainLow = ctx.createGain();
+  gainLow.gain.setValueAtTime(volume * 0.4, now);
+  gainLow.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+  src.connect(bp); bp.connect(gainMain); gainMain.connect(ctx.destination);
+  const src2 = ctx.createBufferSource();
+  src2.buffer = buf;
+  src2.connect(lp); lp.connect(gainLow); gainLow.connect(ctx.destination);
+
+  src.start(now); src.stop(now + 0.08);
+  src2.start(now); src2.stop(now + 0.12);
+}
+
+// MP3 재생 — 매번 새 Audio 객체로 신뢰성 확보
+function playAudio(path, volume = 1.0, playbackRate = 1.0) {
+  const a = new Audio(path);
+  a.volume = volume;
+  a.playbackRate = playbackRate;
+  a.play().catch(() => {});
+}
+// 프리로드
+window.addEventListener('DOMContentLoaded', () => {
+  ['janggun.mp3', 'meonggun.mp3'].forEach(f => {
+    const a = new Audio('audio/' + f);
+    a.preload = 'auto';
+  });
+});
+
+// 경로 기준 (index.html 기준 상대경로)
+const SND = 'audio/';
+
+function playMoveSound() {
+  playWoodKnock(0.55, 1.0);
+}
+
+function playCaptureSound() {
+  playWoodKnock(0.75, 1.15);
+  setTimeout(() => playWoodKnock(0.5, 0.9), 80);
+}
+
+function playCheckSound(isMyKingInCheck) {
+  playWoodKnock(0.6, 1.2);
+  const file = isMyKingInCheck ? 'meonggun.mp3' : 'janggun.mp3';
+  setTimeout(() => playAudio(SND + file, 1.0), 100);
+}
+
+function playWinSound() {
+  playWoodKnock(0.8, 1.4);
+  setTimeout(() => playWoodKnock(0.7, 1.2), 120);
+  setTimeout(() => playWoodKnock(0.9, 1.6), 280);
+}
+
+// ============================================
+// INITIAL BOARD SETUP
+// ============================================
+function createInitialBoard() {
+  const board = Array.from({length: ROWS}, () => Array(COLS).fill(null));
+  const place = (c, r, type, team) => { board[r][c] = { type, team }; };
+
+  // Han (top, green)
+  place(0,0,TYPES.CHARIOT,HAN); place(1,0,TYPES.HORSE,HAN); place(2,0,TYPES.ELEPHANT,HAN);
+  place(3,0,TYPES.GUARD,HAN); place(5,0,TYPES.GUARD,HAN);
+  place(6,0,TYPES.ELEPHANT,HAN); place(7,0,TYPES.HORSE,HAN); place(8,0,TYPES.CHARIOT,HAN);
+  place(4,1,TYPES.KING,HAN);
+  place(1,2,TYPES.CANNON,HAN); place(7,2,TYPES.CANNON,HAN);
+  for (let c = 0; c <= 8; c += 2) place(c, 3, TYPES.SOLDIER, HAN);
+
+  // Cho (bottom, red)
+  place(0,9,TYPES.CHARIOT,CHO); place(1,9,TYPES.HORSE,CHO); place(2,9,TYPES.ELEPHANT,CHO);
+  place(3,9,TYPES.GUARD,CHO); place(5,9,TYPES.GUARD,CHO);
+  place(6,9,TYPES.ELEPHANT,CHO); place(7,9,TYPES.HORSE,CHO); place(8,9,TYPES.CHARIOT,CHO);
+  place(4,8,TYPES.KING,CHO);
+  place(1,7,TYPES.CANNON,CHO); place(7,7,TYPES.CANNON,CHO);
+  for (let c = 0; c <= 8; c += 2) place(c, 6, TYPES.SOLDIER, CHO);
+
+  return board;
+}
+
+function cloneBoard(board) {
+  return board.map(row => row.map(cell => cell ? {...cell} : null));
+}
+
+// ============================================
+// MOVE GENERATION
+// ============================================
+function getMoves(board, col, row) {
+  const piece = board[row][col];
+  if (!piece) return [];
+  const moves = [];
+  const team = piece.team;
+  const enemy = team === CHO ? HAN : CHO;
+
+  switch (piece.type) {
+    case TYPES.KING:
+    case TYPES.GUARD:
+      getKingGuardMoves(board, col, row, team, moves);
+      break;
+    case TYPES.CHARIOT:
+      getChariotMoves(board, col, row, team, moves);
+      break;
+    case TYPES.CANNON:
+      getCannonMoves(board, col, row, team, moves);
+      break;
+    case TYPES.HORSE:
+      getHorseMoves(board, col, row, team, moves);
+      break;
+    case TYPES.ELEPHANT:
+      getElephantMoves(board, col, row, team, moves);
+      break;
+    case TYPES.SOLDIER:
+      getSoldierMoves(board, col, row, team, moves);
+      break;
+  }
+  return moves;
+}
+
+function getKingGuardMoves(board, col, row, team, moves) {
+  // Orthogonal within palace
+  const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+  for (const [dc, dr] of dirs) {
+    const nc = col + dc, nr = row + dr;
+    if (inPalace(nc, nr, team) && (!board[nr][nc] || board[nr][nc].team !== team)) {
+      moves.push([nc, nr]);
+    }
+  }
+  // Diagonal within palace
+  const diagDirs = [[1,1],[1,-1],[-1,1],[-1,-1]];
+  for (const [dc, dr] of diagDirs) {
+    const nc = col + dc, nr = row + dr;
+    if (inPalace(nc, nr, team) && palaceDiagConnected(col, row, nc, nr)) {
+      if (!board[nr][nc] || board[nr][nc].team !== team) {
+        moves.push([nc, nr]);
+      }
+    }
+  }
+}
+
+function getChariotMoves(board, col, row, team, moves) {
+  // Orthogonal directions
+  const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+  for (const [dc, dr] of dirs) {
+    let nc = col + dc, nr = row + dr;
+    while (inBounds(nc, nr)) {
+      if (board[nr][nc]) {
+        if (board[nr][nc].team !== team) moves.push([nc, nr]);
+        break;
+      }
+      moves.push([nc, nr]);
+      nc += dc; nr += dr;
+    }
+  }
+  // Palace diagonal movement
+  if (inAnyPalace(col, row)) {
+    const diagDirs = [[1,1],[1,-1],[-1,1],[-1,-1]];
+    for (const [dc, dr] of diagDirs) {
+      let nc = col + dc, nr = row + dr;
+      while (inAnyPalace(nc, nr) && palaceDiagConnected(nc - dc, nr - dr, nc, nr)) {
+        if (board[nr][nc]) {
+          if (board[nr][nc].team !== team) moves.push([nc, nr]);
+          break;
+        }
+        moves.push([nc, nr]);
+        nc += dc; nr += dr;
+      }
+    }
+  }
+}
+
+function getCannonMoves(board, col, row, team, moves) {
+  const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+  for (const [dc, dr] of dirs) {
+    let nc = col + dc, nr = row + dr;
+    let jumped = false;
+    while (inBounds(nc, nr)) {
+      if (!jumped) {
+        if (board[nr][nc]) {
+          if (board[nr][nc].type === TYPES.CANNON) break; // can't jump over cannon
+          jumped = true;
+        }
+      } else {
+        if (board[nr][nc]) {
+          if (board[nr][nc].team !== team && board[nr][nc].type !== TYPES.CANNON) {
+            moves.push([nc, nr]);
+          }
+          break;
+        }
+        moves.push([nc, nr]);
+      }
+      nc += dc; nr += dr;
+    }
+  }
+  // Palace diagonal cannon moves
+  if (inAnyPalace(col, row)) {
+    const diagDirs = [[1,1],[1,-1],[-1,1],[-1,-1]];
+    for (const [dc, dr] of diagDirs) {
+      let nc = col + dc, nr = row + dr;
+      let jumped = false;
+      while (inAnyPalace(nc, nr) && palaceDiagConnected(nc - dc, nr - dr, nc, nr)) {
+        if (!jumped) {
+          if (board[nr][nc]) {
+            if (board[nr][nc].type === TYPES.CANNON) break;
+            jumped = true;
+          }
+        } else {
+          if (board[nr][nc]) {
+            if (board[nr][nc].team !== team && board[nr][nc].type !== TYPES.CANNON) {
+              moves.push([nc, nr]);
+            }
+            break;
+          }
+          moves.push([nc, nr]);
+        }
+        nc += dc; nr += dr;
+      }
+    }
+  }
+}
+
+function getHorseMoves(board, col, row, team, moves) {
+  const steps = [
+    { first: [1, 0], seconds: [[2, 1], [2, -1]] },
+    { first: [-1, 0], seconds: [[-2, 1], [-2, -1]] },
+    { first: [0, 1], seconds: [[1, 2], [-1, 2]] },
+    { first: [0, -1], seconds: [[1, -2], [-1, -2]] }
+  ];
+  for (const { first, seconds } of steps) {
+    const mc = col + first[0], mr = row + first[1];
+    if (!inBounds(mc, mr) || board[mr][mc]) continue; // blocked
+    for (const [dc, dr] of seconds) {
+      const nc = col + dc, nr = row + dr;
+      if (inBounds(nc, nr) && (!board[nr][nc] || board[nr][nc].team !== team)) {
+        moves.push([nc, nr]);
+      }
+    }
+  }
+}
+
+function getElephantMoves(board, col, row, team, moves) {
+  const steps = [
+    { first: [1, 0], mid: [2, 1], dest: [3, 2] },
+    { first: [1, 0], mid: [2, -1], dest: [3, -2] },
+    { first: [-1, 0], mid: [-2, 1], dest: [-3, 2] },
+    { first: [-1, 0], mid: [-2, -1], dest: [-3, -2] },
+    { first: [0, 1], mid: [1, 2], dest: [2, 3] },
+    { first: [0, 1], mid: [-1, 2], dest: [-2, 3] },
+    { first: [0, -1], mid: [1, -2], dest: [2, -3] },
+    { first: [0, -1], mid: [-1, -2], dest: [-2, -3] }
+  ];
+  for (const { first, mid, dest } of steps) {
+    const fc = col + first[0], fr = row + first[1];
+    if (!inBounds(fc, fr) || board[fr][fc]) continue;
+    const mc = col + mid[0], mr = row + mid[1];
+    if (!inBounds(mc, mr) || board[mr][mc]) continue;
+    const nc = col + dest[0], nr = row + dest[1];
+    if (inBounds(nc, nr) && (!board[nr][nc] || board[nr][nc].team !== team)) {
+      moves.push([nc, nr]);
+    }
+  }
+}
+
+function getSoldierMoves(board, col, row, team, moves) {
+  const forward = team === CHO ? -1 : 1;
+  const dirs = [[0, forward], [1, 0], [-1, 0]];
+  for (const [dc, dr] of dirs) {
+    const nc = col + dc, nr = row + dr;
+    if (inBounds(nc, nr) && (!board[nr][nc] || board[nr][nc].team !== team)) {
+      moves.push([nc, nr]);
+    }
+  }
+  // Palace diagonal (forward only)
+  if (inAnyPalace(col, row)) {
+    const diagDirs = [[1, forward], [-1, forward]];
+    for (const [dc, dr] of diagDirs) {
+      const nc = col + dc, nr = row + dr;
+      if (inAnyPalace(nc, nr) && palaceDiagConnected(col, row, nc, nr)) {
+        if (!board[nr][nc] || board[nr][nc].team !== team) {
+          moves.push([nc, nr]);
+        }
+      }
+    }
+  }
+}
+
+// ============================================
+// CHECK / LEGAL MOVE VALIDATION
+// ============================================
+function findKing(board, team) {
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (board[r][c] && board[r][c].team === team && board[r][c].type === TYPES.KING)
+        return [c, r];
+  return null;
+}
+
+function isUnderAttack(board, col, row, byTeam) {
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (board[r][c] && board[r][c].team === byTeam) {
+        const moves = getMoves(board, c, r);
+        if (moves.some(([mc, mr]) => mc === col && mr === row)) return true;
+      }
+  return false;
+}
+
+function isInCheck(board, team) {
+  const king = findKing(board, team);
+  if (!king) return true;
+  const enemy = team === CHO ? HAN : CHO;
+  return isUnderAttack(board, king[0], king[1], enemy);
+}
+
+function makeMove(board, fromC, fromR, toC, toR) {
+  const newBoard = cloneBoard(board);
+  const captured = newBoard[toR][toC];
+  newBoard[toR][toC] = newBoard[fromR][fromC];
+  newBoard[fromR][fromC] = null;
+  return { board: newBoard, captured };
+}
+
+function getLegalMoves(board, col, row) {
+  const piece = board[row][col];
+  if (!piece) return [];
+  const rawMoves = getMoves(board, col, row);
+  return rawMoves.filter(([tc, tr]) => {
+    const { board: newBoard } = makeMove(board, col, row, tc, tr);
+    return !isInCheck(newBoard, piece.team);
+  });
+}
+
+function getAllLegalMoves(board, team) {
+  const moves = [];
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (board[r][c] && board[r][c].team === team) {
+        const legal = getLegalMoves(board, c, r);
+        for (const [tc, tr] of legal) {
+          moves.push({ from: [c, r], to: [tc, tr] });
+        }
+      }
+  return moves;
+}
+
+function isCheckmate(board, team) {
+  return getAllLegalMoves(board, team).length === 0;
+}
+
+// ============================================
+// AI ENGINE
+// ============================================
+function evaluateBoard(board, forTeam) {
+  let score = 0;
+  const enemy = forTeam === CHO ? HAN : CHO;
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const p = board[r][c];
+      if (!p) continue;
+      let val = PIECE_VALUES[p.type];
+
+      // 병/졸 전진 보너스
+      if (p.type === TYPES.SOLDIER) {
+        val += (p.team === CHO ? (9 - r) : r) * 0.12;
+      }
+
+      // 차: 중앙 열 선호 + 적진 진입 보너스
+      if (p.type === TYPES.CHARIOT) {
+        val += (4 - Math.abs(c - 4)) * 0.15;
+        val += (p.team === CHO ? (9 - r) : r) * 0.08;
+      }
+
+      // 마/상: 중앙 가까울수록 유리
+      if (p.type === TYPES.HORSE || p.type === TYPES.ELEPHANT) {
+        val += (4 - Math.abs(c - 4)) * 0.12;
+        val += (3 - Math.abs(r - 4.5)) * 0.06;
+      }
+
+      // 포: 적 기물 뒤에 있을수록 유리 (간접 측정: 앞에 기물 존재)
+      if (p.type === TYPES.CANNON) {
+        const dr = p.team === CHO ? -1 : 1;
+        let hasScreen = false;
+        for (let nr = r + dr; nr >= 0 && nr < ROWS; nr += dr) {
+          if (board[nr][c]) { hasScreen = true; break; }
+        }
+        val += hasScreen ? 0.4 : -0.2;
+      }
+
+      if (p.team === forTeam) score += val;
+      else score -= val;
+    }
+  }
+
+  // 기동성 보너스 (가능한 수 많을수록 유리)
+  const myMoves = getAllLegalMoves(board, forTeam).length;
+  const enemyMoves = getAllLegalMoves(board, enemy).length;
+  score += (myMoves - enemyMoves) * 0.04;
+
+  // 장군 보너스
+  if (isInCheck(board, enemy)) score += 2.5;
+  if (isInCheck(board, forTeam)) score -= 2.5;
+
+  return score;
+}
+
+function orderMoves(board, moves) {
+  // 포획 이동 먼저, 가치 높은 포획 우선 → 알파베타 가지치기 효율 향상
+  return moves.sort((a, b) => {
+    const ta = board[a.to[1]][a.to[0]];
+    const tb = board[b.to[1]][b.to[0]];
+    const va = ta ? PIECE_VALUES[ta.type] : 0;
+    const vb = tb ? PIECE_VALUES[tb.type] : 0;
+    return vb - va;
+  });
+}
+
+function minimax(board, depth, alpha, beta, maximizing, team, enemy) {
+  if (depth === 0) return { score: evaluateBoard(board, team) };
+
+  const currentTeam = maximizing ? team : enemy;
+  const moves = orderMoves(board, getAllLegalMoves(board, currentTeam));
+
+  if (moves.length === 0) {
+    return { score: maximizing ? -999 : 999 };
+  }
+
+  let bestMove = null;
+
+  if (maximizing) {
+    let maxScore = -Infinity;
+    for (const move of moves) {
+      const { board: newBoard } = makeMove(board, move.from[0], move.from[1], move.to[0], move.to[1]);
+      const result = minimax(newBoard, depth - 1, alpha, beta, false, team, enemy);
+      if (result.score > maxScore) {
+        maxScore = result.score;
+        bestMove = move;
+      }
+      alpha = Math.max(alpha, maxScore);
+      if (beta <= alpha) break;
+    }
+    return { score: maxScore, move: bestMove };
+  } else {
+    let minScore = Infinity;
+    for (const move of moves) {
+      const { board: newBoard } = makeMove(board, move.from[0], move.from[1], move.to[0], move.to[1]);
+      const result = minimax(newBoard, depth - 1, alpha, beta, true, team, enemy);
+      if (result.score < minScore) {
+        minScore = result.score;
+        bestMove = move;
+      }
+      beta = Math.min(beta, minScore);
+      if (beta <= alpha) break;
+    }
+    return { score: minScore, move: bestMove };
+  }
+}
+
+function getAIMove(board, aiTeam, difficulty) {
+  const diff = DIFFICULTIES[difficulty];
+  const enemy = aiTeam === CHO ? HAN : CHO;
+  const moves = getAllLegalMoves(board, aiTeam);
+  if (moves.length === 0) return null;
+
+  // Add randomness for lower difficulties
+  if (Math.random() < diff.random) {
+    return moves[Math.floor(Math.random() * moves.length)];
+  }
+
+  const result = minimax(board, diff.depth, -Infinity, Infinity, true, aiTeam, enemy);
+  return result.move || moves[0];
+}
+
+// Get top 2 recommended moves for a team
+function getRecommendedMoves(board, team, count = 2) {
+  const enemy = team === CHO ? HAN : CHO;
+  const moves = getAllLegalMoves(board, team);
+  if (moves.length === 0) return [];
+
+  const scored = moves.map(move => {
+    const { board: newBoard } = makeMove(board, move.from[0], move.from[1], move.to[0], move.to[1]);
+    const score = minimax(newBoard, 2, -Infinity, Infinity, false, team, enemy).score;
+    return { ...move, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, count);
+}
+
+// ============================================
+// ANIMATION ENGINE
+// ============================================
+function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
+  if (!state.beginnerMode) {
+    callback();
+    return;
+  }
+
+  const boardContainer = document.querySelector('.board-container');
+  const boardRect = boardContainer.getBoundingClientRect();
+  const boardLeft = boardRect.left + 22; // padding
+  const boardTop = boardRect.top + 22;
+
+  const piece = state.board[fromR][fromC];
+  const pieceImg = PIECE_IMAGES[pieceTeam][pieceType];
+
+  const startX = boardLeft + fromC * 48 + 24;
+  const startY = boardTop + fromR * 48 + 24;
+
+  const animEl = document.createElement('div');
+  animEl.className = 'animated-piece';
+  animEl.innerHTML = `<img src="${pieceImg}" alt="">`;
+  document.body.appendChild(animEl);
+
+  const animImg = animEl.querySelector('img');
+  animImg.style.width = '44px';
+  animImg.style.height = '39px';
+
+  let currentX = startX - 22;
+  let currentY = startY - 19.5;
+  animEl.style.left = currentX + 'px';
+  animEl.style.top = currentY + 'px';
+
+  function moveToPoint(targetX, targetY, durationMs) {
+    return new Promise(resolve => {
+      const startTime = Date.now();
+      const startPosX = currentX;
+      const startPosY = currentY;
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / durationMs, 1);
+
+        currentX = startPosX + (targetX - startPosX) * progress;
+        currentY = startPosY + (targetY - startPosY) * progress;
+
+        animEl.style.left = currentX + 'px';
+        animEl.style.top = currentY + 'px';
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          resolve();
+        }
+      };
+      animate();
+    });
+  }
+
+  function scaleAnimation(targetScale, durationMs) {
+    return new Promise(resolve => {
+      const startTime = Date.now();
+      const startScale = parseFloat(animImg.style.transform.match(/scale\(([\d.]+)\)/) ? RegExp.$1 : 1);
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / durationMs, 1);
+        const scale = startScale + (targetScale - startScale) * progress;
+        animImg.style.transform = `scale(${scale})`;
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          resolve();
+        }
+      };
+      animate();
+    });
+  }
+
+  (async () => {
+    const duration = 175;
+
+    if (pieceType === TYPES.CHARIOT || pieceType === TYPES.KING || pieceType === TYPES.GUARD || pieceType === TYPES.SOLDIER) {
+      // Direct straight line
+      const endX = boardLeft + toC * 48 + 24 - 22;
+      const endY = boardTop + toR * 48 + 24 - 19.5;
+      await moveToPoint(endX, endY, duration);
+    } else if (pieceType === TYPES.CANNON) {
+      // Find jumped piece
+      const dc = toC > fromC ? 1 : (toC < fromC ? -1 : 0);
+      const dr = toR > fromR ? 1 : (toR < fromR ? -1 : 0);
+      let jumpC = fromC + dc, jumpR = fromR + dr;
+      while (jumpC !== toC || jumpR !== toR) {
+        if (state.board[jumpR][jumpC]) break;
+        jumpC += dc;
+        jumpR += dr;
+      }
+
+      const jumpX = boardLeft + jumpC * 48 + 24 - 22;
+      const jumpY = boardTop + jumpR * 48 + 24 - 19.5;
+
+      // Move to jump piece
+      await moveToPoint(jumpX, jumpY, duration);
+      // Scale up
+      await scaleAnimation(1.3, 75);
+      // Move to destination
+      const endX = boardLeft + toC * 48 + 24 - 22;
+      const endY = boardTop + toR * 48 + 24 - 19.5;
+      await scaleAnimation(1, 75);
+      await moveToPoint(endX, endY, duration);
+    } else if (pieceType === TYPES.HORSE) {
+      // 말: 직진 1칸 → 대각 1칸
+      // |toC-fromC|=2 이면 가로 먼저, |toR-fromR|=2 이면 세로 먼저
+      const signC = toC > fromC ? 1 : -1;
+      const signR = toR > fromR ? 1 : -1;
+      const absDC = Math.abs(toC - fromC);
+      const absDR = Math.abs(toR - fromR);
+      let step1C, step1R;
+      if (absDC > absDR) {
+        step1C = fromC + signC; step1R = fromR;        // 가로 직진 먼저
+      } else {
+        step1C = fromC;         step1R = fromR + signR; // 세로 직진 먼저
+      }
+      const step1X = boardLeft + step1C * 48 + 24 - 22;
+      const step1Y = boardTop + step1R * 48 + 24 - 19.5;
+      await moveToPoint(step1X, step1Y, duration);
+      const endX = boardLeft + toC * 48 + 24 - 22;
+      const endY = boardTop + toR * 48 + 24 - 19.5;
+      await moveToPoint(endX, endY, duration);
+
+    } else if (pieceType === TYPES.ELEPHANT) {
+      // 상: 직진 1칸 → 대각 1칸 → 대각 1칸
+      // |toC-fromC|=3 이면 가로 먼저, |toR-fromR|=3 이면 세로 먼저
+      const signC = toC > fromC ? 1 : -1;
+      const signR = toR > fromR ? 1 : -1;
+      const absDC = Math.abs(toC - fromC);
+      const absDR = Math.abs(toR - fromR);
+      let step1C, step1R, step2C, step2R;
+      if (absDC > absDR) {
+        // 가로 직진 먼저 (3,2 이동)
+        step1C = fromC + signC;   step1R = fromR;
+        step2C = fromC + signC*2; step2R = fromR + signR;
+      } else {
+        // 세로 직진 먼저 (2,3 이동)
+        step1C = fromC;           step1R = fromR + signR;
+        step2C = fromC + signC;   step2R = fromR + signR*2;
+      }
+      const step1X = boardLeft + step1C * 48 + 24 - 22;
+      const step1Y = boardTop + step1R * 48 + 24 - 19.5;
+      await moveToPoint(step1X, step1Y, duration);
+      const step2X = boardLeft + step2C * 48 + 24 - 22;
+      const step2Y = boardTop + step2R * 48 + 24 - 19.5;
+      await moveToPoint(step2X, step2Y, duration);
+      const endX = boardLeft + toC * 48 + 24 - 22;
+      const endY = boardTop + toR * 48 + 24 - 19.5;
+      await moveToPoint(endX, endY, duration);
+    }
+
+    document.body.removeChild(animEl);
+    callback();
+  })();
+}
+
+// ============================================
+// GAME STATE
+// ============================================
+// ============================================
+// 다국어 번역
+// ============================================
+const LANG = {
+  ko: {
+    title: '베이비장기', subtitle: 'Baby Janggi · ベビー韓将棋',
+    home: '← 홈', newGame: '▶ 새 게임', resign: '■ 기권',
+    aiMode: 'AI 대전', pvpMode: '2인 대전',
+    hint: '💡 훈수', hintOn: '💡 훈수 ON',
+    anim: '🎬 애니', animOn: '🎬 애니 ON',
+    cho: '초(楚)', han: '한(漢)',
+    turn: t => `${t}의 차례`, check: ' — ⚠️ 장군!',
+    aiThinking: 'AI 생각 중...',
+    win: t => `🏆 ${t} 승리!`,
+    winAI: '축하합니다! AI를 이겼습니다!',
+    loseAI: 'AI가 이겼습니다. 다시 도전해보세요!',
+    winP: t => `${t} 플레이어 승리!`,
+    retry: '다시 하기',
+    diff: ['입문','초급','중급','고급','최고수'],
+    capEmpty: t => `${t} 포획 없음`,
+  },
+  ja: {
+    title: 'ベビー韓将棋', subtitle: 'Baby Janggi · 베이비장기',
+    home: '← ホーム', newGame: '▶ 新局', resign: '■ 投了',
+    aiMode: 'AI対局', pvpMode: '二人対局',
+    hint: '💡 助言', hintOn: '💡 助言 ON',
+    anim: '🎬 アニメ', animOn: '🎬 アニメ ON',
+    cho: '楚(そ)', han: '漢(かん)',
+    turn: t => `${t}の番`, check: ' — ⚠️ 将軍!',
+    aiThinking: 'AI思考中...',
+    win: t => `🏆 ${t}の勝利!`,
+    winAI: 'おめでとう！AIに勝ちました！',
+    loseAI: 'AIの勝ちです。もう一度挑戦！',
+    winP: t => `${t}プレイヤーの勝ち！`,
+    retry: 'もう一度',
+    diff: ['入門','初級','中級','上級','最強'],
+    capEmpty: t => `${t}の捕獲なし`,
+  }
+};
+function T(key) { return LANG[state.lang][key]; }
+
+let state = {
+  board: createInitialBoard(),
+  turn: CHO,
+  selected: null,
+  legalMoves: [],
+  captured: { cho: [], han: [] },
+  gameOver: false,
+  winner: null,
+  aiThinking: false,
+  mode: 'ai',
+  difficulty: 2,
+  showRecommend: true,
+  beginnerMode: true,
+  recommended: [],
+  lastMove: null,
+  moveHistory: [],
+  lang: 'ko',
+  inCheck: null
+};
+
+function resetGame() {
+  state.board = createInitialBoard();
+  state.turn = CHO;
+  state.selected = null;
+  state.legalMoves = [];
+  state.captured = { cho: [], han: [] };
+  state.gameOver = false;
+  state.winner = null;
+  state.aiThinking = false;
+  state.recommended = [];
+  state.lastMove = null;
+  state.moveHistory = [];
+  state.inCheck = null;
+  if (state.showRecommend) {
+    state.recommended = getRecommendedMoves(state.board, state.turn);
+  }
+  render();
+}
+
+function selectPiece(col, row) {
+  if (state.gameOver || state.aiThinking) return;
+  const piece = state.board[row][col];
+
+  if (state.selected) {
+    const [sc, sr] = state.selected;
+    // Check if clicking on a legal move destination
+    if (state.legalMoves.some(([mc, mr]) => mc === col && mr === row)) {
+      executeMove(sc, sr, col, row);
+      return;
+    }
+  }
+
+  if (piece && piece.team === state.turn) {
+    if (state.mode === 'ai' && state.turn === HAN) return; // AI's turn
+    state.selected = [col, row];
+    state.legalMoves = getLegalMoves(state.board, col, row);
+  } else {
+    state.selected = null;
+    state.legalMoves = [];
+  }
+  render();
+}
+
+function executeMove(fromC, fromR, toC, toR) {
+  const piece = state.board[fromR][fromC];
+  const isCapture = state.board[toR][toC] !== null;
+
+  const executeMoveFinal = () => {
+    const { board: newBoard, captured } = makeMove(state.board, fromC, fromR, toC, toR);
+    if (captured) {
+      state.captured[captured.team].push(captured);
+      playCaptureSound();
+    } else {
+      playMoveSound();
+    }
+    state.board = newBoard;
+    state.lastMove = { from: [fromC, fromR], to: [toC, toR] };
+    state.moveHistory.push(state.lastMove);
+    state.selected = null;
+    state.legalMoves = [];
+
+    const enemy = state.turn === CHO ? HAN : CHO;
+
+    // Check for checkmate
+    if (isCheckmate(state.board, enemy)) {
+      state.gameOver = true;
+      state.winner = state.turn;
+      state.recommended = [];
+      playWinSound();
+      render();
+      return;
+    }
+
+    // Check for check — 내가 상대 장군
+    if (isInCheck(state.board, enemy)) {
+      playCheckSound(false); // "장군!"
+    }
+
+    state.turn = enemy;
+
+    // Update recommendations
+    if (state.showRecommend && !(state.mode === 'ai' && state.turn === HAN)) {
+      state.recommended = getRecommendedMoves(state.board, state.turn);
+    } else {
+      state.recommended = [];
+    }
+
+    render();
+
+    // AI move
+    if (state.mode === 'ai' && state.turn === HAN && !state.gameOver) {
+      state.aiThinking = true;
+      render();
+      setTimeout(() => {
+        const aiMove = getAIMove(state.board, HAN, state.difficulty);
+        if (aiMove) {
+          state.aiThinking = false;
+          const aiPiece = state.board[aiMove.from[1]][aiMove.from[0]];
+          const aiIsCapture = state.board[aiMove.to[1]][aiMove.to[0]] !== null;
+
+          const executeAIMoveFinal = () => {
+            const { board: nb, captured: cap } = makeMove(state.board, aiMove.from[0], aiMove.from[1], aiMove.to[0], aiMove.to[1]);
+            if (cap) {
+              state.captured[cap.team].push(cap);
+              playCaptureSound();
+            } else {
+              playMoveSound();
+            }
+            state.board = nb;
+            state.lastMove = { from: aiMove.from, to: aiMove.to };
+            state.moveHistory.push(state.lastMove);
+
+            if (isCheckmate(state.board, CHO)) {
+              state.gameOver = true;
+              state.winner = HAN;
+              state.recommended = [];
+              playWinSound();
+            } else {
+              if (isInCheck(state.board, CHO)) {
+                playCheckSound(true); // "멍군!" — AI가 내 왕을 장군
+              }
+              state.turn = CHO;
+              if (state.showRecommend) {
+                state.recommended = getRecommendedMoves(state.board, CHO);
+              }
+            }
+            render();
+          };
+
+          animateMove(aiMove.from[0], aiMove.from[1], aiMove.to[0], aiMove.to[1], aiPiece.type, aiPiece.team, executeAIMoveFinal);
+        } else {
+          state.aiThinking = false;
+          state.gameOver = true;
+          state.winner = CHO;
+          playWinSound();
+          render();
+        }
+      }, 300);
+    }
+  };
+
+  animateMove(fromC, fromR, toC, toR, piece.type, piece.team, executeMoveFinal);
+}
+
+// ============================================
+// RENDERING
+// ============================================
+function render() {
+  const app = document.getElementById('app');
+
+  // Status text
+  const L = LANG[state.lang];
+  let statusText, statusClass;
+  if (state.gameOver) {
+    const winnerName = state.winner === CHO ? L.cho : L.han;
+    statusText = L.win(winnerName);
+    statusClass = 'game-over';
+  } else if (state.aiThinking) {
+    statusText = `<span class="thinking">${L.aiThinking}</span>`;
+    statusClass = 'han-turn';
+  } else {
+    const check = isInCheck(state.board, state.turn);
+    const turnName = state.turn === CHO ? L.cho : L.han;
+    statusText = L.turn(turnName) + (check ? L.check : '');
+    statusClass = state.turn === CHO ? 'cho-turn' : 'han-turn';
+  }
+
+  // Build recommended move lookup
+  const recFromMap = {};
+  const recToMap = {};
+  if (state.showRecommend && state.recommended.length > 0) {
+    if (!state.selected) {
+      // Phase 1: 선택 전 — 추천 기물 강조
+      state.recommended.forEach((rec, i) => {
+        const fk = `${rec.from[0]},${rec.from[1]}`;
+        if (!recFromMap[fk]) recFromMap[fk] = { rank: i + 1 };
+      });
+    } else {
+      // Phase 2: 선택 후 — 선택된 기물의 추천 목적지에 고스트 표시
+      const selKey = `${state.selected[0]},${state.selected[1]}`;
+      state.recommended.forEach((rec, i) => {
+        if (`${rec.from[0]},${rec.from[1]}` === selKey) {
+          const tk = `${rec.to[0]},${rec.to[1]}`;
+          if (!recToMap[tk]) recToMap[tk] = { rank: i + 1 };
+        }
+      });
+    }
+  }
+
+  // Board cells
+  let boardCells = '';
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const piece = state.board[r][c];
+      const isSelected = state.selected && state.selected[0] === c && state.selected[1] === r;
+      const isLegal = state.legalMoves.some(([mc, mr]) => mc === c && mr === r);
+      const isLastFrom = state.lastMove && state.lastMove.from[0] === c && state.lastMove.from[1] === r;
+      const isLastTo = state.lastMove && state.lastMove.to[0] === c && state.lastMove.to[1] === r;
+      const key = `${c},${r}`;
+      const recFrom = recFromMap[key];
+      const recTo = recToMap[key];
+
+      let cellContent = '';
+
+      // last-move 링 제거 — 기물에 직접 클래스로 표시
+
+      // Legal move dot — 빈 칸에만, 고스트가 있는 칸은 제외
+      if (isLegal && !piece && !recTo) {
+        cellContent += `<div class="move-dot"></div>`;
+      }
+      // capture ring 제거 — 상대 기물 위에 동그라미 표시 없음
+
+      // Piece
+      if (piece) {
+        const name = PIECE_NAMES[piece.team][piece.type];
+        const imgUrl = PIECE_IMAGES[piece.team][piece.type];
+        const selClass = isSelected ? ' selected' : '';
+        const recClass = recFrom && !state.selected ? ' recommended' : '';
+        const lastClass = isLastTo && !isSelected ? ' last-moved' : '';
+        cellContent += `<div class="piece ${piece.team}${selClass}${recClass}${lastClass}"><img src="${imgUrl}" alt="${name}"></div>`;
+      }
+
+      // Recommended destination ghost pieces (Phase 2 - when a piece is selected)
+      if (state.selected && recTo && isLegal) {
+        const selectedPiece = state.board[state.selected[1]][state.selected[0]];
+        const ghostImg = PIECE_IMAGES[selectedPiece.team][selectedPiece.type];
+        cellContent += `<div class="recommend-ghost"><img src="${ghostImg}" alt=""></div>`;
+      }
+
+      boardCells += `<div class="cell" data-col="${c}" data-row="${r}">${cellContent}</div>`;
+    }
+  }
+
+  // Captured pieces display — 중요도 내림차순 정렬
+  const sortByValue = arr => [...arr].sort((a, b) => PIECE_VALUES[b.type] - PIECE_VALUES[a.type]);
+  const capturedHan = sortByValue(state.captured.han).map(p =>
+    `<span class="captured-piece han"><img src="${PIECE_IMAGES.han[p.type]}" alt="${PIECE_NAMES.han[p.type]}" style="width:24px;height:21px;"></span>`
+  ).join('');
+  const capturedCho = sortByValue(state.captured.cho).map(p =>
+    `<span class="captured-piece cho"><img src="${PIECE_IMAGES.cho[p.type]}" alt="${PIECE_NAMES.cho[p.type]}" style="width:24px;height:21px;"></span>`
+  ).join('');
+
+  app.innerHTML = `
+    <div class="nav-bar">
+      <a href="../../index.html" class="home-btn">${L.home}</a>
+      <h1 translate="no" style="font-size:20px;letter-spacing:3px;">${L.title}</h1>
+      <button class="lang-btn" onclick="changeLang('${state.lang === 'ko' ? 'ja' : 'ko'}')">${state.lang === 'ko' ? '🇯🇵 JP' : '🇰🇷 KO'}</button>
+    </div>
+    <div class="top-bar">
+      <div class="status ${statusClass}">${statusText}</div>
+    </div>
+    <div class="captures-row">
+      <div class="captured-area">${capturedCho || `<span style="color:#555;font-size:11px;white-space:nowrap;">${L.capEmpty(L.cho)}</span>`}</div>
+      <div class="captured-area">${capturedHan || `<span style="color:#555;font-size:11px;white-space:nowrap;">${L.capEmpty(L.han)}</span>`}</div>
+    </div>
+    <div class="board-container">
+      <svg class="board-lines" viewBox="0 0 432 480" xmlns="http://www.w3.org/2000/svg">
+        ${(() => {
+          let lines = '';
+          const cx = c => c * 48 + 24;
+          const cy = r => r * 48 + 24;
+          const S = '#6B4E10';
+          // Horizontal lines
+          for (let r = 0; r < ROWS; r++) {
+            lines += `<line x1="${cx(0)}" y1="${cy(r)}" x2="${cx(8)}" y2="${cy(r)}" stroke="${S}" stroke-width="${(r===0||r===9)?2:1.2}"/>`;
+          }
+          // Vertical lines — continuous top to bottom
+          for (let c = 0; c < COLS; c++) {
+            lines += `<line x1="${cx(c)}" y1="${cy(0)}" x2="${cx(c)}" y2="${cy(9)}" stroke="${S}" stroke-width="${(c===0||c===8)?2:1.2}"/>`;
+          }
+          // Palace diagonals
+          lines += `<line x1="${cx(3)}" y1="${cy(0)}" x2="${cx(5)}" y2="${cy(2)}" stroke="${S}" stroke-width="1.5"/>`;
+          lines += `<line x1="${cx(5)}" y1="${cy(0)}" x2="${cx(3)}" y2="${cy(2)}" stroke="${S}" stroke-width="1.5"/>`;
+          lines += `<line x1="${cx(3)}" y1="${cy(7)}" x2="${cx(5)}" y2="${cy(9)}" stroke="${S}" stroke-width="1.5"/>`;
+          lines += `<line x1="${cx(5)}" y1="${cy(7)}" x2="${cx(3)}" y2="${cy(9)}" stroke="${S}" stroke-width="1.5"/>`;
+          return lines;
+        })()}
+      </svg>
+      <div class="board">${boardCells}</div>
+    </div>
+    <div class="controls">
+      <div class="controls-row">
+        <button class="btn-start" onclick="resetGame()">${L.newGame}</button>
+        ${!state.gameOver ? `<button class="btn-stop" onclick="resignGame()">${L.resign}</button>` : ''}
+      </div>
+      <div class="controls-row">
+        <select id="modeSelect" onchange="changeMode(this.value)">
+          <option value="ai" ${state.mode === 'ai' ? 'selected' : ''}>${L.aiMode}</option>
+          <option value="pvp" ${state.mode === 'pvp' ? 'selected' : ''}>${L.pvpMode}</option>
+        </select>
+        <select id="diffSelect" onchange="changeDifficulty(this.value)" ${state.mode !== 'ai' ? 'disabled' : ''}>
+          ${L.diff.map((name, i) => `<option value="${i}" ${state.difficulty === i ? 'selected' : ''}>${name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="controls-row">
+        <button class="${state.showRecommend ? 'active' : ''}" onclick="toggleRecommend()">
+          ${state.showRecommend ? L.hintOn : L.hint}
+        </button>
+        <button class="${state.beginnerMode ? 'active' : ''}" onclick="toggleBeginnerMode()">
+          ${state.beginnerMode ? L.animOn : L.anim}
+        </button>
+      </div>
+    </div>
+    ${state.gameOver ? `
+      <div class="modal-overlay" onclick="resetGame()">
+        <div class="modal" onclick="event.stopPropagation()">
+          <h2>${L.win(state.winner === CHO ? L.cho : L.han)}</h2>
+          <p>${state.winner === CHO
+            ? (state.mode === 'ai' ? L.winAI : L.winP(L.cho))
+            : (state.mode === 'ai' ? L.loseAI : L.winP(L.han))}</p>
+          <button onclick="resetGame()">${L.retry}</button>
+        </div>
+      </div>
+    ` : ''}
+  `;
+
+  // Add click handlers
+  document.querySelectorAll('.cell').forEach(cell => {
+    cell.addEventListener('click', () => {
+      const col = parseInt(cell.dataset.col);
+      const row = parseInt(cell.dataset.row);
+      selectPiece(col, row);
+    });
+  });
+}
+
+function changeLang(lang) {
+  state.lang = lang;
+  render();
+}
+
+function resignGame() {
+  if (state.gameOver) return;
+  state.gameOver = true;
+  state.winner = state.turn === CHO ? HAN : CHO;
+  render();
+}
+
+function changeMode(mode) {
+  state.mode = mode;
+  resetGame();
+}
+
+function changeDifficulty(val) {
+  state.difficulty = parseInt(val);
+  if (state.showRecommend && !state.gameOver) {
+    state.recommended = getRecommendedMoves(state.board, state.turn);
+  }
+  render();
+}
+
+function toggleRecommend() {
+  state.showRecommend = !state.showRecommend;
+  if (state.showRecommend && !state.gameOver) {
+    state.recommended = getRecommendedMoves(state.board, state.turn);
+  } else {
+    state.recommended = [];
+  }
+  render();
+}
+
+function toggleBeginnerMode() {
+  state.beginnerMode = !state.beginnerMode;
+  render();
+}
+
+// Initialize
+state.recommended = getRecommendedMoves(state.board, state.turn);
+render();
+</script>
+</body>
+</html>

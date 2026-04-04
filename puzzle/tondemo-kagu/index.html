@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>トンデモ家具工房</title>
+</head>
+<body>
+<h2>🔨 トンデモ家具工房</h2>
+<p>残り<span id="time">30</span>秒 / 納品:<span id="score">0</span>件</p>
+<p id="msg" style="color:blue; font-weight:bold;">土台とパーツを選べ！</p>
+<button onclick="pick('木の板')" style="padding:10px; font-size:16px;">🪵木の板</button>
+<button onclick="pick('タイヤ')" style="padding:10px; font-size:16px;">🛞タイヤ</button>
+<button onclick="pick('ロケット')" style="padding:10px; font-size:16px;">🚀ロケット</button>
+<br><br>
+<button onclick="mix()" style="padding:15px; font-size:20px; background:lightblue;">【組み立てる！】</button>
+<h3>📖 リコール必須！変な家具図鑑</h3>
+<ul id="zukan"></ul>
+<script>
+let timer = 30, score = 0, materials = [];
+let zukanList = new Set();
+let countdown = setInterval(() => {
+  if(timer > 0) { timer--; document.getElementById('time').innerText = timer; }
+}, 1000);
+
+function pick(item) {
+  if(materials.length < 2) {
+    materials.push(item);
+    document.getElementById('msg').innerText = "作業台: " + materials.join(" ＋ ");
+  }
+}
+
+function mix() {
+  if(timer <= 0) return alert('本日の営業終了！お疲れ様！');
+  if(materials.length < 2) return alert('パーツが足りないぞ！');
+  let recipe = materials.sort().join('＋');
+  let resultItem = '';
+  if(recipe === 'タイヤ＋木の板') {
+    resultItem = '🛒普通の台車';
+    score += 1;
+  }
+  else if(recipe === 'ロケット＋木の板') {
+    resultItem = '🛏️空飛ぶベッド（図鑑登録！）';
+    zukanList.add('🛏️空飛ぶベッド');
+  }
+  else {
+    resultItem = '💥危険なガラクタ（図鑑登録！）';
+    zukanList.add('💥危険なガラクタ');
+  }
+  document.getElementById('msg').innerText = "結果：" + resultItem + " 完成！";
+  document.getElementById('score').innerText = score;
+  document.getElementById('zukan').innerHTML = Array.from(zukanList).map(i => "<li>" + i + "</li>").join('');
+  materials = [];
+}
+</script>
+</body>
+</html>

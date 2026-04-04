@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 220" width="600" height="220">
+  <defs>
+    <linearGradient id="swoosh3b" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6c5ce7"/>
+      <stop offset="45%" stop-color="#FF6B00"/>
+      <stop offset="100%" stop-color="#ff6b9d"/>
+    </linearGradient>
+    <filter id="glow3b">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="600" height="220" fill="#0a0a1a" rx="16"/>
+
+  <!-- FILLED swoosh - Nike style but with gradient -->
+  <!-- Bottom edge: the main curve -->
+  <!-- Top edge: tapers from thick to thin point -->
+  <path d="M 75,95
+           C 110,98 150,105 200,88
+           C 260,67 330,42 420,42
+           C 470,42 510,30 530,18
+           C 515,24 490,32 450,36
+           C 370,44 280,55 210,72
+           C 160,84 120,88 90,84
+           Z"
+        fill="url(#swoosh3b)" opacity="0.92" filter="url(#glow3b)"/>
+
+  <!-- Fingertip touch point at swoosh start -->
+  <circle cx="82" cy="90" r="5" fill="#6c5ce7"/>
+  <circle cx="82" cy="90" r="10" fill="none" stroke="#6c5ce7" stroke-width="1.5" opacity="0.45"/>
+  <circle cx="82" cy="90" r="16" fill="none" stroke="#6c5ce7" stroke-width="0.8" opacity="0.2"/>
+
+  <!-- Tiny play triangle near swoosh tip -->
+  <polygon points="520,22 534,30 520,38" fill="#ff6b9d" opacity="0.55"/>
+
+  <!-- "Just play it." - bold italic, tight -->
+  <text x="300" y="150" text-anchor="middle"
+        font-family="'Helvetica Neue', 'Arial Black', Arial, sans-serif"
+        font-size="48" font-weight="900" font-style="italic"
+        fill="white" letter-spacing="-1">
+    Just play it.
+  </text>
+
+  <!-- Tagline -->
+  <text x="300" y="180" text-anchor="middle"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="11" font-weight="400"
+        fill="#777" letter-spacing="2.5">
+    ANYONE CAN START. RIGHT NOW.
+  </text>
+
+  <text x="300" y="205" text-anchor="middle"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="11" font-weight="300"
+        fill="#444" letter-spacing="3">
+    game.in-9.com
+  </text>
+</svg>

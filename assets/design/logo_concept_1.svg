@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 220" width="600" height="220">
+  <defs>
+    <linearGradient id="swoosh1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF6B00"/>
+      <stop offset="100%" stop-color="#FF9500"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="600" height="220" fill="#0a0a1a" rx="16"/>
+
+  <!-- Swoosh - finger swipe trail -->
+  <path d="M 100,95 C 130,95 160,60 220,55 C 280,50 350,80 420,45 C 460,30 480,28 500,30"
+        stroke="url(#swoosh1)" stroke-width="8" fill="none" stroke-linecap="round"
+        opacity="0.9"/>
+
+  <!-- Speed trail fade -->
+  <path d="M 420,45 C 445,36 470,30 500,30"
+        stroke="#FF6B00" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.5"/>
+  <path d="M 460,35 C 480,30 495,29 510,32"
+        stroke="#FF6B00" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.25"/>
+
+  <!-- Fingertip touch point -->
+  <circle cx="100" cy="95" r="10" fill="#FF6B00" opacity="0.9"/>
+  <circle cx="100" cy="95" r="16" fill="none" stroke="#FF6B00" stroke-width="1.5" opacity="0.35"/>
+  <circle cx="100" cy="95" r="23" fill="none" stroke="#FF6B00" stroke-width="1" opacity="0.15"/>
+
+  <!-- "Just play it." text -->
+  <text x="300" y="160" text-anchor="middle"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="48" font-weight="800" font-style="italic"
+        fill="white" letter-spacing="-1">
+    Just play it.
+  </text>
+
+  <!-- in-9 subtle branding -->
+  <text x="300" y="195" text-anchor="middle"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-size="13" font-weight="400"
+        fill="#555" letter-spacing="3">
+    game.in-9.com
+  </text>
+</svg>

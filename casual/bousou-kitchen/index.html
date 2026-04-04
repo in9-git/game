@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>暴走キッチン🌸</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Segoe UI','Helvetica Neue',Hiragino Kaku Gothic Pro,sans-serif;
+  background:linear-gradient(160deg,#ffe0f0 0%,#fff4f9 40%,#f0f8ff 100%);
+  color:#5a2d4a;min-height:100vh;overflow-x:hidden;
+}
+
+/* ── 花びら ── */
+.petal{position:fixed;top:-30px;opacity:.7;animation:fallPetal linear infinite;pointer-events:none;z-index:0;user-select:none;}
+@keyframes fallPetal{
+  0%{transform:translateY(0) rotate(0deg) translateX(0);opacity:.8}
+  50%{transform:translateY(50vh) rotate(180deg) translateX(30px)}
+  100%{transform:translateY(110vh) rotate(360deg) translateX(-20px);opacity:0}
+}
+
+/* ── 固定UI ── */
+.top-bar{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  display:flex;justify-content:flex-end;gap:8px;padding:8px 12px;
+}
+.icon-btn{
+  background:rgba(255,255,255,.88);border:2px solid #f9a8c9;
+  border-radius:50%;width:38px;height:38px;font-size:1rem;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(220,130,180,.3);transition:transform .15s;
+}
+.icon-btn:hover{transform:scale(1.1);}
+
+/* ── メインコンテナ ── */
+.container{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:12px;padding-top:54px;}
+
+/* ── ヘッダー ── */
+header{text-align:center;padding:12px 0 6px;}
+header h1{
+  font-size:1.9rem;font-weight:900;
+  background:linear-gradient(135deg,#e8507a,#f9a8c9,#a78bda);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:2px;
+}
+.subtitle{color:#c06080;font-size:.8rem;margin-top:3px;}
+
+/* ── HUD ── */
+.hud{
+  display:flex;justify-content:space-around;align-items:center;
+  background:rgba(255,255,255,.75);border:2px solid #f9a8c9;
+  border-radius:16px;padding:8px 10px;margin:8px 0;
+  backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(220,130,180,.15);
+}
+.hud-item{text-align:center;}
+.hud-label{font-size:.65rem;color:#c06080;letter-spacing:1px;}
+.hud-value{font-size:1.3rem;font-weight:700;color:#e8507a;}
+
+/* ── 注文パネル ── */
+.order-panel{
+  background:rgba(255,255,255,.82);border:2px solid #f9a8c9;
+  border-radius:16px;padding:10px 14px;margin:6px 0;text-align:center;
+  box-shadow:0 2px 10px rgba(220,130,180,.12);
+}
+.order-label{font-size:.7rem;color:#c06080;letter-spacing:1px;margin-bottom:3px;}
+.order-text{font-size:1.3rem;font-weight:700;color:#5a2d4a;}
+.order-hint{font-size:.76rem;color:#b07890;margin-top:2px;}
+
+/* ── 個数セレクター ── */
+.count-selector{
+  display:flex;justify-content:center;align-items:center;
+  gap:6px;margin:6px 0;
+}
+.count-selector label{font-size:.75rem;color:#c06080;font-weight:600;}
+.count-btn{
+  width:34px;height:34px;border-radius:50%;border:2px solid #f9a8c9;
+  background:rgba(255,255,255,.7);color:#e8507a;font-weight:700;font-size:.9rem;
+  cursor:pointer;transition:all .15s;
+}
+.count-btn.active{background:linear-gradient(135deg,#e8507a,#f9a8c9);color:#fff;border-color:#e8507a;box-shadow:0 2px 8px rgba(232,80,122,.35);}
+.count-btn:hover:not(.active){background:rgba(255,220,235,.7);}
+
+/* ── スロット ── */
+.selected-area{
+  display:flex;gap:4px;justify-content:center;align-items:center;
+  margin:6px 0;flex-wrap:wrap;
+}
+.slot{
+  width:56px;height:60px;border:2px dashed #f9a8c9;border-radius:14px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:1.45rem;background:rgba(255,255,255,.65);
+  transition:all .2s;cursor:pointer;
+}
+.slot.filled{border-style:solid;border-color:#e8507a;background:rgba(255,220,235,.65);}
+.slot.hidden{display:none;}
+.slot .slot-label{font-size:.52rem;color:#b07890;margin-top:1px;}
+.plus-icon{font-size:1.3rem;color:#f9a8c9;}
+.op-sign{font-size:.95rem;color:#e8507a;font-weight:700;}
+
+/* ── ボタン群 ── */
+.cook-btn{
+  padding:11px 16px;font-size:.9rem;font-weight:700;
+  background:linear-gradient(135deg,#e8507a,#f9a8c9);color:#fff;
+  border:none;border-radius:50px;cursor:pointer;
+  transition:all .15s;box-shadow:0 4px 14px rgba(232,80,122,.4);
+  white-space:nowrap;
+}
+.cook-btn:hover:not(:disabled){transform:scale(1.06);}
+.cook-btn:disabled{opacity:.35;cursor:not-allowed;}
+.reset-btn{
+  display:block;width:100%;padding:8px;
+  background:rgba(255,255,255,.7);border:1.5px solid #f9a8c9;
+  border-radius:12px;color:#c06080;font-size:.8rem;
+  cursor:pointer;margin:5px 0;transition:all .15s;
+}
+.reset-btn:hover{background:rgba(255,220,235,.8);border-color:#e8507a;}
+
+/* ── 食事制限パネル ── */
+.diet-panel{
+  background:rgba(255,255,255,.75);border:1.5px solid #d0c0e8;
+  border-radius:14px;padding:10px 12px;margin:6px 0;
+}
+.diet-title{font-size:.72rem;color:#8060b0;font-weight:700;letter-spacing:1px;margin-bottom:7px;}
+.diet-grid{display:flex;flex-wrap:wrap;gap:6px;}
+.diet-chip{
+  padding:5px 12px;border-radius:20px;border:1.5px solid #d0c0e8;
+  background:rgba(255,255,255,.8);color:#8060b0;font-size:.76rem;
+  cursor:pointer;transition:all .15s;user-select:none;
+}
+.diet-chip.active{background:linear-gradient(135deg,#a78bda,#d0a8f0);color:#fff;border-color:#a78bda;box-shadow:0 2px 8px rgba(150,100,220,.3);}
+.diet-chip:hover:not(.active){background:rgba(210,190,255,.4);}
+
+/* アレルギーサブパネル */
+.allergy-panel{
+  margin-top:7px;padding-top:7px;border-top:1px dashed #d0c0e8;
+  display:none;
+}
+.allergy-panel.show{display:block;}
+.allergy-title{font-size:.68rem;color:#a060c0;margin-bottom:5px;}
+.allergy-grid{display:flex;flex-wrap:wrap;gap:5px;}
+.allergy-chip{
+  padding:4px 10px;border-radius:20px;border:1.5px solid #e8d0f8;
+  background:rgba(255,255,255,.8);color:#a060c0;font-size:.72rem;
+  cursor:pointer;transition:all .15s;user-select:none;
+}
+.allergy-chip.active{background:linear-gradient(135deg,#e8507a,#f9a8c9);color:#fff;border-color:#e8507a;}
+
+/* ── 食材セクション ── */
+.ingredients-section{margin:8px 0;}
+.category-block{margin-bottom:10px;}
+.category-header{
+  display:flex;align-items:center;gap:6px;
+  font-size:.72rem;font-weight:700;color:#c06080;
+  letter-spacing:1px;margin-bottom:6px;
+  padding:3px 8px;
+  background:rgba(255,220,235,.5);
+  border-radius:8px;border-left:3px solid #e8507a;
+}
+.category-header .cat-emoji{font-size:1rem;}
+.ingredients-grid{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:7px;
+}
+.ingredient-btn{
+  border-radius:14px;border:2px solid #f0d0e0;
+  background:rgba(255,255,255,.75);
+  cursor:pointer;transition:all .15s;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:7px 3px 5px;
+  position:relative;
+}
+.ingredient-btn .i-emoji{font-size:1.9rem;line-height:1;}
+.ingredient-btn .i-name{font-size:.52rem;color:#b07890;margin-top:3px;text-align:center;line-height:1.2;}
+.ingredient-btn:hover{border-color:#e8507a;transform:scale(1.07);background:rgba(255,220,235,.7);}
+.ingredient-btn.selected{border-color:#e8507a;background:rgba(255,200,220,.75);box-shadow:0 0 0 2px rgba(232,80,122,.25);}
+.ingredient-btn:disabled{opacity:.28;cursor:not-allowed;transform:none;}
+.ingredient-btn.diet-hidden{display:none;}
+
+/* 制限バッジ */
+.diet-badge{
+  position:absolute;top:2px;right:2px;
+  font-size:.5rem;padding:1px 4px;border-radius:8px;
+  background:#f9a8c9;color:#7a1040;line-height:1.4;
+}
+
+/* ── 図鑑ボタン ── */
+.zukan-btn{
+  display:block;width:100%;padding:8px;
+  background:rgba(255,255,255,.65);border:1.5px solid #d0c0e8;
+  border-radius:12px;color:#8060b0;font-size:.8rem;
+  cursor:pointer;margin:5px 0;text-align:center;transition:all .2s;
+}
+.zukan-btn:hover{border-color:#a78bda;background:rgba(220,200,255,.4);}
+
+/* ── オーバーレイ共通 ── */
+.overlay{
+  display:none;position:fixed;inset:0;z-index:100;
+  align-items:center;justify-content:center;flex-direction:column;
+  text-align:center;padding:24px;
+  background:rgba(255,230,240,.93);backdrop-filter:blur(8px);
+}
+.overlay.show{display:flex;}
+
+/* 結果 */
+.result-emoji{font-size:4.5rem;margin-bottom:8px;}
+.result-title{font-size:1.8rem;font-weight:700;color:#e8507a;margin-bottom:5px;}
+.result-dish{font-size:1.1rem;color:#5a2d4a;font-weight:600;margin-bottom:7px;}
+.result-desc{font-size:.86rem;color:#8a5070;margin-bottom:14px;max-width:300px;line-height:1.5;}
+.result-score{font-size:1rem;color:#a060c0;margin-bottom:16px;font-weight:600;}
+.result-btn{
+  padding:12px 30px;font-size:1rem;font-weight:700;
+  border:none;border-radius:50px;cursor:pointer;
+  background:linear-gradient(135deg,#e8507a,#a78bda);color:#fff;
+  box-shadow:0 4px 14px rgba(200,100,180,.35);
+}
+
+/* 図鑑 */
+.zukan-overlay{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(255,245,250,.97);overflow-y:auto;padding:16px;
+}
+.zukan-overlay.show{display:block;}
+.zukan-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:12px;position:sticky;top:0;
+  background:rgba(255,245,250,.97);padding:7px 0;
+  border-bottom:1px solid #f9a8c9;
+}
+.zukan-header h2{font-size:1.25rem;color:#e8507a;}
+.close-btn{
+  padding:6px 14px;border:1.5px solid #f9a8c9;
+  background:rgba(255,255,255,.8);color:#c06080;
+  border-radius:20px;cursor:pointer;font-size:.82rem;
+}
+.zukan-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;}
+.zukan-card{
+  background:rgba(255,255,255,.82);border:1.5px solid #f0d0e0;
+  border-radius:12px;padding:9px;text-align:center;
+}
+.zukan-card.success{border-color:#f9a8c9;}
+.zukan-card.fail{border-color:#d0c0e8;}
+.zukan-dish{font-size:1.7rem;}
+.zukan-name{font-size:.8rem;font-weight:700;margin:3px 0;color:#5a2d4a;}
+.zukan-combo{font-size:.63rem;color:#b07890;}
+.zukan-badge{font-size:.6rem;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:3px;}
+.zukan-badge.s{background:#f9a8c9;color:#7a1040;}
+.zukan-badge.f{background:#d0c0e8;color:#5030a0;}
+
+/* ゲームオーバー */
+.go-title{font-size:2.1rem;font-weight:900;color:#e8507a;margin-bottom:8px;}
+.go-score{font-size:1.35rem;color:#5a2d4a;margin-bottom:5px;}
+.go-zukan{font-size:.92rem;color:#a060c0;margin-bottom:20px;}
+.go-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.go-btn{padding:10px 24px;font-size:.93rem;font-weight:700;border:none;border-radius:50px;cursor:pointer;}
+.go-btn.primary{background:linear-gradient(135deg,#e8507a,#a78bda);color:#fff;box-shadow:0 4px 12px rgba(200,100,180,.35);}
+.go-btn.secondary{background:rgba(255,255,255,.85);color:#8060b0;border:1.5px solid #d0c0e8;}
+
+/* トースト */
+.toast{
+  position:fixed;top:16px;left:50%;transform:translateX(-50%);
+  background:rgba(255,200,220,.95);color:#7a1040;
+  padding:8px 20px;border-radius:28px;font-weight:700;font-size:.9rem;
+  z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;
+  border:1px solid #f9a8c9;
+}
+.toast.show{opacity:1;}
+
+/* コンボアニメ */
+@keyframes popIn{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.2);opacity:1}100%{transform:scale(1)}}
+.combo-pop{animation:popIn .3s ease-out;}
+</style>
+</head>
+<body>
+<div id="petals"></div>
+
+<div class="top-bar">
+  <button class="icon-btn" id="music-btn" onclick="toggleMusic()" title="BGM">🎵</button>
+  <button class="icon-btn" onclick="openZukan()" title="図鑑">📖</button>
+</div>
+
+<div class="container">
+  <header>
+    <h1>🌸 暴走キッチン</h1>
+    <p class="subtitle">食材を組み合わせて注文をこなせ！</p>
+  </header>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="hud-item"><div class="hud-label">スコア</div><div class="hud-value" id="score">0</div></div>
+    <div class="hud-item"><div class="hud-label">コンボ</div><div class="hud-value" id="combo">×1</div></div>
+    <div class="hud-item"><div class="hud-label">成功</div><div class="hud-value" id="success-count">0</div></div>
+    <div class="hud-item"><div class="hud-label">発見</div><div class="hud-value" id="zukan-hud">0</div></div>
+  </div>
+
+  <!-- 注文 -->
+  <div class="order-panel">
+    <div class="order-label">📋 注文</div>
+    <div class="order-text" id="order-text">🌸 はじめよう！</div>
+    <div class="order-hint" id="order-hint">食材をタップするとスタート</div>
+  </div>
+
+  <!-- 食材個数選択 -->
+  <div class="count-selector">
+    <label>食材数：</label>
+    <button class="count-btn" data-n="2" onclick="setIngCount(2)">2</button>
+    <button class="count-btn" data-n="3" onclick="setIngCount(3)">3</button>
+    <button class="count-btn" data-n="4" onclick="setIngCount(4)">4</button>
+    <button class="count-btn active" data-n="5" onclick="setIngCount(5)">5</button>
+  </div>
+
+  <!-- スロット -->
+  <div class="selected-area" id="slots-area">
+    <div class="slot" id="slot1" onclick="clearSlot(0)"><span class="plus-icon">＋</span><span class="slot-label">食材1</span></div>
+    <div class="op-sign" id="op1">＋</div>
+    <div class="slot" id="slot2" onclick="clearSlot(1)"><span class="plus-icon">＋</span><span class="slot-label">食材2</span></div>
+    <div class="op-sign" id="op2">＋</div>
+    <div class="slot" id="slot3" onclick="clearSlot(2)"><span class="plus-icon">＋</span><span class="slot-label">食材3</span></div>
+    <div class="op-sign" id="op3">＋</div>
+    <div class="slot" id="slot4" onclick="clearSlot(3)"><span class="plus-icon">＋</span><span class="slot-label">食材4</span></div>
+    <div class="op-sign" id="op4">＋</div>
+    <div class="slot" id="slot5" onclick="clearSlot(4)"><span class="plus-icon">＋</span><span class="slot-label">食材5</span></div>
+    <div class="op-sign">＝</div>
+    <button class="cook-btn" id="cook-btn" onclick="cook()" disabled>料理！</button>
+  </div>
+
+  <button class="reset-btn" onclick="resetSlots()">🔄 選択をリセット</button>
+
+  <!-- 食事制限パネル -->
+  <div class="diet-panel">
+    <div class="diet-title">🥗 食事制限モード</div>
+    <div class="diet-grid">
+      <div class="diet-chip" data-mode="vegetarian" onclick="toggleDiet('vegetarian')">🌱 ベジタリアン</div>
+      <div class="diet-chip" data-mode="vegan"      onclick="toggleDiet('vegan')">🌿 ヴィーガン</div>
+      <div class="diet-chip" data-mode="gluten"     onclick="toggleDiet('gluten')">🌾 グルテンフリー</div>
+      <div class="diet-chip" data-mode="allergy"    onclick="toggleDiet('allergy')">⚠️ アレルギー除外</div>
+    </div>
+    <!-- アレルギー個別選択 -->
+    <div class="allergy-panel" id="allergy-panel">
+      <div class="allergy-title">除外するアレルゲンを選択：</div>
+      <div class="allergy-grid" id="allergy-grid"></div>
+    </div>
+  </div>
+
+  <!-- 食材グリッド -->
+  <div class="ingredients-section" id="ingredients-section"></div>
+
+  <button class="zukan-btn" onclick="openZukan()">📖 謎料理図鑑（<span id="zukan-count">0</span>種 発見！）</button>
+</div>
+
+<!-- 結果オーバーレイ -->
+<div class="overlay" id="result-overlay">
+  <div class="result-emoji" id="result-emoji"></div>
+  <div class="result-title"  id="result-title"></div>
+  <div class="result-dish"   id="result-dish"></div>
+  <div class="result-desc"   id="result-desc"></div>
+  <div class="result-score"  id="result-score"></div>
+  <button class="result-btn" onclick="nextOrder()">次の注文へ 🌸</button>
+</div>
+
+<!-- 図鑑 -->
+<div class="zukan-overlay" id="zukan-overlay">
+  <div class="zukan-header">
+    <h2>📖 謎料理図鑑</h2>
+    <button class="close-btn" onclick="closeZukan()">✕ 閉じる</button>
+  </div>
+  <div class="zukan-grid" id="zukan-grid"></div>
+</div>
+
+<!-- ゲームオーバー -->
+<div class="overlay" id="gameover-overlay">
+  <div style="font-size:2.8rem;">🌸</div>
+  <div class="go-title">お疲れ様！</div>
+  <div class="go-score">スコア: <span id="final-score">0</span>点</div>
+  <div class="go-zukan">謎料理を <span id="final-zukan">0</span> 種類発見！</div>
+  <div class="go-btns">
+    <button class="go-btn primary"   onclick="startGame()">もう一回！</button>
+    <button class="go-btn secondary" onclick="openZukanFromGameover()">図鑑を見る</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ================================================================
+//  サウンドエンジン
+// ================================================================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let ctx = null;
+let audioUnlocked = false;
+
+function getCtx(){
+  if(!ctx) ctx = new AudioCtx();
+  if(ctx.state==='suspended') ctx.resume();
+  return ctx;
+}
+
+// iOS/Android: 最初のタップでAudioContextをアンロック
+function unlockAudio(){
+  if(audioUnlocked) return;
+  audioUnlocked = true;
+  const ac = getCtx();
+  // 無音バッファを再生してアンロック
+  const buf = ac.createBuffer(1, 1, 22050);
+  const src = ac.createBufferSource();
+  src.buffer = buf;
+  src.connect(ac.destination);
+  src.start(0);
+  ac.resume();
+}
+document.addEventListener('touchstart', unlockAudio, {once: false, passive: true});
+document.addEventListener('touchend',   unlockAudio, {once: false, passive: true});
+document.addEventListener('click',      unlockAudio, {once: false, passive: true});
+
+// 基本トーン
+function tone(freq,type,dur,vol,delay=0,detune=0){
+  const ac=getCtx(),o=ac.createOscillator(),g=ac.createGain();
+  o.connect(g);g.connect(ac.destination);
+  o.type=type;o.frequency.value=freq;
+  if(detune)o.detune.value=detune;
+  const t=ac.currentTime+delay;
+  g.gain.setValueAtTime(vol,t);
+  g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  o.start(t);o.stop(t+dur+.02);
+}
+// 和音
+function chord(freqs,type,dur,vol,delay=0){
+  freqs.forEach(f=>tone(f,type,dur,vol/freqs.length,delay));
+}
+// ノイズ
+function noise(dur,vol,delay=0,bpFreq=800){
+  const ac=getCtx();
+  const buf=ac.createBuffer(1,Math.floor(ac.sampleRate*dur),ac.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1);
+  const src=ac.createBufferSource();src.buffer=buf;
+  const f=ac.createBiquadFilter();f.type='bandpass';f.frequency.value=bpFreq;
+  const g=ac.createGain();
+  src.connect(f);f.connect(g);g.connect(ac.destination);
+  const t=ac.currentTime+delay;
+  g.gain.setValueAtTime(vol,t);
+  g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  src.start(t);src.stop(t+dur+.02);
+}
+// LFO付きトーン（鈴っぽく）
+function bell(freq,dur,vol,delay=0){
+  const ac=getCtx(),o=ac.createOscillator(),g=ac.createGain();
+  o.connect(g);g.connect(ac.destination);
+  o.type='sine';o.frequency.value=freq;
+  const t=ac.currentTime+delay;
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(vol,t+.01);
+  g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  o.start(t);o.stop(t+dur+.02);
+  // 倍音
+  const o2=ac.createOscillator(),g2=ac.createGain();
+  o2.connect(g2);g2.connect(ac.destination);
+  o2.type='sine';o2.frequency.value=freq*2.756;
+  g2.gain.setValueAtTime(0,t);
+  g2.gain.linearRampToValueAtTime(vol*.3,t+.01);
+  g2.gain.exponentialRampToValueAtTime(0.001,t+dur*.5);
+  o2.start(t);o2.stop(t+dur+.02);
+}
+
+// ── 効果音 ──
+function sfxSelect(){
+  bell(880,.15,.22);
+  bell(1320,.1,.14,.06);
+}
+function sfxDeselect(){
+  tone(660,'sine',.09,.15);
+  tone(440,'sine',.08,.1,.05);
+}
+function sfxCook(){
+  noise(.22,.38,0,500);
+  tone(150,'sawtooth',.18,.18,.05);
+  tone(280,'triangle',.12,.12,.12);
+}
+function sfxSuccess(){
+  // 春のファンファーレ
+  [523,659,784,1047,1319].forEach((f,i)=>bell(f,.35,.32,i*.09));
+  // キラキラ
+  setTimeout(()=>{
+    [1568,2093,2637].forEach((f,i)=>tone(f,'sine',.18,.18,i*.05));
+  },300);
+}
+function sfxCombo(level){
+  if(level>=5){
+    // 高コンボ：ダイナミック
+    [523,659,784,1047,1319,1568,2093].forEach((f,i)=>bell(f,.2,.3,i*.06));
+  } else if(level>=3){
+    [880,1108,1320,1760].forEach((f,i)=>tone(f,'triangle',.15,.25,i*.07));
+  } else {
+    [1200,1500,1800].forEach((f,i)=>tone(f,'sine',.1,.22,i*.07));
+  }
+}
+function sfxFail(){
+  tone(330,'sawtooth',.2,.22);
+  tone(240,'triangle',.25,.18,.1);
+  tone(180,'sine',.3,.14,.22);
+  noise(.15,.18,.1,300);
+}
+function sfxReset(){
+  tone(500,'sine',.1,.2);
+  tone(300,'sine',.1,.15,.07);
+}
+function sfxNewOrder(){
+  bell(880,.2,.28);
+  bell(1108,.18,.22,.09);
+  bell(1320,.22,.18,.18);
+}
+function sfxZukan(){
+  [600,800,1000,1200].forEach((f,i)=>tone(f,'sine',.14,.18,i*.06));
+}
+function sfxDiet(){
+  tone(700,'sine',.1,.2);
+  tone(1050,'sine',.12,.18,.08);
+}
+function sfxCountChange(){
+  tone(800,'sine',.1,.2);
+}
+
+// ── BGM ──
+const MELODY=[
+  {n:523,d:.4},{n:587,d:.4},{n:659,d:.4},{n:698,d:.4},
+  {n:784,d:.5},{n:784,d:.15},{n:698,d:.4},{n:659,d:.75},
+  {n:587,d:.4},{n:659,d:.4},{n:698,d:.4},{n:784,d:.4},
+  {n:880,d:.5},{n:784,d:.15},{n:698,d:.4},{n:659,d:.75},
+  {n:523,d:.3},{n:659,d:.3},{n:784,d:.3},{n:1047,d:.5},
+  {n:880,d:.3},{n:784,d:.3},{n:659,d:.3},{n:523,d:.75},
+  {n:659,d:.3},{n:698,d:.3},{n:784,d:.3},{n:880,d:.3},
+  {n:988,d:.5},{n:880,d:.25},{n:784,d:.25},{n:698,d:.75},
+];
+const CHORDS=[
+  [[261,329,392],.8],[[349,440,523],.8],[[392,494,587],.8],[[349,440,523],.8],
+  [[261,329,392],.8],[[349,440,523],.8],[[440,554,659],.8],[[392,494,587],.8],
+];
+let bgmOn=false,bgmRunning=false,bgmTid=null,bgmMelIdx=0,bgmChordIdx=0,bgmChordTimer=0;
+function startBGM(){
+  if(bgmRunning)return;bgmRunning=true;scheduleBGM();
+}
+function stopBGM(){bgmRunning=false;if(bgmTid)clearTimeout(bgmTid);}
+function scheduleBGM(){
+  if(!bgmRunning||!bgmOn)return;
+  const ac=getCtx();
+  const mel=MELODY[bgmMelIdx%MELODY.length];
+  bell(mel.n,mel.d*.9,.08);
+  if(bgmMelIdx%4===0){
+    const [cfreqs,cdur]=CHORDS[bgmChordIdx%CHORDS.length];
+    cfreqs.forEach(f=>tone(f,'sine',cdur*.9,.025));
+    bgmChordIdx++;
+  }
+  bgmMelIdx++;
+  bgmTid=setTimeout(scheduleBGM,mel.d*1000);
+}
+function toggleMusic(){
+  unlockAudio();
+  bgmOn=!bgmOn;
+  document.getElementById('music-btn').textContent=bgmOn?'🔊':'🔇';
+  if(bgmOn){ getCtx(); ac_resume_then_bgm(); } else stopBGM();
+}
+function ac_resume_then_bgm(){
+  const ac=getCtx();
+  const tryStart=()=>{ if(ac.state==='running') startBGM(); else setTimeout(tryStart,100); };
+  ac.resume().then(tryStart).catch(tryStart);
+}
+
+// ================================================================
+//  食材データ（45種類）
+// ================================================================
+// diet flags: v=vegetarian, vg=vegan, gf=gluten-free
+// allergens: egg, milk, wheat, fish, shrimp, soy
+const CATEGORIES = [
+  {
+    id:'grain', label:'主食・穀物', emoji:'🌾',
+    items:[
+      {id:'rice',     emoji:'🍚',name:'ごはん',   v:1,vg:1,gf:1},
+      {id:'bread',    emoji:'🍞',name:'パン',     v:1,vg:0,gf:0, allergen:['wheat','egg','milk']},
+      {id:'noodle',   emoji:'🍜',name:'めん',     v:1,vg:1,gf:0, allergen:['wheat']},
+      {id:'pasta',    emoji:'🍝',name:'パスタ',   v:1,vg:1,gf:0, allergen:['wheat','egg']},
+      {id:'rice_ball',emoji:'🍙',name:'おにぎり', v:1,vg:1,gf:1},
+      {id:'flour',    emoji:'🌾',name:'こむぎこ', v:1,vg:1,gf:0, allergen:['wheat']},
+    ]
+  },
+  {
+    id:'protein', label:'タンパク質', emoji:'🥩',
+    items:[
+      {id:'egg',     emoji:'🥚',name:'たまご',   v:1,vg:0,gf:1, allergen:['egg']},
+      {id:'meat',    emoji:'🥩',name:'お肉',     v:0,vg:0,gf:1},
+      {id:'tuna',    emoji:'🐟',name:'まぐろ',   v:0,vg:0,gf:1, allergen:['fish']},
+      {id:'salmon',  emoji:'🐠',name:'さけ',     v:0,vg:0,gf:1, allergen:['fish']},
+      {id:'squid',   emoji:'🦑',name:'イカ',     v:0,vg:0,gf:1},
+      {id:'shrimp',  emoji:'🦐',name:'えび',     v:0,vg:0,gf:1, allergen:['shrimp']},
+      {id:'chicken', emoji:'🍗',name:'チキン',   v:0,vg:0,gf:1},
+      {id:'tofu',    emoji:'🫙',name:'とうふ',   v:1,vg:1,gf:1, allergen:['soy']},
+      {id:'bacon',   emoji:'🥓',name:'ベーコン', v:0,vg:0,gf:1},
+      {id:'ham',     emoji:'🍖',name:'ハム',     v:0,vg:0,gf:1},
+    ]
+  },
+  {
+    id:'veg', label:'野菜・きのこ', emoji:'🥦',
+    items:[
+      {id:'tomato',   emoji:'🍅',name:'トマト',       v:1,vg:1,gf:1},
+      {id:'carrot',   emoji:'🥕',name:'にんじん',     v:1,vg:1,gf:1},
+      {id:'mushroom', emoji:'🍄',name:'きのこ',       v:1,vg:1,gf:1},
+      {id:'pickle',   emoji:'🥒',name:'きゅうり',     v:1,vg:1,gf:1},
+      {id:'onion',    emoji:'🧅',name:'たまねぎ',     v:1,vg:1,gf:1},
+      {id:'corn',     emoji:'🌽',name:'コーン',       v:1,vg:1,gf:1},
+      {id:'broccoli', emoji:'🥦',name:'ブロッコリー', v:1,vg:1,gf:1},
+      {id:'potato',   emoji:'🥔',name:'じゃがいも',   v:1,vg:1,gf:1},
+      {id:'avocado',  emoji:'🥑',name:'アボカド',     v:1,vg:1,gf:1},
+      {id:'spinach',  emoji:'🌿',name:'ほうれん草',   v:1,vg:1,gf:1},
+    ]
+  },
+  {
+    id:'dairy', label:'乳製品・調味料', emoji:'🧀',
+    items:[
+      {id:'cheese',  emoji:'🧀',name:'チーズ',     v:1,vg:0,gf:1, allergen:['milk']},
+      {id:'butter',  emoji:'🧈',name:'バター',     v:1,vg:0,gf:1, allergen:['milk']},
+      {id:'milk',    emoji:'🥛',name:'ぎゅうにゅう',v:1,vg:0,gf:1,allergen:['milk']},
+      {id:'cream',   emoji:'🫙',name:'クリーム',   v:1,vg:0,gf:1, allergen:['milk']},
+      {id:'mayo',    emoji:'🫙',name:'マヨネーズ', v:1,vg:0,gf:1, allergen:['egg','soy']},
+      {id:'soy',     emoji:'💧',name:'しょうゆ',   v:1,vg:1,gf:1, allergen:['soy','wheat']},
+      {id:'miso',    emoji:'🟤',name:'みそ',       v:1,vg:1,gf:1, allergen:['soy']},
+      {id:'dashi',   emoji:'🫧',name:'だし',       v:0,vg:0,gf:1, allergen:['fish']},
+      {id:'sugar',   emoji:'🍬',name:'さとう',     v:1,vg:1,gf:1},
+      {id:'salt',    emoji:'🧂',name:'しお',       v:1,vg:1,gf:1},
+    ]
+  },
+  {
+    id:'fruit', label:'フルーツ', emoji:'🍓',
+    items:[
+      {id:'banana',    emoji:'🍌',name:'バナナ',   v:1,vg:1,gf:1},
+      {id:'apple',     emoji:'🍎',name:'りんご',   v:1,vg:1,gf:1},
+      {id:'strawberry',emoji:'🍓',name:'いちご',   v:1,vg:1,gf:1},
+      {id:'lemon',     emoji:'🍋',name:'レモン',   v:1,vg:1,gf:1},
+      {id:'peach',     emoji:'🍑',name:'もも',     v:1,vg:1,gf:1},
+    ]
+  },
+  {
+    id:'special', label:'スパイス・その他', emoji:'✨',
+    items:[
+      {id:'curry',     emoji:'🍛',name:'カレー粉', v:1,vg:1,gf:1},
+      {id:'honey',     emoji:'🍯',name:'はちみつ', v:1,vg:0,gf:1},
+      {id:'ice',       emoji:'🧊',name:'こおり',   v:1,vg:1,gf:1},
+      {id:'chocolate', emoji:'🍫',name:'チョコ',   v:1,vg:0,gf:1, allergen:['milk']},
+      {id:'oil',       emoji:'🫙',name:'オリーブ油',v:1,vg:1,gf:1},
+    ]
+  }
+];
+
+// INGREDIENTS flat array
+const INGREDIENTS = CATEGORIES.flatMap(c=>c.items);
+
+// ================================================================
+//  アレルゲンリスト
+// ================================================================
+const ALLERGEN_LIST = [
+  {id:'egg',   label:'🥚 たまご'},
+  {id:'milk',  label:'🥛 乳製品'},
+  {id:'wheat', label:'🌾 小麦'},
+  {id:'fish',  label:'🐟 魚介'},
+  {id:'shrimp',label:'🦐 えび'},
+  {id:'soy',   label:'🫘 大豆'},
+];
+
+// ================================================================
+//  レシピ（2〜5食材、順序不問）
+// ================================================================
+function makeKey(ids){return [...ids].sort().join('+');}
+
+const RECIPES = {
+  // ── 2食材 ──
+  [makeKey(['rice','egg'])]:          {name:'たまごかけごはん',emoji:'🍳',n:2,points:15},
+  [makeKey(['rice','curry'])]:        {name:'カレーライス',    emoji:'🍛',n:2,points:15},
+  [makeKey(['bread','butter'])]:      {name:'バタートースト',  emoji:'🍞',n:2,points:15},
+  [makeKey(['noodle','soy'])]:        {name:'しょうゆラーメン',emoji:'🍜',n:2,points:15},
+  [makeKey(['pasta','tomato'])]:      {name:'トマトパスタ',    emoji:'🍝',n:2,points:15},
+  [makeKey(['banana','milk'])]:       {name:'バナナミルク',    emoji:'🥛',n:2,points:15},
+  [makeKey(['strawberry','milk'])]:   {name:'いちごミルク',    emoji:'🍓',n:2,points:15},
+  [makeKey(['egg','butter'])]:        {name:'スクランブルエッグ',emoji:'🍳',n:2,points:15},
+  [makeKey(['rice','miso'])]:         {name:'みそおにぎり',    emoji:'🍙',n:2,points:15},
+  [makeKey(['tofu','miso'])]:         {name:'みそ汁',          emoji:'🍵',n:2,points:15},
+  [makeKey(['chicken','salt'])]:      {name:'塩チキン',        emoji:'🍗',n:2,points:15},
+  [makeKey(['salmon','salt'])]:       {name:'塩焼きさけ',      emoji:'🐠',n:2,points:15},
+  [makeKey(['chocolate','milk'])]:    {name:'ホットチョコ',    emoji:'🍫',n:2,points:15},
+  [makeKey(['honey','lemon'])]:       {name:'はちみつレモン',  emoji:'🍋',n:2,points:15},
+
+  // ── 3食材 ──
+  [makeKey(['rice','egg','soy'])]:         {name:'だし巻きたまご丼', emoji:'🍳',n:3,points:25},
+  [makeKey(['rice','curry','meat'])]:      {name:'キーマカレー',      emoji:'🍛',n:3,points:25},
+  [makeKey(['bread','egg','cheese'])]:     {name:'チーズエッグトースト',emoji:'🫕',n:3,points:25},
+  [makeKey(['pasta','tomato','cheese'])]:  {name:'トマトチーズパスタ', emoji:'🍝',n:3,points:25},
+  [makeKey(['noodle','miso','butter'])]:   {name:'みそバターラーメン', emoji:'🍜',n:3,points:25},
+  [makeKey(['salmon','butter','lemon'])]:  {name:'ソテーサーモン',    emoji:'🐠',n:3,points:25},
+  [makeKey(['chicken','honey','lemon'])]:  {name:'レモンはちみつチキン',emoji:'🍗',n:3,points:25},
+  [makeKey(['potato','butter','salt'])]:   {name:'バター塩ポテト',    emoji:'🥔',n:3,points:25},
+  [makeKey(['strawberry','cream','sugar'])]: {name:'いちごクリーム',  emoji:'🍓',n:3,points:25},
+  [makeKey(['banana','chocolate','milk'])]:  {name:'チョコバナナスムージー',emoji:'🥤',n:3,points:25},
+  [makeKey(['avocado','lemon','salt'])]:   {name:'アボカドサラダ',    emoji:'🥑',n:3,points:25},
+  [makeKey(['egg','tomato','onion'])]:     {name:'トマトエッグ炒め',  emoji:'🍳',n:3,points:25},
+  [makeKey(['rice','salmon','miso'])]:     {name:'鮭みそおじや',      emoji:'🍲',n:3,points:25},
+  [makeKey(['tofu','spinach','dashi'])]:   {name:'豆腐ほうれん草汁',  emoji:'🍵',n:3,points:25},
+
+  // ── 4食材 ──
+  [makeKey(['rice','egg','soy','dashi'])]:       {name:'たまごかけごはん特製',emoji:'🍳',n:4,points:35},
+  [makeKey(['meat','potato','onion','carrot'])]:  {name:'肉じゃが',            emoji:'🥘',n:4,points:35},
+  [makeKey(['bread','egg','bacon','cheese'])]:    {name:'ベーコンエッグサンド', emoji:'🥪',n:4,points:35},
+  [makeKey(['pasta','cream','salmon','spinach'])]: {name:'鮭クリームパスタ',   emoji:'🍝',n:4,points:35},
+  [makeKey(['noodle','egg','bacon','soy'])]:      {name:'和風カルボナーラ',    emoji:'🍜',n:4,points:35},
+  [makeKey(['bread','butter','honey','strawberry'])]: {name:'いちごバタートースト',emoji:'🍞',n:4,points:35},
+  [makeKey(['rice','shrimp','egg','carrot'])]:    {name:'えびチャーハン',       emoji:'🍳',n:4,points:35},
+  [makeKey(['chicken','onion','carrot','curry'])]: {name:'チキンカレースープ', emoji:'🍛',n:4,points:35},
+  [makeKey(['chocolate','cream','sugar','flour'])]: {name:'ガトーショコラ',    emoji:'🎂',n:4,points:40},
+  [makeKey(['apple','sugar','butter','flour'])]:  {name:'アップルパイ',        emoji:'🥧',n:4,points:40},
+  [makeKey(['tofu','egg','miso','dashi'])]:       {name:'豆腐みそ汁特製',      emoji:'🍵',n:4,points:35},
+  [makeKey(['squid','curry','onion','cream'])]:   {name:'イカカレークリーム',  emoji:'🦑',n:4,points:35},
+
+  // ── 5食材 ──
+  [makeKey(['rice','curry','meat','onion','carrot'])]:   {name:'本格キーマカレー',       emoji:'🍛',n:5,points:50},
+  [makeKey(['pasta','tomato','meat','onion','carrot'])]: {name:'ボロネーゼ',             emoji:'🍝',n:5,points:50},
+  [makeKey(['pasta','cream','salmon','spinach','butter'])]: {name:'サーモンクリームパスタ',emoji:'🍝',n:5,points:50},
+  [makeKey(['bread','egg','bacon','cheese','tomato'])]:  {name:'BLTチーズサンド',        emoji:'🥪',n:5,points:50},
+  [makeKey(['meat','potato','onion','carrot','butter'])]: {name:'ビーフシチュー',         emoji:'🫕',n:5,points:50},
+  [makeKey(['strawberry','cream','sugar','milk','flour'])]: {name:'いちごショートケーキ',emoji:'🍰',n:5,points:60},
+  [makeKey(['chocolate','cream','sugar','butter','flour'])]: {name:'チョコフォンデュケーキ',emoji:'🎂',n:5,points:60},
+  [makeKey(['peach','honey','cream','sugar','milk'])]:   {name:'もものパンナコッタ',     emoji:'🍮',n:5,points:60},
+  [makeKey(['rice','salmon','butter','mushroom','soy'])]: {name:'鮭バターきのこごはん',  emoji:'🍚',n:5,points:50},
+  [makeKey(['noodle','shrimp','dashi','spinach','salt'])]: {name:'えびだし塩ラーメン',   emoji:'🍜',n:5,points:50},
+  [makeKey(['avocado','shrimp','lemon','mayo','onion'])]: {name:'えびアボカドサラダ',    emoji:'🥑',n:5,points:50},
+  [makeKey(['rice','chicken','soy','honey','lemon'])]:   {name:'レモンはちみつ照り焼き丼',emoji:'🍚',n:5,points:55},
+  [makeKey(['banana','ice','milk','honey','strawberry'])]: {name:'バナナいちごスムージー',emoji:'🥤',n:5,points:45},
+  [makeKey(['apple','sugar','butter','cream','flour'])]: {name:'タルト・タタン',          emoji:'🥧',n:5,points:60},
+};
+
+// ================================================================
+//  謎料理
+// ================================================================
+const MYSTERY_FOODS=[
+  {emoji:'🌀',name:'次元スープ',       desc:'食べると少しだけ過去に戻れる気がする'},
+  {emoji:'💜',name:'紫色の何か',       desc:'甘いような辛いような、でも美味しい'},
+  {emoji:'🌪️',name:'竜巻サラダ',       desc:'皿に盛ると勝手に回り始める'},
+  {emoji:'✨',name:'光る煮物',         desc:'暗闇で食べると星空が見える'},
+  {emoji:'🔮',name:'予言ゼリー',       desc:'食べた後、夢で明日の天気がわかる'},
+  {emoji:'🌈',name:'虹色炒め',         desc:'7色あるが全部同じ味がする'},
+  {emoji:'🌊',name:'波のテクスチャ',   desc:'海の音がする料理。なぜか眠くなる'},
+  {emoji:'🎵',name:'音楽サンドイッチ', desc:'噛むたびにドレミが聞こえる'},
+  {emoji:'🦋',name:'蝶々揚げ',         desc:'食べると2時間だけ飛べる（嘘）'},
+  {emoji:'🌙',name:'月光マリネ',       desc:'満月の夜にしか作れないらしい'},
+  {emoji:'🔥',name:'炎上アイス',       desc:'熱いのに冷たい。物理法則を無視'},
+  {emoji:'💤',name:'夢見るシチュー',   desc:'食後に必ず同じ夢を見る'},
+  {emoji:'🎭',name:'仮面スープ',       desc:'飲むたびに味が変わる天才料理'},
+  {emoji:'⚡',name:'稲妻炒飯',         desc:'食べると静電気が3倍になる'},
+  {emoji:'🌸',name:'桜色の謎',         desc:'毎年春にしか出会えない幻の一品'},
+  {emoji:'🍭',name:'謎キャンディ煮',   desc:'甘さと塩気が交互にやってくる'},
+  {emoji:'🫧',name:'泡沫ポタージュ',   desc:'スプーンで触ると全部消える'},
+  {emoji:'🌺',name:'花咲かシチュー',   desc:'食べると翌朝髪に花が咲く（嘘）'},
+  {emoji:'🍀',name:'四つ葉クローバー鍋',desc:'食べた人は全員その日ラッキーらしい'},
+  {emoji:'🎠',name:'回転木馬ライス',   desc:'なぜかクルクル回りながら食べたくなる'},
+];
+
+// ================================================================
+//  ゲーム状態
+// ================================================================
+let gameState='idle';
+let score=0, combo=1, successCount=0;
+let ingCount=5; // 現在の食材個数
+let selectedIngredients=new Array(5).fill(null);
+let currentOrder=null;
+let zukanEntries=[], usedMysteries=[];
+
+// 食事制限状態
+let dietModes={vegetarian:false, vegan:false, gluten:false, allergy:false};
+let activeAllergens=new Set();
+
+// ================================================================
+//  食事制限
+// ================================================================
+function toggleDiet(mode){
+  dietModes[mode]=!dietModes[mode];
+  const chip=document.querySelector(`.diet-chip[data-mode="${mode}"]`);
+  chip.classList.toggle('active', dietModes[mode]);
+  sfxDiet();
+  if(mode==='allergy'){
+    document.getElementById('allergy-panel').classList.toggle('show', dietModes.allergy);
+  }
+  applyDietFilter();
+}
+
+function renderAllergyGrid(){
+  const grid=document.getElementById('allergy-grid');
+  grid.innerHTML=ALLERGEN_LIST.map(a=>`
+    <div class="allergy-chip" data-a="${a.id}" onclick="toggleAllergen('${a.id}')">${a.label}</div>
+  `).join('');
+}
+
+function toggleAllergen(id){
+  if(activeAllergens.has(id)) activeAllergens.delete(id);
+  else activeAllergens.add(id);
+  document.querySelector(`.allergy-chip[data-a="${id}"]`).classList.toggle('active', activeAllergens.has(id));
+  sfxDiet();
+  applyDietFilter();
+}
+
+function isIngHidden(ing){
+  if(dietModes.vegetarian && !ing.v) return true;
+  if(dietModes.vegan && !ing.vg) return true;
+  if(dietModes.gluten && ing.gf===0) return true;
+  if(dietModes.allergy && ing.allergen){
+    for(const a of ing.allergen){
+      if(activeAllergens.has(a)) return true;
+    }
+  }
+  return false;
+}
+
+function applyDietFilter(){
+  INGREDIENTS.forEach(ing=>{
+    const btn=document.getElementById('ing-'+ing.id);
+    if(!btn) return;
+    const hidden=isIngHidden(ing);
+    btn.classList.toggle('diet-hidden', hidden);
+    if(hidden){
+      // 選択されていたら解除
+      const idx=selectedIngredients.indexOf(ing);
+      if(idx!==-1){ selectedIngredients[idx]=null; }
+    }
+  });
+  updateSlotDisplay();
+  updateIngredientBtns();
+  updateCookBtn();
+  // 現在の注文で使えない食材が含まれていたら注文を更新
+  if(gameState==='playing') updateOrderForDiet();
+}
+
+function updateOrderForDiet(){
+  if(!currentOrder) return;
+  // 注文の食材が制限に引っかかっている場合はスキップして次へ
+  const availableOrders=getAvailableOrders();
+  if(availableOrders.length===0) return;
+  const orderKey=currentOrder.key;
+  const keySafe=availableOrders.find(o=>o.key===orderKey);
+  if(!keySafe){
+    nextOrderInternal();
+  }
+}
+
+function getAvailableOrders(){
+  return Object.entries(RECIPES)
+    .filter(([key,val])=>val.n===ingCount)
+    .filter(([key,val])=>{
+      // 使用食材が全部表示可能か確認
+      const ids=key.split('+');
+      return ids.every(id=>{
+        const ing=INGREDIENTS.find(i=>i.id===id);
+        return ing && !isIngHidden(ing);
+      });
+    })
+    .map(([key,val])=>({key, text:val.name}));
+}
+
+// ================================================================
+//  食材個数
+// ================================================================
+function setIngCount(n){
+  ingCount=n;
+  sfxCountChange();
+  document.querySelectorAll('.count-btn').forEach(btn=>{
+    btn.classList.toggle('active', parseInt(btn.dataset.n)===n);
+  });
+  updateSlotVisibility();
+  selectedIngredients=new Array(5).fill(null);
+  updateSlotDisplay();
+  updateIngredientBtns();
+  updateCookBtn();
+  if(gameState==='playing') nextOrderInternal();
+}
+
+function updateSlotVisibility(){
+  for(let i=0;i<5;i++){
+    const slot=document.getElementById('slot'+(i+1));
+    const op=document.getElementById('op'+(i+1));
+    const show=(i<ingCount);
+    if(slot) slot.classList.toggle('hidden', !show);
+    if(op) op.style.display=(i===0||i>=ingCount)?'none':'';
+  }
+  // op1は常に表示
+  const op1=document.getElementById('op1');
+  if(op1) op1.style.display= ingCount>=2 ? '' : 'none';
+}
+
+// ================================================================
+//  初期化
+// ================================================================
+function init(){
+  renderAllergyGrid();
+  renderCategoryIngredients();
+  updateZukanCount();
+  spawnPetals();
+  updateSlotVisibility();
+}
+
+function spawnPetals(){
+  const c=document.getElementById('petals');
+  const em=['🌸','🌺','🌼','🌷','✿'];
+  for(let i=0;i<14;i++){
+    const el=document.createElement('div');
+    el.className='petal';
+    el.textContent=em[Math.floor(Math.random()*em.length)];
+    el.style.left=Math.random()*100+'vw';
+    el.style.animationDuration=(6+Math.random()*8)+'s';
+    el.style.animationDelay=(Math.random()*12)+'s';
+    el.style.fontSize=(.8+Math.random()*.7)+'rem';
+    c.appendChild(el);
+  }
+}
+
+function renderCategoryIngredients(){
+  const section=document.getElementById('ingredients-section');
+  section.innerHTML='';
+  CATEGORIES.forEach(cat=>{
+    const block=document.createElement('div');
+    block.className='category-block';
+    const header=document.createElement('div');
+    header.className='category-header';
+    header.innerHTML=`<span class="cat-emoji">${cat.emoji}</span>${cat.label}`;
+    block.appendChild(header);
+    const grid=document.createElement('div');
+    grid.className='ingredients-grid';
+    cat.items.forEach(ing=>{
+      const btn=document.createElement('button');
+      btn.className='ingredient-btn';
+      btn.id='ing-'+ing.id;
+      btn.innerHTML=`<span class="i-emoji">${ing.emoji}</span><span class="i-name">${ing.name}</span>`;
+      btn.onclick=()=>selectIngredient(ing);
+      grid.appendChild(btn);
+    });
+    block.appendChild(grid);
+    section.appendChild(block);
+  });
+}
+
+// ================================================================
+//  ゲーム開始
+// ================================================================
+function startGame(){
+  document.getElementById('gameover-overlay').classList.remove('show');
+  score=0; combo=1; successCount=0;
+  selectedIngredients=new Array(5).fill(null);
+  updateHUD();
+  gameState='playing';
+  clearSlots();
+  nextOrderInternal();
+  if(bgmOn){stopBGM();startBGM();}
+}
+
+// ================================================================
+//  注文
+// ================================================================
+function nextOrderInternal(){
+  sfxNewOrder();
+  const available=getAvailableOrders();
+  if(available.length===0){
+    document.getElementById('order-text').textContent='注文なし…食事制限を見直して！';
+    document.getElementById('order-hint').textContent='制限解除するか食材数を変えてね';
+    currentOrder=null;
+    return;
+  }
+  currentOrder=available[Math.floor(Math.random()*available.length)];
+  document.getElementById('order-text').textContent=currentOrder.text;
+  document.getElementById('order-hint').textContent=`食材を${ingCount}つ選んで料理しよう！`;
+  selectedIngredients=new Array(5).fill(null);
+  clearSlots();
+  updateCookBtn();
+}
+
+function nextOrder(){
+  document.getElementById('result-overlay').classList.remove('show');
+  if(gameState==='playing') nextOrderInternal();
+}
+
+// ================================================================
+//  食材選択
+// ================================================================
+function selectIngredient(ing){
+  if(isIngHidden(ing)) return;
+  if(gameState!=='playing'){
+    if(gameState==='idle'){
+      startGame();
+      const idx=selectedIngredients.indexOf(null);
+      if(idx!==-1 && idx<ingCount){ selectedIngredients[idx]=ing; sfxSelect(); }
+      updateSlotDisplay(); updateIngredientBtns(); updateCookBtn();
+    }
+    return;
+  }
+  const idx=selectedIngredients.indexOf(ing);
+  if(idx!==-1){ clearSlot(idx); return; }
+  const emptyIdx=selectedIngredients.slice(0,ingCount).indexOf(null);
+  if(emptyIdx!==-1){
+    selectedIngredients[emptyIdx]=ing;
+    sfxSelect();
+  } else {
+    showToast(`食材は${ingCount}つまで！`);
+    return;
+  }
+  updateSlotDisplay(); updateIngredientBtns(); updateCookBtn();
+}
+
+function clearSlot(idx){
+  if(idx>=ingCount) return;
+  if(selectedIngredients[idx]) sfxDeselect();
+  selectedIngredients[idx]=null;
+  updateSlotDisplay(); updateIngredientBtns(); updateCookBtn();
+}
+
+function resetSlots(){
+  if(gameState!=='playing') return;
+  sfxReset();
+  selectedIngredients=new Array(5).fill(null);
+  updateSlotDisplay(); updateIngredientBtns(); updateCookBtn();
+}
+
+function clearSlots(){
+  selectedIngredients=new Array(5).fill(null);
+  updateSlotDisplay(); updateIngredientBtns(); updateCookBtn();
+}
+
+function updateSlotDisplay(){
+  for(let i=0;i<5;i++){
+    const slot=document.getElementById('slot'+(i+1));
+    if(!slot||i>=ingCount) continue;
+    const ing=selectedIngredients[i];
+    if(ing){
+      slot.innerHTML=`<span class="i-emoji" style="font-size:1.4rem">${ing.emoji}</span><span class="slot-label">${ing.name}</span>`;
+      slot.classList.add('filled');
+    } else {
+      slot.innerHTML=`<span class="plus-icon">＋</span><span class="slot-label">食材${i+1}</span>`;
+      slot.classList.remove('filled');
+    }
+  }
+}
+
+function updateIngredientBtns(){
+  INGREDIENTS.forEach(ing=>{
+    const btn=document.getElementById('ing-'+ing.id);
+    if(!btn) return;
+    btn.classList.toggle('selected', selectedIngredients.includes(ing));
+  });
+}
+
+function updateCookBtn(){
+  const filled=selectedIngredients.slice(0,ingCount).filter(s=>s!==null).length;
+  document.getElementById('cook-btn').disabled=(filled<ingCount);
+}
+
+// ================================================================
+//  料理！
+// ================================================================
+function cook(){
+  const used=selectedIngredients.slice(0,ingCount);
+  if(used.some(s=>s===null)) return;
+  sfxCook();
+  const key=makeKey(used.map(i=>i.id));
+  const recipe=RECIPES[key];
+  const overlay=document.getElementById('result-overlay');
+
+  if(recipe && currentOrder && key===currentOrder.key){
+    const pts=recipe.points*combo;
+    score+=pts; successCount++;
+    const oldCombo=combo;
+    combo=Math.min(combo+1,10);
+    updateHUD();
+    setTimeout(()=>{
+      sfxSuccess();
+      if(oldCombo>=2) setTimeout(()=>sfxCombo(oldCombo),480);
+    },80);
+    document.getElementById('result-emoji').textContent='🎉';
+    document.getElementById('result-title').textContent='正解！！🌸';
+    document.getElementById('result-dish').textContent=recipe.emoji+' '+recipe.name;
+    document.getElementById('result-desc').textContent=`${recipe.name}を作った！完璧な一品！`;
+    document.getElementById('result-score').textContent=
+      `+${pts}点${oldCombo>1?' 　コンボ×'+oldCombo+'！':''}`;
+    addToZukan({emoji:recipe.emoji,name:recipe.name,desc:'正解料理！',combo:oldCombo,isSuccess:true,
+      ingredients:used.map(s=>s.emoji)});
+  } else {
+    combo=1; updateHUD();
+    const mystery=getRandomMystery();
+    setTimeout(sfxFail,80);
+    document.getElementById('result-emoji').textContent=mystery.emoji;
+    document.getElementById('result-title').textContent='謎料理完成…！';
+    document.getElementById('result-dish').textContent=mystery.name;
+    document.getElementById('result-desc').textContent=mystery.desc;
+    document.getElementById('result-score').textContent='コンボがリセット…';
+    addToZukan({emoji:mystery.emoji,name:mystery.name,desc:mystery.desc,combo:0,isSuccess:false,
+      ingredients:used.map(s=>s.emoji)});
+  }
+  overlay.classList.add('show');
+}
+
+function getRandomMystery(){
+  const unused=MYSTERY_FOODS.filter(m=>!usedMysteries.includes(m.name));
+  const pool=unused.length>0?unused:MYSTERY_FOODS;
+  const m=pool[Math.floor(Math.random()*pool.length)];
+  usedMysteries.push(m.name);
+  if(usedMysteries.length>MYSTERY_FOODS.length) usedMysteries=[];
+  return m;
+}
+
+function addToZukan(entry){
+  if(!zukanEntries.find(e=>e.name===entry.name)){
+    zukanEntries.push(entry);
+    updateZukanCount();
+    setTimeout(sfxZukan,250);
+  }
+}
+
+// ================================================================
+//  HUD
+// ================================================================
+function updateHUD(){
+  document.getElementById('score').textContent=score;
+  const cel=document.getElementById('combo');
+  cel.textContent='×'+combo;
+  cel.classList.remove('combo-pop');
+  void cel.offsetWidth;
+  if(combo>1) cel.classList.add('combo-pop');
+  document.getElementById('success-count').textContent=successCount;
+}
+function updateZukanCount(){
+  const n=zukanEntries.length;
+  document.getElementById('zukan-hud').textContent=n;
+  document.getElementById('zukan-count').textContent=n;
+}
+
+// ================================================================
+//  図鑑
+// ================================================================
+function openZukan(){renderZukan();document.getElementById('zukan-overlay').classList.add('show');}
+function openZukanFromGameover(){document.getElementById('gameover-overlay').classList.remove('show');openZukan();}
+function closeZukan(){document.getElementById('zukan-overlay').classList.remove('show');}
+function renderZukan(){
+  const grid=document.getElementById('zukan-grid');
+  if(!zukanEntries.length){
+    grid.innerHTML='<p style="color:#b07890;text-align:center;grid-column:span 2;padding:40px;">まだ料理していない！<br>ゲームをプレイして図鑑を埋めよう🌸</p>';
+    return;
+  }
+  grid.innerHTML=zukanEntries.map(e=>`
+    <div class="zukan-card ${e.isSuccess?'success':'fail'}">
+      <div class="zukan-dish">${e.emoji}</div>
+      <div class="zukan-name">${e.name}</div>
+      <div class="zukan-combo">${e.ingredients?e.ingredients.join(''):''}</div>
+      <div class="zukan-badge ${e.isSuccess?'s':'f'}">${e.isSuccess?'✅ 正解':'🌀 謎料理'}</div>
+      <div style="font-size:.6rem;color:#b07890;margin-top:3px;">${e.desc}</div>
+    </div>`).join('');
+}
+
+// ================================================================
+//  トースト
+// ================================================================
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1500);
+}
+
+// ================================================================
+//  起動
+// ================================================================
+init();
+</script>
+</body>
+</html>
