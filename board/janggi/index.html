@@ -494,7 +494,7 @@ function playAudio(path, volume = 1.0, playbackRate = 1.0) {
 }
 // 프리로드
 window.addEventListener('DOMContentLoaded', () => {
-  ['janggun.mp3', 'meonggun.mp3'].forEach(f => {
+  ['janggun.mp3'].forEach(f => {
     const a = new Audio('audio/' + f);
     a.preload = 'auto';
   });
@@ -512,10 +512,52 @@ function playCaptureSound() {
   setTimeout(() => playWoodKnock(0.5, 0.9), 80);
 }
 
+// 멍군 효과음 — 낮고 긴장감 있는 두 음 (Web Audio API 합성)
+function playMeonggunSound() {
+  const ctx = initAudioContext();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+
+  // 두 음을 순서대로: 첫 음 높고 → 두 번째 음 낮음 (위협 느낌)
+  [[0, 220, 0.28], [0.22, 165, 0.32]].forEach(([offset, freq, dur]) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const dist = ctx.createWaveShaper();
+
+    // 약간의 거친 배음 (사각파 느낌)
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq, now + offset);
+    osc.frequency.linearRampToValueAtTime(freq * 0.88, now + offset + dur);
+
+    // 간단한 웨이브셰이퍼로 부드럽게
+    const curve = new Float32Array(256);
+    for (let i = 0; i < 256; i++) {
+      const x = (i * 2) / 256 - 1;
+      curve[i] = (Math.PI + 180) * x / (Math.PI + 180 * Math.abs(x));
+    }
+    dist.curve = curve;
+
+    gain.gain.setValueAtTime(0.0, now + offset);
+    gain.gain.linearRampToValueAtTime(0.22, now + offset + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + offset + dur);
+
+    osc.connect(dist);
+    dist.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now + offset);
+    osc.stop(now + offset + dur + 0.05);
+  });
+}
+
 function playCheckSound(isMyKingInCheck) {
   playWoodKnock(0.6, 1.2);
-  const file = isMyKingInCheck ? 'meonggun.mp3' : 'janggun.mp3';
-  setTimeout(() => playAudio(SND + file, 1.0), 100);
+  if (!isMyKingInCheck) {
+    // 장군 — 내가 상대 왕을 위협
+    setTimeout(() => playAudio(SND + 'janggun.mp3', 1.0), 100);
+  } else {
+    // 멍군 — AI가 내 왕을 위협, 긴장감 있는 경고음
+    setTimeout(() => playMeonggunSound(), 80);
+  }
 }
 
 function playWinSound() {
@@ -1262,7 +1304,10 @@ function executeMove(fromC, fromR, toC, toR) {
 
     // Check for check — 내가 상대 장군
     if (isInCheck(state.board, enemy)) {
-      playCheckSound(false); // "장군!"
+      playCheckSound(false); // "장군!" 음성
+      state.inCheck = enemy; // 상대 왕 깜빡임
+    } else {
+      state.inCheck = null;
     }
 
     state.turn = enemy;
@@ -1306,7 +1351,10 @@ function executeMove(fromC, fromR, toC, toR) {
               playWinSound();
             } else {
               if (isInCheck(state.board, CHO)) {
-                playCheckSound(true); // "멍군!" — AI가 내 왕을 장군
+                playCheckSound(true); // 멍군 — 오디오 없음, 시각 효과만
+                state.inCheck = CHO;  // 내 왕(초) 깜빡임
+              } else {
+                state.inCheck = null;
               }
               state.turn = CHO;
               if (state.showRecommend) {
@@ -1406,7 +1454,8 @@ function render() {
         const selClass = isSelected ? ' selected' : '';
         const recClass = recFrom && !state.selected ? ' recommended' : '';
         const lastClass = isLastTo && !isSelected ? ' last-moved' : '';
-        cellContent += `<div class="piece ${piece.team}${selClass}${recClass}${lastClass}"><img src="${imgUrl}" alt="${name}"></div>`;
+        const chkClass = (state.inCheck && piece.type === TYPES.KING && piece.team === state.inCheck) ? ' in-check' : '';
+        cellContent += `<div class="piece ${piece.team}${selClass}${recClass}${lastClass}${chkClass}"><img src="${imgUrl}" alt="${name}"></div>`;
       }
 
       // Recommended destination ghost pieces (Phase 2 - when a piece is selected)

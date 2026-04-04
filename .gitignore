@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# 디자인 초안 (배포 불필요)
+assets/design/
+
+# 미사용 오디오
+board/janggi/audio/meonggun.mp3
