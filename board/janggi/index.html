@@ -220,32 +220,30 @@ select {
 }
 .game-layout {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  width: 100%;
-  justify-content: center;
-}
-.captures-side {
-  display: flex;
   flex-direction: column;
-  gap: 4px;
-  width: 52px;
-  max-height: 504px;
-  overflow-y: auto;
-  padding: 4px;
+  align-items: center;
+  width: 100%;
+  gap: 6px;
+}
+.captures-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-height: 32px;
+  padding: 4px 8px;
   background: #16213e;
   border-radius: 8px;
   align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 432px;
 }
-.captures-side::-webkit-scrollbar { width: 3px; }
-.captures-side::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 .captured-piece {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 2px;
 }
-.captured-piece img { width: 44px; height: 39px; object-fit: contain; }
+.captured-piece img { width: 28px; height: 28px; object-fit: contain; }
 .captured-piece.cho img { filter: drop-shadow(0 0 2px rgba(255,135,135,0.5)); }
 .captured-piece.han img { filter: drop-shadow(0 0 2px rgba(105,219,124,0.5)); }
 .thinking {
@@ -447,22 +445,22 @@ const PIECE_NAMES = {
 
 const PIECE_IMAGES = {
   cho: {
-    king: 'https://upload.wikimedia.org/wikipedia/commons/0/01/Green_King.png',
-    chariot: 'https://upload.wikimedia.org/wikipedia/commons/0/03/Green_Cha.png',
-    cannon: 'https://upload.wikimedia.org/wikipedia/commons/3/32/Green_Po.png',
-    horse: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Green_Ma.png',
-    elephant: 'https://upload.wikimedia.org/wikipedia/commons/0/07/Green_Sang.png',
-    guard: 'https://upload.wikimedia.org/wikipedia/commons/d/de/Green_Sa.png',
-    soldier: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Green_Zol.png'
+    king: 'img/cho_king.svg',
+    chariot: 'img/cho_chariot.svg',
+    cannon: 'img/cho_cannon.svg',
+    horse: 'img/cho_horse.svg',
+    elephant: 'img/cho_elephant.svg',
+    guard: 'img/cho_guard.svg',
+    soldier: 'img/cho_soldier.svg'
   },
   han: {
-    king: 'https://upload.wikimedia.org/wikipedia/commons/b/bb/Red_King.png',
-    chariot: 'https://upload.wikimedia.org/wikipedia/commons/f/f6/Red_Cha.png',
-    cannon: 'https://upload.wikimedia.org/wikipedia/commons/f/f4/Red_Po.png',
-    horse: 'https://upload.wikimedia.org/wikipedia/commons/6/6a/Red_Ma.png',
-    elephant: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Red_Sang.png',
-    guard: 'https://upload.wikimedia.org/wikipedia/commons/e/e8/Red_Sa.png',
-    soldier: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/Red_Byung.png'
+    king: 'img/han_king.svg',
+    chariot: 'img/han_chariot.svg',
+    cannon: 'img/han_cannon.svg',
+    horse: 'img/han_horse.svg',
+    elephant: 'img/han_elephant.svg',
+    guard: 'img/han_guard.svg',
+    soldier: 'img/han_soldier.svg'
   }
 };
 
@@ -1553,7 +1551,15 @@ function executeMove(fromC, fromR, toC, toR) {
           const uciMove = boardToMoveStr(aiMove.from[0], aiMove.from[1], aiMove.to[0], aiMove.to[1]);
           wasmMoveHistory.push(uciMove);
 
+          // Set ghost BEFORE animation starts — ghost stays at original position
+          state.lastMoveGhost = { col: aiMove.from[0], row: aiMove.from[1], team: aiPiece.team, type: aiPiece.type };
+          // Hide the original piece visually during animation
+          state.board[aiMove.from[1]][aiMove.from[0]] = null;
+          render(); // Re-render to show ghost + hide original piece
+
           const executeAIMoveFinal = () => {
+            // Restore piece at original position before makeMove (makeMove needs it)
+            state.board[aiMove.from[1]][aiMove.from[0]] = aiPiece;
             const { board: nb, captured: cap } = makeMove(state.board, aiMove.from[0], aiMove.from[1], aiMove.to[0], aiMove.to[1]);
             if (cap) {
               state.captured[cap.team].push(cap);
@@ -1563,7 +1569,6 @@ function executeMove(fromC, fromR, toC, toR) {
             }
             state.board = nb;
             state.lastMove = { from: aiMove.from, to: aiMove.to };
-            state.lastMoveGhost = { col: aiMove.from[0], row: aiMove.from[1], team: aiPiece.team, type: aiPiece.type };
             state.moveHistory.push(state.lastMove);
 
             if (isCheckmate(state.board, CHO)) {
@@ -1700,12 +1705,6 @@ function render() {
 
   // Captured pieces display — 중요도 내림차순 정렬
   const sortByValue = arr => [...arr].sort((a, b) => PIECE_VALUES[b.type] - PIECE_VALUES[a.type]);
-  const capturedHan = sortByValue(state.captured.han).map(p =>
-    `<span class="captured-piece han"><img src="${PIECE_IMAGES.han[p.type]}" alt="${PIECE_NAMES.han[p.type]}" style="width:24px;height:21px;"></span>`
-  ).join('');
-  const capturedCho = sortByValue(state.captured.cho).map(p =>
-    `<span class="captured-piece cho"><img src="${PIECE_IMAGES.cho[p.type]}" alt="${PIECE_NAMES.cho[p.type]}" style="width:24px;height:21px;"></span>`
-  ).join('');
 
   app.innerHTML = `
     <div class="nav-bar">
@@ -1717,10 +1716,10 @@ function render() {
       <div class="status ${statusClass}">${statusText}</div>
     </div>
     <div class="game-layout">
-      <div class="captures-side">
-        ${sortByValue(state.captured.cho).length > 0
-          ? sortByValue(state.captured.cho).map(p => `<div class="captured-piece cho"><img src="${PIECE_IMAGES.cho[p.type]}" alt="${PIECE_NAMES.cho[p.type]}"></div>`).join('')
-          : `<span style="color:#555;font-size:9px;text-align:center;padding:4px;">${L.capEmpty(L.cho)}</span>`}
+      <div class="captures-bar">
+        ${sortByValue(state.captured.han).length > 0
+          ? `<span style="color:#69db7c;font-size:11px;margin-right:4px;">${L.cho}:</span>` + sortByValue(state.captured.han).map(p => `<div class="captured-piece han"><img src="${PIECE_IMAGES.han[p.type]}" alt="${PIECE_NAMES.han[p.type]}"></div>`).join('')
+          : `<span style="color:#555;font-size:11px;">${L.capEmpty(L.han)}</span>`}
       </div>
       <div class="board-container">
       <svg class="board-lines" viewBox="0 0 432 480" xmlns="http://www.w3.org/2000/svg">
@@ -1749,11 +1748,11 @@ function render() {
       ${state.lastMoveGhost ? `<div class="ghost-piece" style="position: absolute; left: ${state.lastMoveGhost.col * cellSize + 22}px; top: ${state.lastMoveGhost.row * cellSize + 22}px; width: ${cellSize * 0.917}px; height: ${cellSize * 0.8125}px; pointer-events: none; z-index: 15; opacity: 0.3; animation: ghostFade 2s ease-out forwards;"><img src="${PIECE_IMAGES[state.lastMoveGhost.team][state.lastMoveGhost.type]}" style="width: ${cellSize * 0.917}px; height: ${cellSize * 0.8125}px; object-fit: contain;"></div>` : ''}
     </div>
     </div>
-    <div class="captures-side">
-      ${sortByValue(state.captured.han).length > 0 
-        ? sortByValue(state.captured.han).map(p => `<div class="captured-piece han"><img src="${PIECE_IMAGES.han[p.type]}" alt="${PIECE_NAMES.han[p.type]}"></div>`).join('')
-        : `<span style="color:#555;font-size:9px;text-align:center;padding:4px;">${L.capEmpty(L.han)}</span>`}
-    </div>
+      <div class="captures-bar">
+        ${sortByValue(state.captured.cho).length > 0
+          ? `<span style="color:#ff6b6b;font-size:11px;margin-right:4px;">${L.han}:</span>` + sortByValue(state.captured.cho).map(p => `<div class="captured-piece cho"><img src="${PIECE_IMAGES.cho[p.type]}" alt="${PIECE_NAMES.cho[p.type]}"></div>`).join('')
+          : `<span style="color:#555;font-size:11px;">${L.capEmpty(L.cho)}</span>`}
+      </div>
     <div class="controls">
       <div class="controls-row">
         <button class="btn-start" onclick="resetGame()">${L.newGame}</button>
