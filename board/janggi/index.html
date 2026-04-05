@@ -214,10 +214,6 @@ select {
     filter: drop-shadow(0 0 10px rgba(255,212,59,0.75));
   }
 }
-@keyframes ghostFade {
-  0% { opacity: 0.3; }
-  100% { opacity: 0; }
-}
 .game-layout {
   display: flex;
   flex-direction: column;
@@ -574,23 +570,50 @@ const SND = 'audio/';
 
 // 프리로드
 window.addEventListener('DOMContentLoaded', () => {
-  ['janggun-01.mp3', 'janggun-02.mp3', 'meonggun.mp3', 'defeat.mp3', 'bgm.mp3'].forEach(f => {
+  ['janggun-01.mp3', 'janggun-02.mp3', 'meonggun.mp3', 'defeat.mp3', 'bgm-idle.mp3', 'bgm-battle.mp3'].forEach(f => {
     const a = new Audio(SND + f);
     a.preload = 'auto';
   });
 });
 
-// BGM
+// BGM — idle(대기/메뉴) & battle(게임 중) 두 트랙
 let bgmAudio = null;
-function playBGM() {
-  if (bgmAudio) return;
-  bgmAudio = new Audio(SND + 'bgm.mp3');
+let bgmType = null; // 'idle' | 'battle'
+const BGM_VOL = 0.2;
+
+function playBGM(type) {
+  type = type || 'idle';
+  if (bgmAudio && bgmType === type) return; // 이미 재생 중
+  stopBGM();
+  const file = type === 'battle' ? 'bgm-battle.mp3' : 'bgm-idle.mp3';
+  bgmAudio = new Audio(SND + file);
   bgmAudio.loop = true;
-  bgmAudio.volume = 0.25;
+  bgmAudio.volume = BGM_VOL;
+  bgmType = type;
   bgmAudio.play().catch(() => {});
 }
 function stopBGM() {
-  if (bgmAudio) { bgmAudio.pause(); bgmAudio.currentTime = 0; bgmAudio = null; }
+  if (bgmAudio) { bgmAudio.pause(); bgmAudio.currentTime = 0; bgmAudio = null; bgmType = null; }
+}
+function switchBGM(type) {
+  if (bgmType === type) return;
+  // Crossfade: fade out current, start new
+  if (bgmAudio) {
+    const old = bgmAudio;
+    let vol = old.volume;
+    const fadeOut = setInterval(() => {
+      vol -= 0.02;
+      if (vol <= 0) { clearInterval(fadeOut); old.pause(); }
+      else old.volume = vol;
+    }, 50);
+  }
+  bgmAudio = null; bgmType = null;
+  setTimeout(() => playBGM(type), 500);
+}
+function duckBGM(durationMs) {
+  if (!bgmAudio) return;
+  bgmAudio.volume = 0.04;
+  setTimeout(() => { if (bgmAudio) bgmAudio.volume = BGM_VOL; }, durationMs || 1500);
 }
 
 function playMoveSound() {
@@ -604,6 +627,7 @@ function playCaptureSound() {
 
 // 장군 — 공격 측이 외침. 초 공격 시 01(남), 한 공격 시 02(여)
 function playJanggunSound(attackerTeam) {
+  duckBGM(2000);
   playWoodKnock(0.6, 1.2);
   const file = (attackerTeam === CHO) ? 'janggun-01.mp3' : 'janggun-02.mp3';
   setTimeout(() => playAudio(SND + file, 1.0), 100);
@@ -611,6 +635,7 @@ function playJanggunSound(attackerTeam) {
 
 // 멍군 — 피한 쪽이 외침 + 화면 떨림
 function playMeonggunSound() {
+  duckBGM(1500);
   playWoodKnock(0.5, 0.95);
   setTimeout(() => {
     playAudio(SND + 'meonggun.mp3', 1.0);
@@ -643,7 +668,7 @@ function playWinSound(winner) {
   } else {
     setTimeout(() => playAudio(SND + 'defeat.mp3', 0.9), 50);
   }
-  stopBGM();
+  switchBGM('idle');
 }
 
 // ============================================
@@ -1305,7 +1330,7 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
 const LANG = {
   ko: {
     title: '애기장기', subtitle: 'Baby Janggi · ベビー将棋',
-    home: '← 홈', newGame: '▶ 새 게임', resign: '■ 기권',
+    home: '← 홈', newGame: '▶ 새 게임', resign: '■ 기권', quit: '✕ 그만두기',
     aiMode: 'AI 대전', pvpMode: '2인 대전',
     hint: '💡 훈수', hintOn: '💡 훈수 ON',
     anim: '🎬 애니', animOn: '🎬 애니 ON',
@@ -1322,7 +1347,7 @@ const LANG = {
   },
   ja: {
     title: 'ベビー将棋', subtitle: 'Baby Janggi · 애기장기',
-    home: '← ホーム', newGame: '▶ 新局', resign: '■ 投了',
+    home: '← ホーム', newGame: '▶ 新局', resign: '■ 投了', quit: '✕ やめる',
     aiMode: 'AI対局', pvpMode: '二人対局',
     hint: '💡 助言', hintOn: '💡 助言 ON',
     anim: '🎬 アニメ', animOn: '🎬 アニメ ON',
@@ -1339,7 +1364,7 @@ const LANG = {
   },
   en: {
     title: 'Baby Janggi', subtitle: '애기장기 · ベビー将棋',
-    home: '← Home', newGame: '▶ New Game', resign: '■ Resign',
+    home: '← Home', newGame: '▶ New Game', resign: '■ Resign', quit: '✕ Quit',
     aiMode: 'vs AI', pvpMode: 'vs Player',
     hint: '💡 Hint', hintOn: '💡 Hint ON',
     anim: '🎬 Anim', animOn: '🎬 Anim ON',
@@ -1490,7 +1515,7 @@ async function wasmGetBestMove(depth, skillLevel, limitStrength, elo) {
 
 let bgmStarted = false;
 function tryStartBGM() {
-  if (!bgmStarted) { bgmStarted = true; playBGM(); }
+  if (!bgmStarted) { bgmStarted = true; playBGM('battle'); }
 }
 
 function resetGame() {
@@ -1506,10 +1531,10 @@ function resetGame() {
   state.lastMove = null;
   state.moveHistory = [];
   state.inCheck = null;
-  state.lastMoveGhost = null;
   state.justMeonggun = false;
   bgmStarted = false;
-  stopBGM();
+  // BGM이 이미 재생 중이면 idle로 (첫 수 두면 battle로 전환됨)
+  if (bgmAudio) switchBGM('idle');
   wasmMoveHistory = [];
   if (wasmReady) {
     wasmEngine.postMessage('ucinewgame');
@@ -1626,11 +1651,9 @@ function executeMove(fromC, fromR, toC, toR) {
           // AI 이동 전에 AI 왕(HAN)이 장군 상태였는지 기억 (피하면 멍군)
           const aiWasInCheckBefore = isInCheck(state.board, HAN);
 
-          // Set ghost BEFORE animation starts — ghost stays at original position
-          state.lastMoveGhost = { col: aiMove.from[0], row: aiMove.from[1], team: aiPiece.team, type: aiPiece.type };
-          // Hide the original piece visually during animation
+          // Hide the original piece during animation (no ghost)
           state.board[aiMove.from[1]][aiMove.from[0]] = null;
-          render(); // Re-render to show ghost + hide original piece
+          render();
 
           const executeAIMoveFinal = () => {
             // Restore piece at original position before makeMove (makeMove needs it)
@@ -1650,7 +1673,6 @@ function executeMove(fromC, fromR, toC, toR) {
               state.gameOver = true;
               state.winner = HAN;
               state.recommended = [];
-              state.lastMoveGhost = null;
               playWinSound(HAN);
             } else {
               // 장군/멍군 효과음
@@ -1851,13 +1873,7 @@ function render() {
         })()}
       </svg>
       <div class="board">${boardCells}</div>
-      ${state.lastMoveGhost ? (() => {
-        const gW = getPieceSize(state.lastMoveGhost.type);
-        const gH = getPieceHeight(state.lastMoveGhost.type);
-        const offsetX = (cellSize * 0.917 - gW) / 2;
-        const offsetY = (cellSize * 0.8125 - gH) / 2;
-        return `<div class="ghost-piece" style="position: absolute; left: ${state.lastMoveGhost.col * cellSize + 22 + offsetX}px; top: ${state.lastMoveGhost.row * cellSize + 22 + offsetY}px; pointer-events: none; z-index: 15; opacity: 0.3; animation: ghostFade 2s ease-out forwards;"><img src="${PIECE_IMAGES[state.lastMoveGhost.team][state.lastMoveGhost.type]}" style="width: ${gW}px; height: ${gH}px; object-fit: contain;"></div>`;
-      })() : ''}
+      <!-- ghost removed -->
     </div>
     </div>
       <div class="captures-bar">
@@ -1872,7 +1888,9 @@ function render() {
     <div class="controls">
       <div class="controls-row">
         <button class="btn-start" onclick="resetGame()">${L.newGame}</button>
-        ${!state.gameOver ? `<button class="btn-stop" onclick="resignGame()">${L.resign}</button>` : ''}
+        ${!state.gameOver
+          ? `<button class="btn-stop" onclick="resignGame()">${L.resign}</button>`
+          : `<button class="btn-stop" onclick="quitGame()">${L.quit}</button>`}
       </div>
       <div class="controls-row">
         <select id="modeSelect" onchange="changeMode(this.value)">
@@ -1900,6 +1918,7 @@ function render() {
             ? (state.mode === 'ai' ? L.winAI : L.winP(L.cho))
             : (state.mode === 'ai' ? L.loseAI : L.winP(L.han))}</p>
           <button onclick="resetGame()">${L.retry}</button>
+          <button onclick="quitGame()" style="background:#555;margin-left:8px;">${L.quit}</button>
         </div>
       </div>
     ` : ''}
@@ -1931,7 +1950,13 @@ function resignGame() {
   if (state.gameOver) return;
   state.gameOver = true;
   state.winner = state.turn === CHO ? HAN : CHO;
+  switchBGM('idle');
   render();
+}
+
+function quitGame() {
+  stopBGM();
+  window.location.href = '/';
 }
 
 function changeMode(mode) {
