@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fairy-Stockfish WASM - Janggi Engine Test</title>
+<script src="coi-serviceworker.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 20px;
+  min-height: 100vh;
+}
+h1 { color: #ffd700; margin-bottom: 10px; font-size: 1.4em; }
+.status {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-weight: bold;
+}
+.status.loading { background: #2a2a4e; color: #aaa; }
+.status.ok { background: #1a3a1a; color: #4caf50; }
+.status.error { background: #3a1a1a; color: #f44336; }
+.status.warn { background: #3a3a1a; color: #ff9800; }
+
+#log {
+  background: #0d0d1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  max-height: 50vh;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.controls {
+  margin: 12px 0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+button {
+  background: #ffd700;
+  color: #1a1a2e;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+}
+button:hover { background: #ffed4a; }
+button:disabled { background: #555; color: #888; cursor: not-allowed; }
+select, input {
+  background: #2a2a4e;
+  color: #e0e0e0;
+  border: 1px solid #555;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.info-box {
+  background: #2a2a4e;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.info-box span { color: #ffd700; font-weight: bold; }
+.log-uci { color: #888; }
+.log-send { color: #4caf50; }
+.log-recv { color: #64b5f6; }
+.log-best { color: #ffd700; font-weight: bold; }
+.log-error { color: #f44336; }
+.log-info { color: #ce93d8; }
+</style>
+</head>
+<body>
+
+<h1>Fairy-Stockfish WASM - Janggi Engine Test</h1>
+
+<div id="statusBox" class="status loading">Checking browser capabilities...</div>
+
+<div class="info-grid">
+  <div class="info-box">SharedArrayBuffer: <span id="sabStatus">checking...</span></div>
+  <div class="info-box">WASM: <span id="wasmStatus">checking...</span></div>
+  <div class="info-box">COOP/COEP: <span id="coopStatus">checking...</span></div>
+  <div class="info-box">Engine: <span id="engineStatus">not loaded</span></div>
+</div>
+
+<div class="controls">
+  <button id="btnLoad" onclick="loadEngine()" disabled>Load Engine</button>
+  <button id="btnTest" onclick="testJanggi()" disabled>Test Janggi</button>
+  <select id="depthSelect">
+    <option value="1">Depth 1 (Instant)</option>
+    <option value="3">Depth 3 (Easy)</option>
+    <option value="5" selected>Depth 5 (Normal)</option>
+    <option value="8">Depth 8 (Hard)</option>
+    <option value="12">Depth 12 (Expert)</option>
+    <option value="15">Depth 15 (Max)</option>
+  </select>
+  <button id="btnGo" onclick="goSearch()" disabled>Go (Search Best Move)</button>
+</div>
+
+<div class="controls">
+  <input id="cmdInput" type="text" placeholder="UCI command (e.g. 'd')" style="flex:1;min-width:200px">
+  <button id="btnSend" onclick="sendCmd()" disabled>Send</button>
+</div>
+
+<div id="log"></div>
+
+<script>
+const logEl = document.getElementById('log');
+const statusBox = document.getElementById('statusBox');
+let engine = null;
+let engineReady = false;
+
+function log(msg, cls = '') {
+  const line = document.createElement('div');
+  line.className = cls;
+  line.textContent = msg;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setStatus(text, type) {
+  statusBox.textContent = text;
+  statusBox.className = 'status ' + type;
+}
+
+// Check browser capabilities
+const hasSAB = typeof SharedArrayBuffer !== 'undefined';
+const hasWASM = typeof WebAssembly !== 'undefined';
+let hasCOOP = false;
+
+try {
+  hasCOOP = window.crossOriginIsolated === true;
+} catch(e) {}
+
+document.getElementById('sabStatus').textContent = hasSAB ? 'YES' : 'NO';
+document.getElementById('sabStatus').style.color = hasSAB ? '#4caf50' : '#f44336';
+document.getElementById('wasmStatus').textContent = hasWASM ? 'YES' : 'NO';
+document.getElementById('wasmStatus').style.color = hasWASM ? '#4caf50' : '#f44336';
+document.getElementById('coopStatus').textContent = hasCOOP ? 'YES (isolated)' : 'NO';
+document.getElementById('coopStatus').style.color = hasCOOP ? '#4caf50' : '#ff9800';
+
+if (!hasWASM) {
+  setStatus('WebAssembly not supported in this browser', 'error');
+  log('FATAL: WebAssembly is not available.', 'log-error');
+} else if (!hasSAB) {
+  setStatus('SharedArrayBuffer not available - need COOP/COEP headers', 'error');
+  log('SharedArrayBuffer is not available.', 'log-error');
+  log('The server must send these HTTP headers:', 'log-info');
+  log('  Cross-Origin-Opener-Policy: same-origin', 'log-info');
+  log('  Cross-Origin-Embedder-Policy: require-corp', 'log-info');
+  log('', '');
+  log('For Cloudflare Workers, add these headers in the Worker script.', 'log-info');
+} else if (!hasCOOP) {
+  setStatus('Cross-Origin Isolation not enabled - may have issues', 'warn');
+  log('WARNING: crossOriginIsolated is false, but SAB exists.', 'log-info');
+  log('Engine may still work. Try loading...', 'log-info');
+  document.getElementById('btnLoad').disabled = false;
+} else {
+  setStatus('Browser OK - Ready to load engine', 'ok');
+  log('All browser checks passed!', 'log-info');
+  document.getElementById('btnLoad').disabled = false;
+}
+
+// If SAB available, enable load button even if COOP is unclear
+if (hasSAB) {
+  document.getElementById('btnLoad').disabled = false;
+}
+
+async function loadEngine() {
+  document.getElementById('btnLoad').disabled = true;
+  setStatus('Loading Fairy-Stockfish WASM (1.6MB)...', 'loading');
+  log('Loading engine from ./engine/stockfish.js ...', 'log-send');
+
+  const startTime = performance.now();
+
+  try {
+    // Dynamically load the stockfish.js script
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = './engine/stockfish.js';
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('Failed to load stockfish.js'));
+      document.head.appendChild(script);
+    });
+
+    log('stockfish.js loaded, initializing engine...', 'log-info');
+
+    // Initialize the engine
+    engine = await Stockfish();
+
+    const loadTime = ((performance.now() - startTime) / 1000).toFixed(2);
+    log(`Engine initialized in ${loadTime}s`, 'log-best');
+
+    // Set up message listener
+    engine.addMessageListener((msg) => {
+      if (msg.startsWith('bestmove')) {
+        log(msg, 'log-best');
+      } else if (msg.startsWith('info')) {
+        log(msg, 'log-uci');
+      } else {
+        log(msg, 'log-recv');
+      }
+    });
+
+    // Send UCI init
+    log('>>> uci', 'log-send');
+    engine.postMessage('uci');
+
+    // Wait a bit for uciok
+    await new Promise(r => setTimeout(r, 500));
+
+    document.getElementById('engineStatus').textContent = 'LOADED';
+    document.getElementById('engineStatus').style.color = '#4caf50';
+    setStatus('Engine loaded! Ready for testing.', 'ok');
+
+    document.getElementById('btnTest').disabled = false;
+    document.getElementById('btnGo').disabled = false;
+    document.getElementById('btnSend').disabled = false;
+    engineReady = true;
+
+  } catch (err) {
+    log('ERROR: ' + err.message, 'log-error');
+    log(err.stack || '', 'log-error');
+    setStatus('Engine load failed: ' + err.message, 'error');
+    document.getElementById('engineStatus').textContent = 'FAILED';
+    document.getElementById('engineStatus').style.color = '#f44336';
+    document.getElementById('btnLoad').disabled = false;
+  }
+}
+
+function testJanggi() {
+  if (!engineReady) return;
+  log('', '');
+  log('=== Testing Janggi Variant ===', 'log-best');
+
+  // Set janggi variant
+  const cmds = [
+    'setoption name UCI_Variant value janggi',
+    'position startpos',
+    'd'
+  ];
+
+  cmds.forEach(cmd => {
+    log('>>> ' + cmd, 'log-send');
+    engine.postMessage(cmd);
+  });
+}
+
+function goSearch() {
+  if (!engineReady) return;
+  const depth = document.getElementById('depthSelect').value;
+  log('', '');
+  log(`=== Searching at depth ${depth} ===`, 'log-best');
+
+  const cmd = `go depth ${depth}`;
+  log('>>> ' + cmd, 'log-send');
+
+  const startTime = performance.now();
+
+  // Temporarily add a listener for bestmove
+  const listener = (msg) => {
+    if (msg.startsWith('bestmove')) {
+      const elapsed = ((performance.now() - startTime) / 1000).toFixed(3);
+      log(`Search completed in ${elapsed}s`, 'log-info');
+      engine.removeMessageListener(listener);
+    }
+  };
+  engine.addMessageListener(listener);
+
+  engine.postMessage(cmd);
+}
+
+function sendCmd() {
+  const input = document.getElementById('cmdInput');
+  const cmd = input.value.trim();
+  if (!cmd || !engineReady) return;
+  log('>>> ' + cmd, 'log-send');
+  engine.postMessage(cmd);
+  input.value = '';
+}
+
+document.getElementById('cmdInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') sendCmd();
+});
+</script>
+</body>
+</html>
