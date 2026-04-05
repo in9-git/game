@@ -445,23 +445,34 @@ const PIECE_NAMES = {
 
 const PIECE_IMAGES = {
   cho: {
-    king: 'img/cho_king.svg',
-    chariot: 'img/cho_chariot.svg',
-    cannon: 'img/cho_cannon.svg',
-    horse: 'img/cho_horse.svg',
-    elephant: 'img/cho_elephant.svg',
-    guard: 'img/cho_guard.svg',
-    soldier: 'img/cho_soldier.svg'
+    king: 'img/cho_king.png',
+    chariot: 'img/cho_chariot.png',
+    cannon: 'img/cho_cannon.png',
+    horse: 'img/cho_horse.png',
+    elephant: 'img/cho_elephant.png',
+    guard: 'img/cho_guard.png',
+    soldier: 'img/cho_soldier.png'
   },
   han: {
-    king: 'img/han_king.svg',
-    chariot: 'img/han_chariot.svg',
-    cannon: 'img/han_cannon.svg',
-    horse: 'img/han_horse.svg',
-    elephant: 'img/han_elephant.svg',
-    guard: 'img/han_guard.svg',
-    soldier: 'img/han_soldier.svg'
+    king: 'img/han_king.png',
+    chariot: 'img/han_chariot.png',
+    cannon: 'img/han_cannon.png',
+    horse: 'img/han_horse.png',
+    elephant: 'img/han_elephant.png',
+    guard: 'img/han_guard.png',
+    soldier: 'img/han_soldier.png'
   }
+};
+
+// Piece size multipliers relative to board cell (for visual hierarchy)
+const PIECE_SIZES = {
+  king: 1.0,      // 큼 (왕)
+  chariot: 0.95,  // 큼 (차)
+  cannon: 0.95,   // 큼 (포)
+  horse: 0.85,    // 중간 (마)
+  elephant: 0.85, // 중간 (상)
+  guard: 0.8,     // 중간 (사)
+  soldier: 0.7    // 작음 (졸/병)
 };
 
 const PIECE_VALUES = { king: 0, chariot: 13, cannon: 7, horse: 5, elephant: 3, guard: 3, soldier: 2 };
@@ -1084,13 +1095,13 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
   const boardRect = boardContainer.getBoundingClientRect();
   const boardLeft = boardRect.left + 22; // padding
   const boardTop = boardRect.top + 22;
-  
+
   // Get cell size from actual board element
   const board = document.querySelector('.board');
   const boardSize = board.getBoundingClientRect();
   const cellSize = boardSize.width / 9;
-  const pieceW = cellSize * (44/48);
-  const pieceH = cellSize * (39/48);
+  const pieceW = (cellSize * (44/48)) * PIECE_SIZES[pieceType];
+  const pieceH = (cellSize * (39/48)) * PIECE_SIZES[pieceType];
 
   const piece = state.board[fromR][fromC];
   const pieceImg = PIECE_IMAGES[pieceTeam][pieceType];
@@ -1619,6 +1630,18 @@ function render() {
   if (window.innerWidth <= 480) cellSize = 36;
   if (window.innerWidth <= 380) cellSize = 30;
 
+  // Helper to get piece size based on type
+  function getPieceSize(pieceType) {
+    const base = cellSize * 0.917; // Default: 44px / 48 cell
+    const mult = PIECE_SIZES[pieceType] || 0.85;
+    return base * mult;
+  }
+  function getPieceHeight(pieceType) {
+    const base = cellSize * 0.8125; // Default: 39px / 48 cell
+    const mult = PIECE_SIZES[pieceType] || 0.85;
+    return base * mult;
+  }
+
   // Status text
   const L = LANG[state.lang];
   let statusText, statusClass;
@@ -1689,14 +1712,18 @@ function render() {
         const recClass = recFrom && !state.selected ? ' recommended' : '';
         const lastClass = isLastTo && !isSelected ? ' last-moved' : '';
         const chkClass = (state.inCheck && piece.type === TYPES.KING && piece.team === state.inCheck) ? ' in-check' : '';
-        cellContent += `<div class="piece ${piece.team}${selClass}${recClass}${lastClass}${chkClass}"><img src="${imgUrl}" alt="${name}"></div>`;
+        const pW = getPieceSize(piece.type);
+        const pH = getPieceHeight(piece.type);
+        cellContent += `<div class="piece ${piece.team}${selClass}${recClass}${lastClass}${chkClass}"><img src="${imgUrl}" alt="${name}" style="width:${pW}px;height:${pH}px;"></div>`;
       }
 
       // Recommended destination ghost pieces (Phase 2 - when a piece is selected)
       if (state.selected && recTo && isLegal) {
         const selectedPiece = state.board[state.selected[1]][state.selected[0]];
         const ghostImg = PIECE_IMAGES[selectedPiece.team][selectedPiece.type];
-        cellContent += `<div class="recommend-ghost"><img src="${ghostImg}" alt=""></div>`;
+        const gW = getPieceSize(selectedPiece.type);
+        const gH = getPieceHeight(selectedPiece.type);
+        cellContent += `<div class="recommend-ghost"><img src="${ghostImg}" alt="" style="width:${gW}px;height:${gH}px;"></div>`;
       }
 
       boardCells += `<div class="cell" data-col="${c}" data-row="${r}">${cellContent}</div>`;
@@ -1718,7 +1745,11 @@ function render() {
     <div class="game-layout">
       <div class="captures-bar">
         ${sortByValue(state.captured.han).length > 0
-          ? `<span style="color:#69db7c;font-size:11px;margin-right:4px;">${L.cho}:</span>` + sortByValue(state.captured.han).map(p => `<div class="captured-piece han"><img src="${PIECE_IMAGES.han[p.type]}" alt="${PIECE_NAMES.han[p.type]}"></div>`).join('')
+          ? `<span style="color:#69db7c;font-size:11px;margin-right:4px;">${L.cho}:</span>` + sortByValue(state.captured.han).map(p => {
+            const capW = getPieceSize(p.type) * 0.7; // 70% of board size
+            const capH = getPieceHeight(p.type) * 0.7;
+            return `<div class="captured-piece han"><img src="${PIECE_IMAGES.han[p.type]}" alt="${PIECE_NAMES.han[p.type]}" style="width:${capW}px;height:${capH}px;"></div>`;
+          }).join('')
           : `<span style="color:#555;font-size:11px;">${L.capEmpty(L.han)}</span>`}
       </div>
       <div class="board-container">
@@ -1745,12 +1776,22 @@ function render() {
         })()}
       </svg>
       <div class="board">${boardCells}</div>
-      ${state.lastMoveGhost ? `<div class="ghost-piece" style="position: absolute; left: ${state.lastMoveGhost.col * cellSize + 22}px; top: ${state.lastMoveGhost.row * cellSize + 22}px; width: ${cellSize * 0.917}px; height: ${cellSize * 0.8125}px; pointer-events: none; z-index: 15; opacity: 0.3; animation: ghostFade 2s ease-out forwards;"><img src="${PIECE_IMAGES[state.lastMoveGhost.team][state.lastMoveGhost.type]}" style="width: ${cellSize * 0.917}px; height: ${cellSize * 0.8125}px; object-fit: contain;"></div>` : ''}
+      ${state.lastMoveGhost ? (() => {
+        const gW = getPieceSize(state.lastMoveGhost.type);
+        const gH = getPieceHeight(state.lastMoveGhost.type);
+        const offsetX = (cellSize * 0.917 - gW) / 2;
+        const offsetY = (cellSize * 0.8125 - gH) / 2;
+        return `<div class="ghost-piece" style="position: absolute; left: ${state.lastMoveGhost.col * cellSize + 22 + offsetX}px; top: ${state.lastMoveGhost.row * cellSize + 22 + offsetY}px; pointer-events: none; z-index: 15; opacity: 0.3; animation: ghostFade 2s ease-out forwards;"><img src="${PIECE_IMAGES[state.lastMoveGhost.team][state.lastMoveGhost.type]}" style="width: ${gW}px; height: ${gH}px; object-fit: contain;"></div>`;
+      })() : ''}
     </div>
     </div>
       <div class="captures-bar">
         ${sortByValue(state.captured.cho).length > 0
-          ? `<span style="color:#ff6b6b;font-size:11px;margin-right:4px;">${L.han}:</span>` + sortByValue(state.captured.cho).map(p => `<div class="captured-piece cho"><img src="${PIECE_IMAGES.cho[p.type]}" alt="${PIECE_NAMES.cho[p.type]}"></div>`).join('')
+          ? `<span style="color:#ff6b6b;font-size:11px;margin-right:4px;">${L.han}:</span>` + sortByValue(state.captured.cho).map(p => {
+            const capW = getPieceSize(p.type) * 0.7;
+            const capH = getPieceHeight(p.type) * 0.7;
+            return `<div class="captured-piece cho"><img src="${PIECE_IMAGES.cho[p.type]}" alt="${PIECE_NAMES.cho[p.type]}" style="width:${capW}px;height:${capH}px;"></div>`;
+          }).join('')
           : `<span style="color:#555;font-size:11px;">${L.capEmpty(L.cho)}</span>`}
       </div>
     <div class="controls">
