@@ -136,6 +136,7 @@ select {
   z-index: 1;
   width: 48px;
   height: 48px;
+  touch-action: manipulation;
 }
 .piece {
   width: 44px;
@@ -212,27 +213,38 @@ select {
     filter: drop-shadow(0 0 10px rgba(255,212,59,0.75));
   }
 }
-.captures-row {
-  display: flex;
-  gap: 8px;
-  width: 100%;
-  align-items: stretch;
+@keyframes ghostFade {
+  0% { opacity: 0.3; }
+  100% { opacity: 0; }
 }
-.captured-area {
+.game-layout {
   display: flex;
-  gap: 2px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  min-height: 34px;
-  padding: 5px 8px;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+  justify-content: center;
+}
+.captures-side {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 52px;
+  max-height: 504px;
+  overflow-y: auto;
+  padding: 4px;
   background: #16213e;
   border-radius: 8px;
-  flex: 1;
   align-items: center;
 }
-.captured-area::-webkit-scrollbar { height: 3px; }
-.captured-area::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-.captured-piece { display: inline-flex; align-items: center; }
+.captures-side::-webkit-scrollbar { width: 3px; }
+.captures-side::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+.captured-piece {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+.captured-piece img { width: 44px; height: 39px; object-fit: contain; }
 .captured-piece.cho img { filter: drop-shadow(0 0 2px rgba(255,135,135,0.5)); }
 .captured-piece.han img { filter: drop-shadow(0 0 2px rgba(105,219,124,0.5)); }
 .thinking {
@@ -272,7 +284,30 @@ select {
   50%       { filter: drop-shadow(0 0 18px rgba(255,80,80,1)) drop-shadow(0 0 32px rgba(255,0,0,1));  transform: scale(1.12); }
 }
 .piece.in-check {
-  animation: checkFlash 0.55s ease-in-out 4;
+  animation: checkFlash 0.55s ease-in-out 6;
+}
+@keyframes boardShake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(4px, 0); }
+  50% { transform: translate(-4px, 0); }
+  75% { transform: translate(2px, 0); }
+}
+.board-container.meonggun-shake {
+  animation: boardShake 0.3s ease-out;
+}
+.meonggun-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(255, 0, 0, 0.3);
+  border-radius: 8px;
+  pointer-events: none;
+  animation: overlayFade 0.4s ease-out;
+  z-index: 40;
+}
+@keyframes overlayFade {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
 }
 .animated-piece {
   position: absolute;
@@ -284,6 +319,38 @@ select {
   height: 39px;
   object-fit: contain;
   filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.4));
+}
+@media (max-width: 480px) {
+  body { overflow: auto; }
+  #app { max-width: 100%; padding: 12px; gap: 12px; }
+  h1 { font-size: 18px; letter-spacing: 2px; }
+  .cell { width: 36px; height: 36px; }
+  .piece { width: 33px; height: 33px; }
+  .piece img { width: 33px; height: 29px; }
+  .board { width: 324px; height: 360px; grid-template-columns: repeat(9, 36px); grid-template-rows: repeat(10, 36px); }
+  .board-lines { width: 324px; height: 360px; transform: scale(0.75); transform-origin: top left; }
+  .board-container { padding: 14px; width: 324px; }
+  .game-layout { gap: 10px; }
+  .captures-side { width: 44px; max-height: 374px; }
+  .captured-piece img { width: 33px; height: 29px; }
+  .animated-piece img { width: 33px; height: 29px; }
+  .status { font-size: 13px; padding: 6px 12px; }
+  button, select { font-size: 12px; padding: 6px 10px; }
+  .lang-btn { padding: 6px 10px; font-size: 12px; }
+  .top-bar { gap: 8px; }
+  .controls-row { gap: 6px; }
+  .btn-start, .btn-stop { padding: 8px 16px; font-size: 12px; }
+}
+@media (max-width: 380px) {
+  .cell { width: 30px; height: 30px; }
+  .piece { width: 28px; height: 28px; }
+  .piece img { width: 28px; height: 25px; }
+  .board { width: 270px; height: 300px; grid-template-columns: repeat(9, 30px); grid-template-rows: repeat(10, 30px); }
+  .board-lines { width: 270px; height: 300px; transform: scale(0.625); }
+  .board-container { padding: 10px; width: 270px; }
+  .captures-side { width: 38px; max-height: 310px; }
+  .captured-piece img { width: 28px; height: 25px; }
+  .animated-piece img { width: 28px; height: 25px; }
 }
 .nav-bar {
   display: flex;
@@ -494,7 +561,7 @@ function playAudio(path, volume = 1.0, playbackRate = 1.0) {
 }
 // 프리로드
 window.addEventListener('DOMContentLoaded', () => {
-  ['janggun.mp3'].forEach(f => {
+  ['janggun.mp3', 'meonggun.mp3'].forEach(f => {
     const a = new Audio('audio/' + f);
     a.preload = 'auto';
   });
@@ -512,41 +579,9 @@ function playCaptureSound() {
   setTimeout(() => playWoodKnock(0.5, 0.9), 80);
 }
 
-// 멍군 효과음 — 낮고 긴장감 있는 두 음 (Web Audio API 합성)
+// 멍군 효과음 — audio/meonggun.mp3 파일 재생
 function playMeonggunSound() {
-  const ctx = initAudioContext();
-  if (!ctx) return;
-  const now = ctx.currentTime;
-
-  // 두 음을 순서대로: 첫 음 높고 → 두 번째 음 낮음 (위협 느낌)
-  [[0, 220, 0.28], [0.22, 165, 0.32]].forEach(([offset, freq, dur]) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const dist = ctx.createWaveShaper();
-
-    // 약간의 거친 배음 (사각파 느낌)
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(freq, now + offset);
-    osc.frequency.linearRampToValueAtTime(freq * 0.88, now + offset + dur);
-
-    // 간단한 웨이브셰이퍼로 부드럽게
-    const curve = new Float32Array(256);
-    for (let i = 0; i < 256; i++) {
-      const x = (i * 2) / 256 - 1;
-      curve[i] = (Math.PI + 180) * x / (Math.PI + 180 * Math.abs(x));
-    }
-    dist.curve = curve;
-
-    gain.gain.setValueAtTime(0.0, now + offset);
-    gain.gain.linearRampToValueAtTime(0.22, now + offset + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + offset + dur);
-
-    osc.connect(dist);
-    dist.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now + offset);
-    osc.stop(now + offset + dur + 0.05);
-  });
+  playAudio(SND + 'meonggun.mp3', 1.0);
 }
 
 function playCheckSound(isMyKingInCheck) {
@@ -555,9 +590,27 @@ function playCheckSound(isMyKingInCheck) {
     // 장군 — 내가 상대 왕을 위협
     setTimeout(() => playAudio(SND + 'janggun.mp3', 1.0), 100);
   } else {
-    // 멍군 — AI가 내 왕을 위협, 긴장감 있는 경고음
-    setTimeout(() => playMeonggunSound(), 80);
+    // 멍군 — AI가 내 왕을 위협, 긴장감 있는 경고음 + 화면 떨림
+    setTimeout(() => {
+      playMeonggunSound();
+      triggerMeonggunEffect();
+    }, 80);
   }
+}
+
+function triggerMeonggunEffect() {
+  const boardContainer = document.querySelector('.board-container');
+  if (!boardContainer) return;
+  
+  // Screen shake
+  boardContainer.classList.add('meonggun-shake');
+  setTimeout(() => boardContainer.classList.remove('meonggun-shake'), 300);
+  
+  // Red overlay flash
+  const overlay = document.createElement('div');
+  overlay.className = 'meonggun-overlay';
+  boardContainer.appendChild(overlay);
+  setTimeout(() => overlay.remove(), 400);
 }
 
 function playWinSound() {
@@ -863,7 +916,7 @@ function isCheckmate(board, team) {
 // ============================================
 // AI ENGINE
 // ============================================
-function evaluateBoard(board, forTeam) {
+function evaluateBoard(board, forTeam, depth = 0) {
   let score = 0;
   const enemy = forTeam === CHO ? HAN : CHO;
 
@@ -905,10 +958,12 @@ function evaluateBoard(board, forTeam) {
     }
   }
 
-  // 기동성 보너스 (가능한 수 많을수록 유리)
-  const myMoves = getAllLegalMoves(board, forTeam).length;
-  const enemyMoves = getAllLegalMoves(board, enemy).length;
-  score += (myMoves - enemyMoves) * 0.04;
+  // 기동성 보너스 (depth < 4일 때만 계산)
+  if (depth < 4) {
+    const myMoves = getAllLegalMoves(board, forTeam).length;
+    const enemyMoves = getAllLegalMoves(board, enemy).length;
+    score += (myMoves - enemyMoves) * 0.04;
+  }
 
   // 장군 보너스
   if (isInCheck(board, enemy)) score += 2.5;
@@ -928,8 +983,9 @@ function orderMoves(board, moves) {
   });
 }
 
-function minimax(board, depth, alpha, beta, maximizing, team, enemy) {
-  if (depth === 0) return { score: evaluateBoard(board, team) };
+function minimax(board, depth, alpha, beta, maximizing, team, enemy, maxDepth = null) {
+  if (maxDepth === null) maxDepth = depth; // Set on first call
+  if (depth === 0) return { score: evaluateBoard(board, team, maxDepth) };
 
   const currentTeam = maximizing ? team : enemy;
   const moves = orderMoves(board, getAllLegalMoves(board, currentTeam));
@@ -944,7 +1000,7 @@ function minimax(board, depth, alpha, beta, maximizing, team, enemy) {
     let maxScore = -Infinity;
     for (const move of moves) {
       const { board: newBoard } = makeMove(board, move.from[0], move.from[1], move.to[0], move.to[1]);
-      const result = minimax(newBoard, depth - 1, alpha, beta, false, team, enemy);
+      const result = minimax(newBoard, depth - 1, alpha, beta, false, team, enemy, maxDepth);
       if (result.score > maxScore) {
         maxScore = result.score;
         bestMove = move;
@@ -957,7 +1013,7 @@ function minimax(board, depth, alpha, beta, maximizing, team, enemy) {
     let minScore = Infinity;
     for (const move of moves) {
       const { board: newBoard } = makeMove(board, move.from[0], move.from[1], move.to[0], move.to[1]);
-      const result = minimax(newBoard, depth - 1, alpha, beta, true, team, enemy);
+      const result = minimax(newBoard, depth - 1, alpha, beta, true, team, enemy, maxDepth);
       if (result.score < minScore) {
         minScore = result.score;
         bestMove = move;
@@ -1013,12 +1069,19 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
   const boardRect = boardContainer.getBoundingClientRect();
   const boardLeft = boardRect.left + 22; // padding
   const boardTop = boardRect.top + 22;
+  
+  // Get cell size from actual board element
+  const board = document.querySelector('.board');
+  const boardSize = board.getBoundingClientRect();
+  const cellSize = boardSize.width / 9;
+  const pieceW = cellSize * (44/48);
+  const pieceH = cellSize * (39/48);
 
   const piece = state.board[fromR][fromC];
   const pieceImg = PIECE_IMAGES[pieceTeam][pieceType];
 
-  const startX = boardLeft + fromC * 48 + 24;
-  const startY = boardTop + fromR * 48 + 24;
+  const startX = boardLeft + fromC * cellSize + cellSize/2;
+  const startY = boardTop + fromR * cellSize + cellSize/2;
 
   const animEl = document.createElement('div');
   animEl.className = 'animated-piece';
@@ -1026,11 +1089,11 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
   document.body.appendChild(animEl);
 
   const animImg = animEl.querySelector('img');
-  animImg.style.width = '44px';
-  animImg.style.height = '39px';
+  animImg.style.width = pieceW + 'px';
+  animImg.style.height = pieceH + 'px';
 
-  let currentX = startX - 22;
-  let currentY = startY - 19.5;
+  let currentX = startX - pieceW/2;
+  let currentY = startY - pieceH/2;
   animEl.style.left = currentX + 'px';
   animEl.style.top = currentY + 'px';
 
@@ -1086,8 +1149,8 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
 
     if (pieceType === TYPES.CHARIOT || pieceType === TYPES.KING || pieceType === TYPES.GUARD || pieceType === TYPES.SOLDIER) {
       // Direct straight line
-      const endX = boardLeft + toC * 48 + 24 - 22;
-      const endY = boardTop + toR * 48 + 24 - 19.5;
+      const endX = boardLeft + toC * cellSize + cellSize/2 - pieceW/2;
+      const endY = boardTop + toR * cellSize + cellSize/2 - pieceH/2;
       await moveToPoint(endX, endY, duration);
     } else if (pieceType === TYPES.CANNON) {
       // Find jumped piece
@@ -1108,8 +1171,8 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
       // Scale up
       await scaleAnimation(1.3, 75);
       // Move to destination
-      const endX = boardLeft + toC * 48 + 24 - 22;
-      const endY = boardTop + toR * 48 + 24 - 19.5;
+      const endX = boardLeft + toC * cellSize + cellSize/2 - pieceW/2;
+      const endY = boardTop + toR * cellSize + cellSize/2 - pieceH/2;
       await scaleAnimation(1, 75);
       await moveToPoint(endX, endY, duration);
     } else if (pieceType === TYPES.HORSE) {
@@ -1128,8 +1191,8 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
       const step1X = boardLeft + step1C * 48 + 24 - 22;
       const step1Y = boardTop + step1R * 48 + 24 - 19.5;
       await moveToPoint(step1X, step1Y, duration);
-      const endX = boardLeft + toC * 48 + 24 - 22;
-      const endY = boardTop + toR * 48 + 24 - 19.5;
+      const endX = boardLeft + toC * cellSize + cellSize/2 - pieceW/2;
+      const endY = boardTop + toR * cellSize + cellSize/2 - pieceH/2;
       await moveToPoint(endX, endY, duration);
 
     } else if (pieceType === TYPES.ELEPHANT) {
@@ -1155,8 +1218,8 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
       const step2X = boardLeft + step2C * 48 + 24 - 22;
       const step2Y = boardTop + step2R * 48 + 24 - 19.5;
       await moveToPoint(step2X, step2Y, duration);
-      const endX = boardLeft + toC * 48 + 24 - 22;
-      const endY = boardTop + toR * 48 + 24 - 19.5;
+      const endX = boardLeft + toC * cellSize + cellSize/2 - pieceW/2;
+      const endY = boardTop + toR * cellSize + cellSize/2 - pieceH/2;
       await moveToPoint(endX, endY, duration);
     }
 
@@ -1205,6 +1268,23 @@ const LANG = {
     retry: 'もう一度',
     diff: ['入門','初級','中級','上級','最強'],
     capEmpty: t => `${t}の捕獲なし`,
+  },
+  en: {
+    title: 'Baby Janggi', subtitle: 'Baby Janggi · 베이비장기 · ベビー韓将棋',
+    home: '← Home', newGame: '▶ New Game', resign: '■ Resign',
+    aiMode: 'vs AI', pvpMode: 'vs Player',
+    hint: '💡 Hint', hintOn: '💡 Hint ON',
+    anim: '🎬 Anim', animOn: '🎬 Anim ON',
+    cho: 'Cho', han: 'Han',
+    turn: t => `${t}'s turn`, check: ' — ⚠️ Check!',
+    aiThinking: 'AI thinking...',
+    win: t => `🏆 ${t} wins!`,
+    winAI: 'Congratulations! You beat the AI!',
+    loseAI: 'The AI won. Try again!',
+    winP: t => `${t} player wins!`,
+    retry: 'Play again',
+    diff: ['Beginner','Novice','Intermediate','Advanced','Master'],
+    capEmpty: t => `${t} no captures`,
   }
 };
 function T(key) { return LANG[state.lang][key]; }
@@ -1226,7 +1306,8 @@ let state = {
   lastMove: null,
   moveHistory: [],
   lang: 'ko',
-  inCheck: null
+  inCheck: null,
+  lastMoveGhost: null
 };
 
 function resetGame() {
@@ -1242,6 +1323,7 @@ function resetGame() {
   state.lastMove = null;
   state.moveHistory = [];
   state.inCheck = null;
+  state.lastMoveGhost = null;
   if (state.showRecommend) {
     state.recommended = getRecommendedMoves(state.board, state.turn);
   }
@@ -1269,6 +1351,7 @@ function selectPiece(col, row) {
     state.selected = null;
     state.legalMoves = [];
   }
+  state.lastMoveGhost = null;
   render();
 }
 
@@ -1342,12 +1425,14 @@ function executeMove(fromC, fromR, toC, toR) {
             }
             state.board = nb;
             state.lastMove = { from: aiMove.from, to: aiMove.to };
+            state.lastMoveGhost = { col: aiMove.from[0], row: aiMove.from[1], team: aiPiece.team, type: aiPiece.type };
             state.moveHistory.push(state.lastMove);
 
             if (isCheckmate(state.board, CHO)) {
               state.gameOver = true;
               state.winner = HAN;
               state.recommended = [];
+              state.lastMoveGhost = null;
               playWinSound();
             } else {
               if (isInCheck(state.board, CHO)) {
@@ -1369,10 +1454,11 @@ function executeMove(fromC, fromR, toC, toR) {
           state.aiThinking = false;
           state.gameOver = true;
           state.winner = CHO;
+          state.lastMoveGhost = null;
           playWinSound();
           render();
         }
-      }, 300);
+      }, 50);
     }
   };
 
@@ -1384,6 +1470,11 @@ function executeMove(fromC, fromR, toC, toR) {
 // ============================================
 function render() {
   const app = document.getElementById('app');
+  
+  // Calculate responsive cell size
+  let cellSize = 48;
+  if (window.innerWidth <= 480) cellSize = 36;
+  if (window.innerWidth <= 380) cellSize = 30;
 
   // Status text
   const L = LANG[state.lang];
@@ -1482,16 +1573,18 @@ function render() {
     <div class="nav-bar">
       <a href="../../index.html" class="home-btn">${L.home}</a>
       <h1 translate="no" style="font-size:20px;letter-spacing:3px;">${L.title}</h1>
-      <button class="lang-btn" onclick="changeLang('${state.lang === 'ko' ? 'ja' : 'ko'}')">${state.lang === 'ko' ? '🇯🇵 JP' : '🇰🇷 KO'}</button>
+      <button class="lang-btn" onclick="cycleLang()">${state.lang === 'ko' ? '🇰🇷 KO' : state.lang === 'ja' ? '🇯🇵 JP' : '🇬🇧 EN'}</button>
     </div>
     <div class="top-bar">
       <div class="status ${statusClass}">${statusText}</div>
     </div>
-    <div class="captures-row">
-      <div class="captured-area">${capturedCho || `<span style="color:#555;font-size:11px;white-space:nowrap;">${L.capEmpty(L.cho)}</span>`}</div>
-      <div class="captured-area">${capturedHan || `<span style="color:#555;font-size:11px;white-space:nowrap;">${L.capEmpty(L.han)}</span>`}</div>
-    </div>
-    <div class="board-container">
+    <div class="game-layout">
+      <div class="captures-side">
+        ${sortByValue(state.captured.cho).length > 0
+          ? sortByValue(state.captured.cho).map(p => `<div class="captured-piece cho"><img src="${PIECE_IMAGES.cho[p.type]}" alt="${PIECE_NAMES.cho[p.type]}"></div>`).join('')
+          : `<span style="color:#555;font-size:9px;text-align:center;padding:4px;">${L.capEmpty(L.cho)}</span>`}
+      </div>
+      <div class="board-container">
       <svg class="board-lines" viewBox="0 0 432 480" xmlns="http://www.w3.org/2000/svg">
         ${(() => {
           let lines = '';
@@ -1515,6 +1608,13 @@ function render() {
         })()}
       </svg>
       <div class="board">${boardCells}</div>
+      ${state.lastMoveGhost ? `<div class="ghost-piece" style="position: absolute; left: ${state.lastMoveGhost.col * cellSize + 22}px; top: ${state.lastMoveGhost.row * cellSize + 22}px; width: ${cellSize * 0.917}px; height: ${cellSize * 0.8125}px; pointer-events: none; z-index: 15; opacity: 0.3; animation: ghostFade 2s ease-out forwards;"><img src="${PIECE_IMAGES[state.lastMoveGhost.team][state.lastMoveGhost.type]}" style="width: ${cellSize * 0.917}px; height: ${cellSize * 0.8125}px; object-fit: contain;"></div>` : ''}
+    </div>
+    </div>
+    <div class="captures-side">
+      ${sortByValue(state.captured.han).length > 0 
+        ? sortByValue(state.captured.han).map(p => `<div class="captured-piece han"><img src="${PIECE_IMAGES.han[p.type]}" alt="${PIECE_NAMES.han[p.type]}"></div>`).join('')
+        : `<span style="color:#555;font-size:9px;text-align:center;padding:4px;">${L.capEmpty(L.han)}</span>`}
     </div>
     <div class="controls">
       <div class="controls-row">
@@ -1560,6 +1660,13 @@ function render() {
       selectPiece(col, row);
     });
   });
+}
+
+function cycleLang() {
+  const langs = ['ko', 'ja', 'en'];
+  const currentIndex = langs.indexOf(state.lang);
+  state.lang = langs[(currentIndex + 1) % langs.length];
+  render();
 }
 
 function changeLang(lang) {
