@@ -589,23 +589,19 @@ function playCaptureSound() {
   setTimeout(() => playWoodKnock(0.5, 0.9), 80);
 }
 
-// 멍군 효과음 — audio/meonggun.mp3 파일 재생
-function playMeonggunSound() {
-  playAudio(SND + 'meonggun.mp3', 1.0);
+// 장군 — 공격하는 쪽이 외침 (초/한 모두)
+function playJanggunSound() {
+  playWoodKnock(0.6, 1.2);
+  setTimeout(() => playAudio(SND + 'janggun.mp3', 1.0), 100);
 }
 
-function playCheckSound(isMyKingInCheck) {
-  playWoodKnock(0.6, 1.2);
-  if (!isMyKingInCheck) {
-    // 장군 — 내가 상대 왕을 위협
-    setTimeout(() => playAudio(SND + 'janggun.mp3', 1.0), 100);
-  } else {
-    // 멍군 — AI가 내 왕을 위협, 긴장감 있는 경고음 + 화면 떨림
-    setTimeout(() => {
-      playMeonggunSound();
-      triggerMeonggunEffect();
-    }, 80);
-  }
+// 멍군 — 장군을 피한 쪽이 외침 + 화면 떨림
+function playMeonggunSound() {
+  playWoodKnock(0.5, 0.95);
+  setTimeout(() => {
+    playAudio(SND + 'meonggun.mp3', 1.0);
+    triggerMeonggunEffect();
+  }, 80);
 }
 
 function triggerMeonggunEffect() {
@@ -1268,7 +1264,7 @@ const LANG = {
     hint: '💡 훈수', hintOn: '💡 훈수 ON',
     anim: '🎬 애니', animOn: '🎬 애니 ON',
     cho: '초(楚)', han: '한(漢)',
-    turn: t => `${t}의 차례`, check: ' — ⚠️ 장군!',
+    turn: t => `${t}의 차례`, check: ' — ⚠️ 장군!', meonggun: ' — 멍군!',
     aiThinking: 'AI 생각 중...',
     win: t => `🏆 ${t} 승리!`,
     winAI: '축하합니다! AI를 이겼습니다!',
@@ -1285,7 +1281,7 @@ const LANG = {
     hint: '💡 助言', hintOn: '💡 助言 ON',
     anim: '🎬 アニメ', animOn: '🎬 アニメ ON',
     cho: '楚(そ)', han: '漢(かん)',
-    turn: t => `${t}の番`, check: ' — ⚠️ 将軍!',
+    turn: t => `${t}の番`, check: ' — ⚠️ 将軍!', meonggun: ' — 멍군!',
     aiThinking: 'AI思考中...',
     win: t => `🏆 ${t}の勝利!`,
     winAI: 'おめでとう！AIに勝ちました！',
@@ -1302,7 +1298,7 @@ const LANG = {
     hint: '💡 Hint', hintOn: '💡 Hint ON',
     anim: '🎬 Anim', animOn: '🎬 Anim ON',
     cho: 'Cho', han: 'Han',
-    turn: t => `${t}'s turn`, check: ' — ⚠️ Check!',
+    turn: t => `${t}'s turn`, check: ' — ⚠️ Check!', meonggun: ' — Meonggun!',
     aiThinking: 'AI thinking...',
     win: t => `🏆 ${t} wins!`,
     winAI: 'Congratulations! You beat the AI!',
@@ -1333,7 +1329,8 @@ let state = {
   moveHistory: [],
   lang: 'ko',
   inCheck: null,
-  lastMoveGhost: null
+  lastMoveGhost: null,
+  justMeonggun: false
 };
 
 // WASM Engine
@@ -1459,6 +1456,7 @@ function resetGame() {
   state.moveHistory = [];
   state.inCheck = null;
   state.lastMoveGhost = null;
+  state.justMeonggun = false;
   wasmMoveHistory = [];
   if (wasmReady) {
     wasmEngine.postMessage('ucinewgame');
@@ -1499,6 +1497,8 @@ function selectPiece(col, row) {
 function executeMove(fromC, fromR, toC, toR) {
   const piece = state.board[fromR][fromC];
   const isCapture = state.board[toR][toC] !== null;
+  // 이동 전에 내 왕이 장군 상태였는지 기억 (피하면 멍군)
+  const wasInCheckBefore = isInCheck(state.board, state.turn);
 
   const executeMoveFinal = () => {
     const { board: newBoard, captured } = makeMove(state.board, fromC, fromR, toC, toR);
@@ -1529,10 +1529,17 @@ function executeMove(fromC, fromR, toC, toR) {
       return;
     }
 
-    // Check for check — 내가 상대 장군
+    // 장군/멍군 효과음
+    state.justMeonggun = false;
     if (isInCheck(state.board, enemy)) {
-      playCheckSound(false); // "장군!" 음성
-      state.inCheck = enemy; // 상대 왕 깜빡임
+      // 상대 왕을 위협 → 장군! (내가 외침)
+      playJanggunSound();
+      state.inCheck = enemy;
+    } else if (wasInCheckBefore) {
+      // 장군 상태에서 벗어남 → 멍군! (피한 내가 외침)
+      playMeonggunSound();
+      state.inCheck = null;
+      state.justMeonggun = true;
     } else {
       state.inCheck = null;
     }
@@ -1562,6 +1569,9 @@ function executeMove(fromC, fromR, toC, toR) {
           const uciMove = boardToMoveStr(aiMove.from[0], aiMove.from[1], aiMove.to[0], aiMove.to[1]);
           wasmMoveHistory.push(uciMove);
 
+          // AI 이동 전에 AI 왕(HAN)이 장군 상태였는지 기억 (피하면 멍군)
+          const aiWasInCheckBefore = isInCheck(state.board, HAN);
+
           // Set ghost BEFORE animation starts — ghost stays at original position
           state.lastMoveGhost = { col: aiMove.from[0], row: aiMove.from[1], team: aiPiece.team, type: aiPiece.type };
           // Hide the original piece visually during animation
@@ -1589,9 +1599,17 @@ function executeMove(fromC, fromR, toC, toR) {
               state.lastMoveGhost = null;
               playWinSound();
             } else {
+              // 장군/멍군 효과음
+              state.justMeonggun = false;
               if (isInCheck(state.board, CHO)) {
-                playCheckSound(true); // 멍군 — 오디오 없음, 시각 효과만
-                state.inCheck = CHO;  // 내 왕(초) 깜빡임
+                // AI가 내 왕을 위협 → 장군! (AI가 외침)
+                playJanggunSound();
+                state.inCheck = CHO;
+              } else if (aiWasInCheckBefore) {
+                // AI가 장군 상태에서 벗어남 → 멍군! (AI가 피하며 외침)
+                playMeonggunSound();
+                state.inCheck = null;
+                state.justMeonggun = true;
               } else {
                 state.inCheck = null;
               }
@@ -1653,9 +1671,12 @@ function render() {
     statusText = `<span class="thinking">${L.aiThinking}</span>`;
     statusClass = 'han-turn';
   } else {
-    const check = isInCheck(state.board, state.turn);
+    const inCheck = isInCheck(state.board, state.turn);
     const turnName = state.turn === CHO ? L.cho : L.han;
-    statusText = L.turn(turnName) + (check ? L.check : '');
+    let suffix = '';
+    if (inCheck) suffix = L.check;              // 현재 장군 상태
+    else if (state.justMeonggun) suffix = L.meonggun; // 방금 멍군
+    statusText = L.turn(turnName) + suffix;
     statusClass = state.turn === CHO ? 'cho-turn' : 'han-turn';
   }
 
