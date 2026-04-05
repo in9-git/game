@@ -380,7 +380,7 @@ body {
         <button onclick="setLang('en')" data-lang="en">EN</button>
       </div>
       <div class="header-stats">
-        <span data-i18n="games">게임 <span class="stat-num" id="totalGames">4</span></span>
+        <span data-i18n="games">게임 <span class="stat-num" id="totalGames">2</span></span>
         <span data-i18n="categories">카테고리 <span class="stat-num">8</span></span>
       </div>
     </div>
@@ -515,6 +515,7 @@ body {
           <span class="tag tag-ai" id="tag-grid-janggi-ai">AI</span>
         </div>
         <div class="game-card-title" id="janggi-grid-title">애기장기</div>
+        <div class="game-card-desc" id="janggi-grid-sub" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">ベビー将棋 / Baby Janggi</div>
         <div class="game-card-desc" id="janggi-grid-desc">AI 훈수와 함께하는 한국 전통 장기</div>
       </div>
     </a>
@@ -526,33 +527,28 @@ body {
           <span class="tag tag-hot">HOT</span>
         </div>
         <div class="game-card-title" id="kitchen-grid-title">폭주키친</div>
+        <div class="game-card-desc" id="kitchen-grid-sub" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">暴走キッチン / Runaway Kitchen</div>
         <div class="game-card-desc" id="kitchen-grid-desc">폭주 요리 합성 시뮬레이션</div>
       </div>
     </a>
 
-    <a class="game-card" href="puzzle/yaminabe/" data-cat="puzzle,casual">
-      <div class="game-card-banner" style="background: linear-gradient(135deg, #2d1b4e, #1a1a2e);">🍲</div>
+    <div class="game-card coming-soon" data-cat="puzzle,casual">
+      <div class="game-card-banner" style="background: linear-gradient(135deg, #2d1b4e, #1a1a2e); opacity:0.5;">🍲</div>
       <div class="game-card-body">
-        <div class="card-tags" style="margin-bottom:8px;">
-          <span class="tag tag-cat" id="tag-grid-yami">퍼즐</span>
-        </div>
-        <div class="game-card-title" id="yami-title">어둠냄비 퍼즐</div>
-        <div class="game-card-desc" id="yami-sub" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">闇鍋パズル / Yami Nabe Puzzle</div>
-        <div class="game-card-desc" id="yami-desc">마계의 어둠냄비 소재 합성 퍼즐</div>
+        <div class="game-card-title" id="yami-title" style="color:var(--text-dim);">어둠냄비 퍼즐</div>
+        <div class="game-card-desc" id="yami-sub" style="font-size:11px;color:var(--text-dim);">闇鍋パズル / Yami Nabe Puzzle</div>
+        <div class="game-card-desc" id="yami-desc" style="color:var(--text-dim);font-size:12px;">Coming Soon</div>
       </div>
-    </a>
+    </div>
 
-    <a class="game-card" href="puzzle/tondemo-kagu/" data-cat="puzzle,simulation">
-      <div class="game-card-banner" style="background: linear-gradient(135deg, #1b3a2d, #1a2e1a);">🔨</div>
+    <div class="game-card coming-soon" data-cat="puzzle,simulation">
+      <div class="game-card-banner" style="background: linear-gradient(135deg, #1b3a2d, #1a2e1a); opacity:0.5;">🔨</div>
       <div class="game-card-body">
-        <div class="card-tags" style="margin-bottom:8px;">
-          <span class="tag tag-cat" id="tag-grid-kagu">퍼즐</span>
-        </div>
-        <div class="game-card-title" id="kagu-title">엉뚱가구 공방</div>
-        <div class="game-card-desc" id="kagu-sub" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">トンデモ家具工房 / Tondemo Furniture</div>
-        <div class="game-card-desc" id="kagu-desc">엉뚱한 가구 조립 공방</div>
+        <div class="game-card-title" id="kagu-title" style="color:var(--text-dim);">엉뚱가구 공방</div>
+        <div class="game-card-desc" id="kagu-sub" style="font-size:11px;color:var(--text-dim);">トンデモ家具工房 / Tondemo Furniture</div>
+        <div class="game-card-desc" id="kagu-desc" style="color:var(--text-dim);font-size:12px;">Coming Soon</div>
       </div>
-    </a>
+    </div>
 
     <!-- Coming Soon placeholders -->
     <div class="game-card coming-soon" data-cat="action">
@@ -607,10 +603,10 @@ const I18N = {
     kitchenGridDesc: '폭주 요리 합성 시뮬레이션',
     yamiTitle: '어둠냄비 퍼즐',
     yamiSub: '闇鍋パズル / Yami Nabe Puzzle',
-    yamiDesc: '마계의 어둠냄비 소재 합성 퍼즐',
+    yamiDesc: 'Coming Soon',
     kaguTitle: '엉뚱가구 공방',
     kaguSub: 'トンデモ家具工房 / Tondemo Furniture',
-    kaguDesc: '엉뚱한 가구 조립 공방',
+    kaguDesc: 'Coming Soon',
     comingSoon: 'Coming Soon', actionSoon: '새로운 액션 게임 준비 중...', rpgSoon: '새로운 RPG 게임 준비 중...',
     allGames: '전체 게임',
     footer: '© 2026 in-9.com — 누구나 바로 시작할 수 있는 게임',
@@ -640,10 +636,10 @@ const I18N = {
     kitchenGridDesc: '暴走クッキングシミュレーション',
     yamiTitle: '闇鍋パズル',
     yamiSub: '어둠냄비 퍼즐 / Yami Nabe Puzzle',
-    yamiDesc: '魔界の闇鍋素材合成パズル',
+    yamiDesc: 'Coming Soon',
     kaguTitle: 'トンデモ家具工房',
     kaguSub: '엉뚱가구 공방 / Tondemo Furniture',
-    kaguDesc: 'おかしな家具組み立て工房',
+    kaguDesc: 'Coming Soon',
     comingSoon: 'Coming Soon', actionSoon: '新しいアクションゲーム準備中...', rpgSoon: '新しいRPGゲーム準備中...',
     allGames: '全ゲーム',
     footer: '© 2026 in-9.com — 誰でもすぐ遊べるゲーム',
@@ -673,10 +669,10 @@ const I18N = {
     kitchenGridDesc: 'Crazy cooking simulation',
     yamiTitle: 'Yami Nabe Puzzle',
     yamiSub: '어둠냄비 퍼즐 / 闇鍋パズル',
-    yamiDesc: 'Dark pot ingredient synthesis puzzle',
+    yamiDesc: 'Coming Soon',
     kaguTitle: 'Tondemo Furniture',
     kaguSub: '엉뚱가구 공방 / トンデモ家具工房',
-    kaguDesc: 'Wacky furniture assembly workshop',
+    kaguDesc: 'Coming Soon',
     comingSoon: 'Coming Soon', actionSoon: 'New action game in progress...', rpgSoon: 'New RPG game in progress...',
     allGames: 'All Games',
     footer: '© 2026 in-9.com — Games anyone can start right away',
@@ -726,11 +722,13 @@ function applyI18N() {
     'cat-sim': L.catSim, 'cat-strategy': L.catStrategy, 'cat-casual': L.catCasual,
     'cat-action': L.catAction, 'cat-rpg': L.catRPG,
     'janggi-grid-title': L.janggiGrid,
+    'janggi-grid-sub': L.janggiSub,
     'janggi-grid-desc': L.janggiGridDesc,
     'kitchen-grid-title': L.kitchenGrid,
+    'kitchen-grid-sub': L.kitchenSub,
     'kitchen-grid-desc': L.kitchenGridDesc,
-    'yami-title': L.yamiTitle, 'yami-sub': L.yamiSub, 'yami-desc': L.yamiDesc,
-    'kagu-title': L.kaguTitle, 'kagu-sub': L.kaguSub, 'kagu-desc': L.kaguDesc,
+    'yami-title': L.yamiTitle, 'yami-sub': L.yamiSub, 'yami-desc': L.yamiDesc || L.comingSoon,
+    'kagu-title': L.kaguTitle, 'kagu-sub': L.kaguSub, 'kagu-desc': L.kaguDesc || L.comingSoon,
     'action-soon': L.actionSoon, 'rpg-soon': L.rpgSoon,
     'all-games-title': L.allGames,
     'footer-text': L.footer,
@@ -746,7 +744,7 @@ function applyI18N() {
   // Header stats
   const statsGames = document.querySelector('[data-i18n="games"]');
   const statsCats = document.querySelector('[data-i18n="categories"]');
-  if (statsGames) statsGames.innerHTML = `${L.games} <span class="stat-num" id="totalGames">4</span>`;
+  if (statsGames) statsGames.innerHTML = `${L.games} <span class="stat-num" id="totalGames">2</span>`;
   if (statsCats) statsCats.innerHTML = `${L.categories} <span class="stat-num">8</span>`;
   // Coming soon
   document.querySelectorAll('.coming-soon .game-card-title').forEach(el => el.textContent = L.comingSoon);
