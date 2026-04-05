@@ -3,7 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>game.in-9.com — 게임 포털</title>
+<title>in-9 Games — 누구나 바로 시작할 수 있는 게임</title>
+<meta name="description" content="in-9 Games — 누구나 바로 시작할 수 있는 게임 포털. AI 장기, 퍼즐, 시뮬레이션 등 다양한 게임을 바로 플레이하세요.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="in-9 Games">
+<meta property="og:description" content="누구나 바로 시작할 수 있는 게임 포털">
+<meta property="og:url" content="https://game.in-9.com">
+<meta property="og:image" content="https://game.in-9.com/assets/og-image.png">
+<meta property="og:site_name" content="in-9 Games">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="in-9 Games">
+<meta name="twitter:description" content="누구나 바로 시작할 수 있는 게임 포털">
+<meta name="twitter:image" content="https://game.in-9.com/assets/og-image.png">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
@@ -342,6 +353,15 @@ body {
   .categories { grid-template-columns: repeat(2, 1fr); }
   .hero h2 { font-size: 15px; }
 }
+.lang-switch { display: flex; gap: 4px; }
+.lang-switch button {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+  padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;
+}
+.lang-switch button.active {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+}
+.lang-switch button:hover { border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -353,9 +373,16 @@ body {
       <span class="logo-mark">in-9 Games</span>
       <span class="logo-domain">game.in-9.com</span>
     </div>
-    <div class="header-stats">
-      <span>게임 <span class="stat-num" id="totalGames">4</span></span>
-      <span>카테고리 <span class="stat-num">8</span></span>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="lang-switch" id="langSwitch">
+        <button onclick="setLang('ko')" data-lang="ko">한국어</button>
+        <button onclick="setLang('ja')" data-lang="ja">日本語</button>
+        <button onclick="setLang('en')" data-lang="en">EN</button>
+      </div>
+      <div class="header-stats">
+        <span data-i18n="games">게임 <span class="stat-num" id="totalGames">4</span></span>
+        <span data-i18n="categories">카테고리 <span class="stat-num">8</span></span>
+      </div>
     </div>
   </div>
 </header>
@@ -363,49 +390,65 @@ body {
 <!-- Hero with Logo -->
 <section class="hero">
   <div style="max-width:480px; margin:0 auto 16px;">
-    <svg viewBox="0 0 600 200" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 600 220" width="100%" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="swooshGrad" x1="0%" y1="100%" x2="100%" y2="0%">
           <stop offset="0%" stop-color="#7c3aed"/>
-          <stop offset="45%" stop-color="#FF6B00"/>
+          <stop offset="40%" stop-color="#FF6B00"/>
           <stop offset="100%" stop-color="#ff4081"/>
         </linearGradient>
         <filter id="swooshGlow">
-          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feGaussianBlur stdDeviation="5" result="blur"/>
           <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
         <filter id="touchGlow">
-          <feGaussianBlur stdDeviation="8" result="blur"/>
+          <feGaussianBlur stdDeviation="12" result="blur"/>
           <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
         <radialGradient id="touchFill" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#a78bfa" stop-opacity="1"/>
-          <stop offset="60%" stop-color="#7c3aed" stop-opacity="0.8"/>
-          <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.5"/>
+          <stop offset="0%" stop-color="white" stop-opacity="0.95"/>
+          <stop offset="30%" stop-color="#a78bfa" stop-opacity="0.9"/>
+          <stop offset="70%" stop-color="#7c3aed" stop-opacity="0.6"/>
+          <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="fingerGrad" cx="40%" cy="35%" r="55%">
+          <stop offset="0%" stop-color="#f5dcc0" stop-opacity="0.45"/>
+          <stop offset="50%" stop-color="#e8c9a8" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#d4a574" stop-opacity="0"/>
         </radialGradient>
       </defs>
-      <!-- Swoosh -->
-      <g transform="translate(97, -111) scale(0.32)">
-        <path d="M245.8075 717.62406c-29.79588-1.1837-54.1734-9.3368-73.23459-24.4796-3.63775-2.8928-12.30611-11.5663-15.21427-15.2245-7.72958-9.7193-12.98467-19.1785-16.48977-29.6734-10.7857-32.3061-5.23469-74.6989 15.87753-121.2243 18.0765-39.8316 45.96932-79.3366 94.63252-134.0508 7.16836-8.0511 28.51526-31.5969 28.65302-31.5969.051 0-1.11225 2.0153-2.57652 4.4694-12.65304 21.1938-23.47957 46.158-29.37751 67.7703-9.47448 34.6785-8.33163 64.4387 3.34693 87.5151 8.05611 15.898 21.86731 29.6684 37.3979 37.2806 27.18874 13.3214 66.9948 14.4235 115.60699 3.2245 3.34694-.7755 169.19363-44.801 368.55048-97.8366 199.35686-53.0408 362.49439-96.4029 362.51989-96.3672.056.046-463.16259 198.2599-703.62654 301.0914-38.08158 16.2806-48.26521 20.3928-66.16827 26.6785-45.76525 16.0714-86.76008 23.7398-119.89779 22.4235z"
-              fill="url(#swooshGrad)" filter="url(#swooshGlow)"/>
+      <!-- Swoosh: sharper check-mark bend -->
+      <path d="M80,160 Q120,162 155,115 Q165,98 170,100 Q180,104 220,70 C300,20 420,8 540,30"
+            stroke="url(#swooshGrad)" stroke-width="6" fill="none"
+            stroke-linecap="round" filter="url(#swooshGlow)"/>
+      <path d="M80,160 Q120,162 155,115 Q165,98 170,100 Q180,104 220,70 C300,20 420,8 540,30"
+            stroke="url(#swooshGrad)" stroke-width="2.5" fill="none"
+            stroke-linecap="round" opacity="0.7"/>
+      <!-- Touch point at the bend (the "check" corner) — bigger & stronger -->
+      <circle cx="168" cy="105" r="18" fill="url(#touchFill)" filter="url(#touchGlow)"/>
+      <circle cx="168" cy="105" r="30" fill="none" stroke="#a78bfa" stroke-width="2.5" opacity="0.55"/>
+      <circle cx="168" cy="105" r="46" fill="none" stroke="#7c3aed" stroke-width="2" opacity="0.3"/>
+      <circle cx="168" cy="105" r="65" fill="none" stroke="#7c3aed" stroke-width="1.2" opacity="0.15"/>
+      <!-- Transparent finger silhouette -->
+      <g transform="translate(148, 55) rotate(15)" opacity="0.35">
+        <!-- finger tip -->
+        <ellipse cx="20" cy="10" rx="14" ry="20" fill="url(#fingerGrad)"/>
+        <!-- finger body -->
+        <rect x="8" y="10" width="24" height="42" rx="10" fill="#d4a574" opacity="0.2"/>
+        <!-- knuckle hint -->
+        <ellipse cx="20" cy="52" rx="16" ry="10" fill="#d4a574" opacity="0.12"/>
       </g>
-      <!-- Touch Ripple -->
-      <circle cx="161" cy="114" r="12" fill="url(#touchFill)" filter="url(#touchGlow)"/>
-      <circle cx="161" cy="114" r="22" fill="none" stroke="#7c3aed" stroke-width="2.5" opacity="0.6"/>
-      <circle cx="161" cy="114" r="34" fill="none" stroke="#7c3aed" stroke-width="1.8" opacity="0.35"/>
-      <circle cx="161" cy="114" r="48" fill="none" stroke="#7c3aed" stroke-width="1.2" opacity="0.18"/>
-      <circle cx="161" cy="114" r="64" fill="none" stroke="#7c3aed" stroke-width="0.7" opacity="0.08"/>
       <!-- Text -->
-      <text x="300" y="172" text-anchor="middle"
+      <text x="300" y="192" text-anchor="middle"
             font-family="'Futura', 'Helvetica Neue', 'Arial Black', sans-serif"
-            font-size="48" font-weight="900" font-style="italic"
+            font-size="50" font-weight="900" font-style="italic"
             fill="white" letter-spacing="-2">
-        Just play it.
+        Just play.
       </text>
     </svg>
   </div>
-  <span class="featured-label">Featured Games</span>
-  <h2>누구나 바로 시작할 수 있는 게임</h2>
+  <span class="featured-label" id="featured-label">Featured Games</span>
+  <h2 id="hero-sub">누구나 바로 시작할 수 있는 게임</h2>
 </section>
 
 <!-- Featured Games -->
@@ -414,79 +457,79 @@ body {
     <div class="card-banner janggi">♟️</div>
     <div class="card-body">
       <div class="card-tags">
-        <span class="tag tag-new">NEW</span>
-        <span class="tag tag-ai">AI 대전</span>
-        <span class="tag tag-cat">보드</span>
+        <span class="tag tag-new" id="tag-janggi-new">NEW</span>
+        <span class="tag tag-ai" id="tag-janggi-ai">AI 대전</span>
+        <span class="tag tag-cat" id="tag-janggi-board">보드</span>
       </div>
-      <div class="card-title">베이비장기</div>
-      <div class="card-subtitle">Baby Janggi / ベビー韓将棋</div>
-      <div class="card-desc">
+      <div class="card-title" id="janggi-title">애기장기</div>
+      <div class="card-subtitle" id="janggi-sub">Baby Janggi / ベビー将棋</div>
+      <div class="card-desc" id="janggi-desc">
         장기를 몰라도 바로 시작! AI가 추천하는 훈수를 보며 자연스럽게 배우는 한국 전통 장기.
         AI 5단계 난이도 · 2인 대전 · 훈수 시스템
       </div>
-      <span class="play-btn">▶ 지금 플레이</span>
+      <span class="play-btn" id="janggi-play">▶ 지금 플레이</span>
     </div>
   </a>
   <a class="featured-card" href="casual/bousou-kitchen/" data-cat="simulation,casual">
     <div class="card-banner kitchen">🍳</div>
     <div class="card-body">
       <div class="card-tags">
-        <span class="tag tag-hot">HOT</span>
-        <span class="tag tag-cat">시뮬레이션</span>
-        <span class="tag tag-cat">캐주얼</span>
+        <span class="tag tag-hot" id="tag-kitchen-hot">HOT</span>
+        <span class="tag tag-cat" id="tag-kitchen-sim">시뮬레이션</span>
+        <span class="tag tag-cat" id="tag-kitchen-casual">캐주얼</span>
       </div>
-      <div class="card-title">暴走キッチン</div>
-      <div class="card-subtitle">폭주키친 / Runaway Kitchen</div>
-      <div class="card-desc">
+      <div class="card-title" id="kitchen-title">暴走キッチン</div>
+      <div class="card-subtitle" id="kitchen-sub">폭주키친 / Runaway Kitchen</div>
+      <div class="card-desc" id="kitchen-desc">
         제한 시간 안에 미친 조합으로 요리를 만들어라! 재료를 합성해 엉뚱한 요리를 완성하는 캐주얼 쿠킹 게임.
       </div>
-      <span class="play-btn">▶ 지금 플레이</span>
+      <span class="play-btn" id="kitchen-play">▶ 지금 플레이</span>
     </div>
   </a>
 </section>
 
 <!-- Categories -->
 <section class="categories-section">
-  <h3 class="section-title">카테고리</h3>
+  <h3 class="section-title" id="cat-title">카테고리</h3>
   <div class="categories">
     <div class="cat-card" data-filter="all" onclick="filterGames('all')">
       <div class="cat-icon">🎮</div>
-      <div class="cat-name">전체</div>
-      <div class="cat-count" id="count-all">4 games</div>
+      <div class="cat-name" id="cat-all">전체</div>
+      <div class="cat-count">4 games</div>
     </div>
     <div class="cat-card" data-filter="board" onclick="filterGames('board')">
       <div class="cat-icon">♟️</div>
-      <div class="cat-name">보드</div>
+      <div class="cat-name" id="cat-board">보드</div>
       <div class="cat-count">1 game</div>
     </div>
     <div class="cat-card" data-filter="puzzle" onclick="filterGames('puzzle')">
       <div class="cat-icon">🧩</div>
-      <div class="cat-name">퍼즐</div>
+      <div class="cat-name" id="cat-puzzle">퍼즐</div>
       <div class="cat-count">2 games</div>
     </div>
     <div class="cat-card" data-filter="simulation" onclick="filterGames('simulation')">
       <div class="cat-icon">🏗️</div>
-      <div class="cat-name">시뮬레이션</div>
+      <div class="cat-name" id="cat-sim">시뮬레이션</div>
       <div class="cat-count">1 game</div>
     </div>
     <div class="cat-card" data-filter="strategy" onclick="filterGames('strategy')">
       <div class="cat-icon">🧠</div>
-      <div class="cat-name">전략</div>
+      <div class="cat-name" id="cat-strategy">전략</div>
       <div class="cat-count">1 game</div>
     </div>
     <div class="cat-card" data-filter="casual" onclick="filterGames('casual')">
       <div class="cat-icon">☕</div>
-      <div class="cat-name">캐주얼</div>
+      <div class="cat-name" id="cat-casual">캐주얼</div>
       <div class="cat-count">1 game</div>
     </div>
     <div class="cat-card" data-filter="action" onclick="filterGames('action')">
       <div class="cat-icon">⚔️</div>
-      <div class="cat-name">액션</div>
+      <div class="cat-name" id="cat-action">액션</div>
       <div class="cat-count">coming soon</div>
     </div>
     <div class="cat-card" data-filter="rpg" onclick="filterGames('rpg')">
       <div class="cat-icon">🐉</div>
-      <div class="cat-name">RPG</div>
+      <div class="cat-name" id="cat-rpg">RPG</div>
       <div class="cat-count">coming soon</div>
     </div>
   </div>
@@ -494,18 +537,18 @@ body {
 
 <!-- All Games -->
 <section class="games-section">
-  <h3 class="section-title">전체 게임</h3>
+  <h3 class="section-title" id="all-games-title">전체 게임</h3>
   <div class="all-games-grid" id="gameGrid">
 
     <a class="game-card" href="board/janggi/" data-cat="board,strategy">
       <div class="game-card-banner" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">♟️</div>
       <div class="game-card-body">
         <div class="card-tags" style="margin-bottom:8px;">
-          <span class="tag tag-new">NEW</span>
-          <span class="tag tag-ai">AI</span>
+          <span class="tag tag-new" id="tag-grid-janggi-new">NEW</span>
+          <span class="tag tag-ai" id="tag-grid-janggi-ai">AI</span>
         </div>
-        <div class="game-card-title">베이비장기</div>
-        <div class="game-card-desc">Baby Janggi — AI 훈수와 함께하는 한국 전통 장기</div>
+        <div class="game-card-title" id="janggi-grid-title">애기장기</div>
+        <div class="game-card-desc" id="janggi-grid-desc">Baby Janggi — AI 훈수와 함께하는 한국 전통 장기</div>
       </div>
     </a>
 
@@ -515,8 +558,8 @@ body {
         <div class="card-tags" style="margin-bottom:8px;">
           <span class="tag tag-hot">HOT</span>
         </div>
-        <div class="game-card-title">暴走キッチン</div>
-        <div class="game-card-desc">폭주 요리 합성 시뮬레이션</div>
+        <div class="game-card-title" id="kitchen-grid-title">暴走キッチン</div>
+        <div class="game-card-desc" id="kitchen-grid-desc">폭주 요리 합성 시뮬레이션</div>
       </div>
     </a>
 
@@ -524,10 +567,10 @@ body {
       <div class="game-card-banner" style="background: linear-gradient(135deg, #2d1b4e, #1a1a2e);">🍲</div>
       <div class="game-card-body">
         <div class="card-tags" style="margin-bottom:8px;">
-          <span class="tag tag-cat">퍼즐</span>
+          <span class="tag tag-cat" id="tag-grid-yami">퍼즐</span>
         </div>
-        <div class="game-card-title">闇鍋パズル</div>
-        <div class="game-card-desc">마계의 어둠냄비 소재 합성 퍼즐</div>
+        <div class="game-card-title" id="yami-title">闇鍋パズル</div>
+        <div class="game-card-desc" id="yami-desc">마계의 어둠냄비 소재 합성 퍼즐</div>
       </div>
     </a>
 
@@ -535,10 +578,10 @@ body {
       <div class="game-card-banner" style="background: linear-gradient(135deg, #1b3a2d, #1a2e1a);">🔨</div>
       <div class="game-card-body">
         <div class="card-tags" style="margin-bottom:8px;">
-          <span class="tag tag-cat">퍼즐</span>
+          <span class="tag tag-cat" id="tag-grid-kagu">퍼즐</span>
         </div>
-        <div class="game-card-title">トンデモ家具工房</div>
-        <div class="game-card-desc">엉뚱한 가구 조립 공방</div>
+        <div class="game-card-title" id="kagu-title">トンデモ家具工房</div>
+        <div class="game-card-desc" id="kagu-desc">엉뚱한 가구 조립 공방</div>
       </div>
     </a>
 
@@ -547,7 +590,7 @@ body {
       <div class="game-card-banner" style="background: var(--surface2);">🔒</div>
       <div class="game-card-body">
         <div class="game-card-title" style="color:var(--text-dim);">Coming Soon</div>
-        <div class="game-card-desc">새로운 액션 게임 준비 중...</div>
+        <div class="game-card-desc" id="action-soon">새로운 액션 게임 준비 중...</div>
       </div>
     </div>
 
@@ -555,7 +598,7 @@ body {
       <div class="game-card-banner" style="background: var(--surface2);">🔒</div>
       <div class="game-card-body">
         <div class="game-card-title" style="color:var(--text-dim);">Coming Soon</div>
-        <div class="game-card-desc">새로운 RPG 게임 준비 중...</div>
+        <div class="game-card-desc" id="rpg-soon">새로운 RPG 게임 준비 중...</div>
       </div>
     </div>
 
@@ -564,7 +607,7 @@ body {
 
 <!-- Footer -->
 <footer class="footer">
-  <div class="footer-text">© 2026 in-9.com — 누구나 바로 시작할 수 있는 게임</div>
+  <div class="footer-text" id="footer-text">© 2026 in-9.com — 누구나 바로 시작할 수 있는 게임</div>
   <div class="footer-links">
     <a href="#">About</a>
     <a href="#">Contact</a>
@@ -572,39 +615,175 @@ body {
 </footer>
 
 <script>
-// Category filter
+// ── i18n ──
+const I18N = {
+  ko: {
+    featured: 'Featured Games',
+    heroSub: '누구나 바로 시작할 수 있는 게임',
+    janggiTitle: '애기장기',
+    janggiSub: 'Baby Janggi / ベビー将棋',
+    janggiDesc: '장기를 몰라도 바로 시작! AI가 추천하는 훈수를 보며 자연스럽게 배우는 한국 전통 장기.\nAI 5단계 난이도 · 2인 대전 · 훈수 시스템',
+    janggiPlay: '▶ 지금 플레이',
+    kitchenTitle: '暴走キッチン',
+    kitchenSub: '폭주키친 / Runaway Kitchen',
+    kitchenDesc: '제한 시간 안에 미친 조합으로 요리를 만들어라! 재료를 합성해 엉뚱한 요리를 완성하는 캐주얼 쿠킹 게임.',
+    kitchenPlay: '▶ 지금 플레이',
+    catTitle: '카테고리',
+    catAll: '전체', catBoard: '보드', catPuzzle: '퍼즐', catSim: '시뮬레이션',
+    catStrategy: '전략', catCasual: '캐주얼', catAction: '액션', catRPG: 'RPG',
+    janggiGrid: 'Baby Janggi — AI 훈수와 함께하는 한국 전통 장기',
+    kitchenGrid: '폭주 요리 합성 시뮬레이션',
+    yamiTitle: '闇鍋パズル', yamiDesc: '마계의 어둠냄비 소재 합성 퍼즐',
+    kaguTitle: 'トンデモ家具工房', kaguDesc: '엉뚱한 가구 조립 공방',
+    comingSoon: 'Coming Soon', actionSoon: '새로운 액션 게임 준비 중...', rpgSoon: '새로운 RPG 게임 준비 중...',
+    allGames: '전체 게임',
+    footer: '© 2026 in-9.com — 누구나 바로 시작할 수 있는 게임',
+    games: '게임', categories: '카테고리',
+    tagNew: 'NEW', tagHot: 'HOT', tagAI: 'AI 대전',
+    tagBoard: '보드', tagSim: '시뮬레이션', tagCasual: '캐주얼', tagPuzzle: '퍼즐',
+    inDev: '개발중',
+  },
+  ja: {
+    featured: 'Featured Games',
+    heroSub: '誰でもすぐ遊べるゲーム',
+    janggiTitle: 'ベビー将棋',
+    janggiSub: '애기장기 / Baby Janggi',
+    janggiDesc: '将棋を知らなくてもすぐ始められる！AIのおすすめ手を見ながら自然に学べる韓国伝統将棋。\nAI 5段階 · 対人戦 · ヒントシステム',
+    janggiPlay: '▶ 今すぐプレイ',
+    kitchenTitle: '暴走キッチン',
+    kitchenSub: 'Runaway Kitchen',
+    kitchenDesc: '制限時間内にクレイジーな組み合わせで料理を作れ！素材を合成してとんでもない料理を完成させるカジュアルクッキングゲーム。',
+    kitchenPlay: '▶ 今すぐプレイ',
+    catTitle: 'カテゴリー',
+    catAll: '全部', catBoard: 'ボード', catPuzzle: 'パズル', catSim: 'シミュレーション',
+    catStrategy: '戦略', catCasual: 'カジュアル', catAction: 'アクション', catRPG: 'RPG',
+    janggiGrid: 'Baby Janggi — AIヒント付き韓国伝統将棋',
+    kitchenGrid: '暴走クッキングシミュレーション',
+    yamiTitle: '闇鍋パズル', yamiDesc: '魔界の闇鍋素材合成パズル',
+    kaguTitle: 'トンデモ家具工房', kaguDesc: 'おかしな家具組み立て工房',
+    comingSoon: 'Coming Soon', actionSoon: '新しいアクションゲーム準備中...', rpgSoon: '新しいRPGゲーム準備中...',
+    allGames: '全ゲーム',
+    footer: '© 2026 in-9.com — 誰でもすぐ遊べるゲーム',
+    games: 'ゲーム', categories: 'カテゴリー',
+    tagNew: 'NEW', tagHot: 'HOT', tagAI: 'AI対戦',
+    tagBoard: 'ボード', tagSim: 'シミュレーション', tagCasual: 'カジュアル', tagPuzzle: 'パズル',
+    inDev: '開発中',
+  },
+  en: {
+    featured: 'Featured Games',
+    heroSub: 'Games anyone can start right away',
+    janggiTitle: 'Baby Janggi',
+    janggiSub: '애기장기 / ベビー将棋',
+    janggiDesc: 'Start playing even without knowing Janggi! Learn naturally with AI-recommended moves in this Korean traditional chess.\nAI 5 levels · 2P mode · Hint system',
+    janggiPlay: '▶ Play Now',
+    kitchenTitle: 'Runaway Kitchen',
+    kitchenSub: '暴走キッチン / 폭주키친',
+    kitchenDesc: 'Create crazy food combos before time runs out! A casual cooking game where you synthesize ingredients into wild dishes.',
+    kitchenPlay: '▶ Play Now',
+    catTitle: 'Categories',
+    catAll: 'All', catBoard: 'Board', catPuzzle: 'Puzzle', catSim: 'Simulation',
+    catStrategy: 'Strategy', catCasual: 'Casual', catAction: 'Action', catRPG: 'RPG',
+    janggiGrid: 'Baby Janggi — Korean chess with AI hints',
+    kitchenGrid: 'Crazy cooking simulation',
+    yamiTitle: 'Yami Nabe Puzzle', yamiDesc: 'Dark pot ingredient synthesis puzzle',
+    kaguTitle: 'Tondemo Furniture', kaguDesc: 'Wacky furniture assembly workshop',
+    comingSoon: 'Coming Soon', actionSoon: 'New action game in progress...', rpgSoon: 'New RPG game in progress...',
+    allGames: 'All Games',
+    footer: '© 2026 in-9.com — Games anyone can start right away',
+    games: 'Games', categories: 'Categories',
+    tagNew: 'NEW', tagHot: 'HOT', tagAI: 'AI Battle',
+    tagBoard: 'Board', tagSim: 'Simulation', tagCasual: 'Casual', tagPuzzle: 'Puzzle',
+    inDev: 'In Dev',
+  }
+};
+
+let currentLang = 'ko';
+
+function detectLang() {
+  const saved = localStorage.getItem('in9-lang');
+  if (saved && I18N[saved]) return saved;
+  const nav = (navigator.language || '').toLowerCase();
+  if (nav.startsWith('ja')) return 'ja';
+  if (nav.startsWith('ko')) return 'ko';
+  return 'en';
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('in9-lang', lang);
+  document.querySelectorAll('.lang-switch button').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+  applyI18N();
+}
+
+function applyI18N() {
+  const L = I18N[currentLang];
+  // Use data-i18n-key mapping
+  const m = {
+    'featured-label': L.featured,
+    'hero-sub': L.heroSub,
+    'janggi-title': L.janggiTitle,
+    'janggi-sub': L.janggiSub,
+    'janggi-desc': L.janggiDesc,
+    'janggi-play': L.janggiPlay,
+    'kitchen-title': L.kitchenTitle,
+    'kitchen-sub': L.kitchenSub,
+    'kitchen-desc': L.kitchenDesc,
+    'kitchen-play': L.kitchenPlay,
+    'cat-title': L.catTitle,
+    'cat-all': L.catAll, 'cat-board': L.catBoard, 'cat-puzzle': L.catPuzzle,
+    'cat-sim': L.catSim, 'cat-strategy': L.catStrategy, 'cat-casual': L.catCasual,
+    'cat-action': L.catAction, 'cat-rpg': L.catRPG,
+    'janggi-grid-title': L.janggiTitle,
+    'janggi-grid-desc': L.janggiGrid,
+    'kitchen-grid-title': L.kitchenTitle,
+    'kitchen-grid-desc': L.kitchenGrid,
+    'yami-title': L.yamiTitle, 'yami-desc': L.yamiDesc,
+    'kagu-title': L.kaguTitle, 'kagu-desc': L.kaguDesc,
+    'action-soon': L.actionSoon, 'rpg-soon': L.rpgSoon,
+    'all-games-title': L.allGames,
+    'footer-text': L.footer,
+    'tag-janggi-new': L.tagNew, 'tag-janggi-ai': L.tagAI, 'tag-janggi-board': L.tagBoard,
+    'tag-kitchen-hot': L.tagHot, 'tag-kitchen-sim': L.tagSim, 'tag-kitchen-casual': L.tagCasual,
+    'tag-grid-janggi-new': L.tagNew, 'tag-grid-janggi-ai': L.tagAI,
+    'tag-grid-yami': L.tagPuzzle, 'tag-grid-kagu': L.tagPuzzle,
+  };
+  for (const [id, text] of Object.entries(m)) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+  // Header stats
+  const statsGames = document.querySelector('[data-i18n="games"]');
+  const statsCats = document.querySelector('[data-i18n="categories"]');
+  if (statsGames) statsGames.innerHTML = `${L.games} <span class="stat-num" id="totalGames">4</span>`;
+  if (statsCats) statsCats.innerHTML = `${L.categories} <span class="stat-num">8</span>`;
+  // Coming soon
+  document.querySelectorAll('.coming-soon .game-card-title').forEach(el => el.textContent = L.comingSoon);
+}
+
+// ── Category filter ──
 let currentFilter = 'all';
 
 function filterGames(cat) {
   currentFilter = cat;
-
-  // Update active category
   document.querySelectorAll('.cat-card').forEach(card => {
     card.classList.toggle('active', card.dataset.filter === cat);
   });
-
-  // Filter game cards
   document.querySelectorAll('#gameGrid .game-card').forEach(card => {
     const cats = (card.dataset.cat || '').split(',');
-    if (cat === 'all' || cats.includes(cat)) {
-      card.classList.remove('hidden');
-    } else {
-      card.classList.add('hidden');
-    }
+    if (cat === 'all' || cats.includes(cat)) card.classList.remove('hidden');
+    else card.classList.add('hidden');
   });
-
-  // Filter featured cards
   document.querySelectorAll('.featured .featured-card').forEach(card => {
     const cats = (card.dataset.cat || '').split(',');
-    if (cat === 'all' || cats.includes(cat)) {
-      card.classList.remove('hidden');
-    } else {
-      card.classList.add('hidden');
-    }
+    if (cat === 'all' || cats.includes(cat)) card.classList.remove('hidden');
+    else card.classList.add('hidden');
   });
 }
 
-// Set "all" active on load
+// Init
+setLang(detectLang());
 filterGames('all');
 </script>
 </body>

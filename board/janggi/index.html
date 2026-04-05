@@ -569,16 +569,29 @@ function playAudio(path, volume = 1.0, playbackRate = 1.0) {
   a.playbackRate = playbackRate;
   a.play().catch(() => {});
 }
+// 경로 기준
+const SND = 'audio/';
+
 // 프리로드
 window.addEventListener('DOMContentLoaded', () => {
-  ['janggun.mp3', 'meonggun.mp3'].forEach(f => {
-    const a = new Audio('audio/' + f);
+  ['janggun-01.mp3', 'janggun-02.mp3', 'meonggun.mp3', 'defeat.mp3', 'bgm.mp3'].forEach(f => {
+    const a = new Audio(SND + f);
     a.preload = 'auto';
   });
 });
 
-// 경로 기준 (index.html 기준 상대경로)
-const SND = 'audio/';
+// BGM
+let bgmAudio = null;
+function playBGM() {
+  if (bgmAudio) return;
+  bgmAudio = new Audio(SND + 'bgm.mp3');
+  bgmAudio.loop = true;
+  bgmAudio.volume = 0.25;
+  bgmAudio.play().catch(() => {});
+}
+function stopBGM() {
+  if (bgmAudio) { bgmAudio.pause(); bgmAudio.currentTime = 0; bgmAudio = null; }
+}
 
 function playMoveSound() {
   playWoodKnock(0.55, 1.0);
@@ -589,13 +602,14 @@ function playCaptureSound() {
   setTimeout(() => playWoodKnock(0.5, 0.9), 80);
 }
 
-// 장군 — 공격하는 쪽이 외침 (초/한 모두)
-function playJanggunSound() {
+// 장군 — 공격 측이 외침. 초 공격 시 01(남), 한 공격 시 02(여)
+function playJanggunSound(attackerTeam) {
   playWoodKnock(0.6, 1.2);
-  setTimeout(() => playAudio(SND + 'janggun.mp3', 1.0), 100);
+  const file = (attackerTeam === CHO) ? 'janggun-01.mp3' : 'janggun-02.mp3';
+  setTimeout(() => playAudio(SND + file, 1.0), 100);
 }
 
-// 멍군 — 장군을 피한 쪽이 외침 + 화면 떨림
+// 멍군 — 피한 쪽이 외침 + 화면 떨림
 function playMeonggunSound() {
   playWoodKnock(0.5, 0.95);
   setTimeout(() => {
@@ -619,10 +633,17 @@ function triggerMeonggunEffect() {
   setTimeout(() => overlay.remove(), 400);
 }
 
-function playWinSound() {
-  playWoodKnock(0.8, 1.4);
-  setTimeout(() => playWoodKnock(0.7, 1.2), 120);
-  setTimeout(() => playWoodKnock(0.9, 1.6), 280);
+function playWinSound(winner) {
+  // 내가 이겼으면 목탁 3번, 졌으면 징 소리
+  const iWon = (winner === CHO); // 플레이어는 항상 초
+  if (iWon) {
+    playWoodKnock(0.8, 1.4);
+    setTimeout(() => playWoodKnock(0.7, 1.2), 120);
+    setTimeout(() => playWoodKnock(0.9, 1.6), 280);
+  } else {
+    setTimeout(() => playAudio(SND + 'defeat.mp3', 0.9), 50);
+  }
+  stopBGM();
 }
 
 // ============================================
@@ -1175,7 +1196,7 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
       const endY = boardTop + toR * cellSize + cellSize/2 - pieceH/2;
       await moveToPoint(endX, endY, duration);
     } else if (pieceType === TYPES.CANNON) {
-      // Find jumped piece
+      // 포: 넘는 기물 위를 부드러운 아크(호)로 통과
       const dc = toC > fromC ? 1 : (toC < fromC ? -1 : 0);
       const dr = toR > fromR ? 1 : (toR < fromR ? -1 : 0);
       let jumpC = fromC + dc, jumpR = fromR + dr;
@@ -1185,18 +1206,43 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
         jumpR += dr;
       }
 
-      const jumpX = boardLeft + jumpC * 48 + 24 - 22;
-      const jumpY = boardTop + jumpR * 48 + 24 - 19.5;
-
-      // Move to jump piece
-      await moveToPoint(jumpX, jumpY, duration);
-      // Scale up
-      await scaleAnimation(1.3, 75);
-      // Move to destination
       const endX = boardLeft + toC * cellSize + cellSize/2 - pieceW/2;
       const endY = boardTop + toR * cellSize + cellSize/2 - pieceH/2;
-      await scaleAnimation(1, 75);
-      await moveToPoint(endX, endY, duration);
+      const jumpMidX = boardLeft + jumpC * cellSize + cellSize/2 - pieceW/2;
+      const jumpMidY = boardTop + jumpR * cellSize + cellSize/2 - pieceH/2;
+
+      // Arc animation: smooth parabolic jump over the piece
+      const arcDuration = duration * 2.2;
+      await new Promise(resolve => {
+        const startTime = Date.now();
+        const sx = currentX, sy = currentY;
+        const animate = () => {
+          const elapsed = Date.now() - startTime;
+          const t = Math.min(elapsed / arcDuration, 1);
+          // Smooth ease-in-out
+          const ease = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+          // Linear X/Y interpolation
+          const lx = sx + (endX - sx) * ease;
+          const ly = sy + (endY - sy) * ease;
+          // Parabolic arc height (peak at the jumped piece)
+          const arcHeight = cellSize * 1.2;
+          const arc = -4 * arcHeight * t * (t - 1);
+          currentX = lx;
+          currentY = ly - arc;
+          animEl.style.left = currentX + 'px';
+          animEl.style.top = currentY + 'px';
+          // Slight scale bump at peak
+          const scaleBump = 1 + 0.15 * Math.sin(Math.PI * t);
+          animImg.style.transform = `scale(${scaleBump})`;
+          if (t < 1) {
+            requestAnimationFrame(animate);
+          } else {
+            animImg.style.transform = 'scale(1)';
+            resolve();
+          }
+        };
+        animate();
+      });
     } else if (pieceType === TYPES.HORSE) {
       // 말: 직진 1칸 → 대각 1칸
       // |toC-fromC|=2 이면 가로 먼저, |toR-fromR|=2 이면 세로 먼저
@@ -1258,7 +1304,7 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
 // ============================================
 const LANG = {
   ko: {
-    title: '베이비장기', subtitle: 'Baby Janggi · ベビー韓将棋',
+    title: '애기장기', subtitle: 'Baby Janggi · ベビー将棋',
     home: '← 홈', newGame: '▶ 새 게임', resign: '■ 기권',
     aiMode: 'AI 대전', pvpMode: '2인 대전',
     hint: '💡 훈수', hintOn: '💡 훈수 ON',
@@ -1275,7 +1321,7 @@ const LANG = {
     capEmpty: t => `${t} 포획 없음`,
   },
   ja: {
-    title: 'ベビー韓将棋', subtitle: 'Baby Janggi · 베이비장기',
+    title: 'ベビー将棋', subtitle: 'Baby Janggi · 애기장기',
     home: '← ホーム', newGame: '▶ 新局', resign: '■ 投了',
     aiMode: 'AI対局', pvpMode: '二人対局',
     hint: '💡 助言', hintOn: '💡 助言 ON',
@@ -1292,7 +1338,7 @@ const LANG = {
     capEmpty: t => `${t}の捕獲なし`,
   },
   en: {
-    title: 'Baby Janggi', subtitle: 'Baby Janggi · 베이비장기 · ベビー韓将棋',
+    title: 'Baby Janggi', subtitle: '애기장기 · ベビー将棋',
     home: '← Home', newGame: '▶ New Game', resign: '■ Resign',
     aiMode: 'vs AI', pvpMode: 'vs Player',
     hint: '💡 Hint', hintOn: '💡 Hint ON',
@@ -1327,7 +1373,7 @@ let state = {
   recommended: [],
   lastMove: null,
   moveHistory: [],
-  lang: 'ko',
+  lang: (function(){ const s=localStorage.getItem('in9-lang'); if(s&&LANG[s])return s; const n=(navigator.language||'').toLowerCase(); if(n.startsWith('ja'))return 'ja'; if(n.startsWith('ko'))return 'ko'; return 'en'; })(),
   inCheck: null,
   lastMoveGhost: null,
   justMeonggun: false
@@ -1442,6 +1488,11 @@ async function wasmGetBestMove(depth, skillLevel, limitStrength, elo) {
   });
 }
 
+let bgmStarted = false;
+function tryStartBGM() {
+  if (!bgmStarted) { bgmStarted = true; playBGM(); }
+}
+
 function resetGame() {
   state.board = createInitialBoard();
   state.turn = CHO;
@@ -1457,6 +1508,8 @@ function resetGame() {
   state.inCheck = null;
   state.lastMoveGhost = null;
   state.justMeonggun = false;
+  bgmStarted = false;
+  stopBGM();
   wasmMoveHistory = [];
   if (wasmReady) {
     wasmEngine.postMessage('ucinewgame');
@@ -1471,6 +1524,7 @@ function resetGame() {
 
 function selectPiece(col, row) {
   if (state.gameOver || state.aiThinking) return;
+  tryStartBGM();
   const piece = state.board[row][col];
 
   if (state.selected) {
@@ -1524,7 +1578,7 @@ function executeMove(fromC, fromR, toC, toR) {
       state.gameOver = true;
       state.winner = state.turn;
       state.recommended = [];
-      playWinSound();
+      playWinSound(state.turn);
       render();
       return;
     }
@@ -1533,7 +1587,7 @@ function executeMove(fromC, fromR, toC, toR) {
     state.justMeonggun = false;
     if (isInCheck(state.board, enemy)) {
       // 상대 왕을 위협 → 장군! (내가 외침)
-      playJanggunSound();
+      playJanggunSound(state.turn);
       state.inCheck = enemy;
     } else if (wasInCheckBefore) {
       // 장군 상태에서 벗어남 → 멍군! (피한 내가 외침)
@@ -1597,13 +1651,13 @@ function executeMove(fromC, fromR, toC, toR) {
               state.winner = HAN;
               state.recommended = [];
               state.lastMoveGhost = null;
-              playWinSound();
+              playWinSound(HAN);
             } else {
               // 장군/멍군 효과음
               state.justMeonggun = false;
               if (isInCheck(state.board, CHO)) {
                 // AI가 내 왕을 위협 → 장군! (AI가 외침)
-                playJanggunSound();
+                playJanggunSound(HAN);
                 state.inCheck = CHO;
               } else if (aiWasInCheckBefore) {
                 // AI가 장군 상태에서 벗어남 → 멍군! (AI가 피하며 외침)
@@ -1627,7 +1681,7 @@ function executeMove(fromC, fromR, toC, toR) {
           state.gameOver = true;
           state.winner = CHO;
           state.lastMoveGhost = null;
-          playWinSound();
+          playWinSound(CHO);
           render();
         }
       }, 50);
