@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="google" content="notranslate">
 <title>베이비장기 - Baby Janggi</title>
+<script src="coi-serviceworker.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -468,11 +469,11 @@ const PIECE_IMAGES = {
 const PIECE_VALUES = { king: 0, chariot: 13, cannon: 7, horse: 5, elephant: 3, guard: 3, soldier: 2 };
 
 const DIFFICULTIES = [
-  { name: '입문',  depth: 1, random: 0.4 },
-  { name: '초급',  depth: 2, random: 0.15 },
-  { name: '중급',  depth: 3, random: 0.05 },
-  { name: '고급',  depth: 4, random: 0 },
-  { name: '최고수', depth: 5, random: 0 }
+  { name: '입문',  depth: 1, random: 0.4, wasmDepth: 3,  skillLevel: -10, limitStrength: true, elo: 600 },
+  { name: '초급',  depth: 2, random: 0.15, wasmDepth: 5,  skillLevel: 0,  limitStrength: true, elo: 900 },
+  { name: '중급',  depth: 3, random: 0.05, wasmDepth: 8,  skillLevel: 5,  limitStrength: true, elo: 1350 },
+  { name: '고급',  depth: 4, random: 0,    wasmDepth: 12, skillLevel: 15, limitStrength: true, elo: 2000 },
+  { name: '최고수', depth: 5, random: 0,    wasmDepth: 18, skillLevel: 20, limitStrength: false, elo: 2850 }
 ];
 
 // Palace boundaries
@@ -1025,17 +1026,33 @@ function minimax(board, depth, alpha, beta, maximizing, team, enemy, maxDepth = 
   }
 }
 
-function getAIMove(board, aiTeam, difficulty) {
+async function getAIMove(board, aiTeam, difficulty) {
+  const diff = DIFFICULTIES[difficulty];
+
+  if (wasmReady) {
+    try {
+      const moveStr = await wasmGetBestMove(diff.wasmDepth, diff.skillLevel, diff.limitStrength, diff.elo);
+      if (moveStr && moveStr !== '(none)' && moveStr !== '0000') {
+        const parsed = fromUCI(moveStr);
+        if (parsed) return parsed;
+      }
+    } catch (err) {
+      console.warn('WASM engine error, falling back:', err);
+    }
+  }
+
+  // Fallback to built-in minimax
+  return getAIMoveFallback(board, aiTeam, difficulty);
+}
+
+function getAIMoveFallback(board, aiTeam, difficulty) {
   const diff = DIFFICULTIES[difficulty];
   const enemy = aiTeam === CHO ? HAN : CHO;
   const moves = getAllLegalMoves(board, aiTeam);
   if (moves.length === 0) return null;
-
-  // Add randomness for lower difficulties
   if (Math.random() < diff.random) {
     return moves[Math.floor(Math.random() * moves.length)];
   }
-
   const result = minimax(board, diff.depth, -Infinity, Infinity, true, aiTeam, enemy);
   return result.move || moves[0];
 }
@@ -1310,6 +1327,115 @@ let state = {
   lastMoveGhost: null
 };
 
+// WASM Engine
+let wasmEngine = null;
+let wasmReady = false;
+let wasmMoveHistory = []; // UCI move strings for position tracking
+let pendingBestMove = null; // resolve function for current search
+
+async function initWasmEngine() {
+  try {
+    const script = document.createElement('script');
+    script.src = './engine/stockfish.js';
+    await new Promise((resolve, reject) => {
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+
+    wasmEngine = await Stockfish();
+
+    wasmEngine.addMessageListener((msg) => {
+      if (msg.startsWith('bestmove')) {
+        const parts = msg.split(' ');
+        const moveStr = parts[1];
+        if (pendingBestMove) {
+          pendingBestMove(moveStr);
+          pendingBestMove = null;
+        }
+      }
+    });
+
+    wasmEngine.postMessage('uci');
+    await new Promise(r => setTimeout(r, 300));
+    wasmEngine.postMessage('setoption name UCI_Variant value janggi');
+    wasmEngine.postMessage('setoption name Threads value 1');
+    wasmEngine.postMessage('setoption name Hash value 16');
+    wasmEngine.postMessage('isready');
+    await new Promise(r => setTimeout(r, 200));
+
+    wasmReady = true;
+    console.log('Fairy-Stockfish WASM engine ready!');
+  } catch (err) {
+    console.warn('WASM engine failed to load, falling back to built-in AI:', err);
+    wasmReady = false;
+  }
+}
+
+// Convert internal coordinates to UCI notation
+// Internal: col 0-8, row 0-9 (row 0 = top)
+// UCI janggi: file a-i, rank 1-10 (rank 1 = bottom, rank 10 = top)
+function toUCI(col, row) {
+  const file = String.fromCharCode(97 + col); // a-i
+  const rank = 10 - row; // row 0 -> rank 10, row 9 -> rank 1
+  return file + rank;
+}
+
+function fromUCI(uci) {
+  // Handle pass move
+  if (uci === '0000' || uci === 'pass') return null;
+
+  // Parse: find where from ends and to begins
+  // from: file_char + rank_digits, to: file_char + rank_digits
+  let i = 1;
+  while (i < uci.length && uci[i] >= '0' && uci[i] <= '9') i++;
+  const fromFile = uci.charCodeAt(0) - 97;
+  const fromRank = parseInt(uci.substring(1, i));
+  const toFile = uci.charCodeAt(i) - 97;
+  const toRank = parseInt(uci.substring(i + 1));
+
+  return {
+    from: [fromFile, 10 - fromRank],
+    to: [toFile, 10 - toRank]
+  };
+}
+
+function boardToMoveStr(fromC, fromR, toC, toR) {
+  return toUCI(fromC, fromR) + toUCI(toC, toR);
+}
+
+async function wasmGetBestMove(depth, skillLevel, limitStrength, elo) {
+  if (!wasmReady) return null;
+
+  // Set difficulty
+  if (limitStrength) {
+    wasmEngine.postMessage('setoption name UCI_LimitStrength value true');
+    wasmEngine.postMessage(`setoption name UCI_Elo value ${elo}`);
+  } else {
+    wasmEngine.postMessage('setoption name UCI_LimitStrength value false');
+  }
+  wasmEngine.postMessage(`setoption name Skill Level value ${skillLevel}`);
+
+  // Set position
+  if (wasmMoveHistory.length === 0) {
+    wasmEngine.postMessage('position startpos');
+  } else {
+    wasmEngine.postMessage('position startpos moves ' + wasmMoveHistory.join(' '));
+  }
+
+  // Search
+  return new Promise((resolve) => {
+    pendingBestMove = resolve;
+    wasmEngine.postMessage(`go depth ${depth}`);
+    // Timeout fallback
+    setTimeout(() => {
+      if (pendingBestMove) {
+        wasmEngine.postMessage('stop');
+      }
+    }, 10000);
+  });
+}
+
 function resetGame() {
   state.board = createInitialBoard();
   state.turn = CHO;
@@ -1324,6 +1450,12 @@ function resetGame() {
   state.moveHistory = [];
   state.inCheck = null;
   state.lastMoveGhost = null;
+  wasmMoveHistory = [];
+  if (wasmReady) {
+    wasmEngine.postMessage('ucinewgame');
+    wasmEngine.postMessage('setoption name UCI_Variant value janggi');
+    wasmEngine.postMessage('isready');
+  }
   if (state.showRecommend) {
     state.recommended = getRecommendedMoves(state.board, state.turn);
   }
@@ -1370,6 +1502,9 @@ function executeMove(fromC, fromR, toC, toR) {
     state.board = newBoard;
     state.lastMove = { from: [fromC, fromR], to: [toC, toR] };
     state.moveHistory.push(state.lastMove);
+    // Track move in UCI history for WASM engine
+    const uciMoveStr = boardToMoveStr(fromC, fromR, toC, toR);
+    wasmMoveHistory.push(uciMoveStr);
     state.selected = null;
     state.legalMoves = [];
 
@@ -1408,12 +1543,15 @@ function executeMove(fromC, fromR, toC, toR) {
     if (state.mode === 'ai' && state.turn === HAN && !state.gameOver) {
       state.aiThinking = true;
       render();
-      setTimeout(() => {
-        const aiMove = getAIMove(state.board, HAN, state.difficulty);
+      setTimeout(async () => {
+        const aiMove = await getAIMove(state.board, HAN, state.difficulty);
         if (aiMove) {
           state.aiThinking = false;
           const aiPiece = state.board[aiMove.from[1]][aiMove.from[0]];
-          const aiIsCapture = state.board[aiMove.to[1]][aiMove.to[0]] !== null;
+
+          // Record move in UCI history for WASM engine
+          const uciMove = boardToMoveStr(aiMove.from[0], aiMove.from[1], aiMove.to[0], aiMove.to[1]);
+          wasmMoveHistory.push(uciMove);
 
           const executeAIMoveFinal = () => {
             const { board: nb, captured: cap } = makeMove(state.board, aiMove.from[0], aiMove.from[1], aiMove.to[0], aiMove.to[1]);
@@ -1712,6 +1850,7 @@ function toggleBeginnerMode() {
 // Initialize
 state.recommended = getRecommendedMoves(state.board, state.turn);
 render();
+initWasmEngine();
 </script>
 </body>
 </html>
