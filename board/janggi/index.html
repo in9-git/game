@@ -621,7 +621,7 @@ const BGM_TRACKS = ['bgm-idle.mp3', 'bgm-resting.mp3'];
 
 // 프리로드
 window.addEventListener('DOMContentLoaded', () => {
-  ['janggun-01.mp3', 'janggun-02.mp3', 'defeat.mp3', ...BGM_TRACKS].forEach(f => {
+  ['janggun-01.m4a', 'janggun-02.m4a', 'defeat.mp3', ...BGM_TRACKS].forEach(f => {
     const a = new Audio(SND + f);
     a.preload = 'auto';
   });
@@ -670,7 +670,7 @@ function playCaptureSound() {}
 
 // 장군 — 음성만 재생 (덜컥/duck/리액션 없음)
 function playJanggunSound(attackerTeam) {
-  const file = (attackerTeam === CHO) ? 'janggun-01.mp3' : 'janggun-02.mp3';
+  const file = (attackerTeam === CHO) ? 'janggun-01.m4a' : 'janggun-02.m4a';
   playAudio(SND + file, 1.0);
 }
 
@@ -1139,7 +1139,16 @@ function getRecommendedMoves(board, team, count = 2) {
 // ============================================
 // ANIMATION ENGINE
 // ============================================
+let currentAnim = null; // {finish: () => void} — 진행 중인 animateMove 제어용
+
+function finishCurrentAnim() {
+  if (currentAnim) currentAnim.finish();
+}
+
 function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
+  // 이전 애니메이션이 아직 끝나지 않았으면 즉시 마무리
+  finishCurrentAnim();
+
   if (!state.beginnerMode) {
     callback();
     return;
@@ -1177,6 +1186,19 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
   animEl.style.left = startPos.x + 'px';
   animEl.style.top = startPos.y + 'px';
 
+  // 인터럽트 가능한 애니메이션 제어자
+  let cancelled = false;
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    cancelled = true;
+    if (animEl.parentNode) animEl.parentNode.removeChild(animEl);
+    if (currentAnim && currentAnim.finish === finish) currentAnim = null;
+    callback();
+  };
+  currentAnim = { finish };
+
   // ease-in-out cubic
   const easeInOut = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
 
@@ -1185,6 +1207,7 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
     return new Promise(resolve => {
       const startTime = performance.now();
       const tick = now => {
+        if (cancelled) { resolve(); return; }
         const t = Math.min((now - startTime) / durationMs, 1);
         const e = easeInOut(t);
         const p = pathFn(e);
@@ -1267,8 +1290,7 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
       await runPath(linear(startPos, endPos), duration);
     }
 
-    document.body.removeChild(animEl);
-    callback();
+    finish();
   })();
 }
 
@@ -1508,8 +1530,12 @@ function resetGame() {
 }
 
 function selectPiece(col, row) {
+  if (state.gameOver) return;
+  // 진행 중인 애니메이션이 있으면 즉시 마무리 (callback 이 board/turn 을 갱신할 수 있음)
+  finishCurrentAnim();
   if (state.gameOver || state.aiThinking) return;
   tryStartBGM();
+  // finishCurrentAnim 으로 board 가 변경됐을 수 있으니 piece 는 그 후에 읽음
   const piece = state.board[row][col];
 
   if (state.selected) {
