@@ -1534,21 +1534,26 @@ function selectPiece(col, row) {
   // 진행 중인 애니메이션이 있으면 즉시 마무리 (callback 이 board/turn 을 갱신할 수 있음)
   finishCurrentAnim();
   if (state.gameOver || state.aiThinking) return;
+  // 인터럽트 결과로 턴이 상대(AI)로 넘어갔다면, 같은 클릭으로 또 다른 동작이 일어나면 안 됨
+  if (state.mode === 'ai' && state.turn === HAN) return;
   tryStartBGM();
   // finishCurrentAnim 으로 board 가 변경됐을 수 있으니 piece 는 그 후에 읽음
   const piece = state.board[row][col];
 
   if (state.selected) {
     const [sc, sr] = state.selected;
-    // Check if clicking on a legal move destination
-    if (state.legalMoves.some(([mc, mr]) => mc === col && mr === row)) {
+    const selPiece = state.board[sr]?.[sc];
+    // 선택해 둔 말이 사라졌거나(이미 이동/캡처됨) 내 말이 아니면 선택 무효화
+    if (!selPiece || selPiece.team !== state.turn) {
+      state.selected = null;
+      state.legalMoves = [];
+    } else if (state.legalMoves.some(([mc, mr]) => mc === col && mr === row)) {
       executeMove(sc, sr, col, row);
       return;
     }
   }
 
   if (piece && piece.team === state.turn) {
-    if (state.mode === 'ai' && state.turn === HAN) return; // AI's turn
     state.selected = [col, row];
     state.legalMoves = getLegalMoves(state.board, col, row);
   } else {
@@ -1627,6 +1632,8 @@ function applySelectionDOM() {
 
 function executeMove(fromC, fromR, toC, toR) {
   const piece = state.board[fromR][fromC];
+  // 안전장치: 잘못된 호출(턴 불일치/빈 칸/적 말)은 무시
+  if (!piece || piece.team !== state.turn) return;
   const isCapture = state.board[toR][toC] !== null;
 
   const executeMoveFinal = () => {
