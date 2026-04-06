@@ -224,42 +224,65 @@ select {
   width: 100%;
   gap: 6px;
 }
-.captures-bar {
+.mode-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  min-height: 32px;
-  padding: 4px 8px;
-  background: #16213e;
-  border-radius: 8px;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  max-width: 432px;
-}
-.mode-selector-bar {
-  display: flex;
-  align-items: center;
+  gap: 6px;
   justify-content: center;
   width: 100%;
   max-width: 432px;
   padding: 4px 0;
 }
-.mode-select {
-  background: #16213e;
-  color: #ffd43b;
-  border: 1px solid #4a9eff44;
-  padding: 8px 24px;
-  border-radius: 8px;
-  font-size: 14px;
+.mode-tab {
+  flex: 1;
+  background: #0f1729;
+  color: #6a7891;
+  border: 1px solid #1f2a45;
+  padding: 9px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
   font-weight: 600;
   font-family: inherit;
-  cursor: pointer;
   letter-spacing: 1px;
-  text-align: center;
-  text-align-last: center;
+  transition: all 0.2s;
 }
-.mode-select:hover { border-color: #4a9eff; }
+.mode-tab:hover { border-color: #4a9eff88; color: #9ab0d0; }
+.mode-tab.active {
+  background: linear-gradient(135deg, #1a3a5c, #1f4a7a);
+  color: #ffd43b;
+  border-color: #4a9eff;
+  box-shadow: 0 0 12px rgba(74,158,255,0.3);
+}
+.board-stack {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  align-items: stretch;
+}
+.trophy-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 40px;
+  padding: 6px 10px;
+  background: rgba(16, 24, 44, 0.85);
+  border: 2px solid rgba(90, 110, 140, 0.25);
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.trophy-bar.top    { border-radius: 10px 10px 0 0; border-bottom: none; margin-bottom: 0; }
+.trophy-bar.bottom { border-radius: 0 0 10px 10px; border-top: none; margin-top: 0; }
+@keyframes trophyPulseHan {
+  0%, 100% { border-color: rgba(255, 107, 107, 0.45); box-shadow: inset 0 0 0 rgba(255,107,107,0); }
+  50%      { border-color: rgba(255, 107, 107, 1);    box-shadow: inset 0 0 14px rgba(255,107,107,0.45), 0 0 10px rgba(255,107,107,0.35); }
+}
+@keyframes trophyPulseCho {
+  0%, 100% { border-color: rgba(105, 219, 124, 0.45); box-shadow: inset 0 0 0 rgba(105,219,124,0); }
+  50%      { border-color: rgba(105, 219, 124, 1);    box-shadow: inset 0 0 14px rgba(105,219,124,0.45), 0 0 10px rgba(105,219,124,0.35); }
+}
+.trophy-bar.han.active { animation: trophyPulseHan 1.7s ease-in-out infinite; }
+.trophy-bar.cho.active { animation: trophyPulseCho 1.7s ease-in-out infinite; }
 .captured-piece {
   display: flex;
   align-items: center;
@@ -440,6 +463,26 @@ select {
   letter-spacing: 1px;
 }
 .btn-stop:hover { background: #5a2020; border-color: #ff6b6b; }
+.btn-toggle {
+  background: #0f1729;
+  color: #5a6b85;
+  border: 1px solid #1f2a45;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: all 0.2s;
+  letter-spacing: 1px;
+}
+.btn-toggle:hover { border-color: #4a9eff88; color: #8ea2c2; }
+.btn-toggle.active {
+  background: #1a3a5c;
+  color: #ffd43b;
+  border-color: #4a9eff;
+  box-shadow: 0 0 10px rgba(255,212,59,0.25);
+}
 </style>
 </head>
 <body>
@@ -1797,17 +1840,20 @@ function render() {
       <h1 translate="no" style="font-size:20px;letter-spacing:3px;">${L.title}</h1>
       <button class="lang-btn" onclick="cycleLang()">${state.lang === 'ko' ? '🇰🇷 KO' : state.lang === 'ja' ? '🇯🇵 JP' : '🇬🇧 EN'}</button>
     </div>
-    <div class="top-bar">
-      <div class="status ${statusClass}">${statusText}</div>
+    <div class="mode-tabs">
+      ${['practice','match','challenge'].map(m =>
+        `<button class="mode-tab ${state.gameMode === m ? 'active' : ''}" onclick="changeGameMode('${m}')">${L.gameModes[m]}</button>`
+      ).join('')}
     </div>
     <div class="game-layout">
-      <div class="mode-selector-bar">
-        <select id="gameModeSelect" class="mode-select" onchange="changeGameMode(this.value)">
-          <option value="practice" ${state.gameMode === 'practice' ? 'selected' : ''}>${L.gameModes.practice}</option>
-          <option value="match" ${state.gameMode === 'match' ? 'selected' : ''}>${L.gameModes.match}</option>
-          <option value="challenge" ${state.gameMode === 'challenge' ? 'selected' : ''}>${L.gameModes.challenge}</option>
-        </select>
-      </div>
+      <div class="board-stack">
+        <div class="trophy-bar top han ${!state.gameOver && state.turn === HAN ? 'active' : ''}">
+          ${sortByValue(state.captured.cho).map(p => {
+            const capW = getPieceSize(p.type) * 0.7;
+            const capH = getPieceHeight(p.type) * 0.7;
+            return `<div class="captured-piece cho"><img src="${PIECE_IMAGES.cho[p.type]}" alt="${PIECE_NAMES.cho[p.type]}" style="width:${capW}px;height:${capH}px;"></div>`;
+          }).join('')}
+        </div>
       <div class="board-container">
       <svg class="board-lines" viewBox="0 0 432 480" xmlns="http://www.w3.org/2000/svg">
         ${(() => {
@@ -1834,28 +1880,23 @@ function render() {
       <div class="board">${boardCells}</div>
       <!-- ghost removed -->
     </div>
-    </div>
-      <div class="captures-bar">
-        ${sortByValue(state.captured.han).length > 0
-          ? `<span style="color:#69db7c;font-size:11px;margin-right:4px;">${L.cho}:</span>` + sortByValue(state.captured.han).map(p => {
+        <div class="trophy-bar bottom cho ${!state.gameOver && state.turn === CHO && !state.aiThinking ? 'active' : ''}">
+          ${sortByValue(state.captured.han).map(p => {
             const capW = getPieceSize(p.type) * 0.7;
             const capH = getPieceHeight(p.type) * 0.7;
             return `<div class="captured-piece han"><img src="${PIECE_IMAGES.han[p.type]}" alt="${PIECE_NAMES.han[p.type]}" style="width:${capW}px;height:${capH}px;"></div>`;
-          }).join('')
-          : `<span style="color:#555;font-size:11px;">${L.capEmpty(L.cho)}</span>`}
+          }).join('')}
+        </div>
       </div>
+    </div>
     <div class="controls">
       <div class="controls-row">
         <button class="btn-start" onclick="resetGame()">${L.newGame}</button>
         ${!state.gameOver
           ? `<button class="btn-stop" onclick="resignGame()">${L.resign}</button>`
           : `<button class="btn-stop" onclick="quitGame()">${L.quit}</button>`}
-        <button class="${state.showRecommend ? 'active' : ''}" onclick="toggleRecommend()">
-          ${state.showRecommend ? L.hintOn : L.hint}
-        </button>
-        <button class="${state.beginnerMode ? 'active' : ''}" onclick="toggleBeginnerMode()">
-          ${state.beginnerMode ? L.animOn : L.anim}
-        </button>
+        <button class="btn-toggle ${state.showRecommend ? 'active' : ''}" onclick="toggleRecommend()">${L.hint}</button>
+        <button class="btn-toggle ${state.beginnerMode ? 'active' : ''}" onclick="toggleBeginnerMode()">${L.anim}</button>
       </div>
     </div>
     ${state.gameOver ? `
