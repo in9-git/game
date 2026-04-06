@@ -467,12 +467,12 @@ const PIECE_SIZES = {
 
 const PIECE_VALUES = { king: 0, chariot: 13, cannon: 7, horse: 5, elephant: 3, guard: 3, soldier: 2 };
 
+// 애기장기 컨셉: 초보자가 직접 두면서 배우기. 속도 우선, 강함 X.
+// 강한 AI는 별도 모드에서 다룰 예정. 모든 레벨은 즉각 응답해야 함.
 const DIFFICULTIES = [
-  { name: '입문',  depth: 1, random: 0.4, wasmDepth: 3,  skillLevel: -10, limitStrength: true, elo: 600 },
-  { name: '초급',  depth: 2, random: 0.15, wasmDepth: 5,  skillLevel: 0,  limitStrength: true, elo: 900 },
-  { name: '중급',  depth: 3, random: 0.05, wasmDepth: 8,  skillLevel: 5,  limitStrength: true, elo: 1350 },
-  { name: '고급',  depth: 4, random: 0,    wasmDepth: 12, skillLevel: 15, limitStrength: true, elo: 2000 },
-  { name: '최고수', depth: 5, random: 0,    wasmDepth: 18, skillLevel: 20, limitStrength: false, elo: 2850 }
+  { name: '하', depth: 1, random: 0.5,  wasmDepth: 2, skillLevel: -15, limitStrength: true, elo: 600 },
+  { name: '중', depth: 2, random: 0.2,  wasmDepth: 3, skillLevel: -5,  limitStrength: true, elo: 900 },
+  { name: '상', depth: 2, random: 0.05, wasmDepth: 4, skillLevel: 5,   limitStrength: true, elo: 1200 }
 ];
 
 // Palace boundaries
@@ -1152,126 +1152,97 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
   animImg.style.width = pieceW + 'px';
   animImg.style.height = pieceH + 'px';
 
-  let currentX = startPos.x;
-  let currentY = startPos.y;
-  animEl.style.left = currentX + 'px';
-  animEl.style.top = currentY + 'px';
+  animEl.style.left = startPos.x + 'px';
+  animEl.style.top = startPos.y + 'px';
 
-  function moveToPoint(targetX, targetY, durationMs) {
+  // ease-in-out cubic
+  const easeInOut = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+
+  // Run an animation along a path function path(t) → {x, y}
+  function runPath(pathFn, durationMs) {
     return new Promise(resolve => {
-      const startTime = Date.now();
-      const startPosX = currentX;
-      const startPosY = currentY;
-
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / durationMs, 1);
-
-        currentX = startPosX + (targetX - startPosX) * progress;
-        currentY = startPosY + (targetY - startPosY) * progress;
-
-        animEl.style.left = currentX + 'px';
-        animEl.style.top = currentY + 'px';
-
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        } else {
-          resolve();
-        }
+      const startTime = performance.now();
+      const tick = now => {
+        const t = Math.min((now - startTime) / durationMs, 1);
+        const e = easeInOut(t);
+        const p = pathFn(e);
+        animEl.style.left = p.x + 'px';
+        animEl.style.top = p.y + 'px';
+        if (t < 1) requestAnimationFrame(tick);
+        else resolve();
       };
-      animate();
+      requestAnimationFrame(tick);
     });
   }
 
-  function scaleAnimation(targetScale, durationMs) {
-    return new Promise(resolve => {
-      const startTime = Date.now();
-      const startScale = parseFloat(animImg.style.transform.match(/scale\(([\d.]+)\)/) ? RegExp.$1 : 1);
+  // Quadratic bezier through 1 control point (P0 → C → P2)
+  const quadBezier = (P0, C, P2) => e => {
+    const u = 1 - e;
+    return {
+      x: u*u * P0.x + 2*u*e * C.x + e*e * P2.x,
+      y: u*u * P0.y + 2*u*e * C.y + e*e * P2.y
+    };
+  };
 
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / durationMs, 1);
-        const scale = startScale + (targetScale - startScale) * progress;
-        animImg.style.transform = `scale(${scale})`;
+  // Cubic bezier through 2 control points (P0 → C1 → C2 → P3)
+  const cubicBezier = (P0, C1, C2, P3) => e => {
+    const u = 1 - e;
+    return {
+      x: u*u*u * P0.x + 3*u*u*e * C1.x + 3*u*e*e * C2.x + e*e*e * P3.x,
+      y: u*u*u * P0.y + 3*u*u*e * C1.y + 3*u*e*e * C2.y + e*e*e * P3.y
+    };
+  };
 
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        } else {
-          resolve();
-        }
-      };
-      animate();
-    });
-  }
+  // Simple linear path
+  const linear = (P0, P1) => e => ({
+    x: P0.x + (P1.x - P0.x) * e,
+    y: P0.y + (P1.y - P0.y) * e
+  });
 
   (async () => {
-    const duration = 175;
     const endPos = cellToPx(toC, toR);
+    const dist = Math.hypot(endPos.x - startPos.x, endPos.y - startPos.y);
+    // Speed-based duration: ~0.6s for far moves, min 220ms for short
+    const duration = Math.max(220, Math.min(600, dist * 1.4));
 
-    if (pieceType === TYPES.CHARIOT || pieceType === TYPES.KING || pieceType === TYPES.GUARD || pieceType === TYPES.SOLDIER) {
-      // Direct straight line
-      await moveToPoint(endPos.x, endPos.y, duration);
-    } else if (pieceType === TYPES.CANNON) {
-      // 포: 살짝 떠올라 부드럽게 호를 그리며 착지 (과하지 않게)
-      const arcDuration = duration * 1.6;
-      await new Promise(resolve => {
-        const startTime = Date.now();
-        const sx = currentX, sy = currentY;
-        const animate = () => {
-          const elapsed = Date.now() - startTime;
-          const t = Math.min(elapsed / arcDuration, 1);
-          const ease = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
-          const lx = sx + (endPos.x - sx) * ease;
-          const ly = sy + (endPos.y - sy) * ease;
-          const arcHeight = cellSize * 0.55; // 약하게 떠오름
-          const arc = -4 * arcHeight * t * (t - 1);
-          currentX = lx;
-          currentY = ly - arc;
-          animEl.style.left = currentX + 'px';
-          animEl.style.top = currentY + 'px';
-          if (t < 1) {
-            requestAnimationFrame(animate);
-          } else {
-            resolve();
-          }
-        };
-        animate();
-      });
+    if (pieceType === TYPES.CANNON) {
+      // 포: 작은 아치를 그리며 착지 (점프 느낌)
+      const midX = (startPos.x + endPos.x) / 2;
+      const midY = (startPos.y + endPos.y) / 2 - cellSize * 0.55;
+      await runPath(quadBezier(startPos, {x: midX, y: midY}, endPos), duration);
     } else if (pieceType === TYPES.HORSE) {
-      // 말: 직진 1칸 → 대각 1칸
+      // 말: L자 경로를 부드러운 곡선으로 (waypoint를 살짝 휘감음)
       const signC = toC > fromC ? 1 : -1;
       const signR = toR > fromR ? 1 : -1;
-      const absDC = Math.abs(toC - fromC);
-      let step1C, step1R;
-      if (absDC > Math.abs(toR - fromR)) {
-        step1C = fromC + signC; step1R = fromR;        // 가로 직진 먼저
+      let wpC, wpR;
+      if (Math.abs(toC - fromC) > Math.abs(toR - fromR)) {
+        wpC = fromC + signC; wpR = fromR;       // 가로 1 → 대각
       } else {
-        step1C = fromC;         step1R = fromR + signR; // 세로 직진 먼저
+        wpC = fromC;         wpR = fromR + signR; // 세로 1 → 대각
       }
-      const step1 = cellToPx(step1C, step1R);
-      await moveToPoint(step1.x, step1.y, duration);
-      await moveToPoint(endPos.x, endPos.y, duration);
-
+      const wp = cellToPx(wpC, wpR);
+      // Use waypoint as control point — curve passes near it, not through it
+      await runPath(quadBezier(startPos, wp, endPos), duration);
     } else if (pieceType === TYPES.ELEPHANT) {
-      // 상: 직진 1칸 → 대각 1칸 → 대각 1칸
+      // 상: 더 큰 곡선. 두 waypoint를 control points로 사용
       const signC = toC > fromC ? 1 : -1;
       const signR = toR > fromR ? 1 : -1;
-      const absDC = Math.abs(toC - fromC);
-      let step1C, step1R, step2C, step2R;
-      if (absDC > Math.abs(toR - fromR)) {
-        // 가로 직진 먼저 (3,2 이동)
-        step1C = fromC + signC;   step1R = fromR;
-        step2C = fromC + signC*2; step2R = fromR + signR;
+      let c1C, c1R, c2C, c2R;
+      if (Math.abs(toC - fromC) > Math.abs(toR - fromR)) {
+        // 가로 우세 (3,2)
+        c1C = fromC + signC;   c1R = fromR;
+        c2C = fromC + signC*2; c2R = fromR + signR;
       } else {
-        // 세로 직진 먼저 (2,3 이동)
-        step1C = fromC;           step1R = fromR + signR;
-        step2C = fromC + signC;   step2R = fromR + signR*2;
+        // 세로 우세 (2,3)
+        c1C = fromC;           c1R = fromR + signR;
+        c2C = fromC + signC;   c2R = fromR + signR*2;
       }
-      const step1 = cellToPx(step1C, step1R);
-      const step2 = cellToPx(step2C, step2R);
-      await moveToPoint(step1.x, step1.y, duration);
-      await moveToPoint(step2.x, step2.y, duration);
-      await moveToPoint(endPos.x, endPos.y, duration);
+      const c1 = cellToPx(c1C, c1R);
+      const c2 = cellToPx(c2C, c2R);
+      await runPath(cubicBezier(startPos, c1, c2, endPos), duration);
+    } else {
+      // 차/왕/사/졸/병: 직선
+      await runPath(linear(startPos, endPos), duration);
     }
 
     document.body.removeChild(animEl);
@@ -1300,7 +1271,7 @@ const LANG = {
     loseAI: 'AI가 이겼습니다. 다시 도전해보세요!',
     winP: t => `${t} 플레이어 승리!`,
     retry: '다시 하기',
-    diff: ['입문','초급','중급','고급','최고수'],
+    diff: ['하','중','상'],
     capEmpty: t => `${t} 포획 없음`,
   },
   ja: {
@@ -1317,7 +1288,7 @@ const LANG = {
     loseAI: 'AIの勝ちです。もう一度挑戦！',
     winP: t => `${t}プレイヤーの勝ち！`,
     retry: 'もう一度',
-    diff: ['入門','初級','中級','上級','最強'],
+    diff: ['弱','中','強'],
     capEmpty: t => `${t}の捕獲なし`,
   },
   en: {
@@ -1334,7 +1305,7 @@ const LANG = {
     loseAI: 'The AI won. Try again!',
     winP: t => `${t} player wins!`,
     retry: 'Play again',
-    diff: ['Beginner','Novice','Intermediate','Advanced','Master'],
+    diff: ['Easy','Mid','Hard'],
     capEmpty: t => `${t} no captures`,
   }
 };
@@ -1350,7 +1321,7 @@ let state = {
   winner: null,
   aiThinking: false,
   mode: 'ai',
-  difficulty: 2,
+  difficulty: 1,
   showRecommend: true,
   beginnerMode: true,
   recommended: [],
