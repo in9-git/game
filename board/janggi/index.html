@@ -668,12 +668,8 @@ function duckBGM(durationMs) {
 function playMoveSound() {}
 function playCaptureSound() {}
 
-// 장군 — 공격 측이 외침. 초 공격 시 01(남), 한 공격 시 02(여)
-function playJanggunSound(attackerTeam) {
-  duckBGM(2000);
-  const file = (attackerTeam === CHO) ? 'janggun-01.mp3' : 'janggun-02.mp3';
-  playAudio(SND + file, 1.0);
-}
+// 장군 사운드/리액션 전부 무음 처리 — 사용자 요청
+function playJanggunSound(_attackerTeam) {}
 
 function playWinSound(winner) {
   // 내가 이겼으면 목탁 3번, 졌으면 징 소리
@@ -1567,14 +1563,8 @@ function executeMove(fromC, fromR, toC, toR) {
       return;
     }
 
-    // 장군 효과음
-    if (isInCheck(state.board, enemy)) {
-      // 상대 왕을 위협 → 장군! (내가 외침)
-      playJanggunSound(state.turn);
-      state.inCheck = enemy;
-    } else {
-      state.inCheck = null;
-    }
+    // 장군 액션 전부 제거 — 사운드/하이라이트/상태 표시 없음
+    state.inCheck = null;
 
     state.turn = enemy;
 
@@ -1625,14 +1615,8 @@ function executeMove(fromC, fromR, toC, toR) {
               state.recommended = [];
               playWinSound(HAN);
             } else {
-              // 장군 효과음
-              if (isInCheck(state.board, CHO)) {
-                // AI가 내 왕을 위협 → 장군! (AI가 외침)
-                playJanggunSound(HAN);
-                state.inCheck = CHO;
-              } else {
-                state.inCheck = null;
-              }
+              // 장군 액션 전부 제거
+              state.inCheck = null;
               state.turn = CHO;
               if (state.showRecommend) {
                 state.recommended = getRecommendedMoves(state.board, CHO);
@@ -1691,11 +1675,8 @@ function render() {
     statusText = `<span class="thinking">${L.aiThinking}</span>`;
     statusClass = 'han-turn';
   } else {
-    const inCheck = isInCheck(state.board, state.turn);
     const turnName = state.turn === CHO ? L.cho : L.han;
-    let suffix = '';
-    if (inCheck) suffix = L.check;              // 현재 장군 상태
-    statusText = L.turn(turnName) + suffix;
+    statusText = L.turn(turnName);
     statusClass = state.turn === CHO ? 'cho-turn' : 'han-turn';
   }
 
