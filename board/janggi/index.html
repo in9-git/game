@@ -284,15 +284,6 @@ select {
 .piece.in-check {
   animation: checkFlash 0.55s ease-in-out 6;
 }
-@keyframes boardShake {
-  0%, 100% { transform: translate(0, 0); }
-  25% { transform: translate(4px, 0); }
-  50% { transform: translate(-4px, 0); }
-  75% { transform: translate(2px, 0); }
-}
-.board-container.meonggun-shake {
-  animation: boardShake 0.3s ease-out;
-}
 .meonggun-overlay {
   position: absolute;
   top: 0; left: 0;
@@ -463,15 +454,15 @@ const PIECE_IMAGES = {
   }
 };
 
-// Piece size multipliers relative to board cell (for visual hierarchy)
+// Piece size multipliers relative to board cell — uniform for all pieces
 const PIECE_SIZES = {
-  king: 1.0,      // 큼 (왕)
-  chariot: 0.95,  // 큼 (차)
-  cannon: 0.95,   // 큼 (포)
-  horse: 0.85,    // 중간 (마)
-  elephant: 0.85, // 중간 (상)
-  guard: 0.8,     // 중간 (사)
-  soldier: 0.7    // 작음 (졸/병)
+  king: 0.9,
+  chariot: 0.9,
+  cannon: 0.9,
+  horse: 0.9,
+  elephant: 0.9,
+  guard: 0.9,
+  soldier: 0.9
 };
 
 const PIECE_VALUES = { king: 0, chariot: 13, cannon: 7, horse: 5, elephant: 3, guard: 3, soldier: 2 };
@@ -649,12 +640,8 @@ function playMeonggunSound() {
 function triggerMeonggunEffect() {
   const boardContainer = document.querySelector('.board-container');
   if (!boardContainer) return;
-  
-  // Screen shake
-  boardContainer.classList.add('meonggun-shake');
-  setTimeout(() => boardContainer.classList.remove('meonggun-shake'), 300);
-  
-  // Red overlay flash
+
+  // Red overlay flash (no shake)
   const overlay = document.createElement('div');
   overlay.className = 'meonggun-overlay';
   boardContainer.appendChild(overlay);
@@ -1136,23 +1123,25 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
     return;
   }
 
-  const boardContainer = document.querySelector('.board-container');
-  const boardRect = boardContainer.getBoundingClientRect();
-  const boardLeft = boardRect.left + 22; // padding
-  const boardTop = boardRect.top + 22;
-
-  // Get cell size from actual board element
+  // Use .board's actual position so animation works at every viewport
   const board = document.querySelector('.board');
   const boardSize = board.getBoundingClientRect();
+  const boardLeft = boardSize.left;
+  const boardTop = boardSize.top;
   const cellSize = boardSize.width / 9;
   const pieceW = (cellSize * (44/48)) * PIECE_SIZES[pieceType];
   const pieceH = (cellSize * (39/48)) * PIECE_SIZES[pieceType];
 
+  // Helper: cell (c, r) → top-left pixel for an absolutely-positioned piece
+  const cellToPx = (c, r) => ({
+    x: boardLeft + (c + 0.5) * cellSize - pieceW/2,
+    y: boardTop  + (r + 0.5) * cellSize - pieceH/2
+  });
+
   const piece = state.board[fromR][fromC];
   const pieceImg = PIECE_IMAGES[pieceTeam][pieceType];
 
-  const startX = boardLeft + fromC * cellSize + cellSize/2;
-  const startY = boardTop + fromR * cellSize + cellSize/2;
+  const startPos = cellToPx(fromC, fromR);
 
   const animEl = document.createElement('div');
   animEl.className = 'animated-piece';
@@ -1163,8 +1152,8 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
   animImg.style.width = pieceW + 'px';
   animImg.style.height = pieceH + 'px';
 
-  let currentX = startX - pieceW/2;
-  let currentY = startY - pieceH/2;
+  let currentX = startPos.x;
+  let currentY = startPos.y;
   animEl.style.left = currentX + 'px';
   animEl.style.top = currentY + 'px';
 
@@ -1217,55 +1206,32 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
 
   (async () => {
     const duration = 175;
+    const endPos = cellToPx(toC, toR);
 
     if (pieceType === TYPES.CHARIOT || pieceType === TYPES.KING || pieceType === TYPES.GUARD || pieceType === TYPES.SOLDIER) {
       // Direct straight line
-      const endX = boardLeft + toC * cellSize + cellSize/2 - pieceW/2;
-      const endY = boardTop + toR * cellSize + cellSize/2 - pieceH/2;
-      await moveToPoint(endX, endY, duration);
+      await moveToPoint(endPos.x, endPos.y, duration);
     } else if (pieceType === TYPES.CANNON) {
-      // 포: 넘는 기물 위를 부드러운 아크(호)로 통과
-      const dc = toC > fromC ? 1 : (toC < fromC ? -1 : 0);
-      const dr = toR > fromR ? 1 : (toR < fromR ? -1 : 0);
-      let jumpC = fromC + dc, jumpR = fromR + dr;
-      while (jumpC !== toC || jumpR !== toR) {
-        if (state.board[jumpR][jumpC]) break;
-        jumpC += dc;
-        jumpR += dr;
-      }
-
-      const endX = boardLeft + toC * cellSize + cellSize/2 - pieceW/2;
-      const endY = boardTop + toR * cellSize + cellSize/2 - pieceH/2;
-      const jumpMidX = boardLeft + jumpC * cellSize + cellSize/2 - pieceW/2;
-      const jumpMidY = boardTop + jumpR * cellSize + cellSize/2 - pieceH/2;
-
-      // Arc animation: smooth parabolic jump over the piece
-      const arcDuration = duration * 2.2;
+      // 포: 살짝 떠올라 부드럽게 호를 그리며 착지 (과하지 않게)
+      const arcDuration = duration * 1.6;
       await new Promise(resolve => {
         const startTime = Date.now();
         const sx = currentX, sy = currentY;
         const animate = () => {
           const elapsed = Date.now() - startTime;
           const t = Math.min(elapsed / arcDuration, 1);
-          // Smooth ease-in-out
           const ease = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
-          // Linear X/Y interpolation
-          const lx = sx + (endX - sx) * ease;
-          const ly = sy + (endY - sy) * ease;
-          // Parabolic arc height (peak at the jumped piece)
-          const arcHeight = cellSize * 1.2;
+          const lx = sx + (endPos.x - sx) * ease;
+          const ly = sy + (endPos.y - sy) * ease;
+          const arcHeight = cellSize * 0.55; // 약하게 떠오름
           const arc = -4 * arcHeight * t * (t - 1);
           currentX = lx;
           currentY = ly - arc;
           animEl.style.left = currentX + 'px';
           animEl.style.top = currentY + 'px';
-          // Slight scale bump at peak
-          const scaleBump = 1 + 0.15 * Math.sin(Math.PI * t);
-          animImg.style.transform = `scale(${scaleBump})`;
           if (t < 1) {
             requestAnimationFrame(animate);
           } else {
-            animImg.style.transform = 'scale(1)';
             resolve();
           }
         };
@@ -1273,33 +1239,26 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
       });
     } else if (pieceType === TYPES.HORSE) {
       // 말: 직진 1칸 → 대각 1칸
-      // |toC-fromC|=2 이면 가로 먼저, |toR-fromR|=2 이면 세로 먼저
       const signC = toC > fromC ? 1 : -1;
       const signR = toR > fromR ? 1 : -1;
       const absDC = Math.abs(toC - fromC);
-      const absDR = Math.abs(toR - fromR);
       let step1C, step1R;
-      if (absDC > absDR) {
+      if (absDC > Math.abs(toR - fromR)) {
         step1C = fromC + signC; step1R = fromR;        // 가로 직진 먼저
       } else {
         step1C = fromC;         step1R = fromR + signR; // 세로 직진 먼저
       }
-      const step1X = boardLeft + step1C * 48 + 24 - 22;
-      const step1Y = boardTop + step1R * 48 + 24 - 19.5;
-      await moveToPoint(step1X, step1Y, duration);
-      const endX = boardLeft + toC * cellSize + cellSize/2 - pieceW/2;
-      const endY = boardTop + toR * cellSize + cellSize/2 - pieceH/2;
-      await moveToPoint(endX, endY, duration);
+      const step1 = cellToPx(step1C, step1R);
+      await moveToPoint(step1.x, step1.y, duration);
+      await moveToPoint(endPos.x, endPos.y, duration);
 
     } else if (pieceType === TYPES.ELEPHANT) {
       // 상: 직진 1칸 → 대각 1칸 → 대각 1칸
-      // |toC-fromC|=3 이면 가로 먼저, |toR-fromR|=3 이면 세로 먼저
       const signC = toC > fromC ? 1 : -1;
       const signR = toR > fromR ? 1 : -1;
       const absDC = Math.abs(toC - fromC);
-      const absDR = Math.abs(toR - fromR);
       let step1C, step1R, step2C, step2R;
-      if (absDC > absDR) {
+      if (absDC > Math.abs(toR - fromR)) {
         // 가로 직진 먼저 (3,2 이동)
         step1C = fromC + signC;   step1R = fromR;
         step2C = fromC + signC*2; step2R = fromR + signR;
@@ -1308,15 +1267,11 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
         step1C = fromC;           step1R = fromR + signR;
         step2C = fromC + signC;   step2R = fromR + signR*2;
       }
-      const step1X = boardLeft + step1C * 48 + 24 - 22;
-      const step1Y = boardTop + step1R * 48 + 24 - 19.5;
-      await moveToPoint(step1X, step1Y, duration);
-      const step2X = boardLeft + step2C * 48 + 24 - 22;
-      const step2Y = boardTop + step2R * 48 + 24 - 19.5;
-      await moveToPoint(step2X, step2Y, duration);
-      const endX = boardLeft + toC * cellSize + cellSize/2 - pieceW/2;
-      const endY = boardTop + toR * cellSize + cellSize/2 - pieceH/2;
-      await moveToPoint(endX, endY, duration);
+      const step1 = cellToPx(step1C, step1R);
+      const step2 = cellToPx(step2C, step2R);
+      await moveToPoint(step1.x, step1.y, duration);
+      await moveToPoint(step2.x, step2.y, duration);
+      await moveToPoint(endPos.x, endPos.y, duration);
     }
 
     document.body.removeChild(animEl);
