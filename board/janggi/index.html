@@ -676,9 +676,8 @@ function playCaptureSound() {
 // 장군 — 공격 측이 외침. 초 공격 시 01(남), 한 공격 시 02(여)
 function playJanggunSound(attackerTeam) {
   duckBGM(2000);
-  playWoodKnock(0.6, 1.2);
   const file = (attackerTeam === CHO) ? 'janggun-01.mp3' : 'janggun-02.mp3';
-  setTimeout(() => playAudio(SND + file, 1.0), 100);
+  playAudio(SND + file, 1.0);
 }
 
 function playWinSound(winner) {
@@ -1861,15 +1860,22 @@ function render() {
     ` : ''}
   `;
 
-  // Add click handlers
-  document.querySelectorAll('.cell').forEach(cell => {
-    cell.addEventListener('click', () => {
-      const col = parseInt(cell.dataset.col);
-      const row = parseInt(cell.dataset.row);
-      selectPiece(col, row);
-    });
-  });
 }
+
+// 셀 클릭은 #app에 위임된 pointerdown 한 번만 부착해 매 렌더마다 재부착 비용 제거 + 터치 지연 제거
+(function attachCellDelegate() {
+  const app = document.getElementById('app');
+  if (!app || app.dataset.cellDelegate) return;
+  app.dataset.cellDelegate = '1';
+  app.addEventListener('pointerdown', (e) => {
+    const cell = e.target.closest && e.target.closest('.cell');
+    if (!cell) return;
+    const col = parseInt(cell.dataset.col);
+    const row = parseInt(cell.dataset.row);
+    if (Number.isNaN(col) || Number.isNaN(row)) return;
+    selectPiece(col, row);
+  });
+})();
 
 function cycleLang() {
   const langs = ['ko', 'ja', 'en'];
