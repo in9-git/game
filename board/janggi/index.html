@@ -1526,10 +1526,11 @@ function resetGame() {
     wasmEngine.postMessage('setoption name UCI_Variant value janggi');
     wasmEngine.postMessage('isready');
   }
-  if (state.showRecommend) {
-    state.recommended = getRecommendedMoves(state.board, state.turn);
-  }
+  state.recommended = [];
   render();
+  if (state.showRecommend) {
+    scheduleRecommend(state.turn);
+  }
 }
 
 function selectPiece(col, row) {
@@ -1633,6 +1634,21 @@ function applySelectionDOM() {
   }
 }
 
+// 추천 계산은 무거우니(minimax depth=2) 클릭 응답을 막지 않도록 비동기로 미룸
+let recommendToken = 0;
+function scheduleRecommend(team) {
+  const myToken = ++recommendToken;
+  setTimeout(() => {
+    if (myToken !== recommendToken) return; // 더 새로운 요청이 들어왔으면 폐기
+    if (state.gameOver) return;
+    if (!state.showRecommend) return;
+    if (state.turn !== team) return;
+    state.recommended = getRecommendedMoves(state.board, team);
+    // 선택 중이 아닐 때만 렌더(선택 중에는 추천이 다음 차례에 다시 계산됨)
+    if (!state.selected) render();
+  }, 0);
+}
+
 function executeMove(fromC, fromR, toC, toR) {
   const piece = state.board[fromR][fromC];
   // 안전장치: 잘못된 호출(턴 불일치/빈 칸/적 말)은 무시
@@ -1676,14 +1692,12 @@ function executeMove(fromC, fromR, toC, toR) {
 
     state.turn = enemy;
 
-    // Update recommendations
-    if (state.showRecommend && !(state.mode === 'ai' && state.turn === HAN)) {
-      state.recommended = getRecommendedMoves(state.board, state.turn);
-    } else {
-      state.recommended = [];
-    }
-
+    // 추천은 무거우니 우선 비워서 즉시 렌더하고, 계산은 비동기로 이후 보강
+    state.recommended = [];
     render();
+    if (state.showRecommend && !(state.mode === 'ai' && state.turn === HAN)) {
+      scheduleRecommend(state.turn);
+    }
 
     // AI move
     if (state.mode === 'ai' && state.turn === HAN && !state.gameOver) {
@@ -1729,11 +1743,12 @@ function executeMove(fromC, fromR, toC, toR) {
               }
               state.inCheck = null;
               state.turn = CHO;
-              if (state.showRecommend) {
-                state.recommended = getRecommendedMoves(state.board, CHO);
-              }
+              state.recommended = [];
             }
             render();
+            if (!state.gameOver && state.showRecommend) {
+              scheduleRecommend(CHO);
+            }
           };
 
           animateMove(aiMove.from[0], aiMove.from[1], aiMove.to[0], aiMove.to[1], aiPiece.type, aiPiece.team, executeAIMoveFinal);
@@ -1992,20 +2007,16 @@ function changeGameMode(newMode) {
 
 function changeDifficulty(val) {
   state.difficulty = parseInt(val);
-  if (state.showRecommend && !state.gameOver) {
-    state.recommended = getRecommendedMoves(state.board, state.turn);
-  }
+  state.recommended = [];
   render();
+  if (state.showRecommend && !state.gameOver) scheduleRecommend(state.turn);
 }
 
 function toggleRecommend() {
   state.showRecommend = !state.showRecommend;
-  if (state.showRecommend && !state.gameOver) {
-    state.recommended = getRecommendedMoves(state.board, state.turn);
-  } else {
-    state.recommended = [];
-  }
+  state.recommended = [];
   render();
+  if (state.showRecommend && !state.gameOver) scheduleRecommend(state.turn);
 }
 
 function toggleBeginnerMode() {
@@ -2014,8 +2025,9 @@ function toggleBeginnerMode() {
 }
 
 // Initialize
-state.recommended = getRecommendedMoves(state.board, state.turn);
+state.recommended = [];
 render();
+if (state.showRecommend) scheduleRecommend(state.turn);
 initWasmEngine();
 </script>
 </body>
