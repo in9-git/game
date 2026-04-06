@@ -237,6 +237,29 @@ select {
   width: 100%;
   max-width: 432px;
 }
+.mode-selector-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 432px;
+  padding: 4px 0;
+}
+.mode-select {
+  background: #16213e;
+  color: #ffd43b;
+  border: 1px solid #4a9eff44;
+  padding: 8px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-align: center;
+  text-align-last: center;
+}
+.mode-select:hover { border-color: #4a9eff; }
 .captured-piece {
   display: flex;
   align-items: center;
@@ -327,8 +350,9 @@ select {
   button, select { font-size: 12px; padding: 6px 10px; }
   .lang-btn { padding: 6px 10px; font-size: 12px; }
   .top-bar { gap: 8px; }
-  .controls-row { gap: 6px; }
-  .btn-start, .btn-stop { padding: 8px 16px; font-size: 12px; }
+  .controls-row { gap: 5px; }
+  .controls-row button { padding: 7px 8px; font-size: 11px; letter-spacing: 0.5px; }
+  .btn-start, .btn-stop { padding: 7px 10px; font-size: 11px; }
 }
 @media (max-width: 380px) {
   .cell { width: 30px; height: 30px; }
@@ -467,12 +491,13 @@ const PIECE_SIZES = {
 
 const PIECE_VALUES = { king: 0, chariot: 13, cannon: 7, horse: 5, elephant: 3, guard: 3, soldier: 2 };
 
-// 애기장기 컨셉: 초보자가 직접 두면서 배우기. 속도 우선, 강함 X.
-// 강한 AI는 별도 모드에서 다룰 예정. 모든 레벨은 즉각 응답해야 함.
+// 게임 모드별 AI 프로필. 연습 모드도 충분히 강하게 (학습 가치 있게).
 const DIFFICULTIES = [
-  { name: '하', depth: 1, random: 0.5,  wasmDepth: 2, skillLevel: -15, limitStrength: true, elo: 600 },
-  { name: '중', depth: 2, random: 0.2,  wasmDepth: 3, skillLevel: -5,  limitStrength: true, elo: 900 },
-  { name: '상', depth: 2, random: 0.05, wasmDepth: 4, skillLevel: 5,   limitStrength: true, elo: 1200 }
+  // index 0: 연습 모드 — 강하지만 너무 느리지 않게
+  { name: '연습', depth: 3, random: 0.02, wasmDepth: 10, skillLevel: 18, limitStrength: false, elo: 2000 },
+  // index 1, 2: 미사용 (대전/도전 모드는 추후 별도 프로필)
+  { name: '대전', depth: 3, random: 0.02, wasmDepth: 12, skillLevel: 20, limitStrength: false, elo: 2400 },
+  { name: '도전', depth: 4, random: 0,    wasmDepth: 15, skillLevel: 20, limitStrength: false, elo: 2800 }
 ];
 
 // Palace boundaries
@@ -1273,6 +1298,8 @@ const LANG = {
     retry: '다시 하기',
     diff: ['하','중','상'],
     capEmpty: t => `${t} 포획 없음`,
+    gameModes: { practice: '연습 모드', match: '대전 모드', challenge: '도전 모드' },
+    comingSoon: '준비 중입니다 🚧',
   },
   ja: {
     title: 'ベビー将棋', subtitle: 'Baby Janggi · 애기장기',
@@ -1290,6 +1317,8 @@ const LANG = {
     retry: 'もう一度',
     diff: ['弱','中','強'],
     capEmpty: t => `${t}の捕獲なし`,
+    gameModes: { practice: '練習モード', match: '対戦モード', challenge: '挑戦モード' },
+    comingSoon: '準備中です 🚧',
   },
   en: {
     title: 'Baby Janggi', subtitle: '애기장기 · ベビー将棋',
@@ -1307,6 +1336,8 @@ const LANG = {
     retry: 'Play again',
     diff: ['Easy','Mid','Hard'],
     capEmpty: t => `${t} no captures`,
+    gameModes: { practice: 'Practice', match: 'Match', challenge: 'Challenge' },
+    comingSoon: 'Coming soon 🚧',
   }
 };
 function T(key) { return LANG[state.lang][key]; }
@@ -1321,7 +1352,8 @@ let state = {
   winner: null,
   aiThinking: false,
   mode: 'ai',
-  difficulty: 1,
+  gameMode: 'practice', // practice | match | challenge
+  difficulty: 0, // index into DIFFICULTIES (0 = 연습 프로필)
   showRecommend: true,
   beginnerMode: true,
   recommended: [],
@@ -1769,14 +1801,12 @@ function render() {
       <div class="status ${statusClass}">${statusText}</div>
     </div>
     <div class="game-layout">
-      <div class="captures-bar">
-        ${sortByValue(state.captured.cho).length > 0
-          ? `<span style="color:#ff6b6b;font-size:11px;margin-right:4px;">${L.han}:</span>` + sortByValue(state.captured.cho).map(p => {
-            const capW = getPieceSize(p.type) * 0.7;
-            const capH = getPieceHeight(p.type) * 0.7;
-            return `<div class="captured-piece cho"><img src="${PIECE_IMAGES.cho[p.type]}" alt="${PIECE_NAMES.cho[p.type]}" style="width:${capW}px;height:${capH}px;"></div>`;
-          }).join('')
-          : `<span style="color:#555;font-size:11px;">${L.capEmpty(L.han)}</span>`}
+      <div class="mode-selector-bar">
+        <select id="gameModeSelect" class="mode-select" onchange="changeGameMode(this.value)">
+          <option value="practice" ${state.gameMode === 'practice' ? 'selected' : ''}>${L.gameModes.practice}</option>
+          <option value="match" ${state.gameMode === 'match' ? 'selected' : ''}>${L.gameModes.match}</option>
+          <option value="challenge" ${state.gameMode === 'challenge' ? 'selected' : ''}>${L.gameModes.challenge}</option>
+        </select>
       </div>
       <div class="board-container">
       <svg class="board-lines" viewBox="0 0 432 480" xmlns="http://www.w3.org/2000/svg">
@@ -1820,17 +1850,6 @@ function render() {
         ${!state.gameOver
           ? `<button class="btn-stop" onclick="resignGame()">${L.resign}</button>`
           : `<button class="btn-stop" onclick="quitGame()">${L.quit}</button>`}
-      </div>
-      <div class="controls-row">
-        <select id="modeSelect" onchange="changeMode(this.value)">
-          <option value="ai" ${state.mode === 'ai' ? 'selected' : ''}>${L.aiMode}</option>
-          <option value="pvp" ${state.mode === 'pvp' ? 'selected' : ''}>${L.pvpMode}</option>
-        </select>
-        <select id="diffSelect" onchange="changeDifficulty(this.value)" ${state.mode !== 'ai' ? 'disabled' : ''}>
-          ${L.diff.map((name, i) => `<option value="${i}" ${state.difficulty === i ? 'selected' : ''}>${name}</option>`).join('')}
-        </select>
-      </div>
-      <div class="controls-row">
         <button class="${state.showRecommend ? 'active' : ''}" onclick="toggleRecommend()">
           ${state.showRecommend ? L.hintOn : L.hint}
         </button>
@@ -1890,6 +1909,20 @@ function quitGame() {
 
 function changeMode(mode) {
   state.mode = mode;
+  resetGame();
+}
+
+function changeGameMode(newMode) {
+  if (newMode === 'match' || newMode === 'challenge') {
+    alert(LANG[state.lang].comingSoon);
+    // revert dropdown selection visually
+    const sel = document.getElementById('gameModeSelect');
+    if (sel) sel.value = state.gameMode;
+    return;
+  }
+  state.gameMode = newMode;
+  // Practice mode uses index 0 (강한 AI)
+  state.difficulty = 0;
   resetGame();
 }
 
