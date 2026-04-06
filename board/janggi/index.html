@@ -630,48 +630,48 @@ function playAudio(path, volume = 1.0, playbackRate = 1.0) {
 // 경로 기준
 const SND = 'audio/';
 
+// BGM — 두 곡 랜덤 재생
+const BGM_TRACKS = ['bgm-idle.mp3', 'bgm-resting.mp3'];
+
 // 프리로드
 window.addEventListener('DOMContentLoaded', () => {
-  ['janggun-01.mp3', 'janggun-02.mp3', 'meonggun.mp3', 'defeat.mp3', 'bgm-idle.mp3', 'bgm-battle.mp3'].forEach(f => {
+  ['janggun-01.mp3', 'janggun-02.mp3', 'meonggun.mp3', 'defeat.mp3', ...BGM_TRACKS].forEach(f => {
     const a = new Audio(SND + f);
     a.preload = 'auto';
   });
 });
 
-// BGM — idle(대기/메뉴) & battle(게임 중) 두 트랙
 let bgmAudio = null;
-let bgmType = null; // 'idle' | 'battle'
+let bgmLastIndex = -1;
 const BGM_VOL = 0.2;
 
-function playBGM(type) {
-  type = type || 'idle';
-  if (bgmAudio && bgmType === type) return; // 이미 재생 중
+function pickNextBgmTrack() {
+  let i;
+  do { i = Math.floor(Math.random() * BGM_TRACKS.length); }
+  while (BGM_TRACKS.length > 1 && i === bgmLastIndex);
+  bgmLastIndex = i;
+  return BGM_TRACKS[i];
+}
+
+function playBGM() {
+  if (!state.bgmOn) return;
+  if (bgmAudio && !bgmAudio.paused) return;
   stopBGM();
-  const file = type === 'battle' ? 'bgm-battle.mp3' : 'bgm-idle.mp3';
+  const file = pickNextBgmTrack();
   bgmAudio = new Audio(SND + file);
-  bgmAudio.loop = true;
+  bgmAudio.loop = false;
   bgmAudio.volume = BGM_VOL;
-  bgmType = type;
+  bgmAudio.addEventListener('ended', () => {
+    bgmAudio = null;
+    if (state.bgmOn) playBGM();
+  });
   bgmAudio.play().catch(() => {});
 }
 function stopBGM() {
-  if (bgmAudio) { bgmAudio.pause(); bgmAudio.currentTime = 0; bgmAudio = null; bgmType = null; }
+  if (bgmAudio) { bgmAudio.pause(); bgmAudio.currentTime = 0; bgmAudio = null; }
 }
-function switchBGM(type) {
-  if (bgmType === type) return;
-  // Crossfade: fade out current, start new
-  if (bgmAudio) {
-    const old = bgmAudio;
-    let vol = old.volume;
-    const fadeOut = setInterval(() => {
-      vol -= 0.02;
-      if (vol <= 0) { clearInterval(fadeOut); old.pause(); }
-      else old.volume = vol;
-    }, 50);
-  }
-  bgmAudio = null; bgmType = null;
-  setTimeout(() => playBGM(type), 500);
-}
+// 호환 shim — 기존 호출부 유지용
+function switchBGM(_type) { if (state.bgmOn && (!bgmAudio || bgmAudio.paused)) playBGM(); }
 function duckBGM(durationMs) {
   if (!bgmAudio) return;
   bgmAudio.volume = 0.04;
@@ -1331,6 +1331,7 @@ const LANG = {
     aiMode: 'AI 대전', pvpMode: '2인 대전',
     hint: '💡 훈수', hintOn: '💡 훈수 ON',
     anim: '🎬 애니', animOn: '🎬 애니 ON',
+    bgm: '🎵 BGM',
     cho: '초(楚)', han: '한(漢)',
     turn: t => `${t}의 차례`, check: ' — ⚠️ 장군!', meonggun: ' — 멍군!',
     aiThinking: 'AI 생각 중...',
@@ -1350,6 +1351,7 @@ const LANG = {
     aiMode: 'AI対局', pvpMode: '二人対局',
     hint: '💡 助言', hintOn: '💡 助言 ON',
     anim: '🎬 アニメ', animOn: '🎬 アニメ ON',
+    bgm: '🎵 BGM',
     cho: '楚(そ)', han: '漢(かん)',
     turn: t => `${t}の番`, check: ' — ⚠️ 将軍!', meonggun: ' — 멍군!',
     aiThinking: 'AI思考中...',
@@ -1369,6 +1371,7 @@ const LANG = {
     aiMode: 'vs AI', pvpMode: 'vs Player',
     hint: '💡 Hint', hintOn: '💡 Hint ON',
     anim: '🎬 Anim', animOn: '🎬 Anim ON',
+    bgm: '🎵 BGM',
     cho: 'Cho', han: 'Han',
     turn: t => `${t}'s turn`, check: ' — ⚠️ Check!', meonggun: ' — Meonggun!',
     aiThinking: 'AI thinking...',
@@ -1399,6 +1402,7 @@ let state = {
   difficulty: 0, // index into DIFFICULTIES (0 = 연습 프로필)
   showRecommend: true,
   beginnerMode: true,
+  bgmOn: true,
   recommended: [],
   lastMove: null,
   moveHistory: [],
@@ -1519,7 +1523,7 @@ async function wasmGetBestMove(depth, skillLevel, limitStrength, elo) {
 
 let bgmStarted = false;
 function tryStartBGM() {
-  if (!bgmStarted) { bgmStarted = true; playBGM('battle'); }
+  if (!bgmStarted) { bgmStarted = true; if (state.bgmOn) playBGM(); }
 }
 
 function resetGame() {
@@ -1892,11 +1896,10 @@ function render() {
     <div class="controls">
       <div class="controls-row">
         <button class="btn-start" onclick="resetGame()">${L.newGame}</button>
-        ${!state.gameOver
-          ? `<button class="btn-stop" onclick="resignGame()">${L.resign}</button>`
-          : `<button class="btn-stop" onclick="quitGame()">${L.quit}</button>`}
+        ${state.gameOver ? `<button class="btn-stop" onclick="quitGame()">${L.quit}</button>` : ''}
         <button class="btn-toggle ${state.showRecommend ? 'active' : ''}" onclick="toggleRecommend()">${L.hint}</button>
         <button class="btn-toggle ${state.beginnerMode ? 'active' : ''}" onclick="toggleBeginnerMode()">${L.anim}</button>
+        <button class="btn-toggle ${state.bgmOn ? 'active' : ''}" onclick="toggleBgm()">${L.bgm}</button>
       </div>
     </div>
     ${state.gameOver ? `
@@ -1935,11 +1938,13 @@ function changeLang(lang) {
   render();
 }
 
-function resignGame() {
-  if (state.gameOver) return;
-  state.gameOver = true;
-  state.winner = state.turn === CHO ? HAN : CHO;
-  switchBGM('idle');
+function toggleBgm() {
+  state.bgmOn = !state.bgmOn;
+  if (state.bgmOn) {
+    if (bgmStarted) playBGM();
+  } else {
+    stopBGM();
+  }
   render();
 }
 
