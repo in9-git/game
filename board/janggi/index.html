@@ -278,10 +278,10 @@ select {
   filter: drop-shadow(0 0 5px rgba(74,158,255,0.9)) drop-shadow(0 0 10px rgba(74,158,255,0.5));
 }
 @keyframes checkFlash {
-  0%, 100% { filter: drop-shadow(0 0 6px rgba(255,60,60,1)) drop-shadow(0 0 14px rgba(255,0,0,0.7)); transform: scale(1.0); }
-  50%       { filter: drop-shadow(0 0 18px rgba(255,80,80,1)) drop-shadow(0 0 32px rgba(255,0,0,1));  transform: scale(1.12); }
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(255,60,60,1)) drop-shadow(0 0 14px rgba(255,0,0,0.7)); }
+  50%      { filter: drop-shadow(0 0 18px rgba(255,80,80,1)) drop-shadow(0 0 32px rgba(255,0,0,1)); }
 }
-.piece.in-check {
+.piece.in-check img {
   animation: checkFlash 0.55s ease-in-out 6;
 }
 .meonggun-overlay {
@@ -454,15 +454,15 @@ const PIECE_IMAGES = {
   }
 };
 
-// Piece size multipliers relative to board cell — uniform, ~1.5x larger
+// Piece size multipliers relative to board cell. King slightly larger as focal point.
 const PIECE_SIZES = {
   king: 1.35,
-  chariot: 1.35,
-  cannon: 1.35,
-  horse: 1.35,
-  elephant: 1.35,
-  guard: 1.35,
-  soldier: 1.35
+  chariot: 1.3,
+  cannon: 1.3,
+  horse: 1.3,
+  elephant: 1.3,
+  guard: 1.3,
+  soldier: 1.3
 };
 
 const PIECE_VALUES = { king: 0, chariot: 13, cannon: 7, horse: 5, elephant: 3, guard: 3, soldier: 2 };
@@ -1770,11 +1770,11 @@ function render() {
     </div>
     <div class="game-layout">
       <div class="captures-bar">
-        ${sortByValue(state.captured.han).length > 0
-          ? `<span style="color:#69db7c;font-size:11px;margin-right:4px;">${L.cho}:</span>` + sortByValue(state.captured.han).map(p => {
-            const capW = getPieceSize(p.type) * 0.7; // 70% of board size
+        ${sortByValue(state.captured.cho).length > 0
+          ? `<span style="color:#ff6b6b;font-size:11px;margin-right:4px;">${L.han}:</span>` + sortByValue(state.captured.cho).map(p => {
+            const capW = getPieceSize(p.type) * 0.7;
             const capH = getPieceHeight(p.type) * 0.7;
-            return `<div class="captured-piece han"><img src="${PIECE_IMAGES.han[p.type]}" alt="${PIECE_NAMES.han[p.type]}" style="width:${capW}px;height:${capH}px;"></div>`;
+            return `<div class="captured-piece cho"><img src="${PIECE_IMAGES.cho[p.type]}" alt="${PIECE_NAMES.cho[p.type]}" style="width:${capW}px;height:${capH}px;"></div>`;
           }).join('')
           : `<span style="color:#555;font-size:11px;">${L.capEmpty(L.han)}</span>`}
       </div>
@@ -1806,11 +1806,11 @@ function render() {
     </div>
     </div>
       <div class="captures-bar">
-        ${sortByValue(state.captured.cho).length > 0
-          ? `<span style="color:#ff6b6b;font-size:11px;margin-right:4px;">${L.han}:</span>` + sortByValue(state.captured.cho).map(p => {
+        ${sortByValue(state.captured.han).length > 0
+          ? `<span style="color:#69db7c;font-size:11px;margin-right:4px;">${L.cho}:</span>` + sortByValue(state.captured.han).map(p => {
             const capW = getPieceSize(p.type) * 0.7;
             const capH = getPieceHeight(p.type) * 0.7;
-            return `<div class="captured-piece cho"><img src="${PIECE_IMAGES.cho[p.type]}" alt="${PIECE_NAMES.cho[p.type]}" style="width:${capW}px;height:${capH}px;"></div>`;
+            return `<div class="captured-piece han"><img src="${PIECE_IMAGES.han[p.type]}" alt="${PIECE_NAMES.han[p.type]}" style="width:${capW}px;height:${capH}px;"></div>`;
           }).join('')
           : `<span style="color:#555;font-size:11px;">${L.capEmpty(L.cho)}</span>`}
       </div>
