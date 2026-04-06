@@ -146,8 +146,11 @@ select {
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  transition: all 0.15s;
-  position: relative;
+  transition: transform 0.15s, filter 0.15s;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 2;
   user-select: none;
 }
@@ -162,7 +165,7 @@ select {
 .piece.han {}
 .piece.selected {
   filter: drop-shadow(0 0 6px #ffd43b) drop-shadow(0 0 12px rgba(255,212,59,0.5));
-  transform: scale(1.15);
+  transform: translate(-50%, -50%) scale(1.15);
 }
 .piece.selected img {
   filter: drop-shadow(0 0 4px #ffd43b);
@@ -323,8 +326,8 @@ select {
   .piece { width: 33px; height: 33px; }
   .piece img { width: 33px; height: 29px; }
   .board { width: 324px; height: 360px; grid-template-columns: repeat(9, 36px); grid-template-rows: repeat(10, 36px); }
-  .board-lines { width: 324px; height: 360px; transform: scale(0.75); transform-origin: top left; }
-  .board-container { padding: 14px; width: 324px; }
+  .board-lines { width: 324px; height: 360px; top: 14px; left: 14px; transform: none; }
+  .board-container { padding: 14px; width: auto; }
   .game-layout { gap: 10px; }
   .captures-side { width: 44px; max-height: 374px; }
   .captured-piece img { width: 33px; height: 29px; }
@@ -341,8 +344,8 @@ select {
   .piece { width: 28px; height: 28px; }
   .piece img { width: 28px; height: 25px; }
   .board { width: 270px; height: 300px; grid-template-columns: repeat(9, 30px); grid-template-rows: repeat(10, 30px); }
-  .board-lines { width: 270px; height: 300px; transform: scale(0.625); }
-  .board-container { padding: 10px; width: 270px; }
+  .board-lines { width: 270px; height: 300px; top: 10px; left: 10px; transform: none; }
+  .board-container { padding: 10px; width: auto; }
   .captures-side { width: 38px; max-height: 310px; }
   .captured-piece img { width: 28px; height: 25px; }
   .animated-piece img { width: 28px; height: 25px; }
