@@ -668,8 +668,11 @@ function duckBGM(durationMs) {
 function playMoveSound() {}
 function playCaptureSound() {}
 
-// 장군 사운드/리액션 전부 무음 처리 — 사용자 요청
-function playJanggunSound(_attackerTeam) {}
+// 장군 — 음성만 재생 (덜컥/duck/리액션 없음)
+function playJanggunSound(attackerTeam) {
+  const file = (attackerTeam === CHO) ? 'janggun-01.mp3' : 'janggun-02.mp3';
+  playAudio(SND + file, 1.0);
+}
 
 function playWinSound(winner) {
   // 내가 이겼으면 목탁 3번, 졌으면 징 소리
@@ -1527,7 +1530,73 @@ function selectPiece(col, row) {
     state.legalMoves = [];
   }
   state.lastMoveGhost = null;
-  render();
+  // 선택만 바뀔 땐 부분 DOM 업데이트로 즉각 반응 (전체 innerHTML 재빌드 회피)
+  applySelectionDOM();
+}
+
+// 반응형 셀/기물 크기 헬퍼 — render 와 applySelectionDOM 모두에서 사용
+function getCellSize() {
+  let s = 48;
+  if (window.innerWidth <= 480) s = 36;
+  if (window.innerWidth <= 380) s = 30;
+  return s;
+}
+function getPieceSize(pieceType) {
+  const base = getCellSize() * 0.917;
+  const mult = PIECE_SIZES[pieceType] || 0.85;
+  return base * mult;
+}
+function getPieceHeight(pieceType) {
+  const base = getCellSize() * 0.8125;
+  const mult = PIECE_SIZES[pieceType] || 0.85;
+  return base * mult;
+}
+
+// 선택 상태 변경을 기존 DOM에 직접 반영해 click→paint 지연 최소화
+function applySelectionDOM() {
+  // Clear previous selection visuals
+  document.querySelectorAll('.piece.selected').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.cell .move-dot, .cell .recommend-ghost').forEach(el => el.remove());
+
+  if (!state.selected) return;
+  const [sc, sr] = state.selected;
+  const selectedPiece = state.board[sr][sc];
+  if (!selectedPiece) return;
+
+  // Highlight selected piece
+  const selCell = document.querySelector(`.cell[data-col="${sc}"][data-row="${sr}"]`);
+  selCell?.querySelector('.piece')?.classList.add('selected');
+
+  // Build recommended-to lookup for ghost rendering
+  const recToMap = {};
+  if (state.showRecommend && state.recommended.length > 0) {
+    for (const m of state.recommended) {
+      const fromKey = `${m.from[0]},${m.from[1]}`;
+      const selKey = `${sc},${sr}`;
+      if (fromKey === selKey) recToMap[`${m.to[0]},${m.to[1]}`] = m;
+    }
+  }
+
+  // Legal-move dots and recommend ghosts
+  for (const [mc, mr] of state.legalMoves) {
+    const cell = document.querySelector(`.cell[data-col="${mc}"][data-row="${mr}"]`);
+    if (!cell) continue;
+    const hasPiece = !!cell.querySelector('.piece');
+    const recTo = recToMap[`${mc},${mr}`];
+    if (recTo) {
+      const gW = getPieceSize(selectedPiece.type);
+      const gH = getPieceHeight(selectedPiece.type);
+      const ghostImg = PIECE_IMAGES[selectedPiece.team][selectedPiece.type];
+      const ghost = document.createElement('div');
+      ghost.className = 'recommend-ghost';
+      ghost.innerHTML = `<img src="${ghostImg}" alt="" style="width:${gW}px;height:${gH}px;">`;
+      cell.appendChild(ghost);
+    } else if (!hasPiece) {
+      const dot = document.createElement('div');
+      dot.className = 'move-dot';
+      cell.appendChild(dot);
+    }
+  }
 }
 
 function executeMove(fromC, fromR, toC, toR) {
@@ -1563,7 +1632,10 @@ function executeMove(fromC, fromR, toC, toR) {
       return;
     }
 
-    // 장군 액션 전부 제거 — 사운드/하이라이트/상태 표시 없음
+    // 장군 → 음성만 재생, 시각적 하이라이트/상태바 표시 없음
+    if (isInCheck(state.board, enemy)) {
+      playJanggunSound(state.turn);
+    }
     state.inCheck = null;
 
     state.turn = enemy;
@@ -1615,7 +1687,10 @@ function executeMove(fromC, fromR, toC, toR) {
               state.recommended = [];
               playWinSound(HAN);
             } else {
-              // 장군 액션 전부 제거
+              // 장군 → 음성만 재생
+              if (isInCheck(state.board, CHO)) {
+                playJanggunSound(HAN);
+              }
               state.inCheck = null;
               state.turn = CHO;
               if (state.showRecommend) {
@@ -1646,23 +1721,7 @@ function executeMove(fromC, fromR, toC, toR) {
 // ============================================
 function render() {
   const app = document.getElementById('app');
-  
-  // Calculate responsive cell size
-  let cellSize = 48;
-  if (window.innerWidth <= 480) cellSize = 36;
-  if (window.innerWidth <= 380) cellSize = 30;
-
-  // Helper to get piece size based on type
-  function getPieceSize(pieceType) {
-    const base = cellSize * 0.917; // Default: 44px / 48 cell
-    const mult = PIECE_SIZES[pieceType] || 0.85;
-    return base * mult;
-  }
-  function getPieceHeight(pieceType) {
-    const base = cellSize * 0.8125; // Default: 39px / 48 cell
-    const mult = PIECE_SIZES[pieceType] || 0.85;
-    return base * mult;
-  }
+  // 셀 크기는 모듈 스코프 헬퍼가 사용
 
   // Status text
   const L = LANG[state.lang];
