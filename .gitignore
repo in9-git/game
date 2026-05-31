@@ -7,3 +7,10 @@ assets/design/
 
 # 미사용 오디오
 board/janggi/audio/meonggun.mp3
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
