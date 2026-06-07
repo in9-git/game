@@ -472,6 +472,45 @@ select {
   border-color: #4a9eff;
   box-shadow: 0 0 10px rgba(255,212,59,0.25);
 }
+
+/* ===== 온라인 대전 ===== */
+/* 한(漢) 시점: 보드 180° 회전 + 기물 글자는 다시 정방향 */
+.board-container.flipped { transform: rotate(180deg); }
+.board-container.flipped .piece img,
+.board-container.flipped .recommend-ghost img { transform: rotate(180deg); }
+.online-bar {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center;
+  width: 100%; max-width: 432px; margin: 2px 0; font-size: 13px; font-weight: 600;
+}
+.online-bar .ot-code {
+  cursor: pointer; color: #ffd43b; background: #1a3a5c; border: 1px solid #4a9eff;
+  padding: 4px 10px; border-radius: 8px; letter-spacing: 1px;
+}
+.online-bar .ot-code:hover { background: #1f4a7a; }
+.online-bar .ot-side { padding: 4px 10px; border-radius: 8px; border: 1px solid #1f2a45; background: #0f1729; }
+.online-bar .ot-side.cho { color: #69db7c; }
+.online-bar .ot-side.han { color: #ff8787; }
+.online-bar .ot-turn { padding: 4px 10px; border-radius: 8px; }
+.online-bar .ot-turn.mine { color: #69db7c; background: rgba(105,219,124,0.14); }
+.online-bar .ot-turn.opp  { color: #8ea2c2; background: rgba(90,110,140,0.14); }
+.online-toast {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  background: rgba(26,58,92,0.96); color: #ffd43b; border: 1px solid #4a9eff;
+  padding: 10px 18px; border-radius: 10px; font-size: 14px; font-weight: 600;
+  z-index: 200; box-shadow: 0 4px 20px rgba(0,0,0,0.5); white-space: nowrap;
+}
+.online-lobby .lobby-join { display: flex; gap: 8px; margin-top: 4px; }
+.online-lobby input {
+  flex: 1; background: #0f1729; border: 1px solid #2d3a55; color: #e8eef7;
+  padding: 10px 12px; border-radius: 8px; font-size: 16px; font-family: inherit;
+  letter-spacing: 3px; text-align: center; text-transform: uppercase; min-width: 0;
+}
+.online-lobby input:focus { outline: none; border-color: #4a9eff; }
+.room-code-big {
+  font-size: 40px; font-weight: 700; letter-spacing: 10px; color: #ffd43b;
+  background: #0f1729; border: 2px dashed #4a9eff; border-radius: 12px;
+  padding: 14px 8px 14px 18px; margin: 8px 0 14px; cursor: pointer; user-select: all;
+}
 </style>
 </head>
 <body>
@@ -1166,11 +1205,17 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
   const pieceW = (cellSize * (44/48)) * PIECE_SIZES[pieceType];
   const pieceH = (cellSize * (39/48)) * PIECE_SIZES[pieceType];
 
+  // 온라인에서 한(漢)은 보드를 180° 뒤집어 보므로 애니 좌표도 동일하게 매핑
+  const flip = (state.mode === 'online' && state.mySide === HAN);
   // Helper: cell (c, r) → top-left pixel for an absolutely-positioned piece
-  const cellToPx = (c, r) => ({
-    x: boardLeft + (c + 0.5) * cellSize - pieceW/2,
-    y: boardTop  + (r + 0.5) * cellSize - pieceH/2
-  });
+  const cellToPx = (c, r) => {
+    const cc = flip ? (COLS - 1 - c) : c;
+    const rr = flip ? (ROWS - 1 - r) : r;
+    return {
+      x: boardLeft + (cc + 0.5) * cellSize - pieceW/2,
+      y: boardTop  + (rr + 0.5) * cellSize - pieceH/2
+    };
+  };
 
   const piece = state.board[fromR][fromC];
   const pieceImg = PIECE_IMAGES[pieceTeam][pieceType];
@@ -1185,6 +1230,7 @@ function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
   const animImg = animEl.querySelector('img');
   animImg.style.width = pieceW + 'px';
   animImg.style.height = pieceH + 'px';
+  if (flip) animImg.style.transform = 'rotate(180deg)';
 
   animEl.style.left = startPos.x + 'px';
   animEl.style.top = startPos.y + 'px';
@@ -1323,6 +1369,17 @@ const LANG = {
     capEmpty: t => `${t} 포획 없음`,
     gameModes: { practice: '연습 모드', match: '대전 모드', challenge: '도전 모드' },
     comingSoon: '준비 중입니다 🚧',
+    online: {
+      title: '온라인 대전', desc: '방 코드로 친구와 1:1 대국',
+      create: '방 만들기', join: '코드로 입장', codePh: '방 코드', enter: '입장',
+      connecting: '연결 중...', waiting: '상대를 기다리는 중...',
+      share: c => `방 코드: ${c}`, hint: '친구에게 코드를 알려주세요', copy: '복사', copied: '복사됨!',
+      joined: '상대가 입장했어요!', left: '상대가 나갔어요 · 재접속 대기',
+      resigned: '상대가 기권했어요', full: '방이 가득 찼어요', lost: '연결이 끊겼어요', retry: '다시 연결',
+      leave: '✕ 나가기', rematch: '▶ 다시', resign: '■ 기권',
+      side: s => `내 편 ${s}`, myturn: '내 차례', oppturn: '상대 차례',
+      win: '🏆 승리!', lose: '패배…',
+    },
   },
   ja: {
     title: 'ベビー将棋', subtitle: 'Baby Janggi · 애기장기',
@@ -1343,6 +1400,17 @@ const LANG = {
     capEmpty: t => `${t}の捕獲なし`,
     gameModes: { practice: '練習モード', match: '対戦モード', challenge: '挑戦モード' },
     comingSoon: '準備中です 🚧',
+    online: {
+      title: 'オンライン対戦', desc: 'ルームコードで友達と1:1対局',
+      create: 'ルーム作成', join: 'コードで入室', codePh: 'ルームコード', enter: '入室',
+      connecting: '接続中...', waiting: '相手を待っています...',
+      share: c => `ルームコード: ${c}`, hint: '友達にコードを教えてね', copy: 'コピー', copied: 'コピー済み!',
+      joined: '相手が入室しました!', left: '相手が退室 · 再接続待ち',
+      resigned: '相手が投了しました', full: 'ルームが満員です', lost: '接続が切れました', retry: '再接続',
+      leave: '✕ 退室', rematch: '▶ 再戦', resign: '■ 投了',
+      side: s => `自分 ${s}`, myturn: '自分の番', oppturn: '相手の番',
+      win: '🏆 勝利!', lose: '敗北…',
+    },
   },
   en: {
     title: 'Baby Janggi', subtitle: '애기장기 · ベビー将棋',
@@ -1363,9 +1431,21 @@ const LANG = {
     capEmpty: t => `${t} no captures`,
     gameModes: { practice: 'Practice', match: 'Match', challenge: 'Challenge' },
     comingSoon: 'Coming soon 🚧',
+    online: {
+      title: 'Online Match', desc: 'Play a friend 1:1 with a room code',
+      create: 'Create Room', join: 'Join by Code', codePh: 'Room code', enter: 'Join',
+      connecting: 'Connecting...', waiting: 'Waiting for opponent...',
+      share: c => `Room code: ${c}`, hint: 'Share the code with your friend', copy: 'Copy', copied: 'Copied!',
+      joined: 'Opponent joined!', left: 'Opponent left · awaiting reconnect',
+      resigned: 'Opponent resigned', full: 'Room is full', lost: 'Connection lost', retry: 'Reconnect',
+      leave: '✕ Leave', rematch: '▶ Rematch', resign: '■ Resign',
+      side: s => `You: ${s}`, myturn: 'Your turn', oppturn: "Opponent's turn",
+      win: '🏆 You win!', lose: 'You lose…',
+    }
   }
 };
 function T(key) { return LANG[state.lang][key]; }
+function OL() { return LANG[state.lang].online; }
 
 let state = {
   board: createInitialBoard(),
@@ -1387,8 +1467,16 @@ let state = {
   moveHistory: [],
   lang: (function(){ const s=localStorage.getItem('in9-lang'); if(s&&LANG[s])return s; const n=(navigator.language||'').toLowerCase(); if(n.startsWith('ja'))return 'ja'; if(n.startsWith('ko'))return 'ko'; return 'en'; })(),
   inCheck: null,
-  lastMoveGhost: null
+  lastMoveGhost: null,
+  // 온라인 대전 (mode==='online')
+  mySide: null,        // CHO | HAN — 내가 조작하는 편
+  onlinePhase: null,   // null | 'lobby' | 'connecting' | 'waiting' | 'playing' | 'full' | 'lost'
+  onlineMsg: ''        // 일시 상태 메시지(상대 입장/퇴장 등)
 };
+
+// 온라인 연결(모듈 스코프) — 렌더 churn 회피를 위해 ws/handler 는 state 밖에 둔다
+let onlineConn = null; // { ws, code, playerId, side, opponentConnected }
+let onlineMsgTimer = null;
 
 // WASM Engine
 let wasmEngine = null;
@@ -1540,6 +1628,8 @@ function selectPiece(col, row) {
   if (state.gameOver || state.aiThinking) return;
   // 인터럽트 결과로 턴이 상대(AI)로 넘어갔다면, 같은 클릭으로 또 다른 동작이 일어나면 안 됨
   if (state.mode === 'ai' && state.turn === HAN) return;
+  // 온라인: 대국 중이고 내 차례일 때만 입력 허용 (상대 말/상대 차례 차단)
+  if (state.mode === 'online' && (state.onlinePhase !== 'playing' || state.turn !== state.mySide)) return;
   tryStartBGM();
   // finishCurrentAnim 으로 board 가 변경됐을 수 있으니 piece 는 그 후에 읽음
   const piece = state.board[row][col];
@@ -1681,6 +1771,11 @@ function executeMove(fromC, fromR, toC, toR) {
     wasmMoveHistory.push(uciMoveStr);
     state.selected = null;
     state.legalMoves = [];
+
+    // 온라인: 내 수를 상대에게 전송 (체크메이트로 끝나는 수도 반드시 전송돼야 하므로 여기서)
+    if (state.mode === 'online') {
+      onlineSend({ type: 'move', from: [fromC, fromR], to: [toC, toR] });
+    }
 
     const enemy = state.turn === CHO ? HAN : CHO;
 
@@ -1877,6 +1972,98 @@ function render() {
   // Captured pieces display — 중요도 내림차순 정렬
   const sortByValue = arr => [...arr].sort((a, b) => PIECE_VALUES[b.type] - PIECE_VALUES[a.type]);
 
+  // ---- 온라인 대전 UI 조각 ----
+  const isOnline = state.mode === 'online';
+  const O = LANG[state.lang].online;
+  const flippedClass = (isOnline && state.mySide === HAN) ? ' flipped' : '';
+  let onlineBar = '';
+  if (isOnline && onlineConn && (state.onlinePhase === 'waiting' || state.onlinePhase === 'playing')) {
+    const sideName = state.mySide === CHO ? L.cho : L.han;
+    const sideCls = state.mySide === CHO ? 'cho' : 'han';
+    let turnTag = '';
+    if (state.onlinePhase === 'playing' && !state.gameOver) {
+      const mine = state.turn === state.mySide;
+      turnTag = `<span class="ot-turn ${mine ? 'mine' : 'opp'}">${mine ? O.myturn : O.oppturn}</span>`;
+    }
+    onlineBar = `<div class="online-bar">`
+      + `<span class="ot-code" onclick="copyRoomCode()" title="${O.copy}">${O.share(onlineConn.code)} ⧉</span>`
+      + `<span class="ot-side ${sideCls}">${O.side(sideName)}</span>`
+      + turnTag + `</div>`;
+  }
+  const onlineToast = (isOnline && state.onlineMsg) ? `<div class="online-toast">${state.onlineMsg}</div>` : '';
+
+  // 컨트롤 버튼 — 온라인/AI 분기
+  let controlsHtml = '';
+  if (isOnline) {
+    if (state.onlinePhase === 'playing' || state.onlinePhase === 'waiting') {
+      controlsHtml = `<div class="controls"><div class="controls-row">`
+        + (state.gameOver ? `<button class="btn-start" onclick="onlineRematch()">${O.rematch}</button>` : '')
+        + (!state.gameOver && state.onlinePhase === 'playing' ? `<button class="btn-stop" onclick="onlineResign()">${O.resign}</button>` : '')
+        + `<button class="btn-stop" onclick="onlineLeave(false)">${O.leave}</button>`
+        + `<button class="btn-toggle ${state.showRecommend ? 'active' : ''}" onclick="toggleRecommend()">${L.hint}</button>`
+        + `<button class="btn-toggle ${state.beginnerMode ? 'active' : ''}" onclick="toggleBeginnerMode()">${L.anim}</button>`
+        + `<button class="btn-toggle ${state.bgmOn ? 'active' : ''}" onclick="toggleBgm()">${L.bgm}</button>`
+        + `</div></div>`;
+    }
+  } else {
+    controlsHtml = `<div class="controls"><div class="controls-row">`
+      + `<button class="btn-start" onclick="resetGame()">${L.newGame}</button>`
+      + (state.gameOver ? `<button class="btn-stop" onclick="quitGame()">${L.quit}</button>` : '')
+      + `<button class="btn-toggle ${state.showRecommend ? 'active' : ''}" onclick="toggleRecommend()">${L.hint}</button>`
+      + `<button class="btn-toggle ${state.beginnerMode ? 'active' : ''}" onclick="toggleBeginnerMode()">${L.anim}</button>`
+      + `<button class="btn-toggle ${state.bgmOn ? 'active' : ''}" onclick="toggleBgm()">${L.bgm}</button>`
+      + `</div></div>`;
+  }
+
+  // 오버레이 — 온라인 로비/대기/만석/끊김/종료
+  let overlayHtml = '';
+  if (isOnline && state.onlinePhase === 'lobby') {
+    overlayHtml = `<div class="modal-overlay"><div class="modal online-lobby" onclick="event.stopPropagation()">`
+      + `<h2>${O.title}</h2><p>${O.desc}</p>`
+      + `<button class="btn-start" style="display:block;width:100%;margin:0 0 14px;" onclick="onlineCreate()">${O.create}</button>`
+      + `<div class="lobby-join"><input id="roomCodeInput" maxlength="6" placeholder="${O.codePh}" autocomplete="off" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')onlineJoinFromInput()">`
+      + `<button class="btn-toggle" onclick="onlineJoinFromInput()">${O.enter}</button></div>`
+      + `<button onclick="onlineLeave(false)" style="background:#555;margin-top:16px;">${O.leave}</button>`
+      + `</div></div>`;
+  } else if (isOnline && state.onlinePhase === 'connecting') {
+    overlayHtml = `<div class="modal-overlay"><div class="modal" onclick="event.stopPropagation()"><h2 class="thinking">${O.connecting}</h2></div></div>`;
+  } else if (isOnline && state.onlinePhase === 'waiting') {
+    overlayHtml = `<div class="modal-overlay"><div class="modal" onclick="event.stopPropagation()">`
+      + `<h2>${O.waiting}</h2>`
+      + `<div class="room-code-big" onclick="copyRoomCode()" title="${O.copy}">${onlineConn ? onlineConn.code : ''}</div>`
+      + `<p>${O.hint}</p>`
+      + `<button class="btn-toggle" onclick="copyRoomCode()">${O.copy}</button>`
+      + `<button onclick="onlineLeave(false)" style="background:#555;margin-left:8px;">${O.leave}</button>`
+      + `</div></div>`;
+  } else if (isOnline && state.onlinePhase === 'full') {
+    overlayHtml = `<div class="modal-overlay"><div class="modal" onclick="event.stopPropagation()">`
+      + `<h2>${O.full}</h2>`
+      + `<button onclick="openOnlineLobby()">${O.retry}</button>`
+      + `<button onclick="onlineLeave(false)" style="background:#555;margin-left:8px;">${O.leave}</button>`
+      + `</div></div>`;
+  } else if (isOnline && state.onlinePhase === 'lost') {
+    overlayHtml = `<div class="modal-overlay"><div class="modal" onclick="event.stopPropagation()">`
+      + `<h2>${O.lost}</h2>`
+      + `<button onclick="onlineReconnect()">${O.retry}</button>`
+      + `<button onclick="onlineLeave(false)" style="background:#555;margin-left:8px;">${O.leave}</button>`
+      + `</div></div>`;
+  } else if (state.gameOver && isOnline) {
+    const iWon = state.winner === state.mySide;
+    overlayHtml = `<div class="modal-overlay"><div class="modal" onclick="event.stopPropagation()">`
+      + `<h2>${iWon ? O.win : O.lose}</h2>`
+      + (state.onlineMsg ? `<p>${state.onlineMsg}</p>` : '')
+      + `<button onclick="onlineRematch()">${O.rematch}</button>`
+      + `<button onclick="onlineLeave(false)" style="background:#555;margin-left:8px;">${O.leave}</button>`
+      + `</div></div>`;
+  } else if (state.gameOver) {
+    overlayHtml = `<div class="modal-overlay" onclick="resetGame()"><div class="modal" onclick="event.stopPropagation()">`
+      + `<h2>${L.win(state.winner === CHO ? L.cho : L.han)}</h2>`
+      + `<p>${state.winner === CHO ? (state.mode === 'ai' ? L.winAI : L.winP(L.cho)) : (state.mode === 'ai' ? L.loseAI : L.winP(L.han))}</p>`
+      + `<button onclick="resetGame()">${L.retry}</button>`
+      + `<button onclick="quitGame()" style="background:#555;margin-left:8px;">${L.quit}</button>`
+      + `</div></div>`;
+  }
+
   app.innerHTML = `
     <div class="nav-bar">
       <a href="../../index.html" class="home-btn">${L.home}</a>
@@ -1888,6 +2075,7 @@ function render() {
         `<button class="mode-tab ${state.gameMode === m ? 'active' : ''}" onclick="changeGameMode('${m}')">${L.gameModes[m]}</button>`
       ).join('')}
     </div>
+    ${onlineBar}
     <div class="game-layout">
       <div class="board-stack">
         <div class="trophy-bar top han ${!state.gameOver && state.turn === HAN ? 'active' : ''}">
@@ -1897,7 +2085,7 @@ function render() {
             return `<div class="captured-piece cho"><img src="${PIECE_IMAGES.cho[p.type]}" alt="${PIECE_NAMES.cho[p.type]}" style="width:${capW}px;height:${capH}px;"></div>`;
           }).join('')}
         </div>
-      <div class="board-container">
+      <div class="board-container${flippedClass}">
       <svg class="board-lines" viewBox="0 0 432 480" xmlns="http://www.w3.org/2000/svg">
         ${(() => {
           let lines = '';
@@ -1932,27 +2120,9 @@ function render() {
         </div>
       </div>
     </div>
-    <div class="controls">
-      <div class="controls-row">
-        <button class="btn-start" onclick="resetGame()">${L.newGame}</button>
-        ${state.gameOver ? `<button class="btn-stop" onclick="quitGame()">${L.quit}</button>` : ''}
-        <button class="btn-toggle ${state.showRecommend ? 'active' : ''}" onclick="toggleRecommend()">${L.hint}</button>
-        <button class="btn-toggle ${state.beginnerMode ? 'active' : ''}" onclick="toggleBeginnerMode()">${L.anim}</button>
-        <button class="btn-toggle ${state.bgmOn ? 'active' : ''}" onclick="toggleBgm()">${L.bgm}</button>
-      </div>
-    </div>
-    ${state.gameOver ? `
-      <div class="modal-overlay" onclick="resetGame()">
-        <div class="modal" onclick="event.stopPropagation()">
-          <h2>${L.win(state.winner === CHO ? L.cho : L.han)}</h2>
-          <p>${state.winner === CHO
-            ? (state.mode === 'ai' ? L.winAI : L.winP(L.cho))
-            : (state.mode === 'ai' ? L.loseAI : L.winP(L.han))}</p>
-          <button onclick="resetGame()">${L.retry}</button>
-          <button onclick="quitGame()" style="background:#555;margin-left:8px;">${L.quit}</button>
-        </div>
-      </div>
-    ` : ''}
+    ${controlsHtml}
+    ${overlayHtml}
+    ${onlineToast}
   `;
 
 }
@@ -2005,17 +2175,280 @@ function changeMode(mode) {
 }
 
 function changeGameMode(newMode) {
-  if (newMode === 'match' || newMode === 'challenge') {
+  if (newMode === 'challenge') {
     alert(LANG[state.lang].comingSoon);
-    // revert dropdown selection visually
-    const sel = document.getElementById('gameModeSelect');
-    if (sel) sel.value = state.gameMode;
     return;
   }
+  if (newMode === 'match') {
+    openOnlineLobby();
+    return;
+  }
+  // practice — 온라인 연결 중이면 조용히 정리
+  if (state.mode === 'online') onlineLeave(true);
   state.gameMode = newMode;
+  state.mode = 'ai';
+  state.onlinePhase = null;
+  state.mySide = null;
   // Practice mode uses index 0 (강한 AI)
   state.difficulty = 0;
   resetGame();
+}
+
+// ============================================
+// 온라인 대전 (방 코드 · WebSocket)
+// ============================================
+const ROOM_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // 0/O/1/I/L 제외
+function genRoomCode() {
+  let c = '';
+  for (let i = 0; i < 4; i++) c += ROOM_ALPHABET[Math.floor(Math.random() * ROOM_ALPHABET.length)];
+  return c;
+}
+function getOrCreatePlayerId() {
+  let id = localStorage.getItem('in9-janggi-pid');
+  if (!id) {
+    id = 'p-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    localStorage.setItem('in9-janggi-pid', id);
+  }
+  return id;
+}
+function flashOnlineMsg(text, ms = 2600) {
+  state.onlineMsg = text;
+  render();
+  if (onlineMsgTimer) clearTimeout(onlineMsgTimer);
+  onlineMsgTimer = setTimeout(() => { state.onlineMsg = ''; render(); }, ms);
+}
+
+// 빈 보드로 초기화 (온라인 진입/리셋 공용)
+function clearOnlineBoard() {
+  state.board = createInitialBoard();
+  state.turn = CHO;
+  state.selected = null;
+  state.legalMoves = [];
+  state.captured = { cho: [], han: [] };
+  state.gameOver = false;
+  state.winner = null;
+  state.aiThinking = false;
+  state.lastMove = null;
+  state.moveHistory = [];
+  state.recommended = [];
+  state.inCheck = null;
+  state.lastMoveGhost = null;
+  wasmMoveHistory = [];
+}
+
+function openOnlineLobby() {
+  onlineLeave(true);           // 기존 연결 정리(조용히)
+  state.mode = 'online';
+  state.gameMode = 'match';
+  state.onlinePhase = 'lobby';
+  state.mySide = null;
+  state.onlineMsg = '';
+  state.showRecommend = false; // 사람 상대 — 훈수 기본 off
+  clearOnlineBoard();
+  render();
+}
+
+function onlineCreate() { onlineConnect(genRoomCode()); }
+function onlineJoinFromInput() {
+  const el = document.getElementById('roomCodeInput');
+  const code = ((el && el.value) || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length < 1) { if (el) el.focus(); return; }
+  onlineConnect(code);
+}
+function onlineReconnect() {
+  const code = onlineConn && onlineConn.code;
+  if (!code) { openOnlineLobby(); return; }
+  onlineConnect(code);
+}
+
+function onlineConnect(code) {
+  const playerId = getOrCreatePlayerId();
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const url = `${proto}//${location.host}/api/room/${encodeURIComponent(code)}?playerId=${encodeURIComponent(playerId)}`;
+  let ws;
+  try { ws = new WebSocket(url); }
+  catch (e) { state.onlinePhase = 'lost'; render(); return; }
+  onlineConn = { ws, code, playerId, side: null, opponentConnected: false };
+  state.mode = 'online';
+  state.gameMode = 'match';
+  state.onlinePhase = 'connecting';
+  render();
+
+  ws.onmessage = (e) => {
+    let msg; try { msg = JSON.parse(e.data); } catch { return; }
+    handleServerMsg(msg);
+  };
+  ws.onclose = () => {
+    if (!onlineConn || onlineConn.ws !== ws) return;     // 교체/의도적 종료는 무시
+    if (state.mode === 'online' && state.onlinePhase !== 'full') {
+      state.onlinePhase = 'lost';
+      render();
+    }
+  };
+  ws.onerror = () => {
+    if (!onlineConn || onlineConn.ws !== ws) return;
+    if (state.mode === 'online' && state.onlinePhase !== 'full') {
+      state.onlinePhase = 'lost';
+      render();
+    }
+  };
+}
+
+function onlineSend(obj) {
+  if (onlineConn && onlineConn.ws && onlineConn.ws.readyState === WebSocket.OPEN) {
+    try { onlineConn.ws.send(JSON.stringify(obj)); } catch {}
+  }
+}
+
+function handleServerMsg(msg) {
+  switch (msg.type) {
+    case 'welcome': {
+      if (!onlineConn) return;
+      onlineConn.side = msg.side;
+      onlineConn.opponentConnected = !!msg.opponentConnected;
+      state.mySide = msg.side === 'cho' ? CHO : HAN;
+      replayOnlineMoves(msg.moves || []);
+      state.onlinePhase = onlineConn.opponentConnected ? 'playing' : 'waiting';
+      render();
+      break;
+    }
+    case 'full':
+      state.onlinePhase = 'full';
+      render();
+      break;
+    case 'opponentJoined': {
+      if (onlineConn) onlineConn.opponentConnected = true;
+      const wasWaiting = state.onlinePhase !== 'playing';
+      state.onlinePhase = 'playing';
+      if (wasWaiting) flashOnlineMsg(OL().joined); else render();
+      break;
+    }
+    case 'opponentLeft':
+      if (onlineConn) onlineConn.opponentConnected = false;
+      flashOnlineMsg(OL().left, 4000);
+      break;
+    case 'move':
+      applyOpponentMove(msg.from, msg.to);
+      break;
+    case 'reset':
+      clearOnlineBoard();
+      state.onlinePhase = 'playing';
+      render();
+      break;
+    case 'resign':
+      state.gameOver = true;
+      state.winner = state.mySide;
+      state.onlineMsg = OL().resigned;
+      playWinSound(state.mySide);
+      render();
+      break;
+  }
+}
+
+// 서버가 보낸 전체 수 목록으로 보드 재구성 (재접속/새로고침 동기화)
+function replayOnlineMoves(moves) {
+  clearOnlineBoard();
+  for (const mv of moves) {
+    if (!mv || !mv.from || !mv.to) continue;
+    const [fc, fr] = mv.from, [tc, tr] = mv.to;
+    const piece = state.board[fr] && state.board[fr][fc];
+    if (!piece) continue;
+    const { board: nb, captured } = makeMove(state.board, fc, fr, tc, tr);
+    if (captured) state.captured[captured.team].push(captured);
+    state.board = nb;
+    state.lastMove = { from: [fc, fr], to: [tc, tr] };
+    state.moveHistory.push(state.lastMove);
+    wasmMoveHistory.push(boardToMoveStr(fc, fr, tc, tr));
+    state.turn = state.turn === CHO ? HAN : CHO;
+  }
+  if (isCheckmate(state.board, state.turn)) {
+    state.gameOver = true;
+    state.winner = state.turn === CHO ? HAN : CHO;
+  }
+}
+
+// 상대 수 적용 (애니 + 커밋, 재전송 없음) — AI 경로 미러
+function applyOpponentMove(from, to) {
+  finishCurrentAnim();
+  if (!from || !to) return;
+  const [fc, fr] = from, [tc, tr] = to;
+  const piece = state.board[fr] && state.board[fr][fc];
+  if (!piece) { console.warn('[online] 상대 수가 빈 칸에서 시작 — 무시', from, to); return; }
+  wasmMoveHistory.push(boardToMoveStr(fc, fr, tc, tr));
+  state.board[fr][fc] = null;   // 애니 동안 원위치 기물 숨김
+  render();
+  const finalize = () => {
+    state.board[fr][fc] = piece; // makeMove 전에 복원
+    const { board: nb, captured } = makeMove(state.board, fc, fr, tc, tr);
+    if (captured) { state.captured[captured.team].push(captured); playCaptureSound(); }
+    else playMoveSound();
+    state.board = nb;
+    state.selected = null;
+    state.legalMoves = [];
+    state.lastMove = { from: [fc, fr], to: [tc, tr] };
+    state.moveHistory.push(state.lastMove);
+    const mover = piece.team;
+    const next = mover === CHO ? HAN : CHO;
+    if (isCheckmate(state.board, next)) {
+      state.gameOver = true;
+      state.winner = mover;
+      playWinSound(mover);
+    } else {
+      if (isInCheck(state.board, next)) playJanggunSound(mover);
+      state.inCheck = null;
+      state.turn = next;
+    }
+    render();
+    if (!state.gameOver && state.showRecommend && state.turn === state.mySide) {
+      scheduleRecommend(state.turn);
+    }
+  };
+  animateMove(fc, fr, tc, tr, piece.type, piece.team, finalize);
+}
+
+function onlineRematch() {
+  onlineSend({ type: 'reset' });
+  clearOnlineBoard();
+  state.onlinePhase = 'playing';
+  render();
+}
+function onlineResign() {
+  if (state.gameOver) return;
+  onlineSend({ type: 'resign' });
+  state.gameOver = true;
+  state.winner = state.mySide === CHO ? HAN : CHO;
+  playWinSound(state.winner);
+  render();
+}
+
+function onlineLeave(silent) {
+  if (onlineMsgTimer) { clearTimeout(onlineMsgTimer); onlineMsgTimer = null; }
+  if (onlineConn && onlineConn.ws) {
+    const ws = onlineConn.ws;
+    try { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'leave' })); } catch {}
+    onlineConn = null;          // onclose 가 'lost' 처리하지 않도록 먼저 끊음
+    try { ws.close(1000, 'leave'); } catch {}
+  } else {
+    onlineConn = null;
+  }
+  if (!silent) {
+    state.mode = 'ai';
+    state.gameMode = 'practice';
+    state.onlinePhase = null;
+    state.mySide = null;
+    state.onlineMsg = '';
+    state.showRecommend = true;
+    state.difficulty = 0;
+    resetGame();
+  }
+}
+
+function copyRoomCode() {
+  if (!onlineConn) return;
+  const done = () => flashOnlineMsg(OL().copied, 1500);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(onlineConn.code).then(done).catch(done);
+  } else { done(); }
 }
 
 function changeDifficulty(val) {

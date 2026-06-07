@@ -1,0 +1,14 @@
+# 정적 자산으로 노출하면 안 되는 것들 (assets.directory = 저장소 루트)
+node_modules
+worker
+package.json
+package-lock.json
+wrangler.jsonc
+.assetsignore
+.dev.vars*
+.git
+.gitignore
+.claude
+CLAUDE.md
+.DS_Store
+**/.DS_Store
