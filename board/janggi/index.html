@@ -161,6 +161,29 @@ select {
   pointer-events: none;
   filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.4));
 }
+/* 팬시 한글 장기말 — 베벨 나무 토큰 위에 한글 캘리그래피 */
+.pc-han {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 26%;
+  background: radial-gradient(circle at 38% 30%, #f8ecd2 0%, #ecd4a0 52%, #d8b675 100%);
+  border: 1.5px solid #7c5520;
+  box-shadow: inset 0 2px 3px rgba(255,255,255,0.55),
+              inset 0 -3px 5px rgba(110,70,15,0.40),
+              1px 2px 3px rgba(0,0,0,0.40);
+  font-family: 'Nanum Myeongjo', 'AppleMyungjo', 'Batang', serif;
+  font-weight: 800;
+  line-height: 1;
+  pointer-events: none;
+}
+.pc-han > i {
+  font-style: normal;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.40);
+}
+.pc-han.cho > i { color: #0b6b34; }
+.pc-han.han > i { color: #b5231b; }
+.piece.in-check .pc-han { animation: checkFlash 0.55s ease-in-out 6; }
 .piece.cho {}
 .piece.han {}
 .piece.selected {
@@ -472,12 +495,16 @@ select {
   border-color: #4a9eff;
   box-shadow: 0 0 10px rgba(255,212,59,0.25);
 }
+.btn-toggle:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+.btn-toggle:disabled:hover { border-color: #1f2a45; color: #5a6b85; }
 
 /* ===== 온라인 대전 ===== */
 /* 한(漢) 시점: 보드 180° 회전 + 기물 글자는 다시 정방향 */
 .board-container.flipped { transform: rotate(180deg); }
 .board-container.flipped .piece img,
-.board-container.flipped .recommend-ghost img { transform: rotate(180deg); }
+.board-container.flipped .piece .pc-han,
+.board-container.flipped .recommend-ghost img,
+.board-container.flipped .recommend-ghost .pc-han { transform: rotate(180deg); }
 .online-bar {
   display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center;
   width: 100%; max-width: 432px; margin: 2px 0; font-size: 13px; font-weight: 600;
@@ -547,6 +574,12 @@ const PIECE_IMAGES = {
     guard: 'img/Red_Sa.png',
     soldier: 'img/Red_Byung.png'
   }
+};
+
+// 팬시 한글 장기말 — 이미지 대신 CSS 나무 토큰 위에 한글을 새긴다 (state.koreanPieces)
+const PIECE_HANGUL = {
+  cho: { king: '초', guard: '사', horse: '마', elephant: '상', chariot: '차', cannon: '포', soldier: '병' },
+  han: { king: '한', guard: '사', horse: '마', elephant: '상', chariot: '차', cannon: '포', soldier: '졸' }
 };
 
 // Piece size multipliers relative to board cell. King slightly larger as focal point.
@@ -1188,159 +1221,8 @@ function finishCurrentAnim() {
 }
 
 function animateMove(fromC, fromR, toC, toR, pieceType, pieceTeam, callback) {
-  // 이전 애니메이션이 아직 끝나지 않았으면 즉시 마무리
-  finishCurrentAnim();
-
-  if (!state.beginnerMode) {
-    callback();
-    return;
-  }
-
-  // Use .board's actual position so animation works at every viewport
-  const board = document.querySelector('.board');
-  const boardSize = board.getBoundingClientRect();
-  const boardLeft = boardSize.left;
-  const boardTop = boardSize.top;
-  const cellSize = boardSize.width / 9;
-  const pieceW = (cellSize * (44/48)) * PIECE_SIZES[pieceType];
-  const pieceH = (cellSize * (39/48)) * PIECE_SIZES[pieceType];
-
-  // 온라인에서 한(漢)은 보드를 180° 뒤집어 보므로 애니 좌표도 동일하게 매핑
-  const flip = (state.mode === 'online' && state.mySide === HAN);
-  // Helper: cell (c, r) → top-left pixel for an absolutely-positioned piece
-  const cellToPx = (c, r) => {
-    const cc = flip ? (COLS - 1 - c) : c;
-    const rr = flip ? (ROWS - 1 - r) : r;
-    return {
-      x: boardLeft + (cc + 0.5) * cellSize - pieceW/2,
-      y: boardTop  + (rr + 0.5) * cellSize - pieceH/2
-    };
-  };
-
-  const piece = state.board[fromR][fromC];
-  const pieceImg = PIECE_IMAGES[pieceTeam][pieceType];
-
-  const startPos = cellToPx(fromC, fromR);
-
-  const animEl = document.createElement('div');
-  animEl.className = 'animated-piece';
-  animEl.innerHTML = `<img src="${pieceImg}" alt="">`;
-  document.body.appendChild(animEl);
-
-  const animImg = animEl.querySelector('img');
-  animImg.style.width = pieceW + 'px';
-  animImg.style.height = pieceH + 'px';
-  if (flip) animImg.style.transform = 'rotate(180deg)';
-
-  animEl.style.left = startPos.x + 'px';
-  animEl.style.top = startPos.y + 'px';
-
-  // 인터럽트 가능한 애니메이션 제어자
-  let cancelled = false;
-  let finished = false;
-  const finish = () => {
-    if (finished) return;
-    finished = true;
-    cancelled = true;
-    if (animEl.parentNode) animEl.parentNode.removeChild(animEl);
-    if (currentAnim && currentAnim.finish === finish) currentAnim = null;
-    callback();
-  };
-  currentAnim = { finish };
-
-  // ease-in-out cubic
-  const easeInOut = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
-
-  // Run an animation along a path function path(t) → {x, y}
-  function runPath(pathFn, durationMs) {
-    return new Promise(resolve => {
-      const startTime = performance.now();
-      const tick = now => {
-        if (cancelled) { resolve(); return; }
-        const t = Math.min((now - startTime) / durationMs, 1);
-        const e = easeInOut(t);
-        const p = pathFn(e);
-        animEl.style.left = p.x + 'px';
-        animEl.style.top = p.y + 'px';
-        if (t < 1) requestAnimationFrame(tick);
-        else resolve();
-      };
-      requestAnimationFrame(tick);
-    });
-  }
-
-  // Quadratic bezier through 1 control point (P0 → C → P2)
-  const quadBezier = (P0, C, P2) => e => {
-    const u = 1 - e;
-    return {
-      x: u*u * P0.x + 2*u*e * C.x + e*e * P2.x,
-      y: u*u * P0.y + 2*u*e * C.y + e*e * P2.y
-    };
-  };
-
-  // Cubic bezier through 2 control points (P0 → C1 → C2 → P3)
-  const cubicBezier = (P0, C1, C2, P3) => e => {
-    const u = 1 - e;
-    return {
-      x: u*u*u * P0.x + 3*u*u*e * C1.x + 3*u*e*e * C2.x + e*e*e * P3.x,
-      y: u*u*u * P0.y + 3*u*u*e * C1.y + 3*u*e*e * C2.y + e*e*e * P3.y
-    };
-  };
-
-  // Simple linear path
-  const linear = (P0, P1) => e => ({
-    x: P0.x + (P1.x - P0.x) * e,
-    y: P0.y + (P1.y - P0.y) * e
-  });
-
-  (async () => {
-    const endPos = cellToPx(toC, toR);
-    const dist = Math.hypot(endPos.x - startPos.x, endPos.y - startPos.y);
-    // Speed-based duration: ~0.6s for far moves, min 220ms for short
-    const duration = Math.max(220, Math.min(600, dist * 1.4));
-
-    if (pieceType === TYPES.CANNON) {
-      // 포: 작은 아치를 그리며 착지 (점프 느낌)
-      const midX = (startPos.x + endPos.x) / 2;
-      const midY = (startPos.y + endPos.y) / 2 - cellSize * 0.55;
-      await runPath(quadBezier(startPos, {x: midX, y: midY}, endPos), duration);
-    } else if (pieceType === TYPES.HORSE) {
-      // 말: L자 경로를 부드러운 곡선으로 (waypoint를 살짝 휘감음)
-      const signC = toC > fromC ? 1 : -1;
-      const signR = toR > fromR ? 1 : -1;
-      let wpC, wpR;
-      if (Math.abs(toC - fromC) > Math.abs(toR - fromR)) {
-        wpC = fromC + signC; wpR = fromR;       // 가로 1 → 대각
-      } else {
-        wpC = fromC;         wpR = fromR + signR; // 세로 1 → 대각
-      }
-      const wp = cellToPx(wpC, wpR);
-      // Use waypoint as control point — curve passes near it, not through it
-      await runPath(quadBezier(startPos, wp, endPos), duration);
-    } else if (pieceType === TYPES.ELEPHANT) {
-      // 상: 더 큰 곡선. 두 waypoint를 control points로 사용
-      const signC = toC > fromC ? 1 : -1;
-      const signR = toR > fromR ? 1 : -1;
-      let c1C, c1R, c2C, c2R;
-      if (Math.abs(toC - fromC) > Math.abs(toR - fromR)) {
-        // 가로 우세 (3,2)
-        c1C = fromC + signC;   c1R = fromR;
-        c2C = fromC + signC*2; c2R = fromR + signR;
-      } else {
-        // 세로 우세 (2,3)
-        c1C = fromC;           c1R = fromR + signR;
-        c2C = fromC + signC;   c2R = fromR + signR*2;
-      }
-      const c1 = cellToPx(c1C, c1R);
-      const c2 = cellToPx(c2C, c2R);
-      await runPath(cubicBezier(startPos, c1, c2, endPos), duration);
-    } else {
-      // 차/왕/사/졸/병: 직선
-      await runPath(linear(startPos, endPos), duration);
-    }
-
-    finish();
-  })();
+  // 애니메이션 삭제 — 즉시 이동 커밋 (호출부 구조는 그대로 유지)
+  callback();
 }
 
 // ============================================
@@ -1355,7 +1237,7 @@ const LANG = {
     home: '← 홈', newGame: '▶ 새 게임', resign: '■ 기권', quit: '✕ 그만두기',
     aiMode: 'AI 대전', pvpMode: '2인 대전',
     hint: '💡 훈수', hintOn: '💡 훈수 ON',
-    anim: '🎬 애니', animOn: '🎬 애니 ON',
+    beginner: '🔰 초보', undo: '↩ 무르기', korean: '한글말',
     bgm: '🎵 BGM',
     cho: '초(楚)', han: '한(漢)',
     turn: t => `${t}의 차례`, check: ' — ⚠️ 장군!',
@@ -1386,7 +1268,7 @@ const LANG = {
     home: '← ホーム', newGame: '▶ 新局', resign: '■ 投了', quit: '✕ やめる',
     aiMode: 'AI対局', pvpMode: '二人対局',
     hint: '💡 助言', hintOn: '💡 助言 ON',
-    anim: '🎬 アニメ', animOn: '🎬 アニメ ON',
+    beginner: '🔰 初心者', undo: '↩ 待った', korean: 'ハングル駒',
     bgm: '🎵 BGM',
     cho: '楚(そ)', han: '漢(かん)',
     turn: t => `${t}の番`, check: ' — ⚠️ 将軍!',
@@ -1417,7 +1299,7 @@ const LANG = {
     home: '← Home', newGame: '▶ New Game', resign: '■ Resign', quit: '✕ Quit',
     aiMode: 'vs AI', pvpMode: 'vs Player',
     hint: '💡 Hint', hintOn: '💡 Hint ON',
-    anim: '🎬 Anim', animOn: '🎬 Anim ON',
+    beginner: '🔰 Beginner', undo: '↩ Undo', korean: 'Hangul',
     bgm: '🎵 BGM',
     cho: 'Cho', han: 'Han',
     turn: t => `${t}'s turn`, check: ' — ⚠️ Check!',
@@ -1459,9 +1341,10 @@ let state = {
   mode: 'ai',
   gameMode: 'practice', // practice | match | challenge
   difficulty: 0, // index into DIFFICULTIES (0 = 연습 프로필)
-  showRecommend: true,
-  beginnerMode: true,
-  bgmOn: true,
+  showRecommend: false, // 훈수(다음 수 예측) — 기본 off
+  beginnerMode: false,  // 초보자 모드(누른 말의 갈 길 표시) — 기본 off
+  bgmOn: false,         // BGM — 기본 off
+  koreanPieces: false,  // 팬시 한글 장기말 — 기본 off (이미지말)
   recommended: [],
   lastMove: null,
   moveHistory: [],
@@ -1482,6 +1365,7 @@ let onlineMsgTimer = null;
 let wasmEngine = null;
 let wasmReady = false;
 let wasmMoveHistory = []; // UCI move strings for position tracking
+let undoStack = [];       // 무르기(undo) 스냅샷 — AI 연습 모드 전용
 let pendingBestMove = null; // resolve function for current search
 
 async function initWasmEngine() {
@@ -1605,6 +1489,7 @@ function resetGame() {
   state.lastMove = null;
   state.moveHistory = [];
   state.inCheck = null;
+  undoStack = [];
   bgmStarted = false;
   // BGM이 이미 재생 중이면 idle로 (첫 수 두면 battle로 전환됨)
   if (bgmAudio) switchBGM('idle');
@@ -1680,6 +1565,15 @@ function getPieceHeight(pieceType) {
   const mult = PIECE_SIZES[pieceType] || 0.85;
   return base * mult;
 }
+// 기물 내부 마크업 — 이미지말 또는 팬시 한글말(state.koreanPieces). 보드/포획/고스트 공용
+function pieceMarkup(team, type, w, h) {
+  if (state.koreanPieces) {
+    const box = Math.round(h);            // 정사각 토큰 (이미지 세로폭에 맞춰 안 붐비게)
+    const fs = Math.round(box * 0.62);
+    return `<span class="pc-han ${team}" style="width:${box}px;height:${box}px;font-size:${fs}px;"><i>${PIECE_HANGUL[team][type]}</i></span>`;
+  }
+  return `<img src="${PIECE_IMAGES[team][type]}" alt="${PIECE_NAMES[team][type]}" style="width:${w}px;height:${h}px;">`;
+}
 
 // 선택 상태 변경을 기존 DOM에 직접 반영해 click→paint 지연 최소화
 function applySelectionDOM() {
@@ -1715,12 +1609,11 @@ function applySelectionDOM() {
     if (recTo) {
       const gW = getPieceSize(selectedPiece.type);
       const gH = getPieceHeight(selectedPiece.type);
-      const ghostImg = PIECE_IMAGES[selectedPiece.team][selectedPiece.type];
       const ghost = document.createElement('div');
       ghost.className = 'recommend-ghost';
-      ghost.innerHTML = `<img src="${ghostImg}" alt="" style="width:${gW}px;height:${gH}px;">`;
+      ghost.innerHTML = pieceMarkup(selectedPiece.team, selectedPiece.type, gW, gH);
       cell.appendChild(ghost);
-    } else if (!hasPiece) {
+    } else if (state.beginnerMode && !hasPiece) {
       const dot = document.createElement('div');
       dot.className = 'move-dot';
       cell.appendChild(dot);
@@ -1812,6 +1705,7 @@ function executeMove(fromC, fromR, toC, toR) {
         const aiMove = await getAIMove(state.board, HAN, state.difficulty);
         if (aiMove) {
           state.aiThinking = false;
+          pushUndoSnapshot(); // AI 수 직전 스냅샷 (turn === HAN)
           const aiPiece = state.board[aiMove.from[1]][aiMove.from[0]];
 
           // Record move in UCI history for WASM engine
@@ -1872,6 +1766,7 @@ function executeMove(fromC, fromR, toC, toR) {
     }
   };
 
+  if (state.mode === 'ai') pushUndoSnapshot(); // 내 수 직전 스냅샷 (무르기용)
   animateMove(fromC, fromR, toC, toR, piece.type, piece.team, executeMoveFinal);
 }
 
@@ -1938,31 +1833,28 @@ function render() {
       // last-move 링 제거 — 기물에 직접 클래스로 표시
 
       // Legal move dot — 빈 칸에만, 고스트가 있는 칸은 제외
-      if (isLegal && !piece && !recTo) {
+      if (state.beginnerMode && isLegal && !piece && !recTo) {
         cellContent += `<div class="move-dot"></div>`;
       }
       // capture ring 제거 — 상대 기물 위에 동그라미 표시 없음
 
       // Piece
       if (piece) {
-        const name = PIECE_NAMES[piece.team][piece.type];
-        const imgUrl = PIECE_IMAGES[piece.team][piece.type];
         const selClass = isSelected ? ' selected' : '';
         const recClass = recFrom && !state.selected ? ' recommended' : '';
         const lastClass = isLastTo && !isSelected ? ' last-moved' : '';
         const chkClass = (state.inCheck && piece.type === TYPES.KING && piece.team === state.inCheck) ? ' in-check' : '';
         const pW = getPieceSize(piece.type);
         const pH = getPieceHeight(piece.type);
-        cellContent += `<div class="piece ${piece.team}${selClass}${recClass}${lastClass}${chkClass}"><img src="${imgUrl}" alt="${name}" style="width:${pW}px;height:${pH}px;"></div>`;
+        cellContent += `<div class="piece ${piece.team}${selClass}${recClass}${lastClass}${chkClass}">${pieceMarkup(piece.team, piece.type, pW, pH)}</div>`;
       }
 
       // Recommended destination ghost pieces (Phase 2 - when a piece is selected)
       if (state.selected && recTo && isLegal) {
         const selectedPiece = state.board[state.selected[1]][state.selected[0]];
-        const ghostImg = PIECE_IMAGES[selectedPiece.team][selectedPiece.type];
         const gW = getPieceSize(selectedPiece.type);
         const gH = getPieceHeight(selectedPiece.type);
-        cellContent += `<div class="recommend-ghost"><img src="${ghostImg}" alt="" style="width:${gW}px;height:${gH}px;"></div>`;
+        cellContent += `<div class="recommend-ghost">${pieceMarkup(selectedPiece.team, selectedPiece.type, gW, gH)}</div>`;
       }
 
       boardCells += `<div class="cell" data-col="${c}" data-row="${r}">${cellContent}</div>`;
@@ -2000,8 +1892,9 @@ function render() {
         + (state.gameOver ? `<button class="btn-start" onclick="onlineRematch()">${O.rematch}</button>` : '')
         + (!state.gameOver && state.onlinePhase === 'playing' ? `<button class="btn-stop" onclick="onlineResign()">${O.resign}</button>` : '')
         + `<button class="btn-stop" onclick="onlineLeave(false)">${O.leave}</button>`
+        + `<button class="btn-toggle ${state.beginnerMode ? 'active' : ''}" onclick="toggleBeginnerMode()">${L.beginner}</button>`
         + `<button class="btn-toggle ${state.showRecommend ? 'active' : ''}" onclick="toggleRecommend()">${L.hint}</button>`
-        + `<button class="btn-toggle ${state.beginnerMode ? 'active' : ''}" onclick="toggleBeginnerMode()">${L.anim}</button>`
+        + `<button class="btn-toggle ${state.koreanPieces ? 'active' : ''}" onclick="toggleKorean()">${L.korean}</button>`
         + `<button class="btn-toggle ${state.bgmOn ? 'active' : ''}" onclick="toggleBgm()">${L.bgm}</button>`
         + `</div></div>`;
     }
@@ -2009,8 +1902,10 @@ function render() {
     controlsHtml = `<div class="controls"><div class="controls-row">`
       + `<button class="btn-start" onclick="resetGame()">${L.newGame}</button>`
       + (state.gameOver ? `<button class="btn-stop" onclick="quitGame()">${L.quit}</button>` : '')
+      + `<button class="btn-toggle" onclick="undoMove()"${canUndo() ? '' : ' disabled'}>${L.undo}</button>`
+      + `<button class="btn-toggle ${state.beginnerMode ? 'active' : ''}" onclick="toggleBeginnerMode()">${L.beginner}</button>`
       + `<button class="btn-toggle ${state.showRecommend ? 'active' : ''}" onclick="toggleRecommend()">${L.hint}</button>`
-      + `<button class="btn-toggle ${state.beginnerMode ? 'active' : ''}" onclick="toggleBeginnerMode()">${L.anim}</button>`
+      + `<button class="btn-toggle ${state.koreanPieces ? 'active' : ''}" onclick="toggleKorean()">${L.korean}</button>`
       + `<button class="btn-toggle ${state.bgmOn ? 'active' : ''}" onclick="toggleBgm()">${L.bgm}</button>`
       + `</div></div>`;
   }
@@ -2082,7 +1977,7 @@ function render() {
           ${sortByValue(state.captured.cho).map(p => {
             const capW = getPieceSize(p.type) * 0.7;
             const capH = getPieceHeight(p.type) * 0.7;
-            return `<div class="captured-piece cho"><img src="${PIECE_IMAGES.cho[p.type]}" alt="${PIECE_NAMES.cho[p.type]}" style="width:${capW}px;height:${capH}px;"></div>`;
+            return `<div class="captured-piece cho">${pieceMarkup('cho', p.type, capW, capH)}</div>`;
           }).join('')}
         </div>
       <div class="board-container${flippedClass}">
@@ -2115,7 +2010,7 @@ function render() {
           ${sortByValue(state.captured.han).map(p => {
             const capW = getPieceSize(p.type) * 0.7;
             const capH = getPieceHeight(p.type) * 0.7;
-            return `<div class="captured-piece han"><img src="${PIECE_IMAGES.han[p.type]}" alt="${PIECE_NAMES.han[p.type]}" style="width:${capW}px;height:${capH}px;"></div>`;
+            return `<div class="captured-piece han">${pieceMarkup('han', p.type, capW, capH)}</div>`;
           }).join('')}
         </div>
       </div>
@@ -2234,6 +2129,7 @@ function clearOnlineBoard() {
   state.inCheck = null;
   state.lastMoveGhost = null;
   wasmMoveHistory = [];
+  undoStack = [];
 }
 
 function openOnlineLobby() {
@@ -2468,6 +2364,53 @@ function toggleRecommend() {
 function toggleBeginnerMode() {
   state.beginnerMode = !state.beginnerMode;
   render();
+}
+
+function toggleKorean() {
+  state.koreanPieces = !state.koreanPieces;
+  render();
+}
+
+// ===== 무르기(undo) — AI 연습 모드 전용. 매 ply 직전 스냅샷을 쌓고, 내 차례로 되감는다 =====
+function snapshotForUndo() {
+  return {
+    board: state.board.map(row => row.map(c => c ? { team: c.team, type: c.type } : null)),
+    turn: state.turn,
+    captured: { cho: state.captured.cho.map(p => ({ ...p })), han: state.captured.han.map(p => ({ ...p })) },
+    lastMove: state.lastMove ? { from: [...state.lastMove.from], to: [...state.lastMove.to] } : null,
+    moveHistoryLen: state.moveHistory.length,
+    wasmLen: wasmMoveHistory.length,
+    inCheck: state.inCheck
+  };
+}
+function pushUndoSnapshot() {
+  undoStack.push(snapshotForUndo());
+  if (undoStack.length > 120) undoStack.shift();
+}
+function canUndo() {
+  return state.mode === 'ai' && !state.aiThinking && undoStack.length > 0;
+}
+function undoMove() {
+  if (!canUndo()) return;
+  // 내 차례(초)로 돌아갈 때까지 되감는다 — 보통 [AI 한 수 + 내 한 수] 2 ply
+  let snap = undoStack.pop();
+  while (undoStack.length > 0 && snap.turn !== CHO) snap = undoStack.pop();
+  state.board = snap.board.map(row => row.map(c => c ? { team: c.team, type: c.type } : null));
+  state.turn = snap.turn;
+  state.captured = { cho: snap.captured.cho.map(p => ({ ...p })), han: snap.captured.han.map(p => ({ ...p })) };
+  state.lastMove = snap.lastMove;
+  state.moveHistory.length = snap.moveHistoryLen;
+  wasmMoveHistory.length = snap.wasmLen;
+  state.inCheck = snap.inCheck;
+  state.selected = null;
+  state.legalMoves = [];
+  state.recommended = [];
+  state.gameOver = false;
+  state.winner = null;
+  state.aiThinking = false;
+  state.lastMoveGhost = null;
+  render();
+  if (state.showRecommend) scheduleRecommend(state.turn);
 }
 
 // Initialize
