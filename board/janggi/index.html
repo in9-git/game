@@ -1511,12 +1511,13 @@ async function wasmGetBestMove(depth, skillLevel, limitStrength, elo) {
   return new Promise((resolve) => {
     pendingBestMove = resolve;
     wasmEngine.postMessage(`go depth ${depth}`);
-    // Timeout fallback
+    // Timeout fallback — 느린 기기(스마트폰)도 목표 깊이를 끝낼 수 있도록 충분히 길게(30초).
+    // 고정 깊이 탐색이라 시간만 더 줄 뿐 '같은 깊이 = 같은 실력' → 맥미니/폰 실력차 완화.
     setTimeout(() => {
       if (pendingBestMove) {
         wasmEngine.postMessage('stop');
       }
-    }, 10000);
+    }, 30000);
   });
 }
 
