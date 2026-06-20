@@ -1244,6 +1244,25 @@ function getAIMoveFallback(board, aiTeam, difficulty) {
   return result.move || moves[0];
 }
 
+// 엔진(WASM)이 데싱크 등으로 '상대편(초) 말' 또는 비합법 수를 돌려줄 수 있다.
+// 그대로 적용하면 "상대 차례인데 내 말이 멋대로 움직이는" 증상이 난다.
+// 반환된 수가 실제 보드에서 aiTeam의 합법수인지 검증하고, 아니면 로컬 합법수로 대체한다.
+// 합법수가 하나도 없으면(외통/막힘) null → 상위에서 패배 처리.
+function ensureLegalAIMove(move, aiTeam) {
+  const legal = getAllLegalMoves(state.board, aiTeam);
+  if (legal.length === 0) return null;
+  const matches = (m) => move &&
+    m.from[0] === move.from[0] && m.from[1] === move.from[1] &&
+    m.to[0] === move.to[0] && m.to[1] === move.to[1];
+  if (legal.some(matches)) return move;
+  if (move) {
+    const p = state.board[move.from[1]] && state.board[move.from[1]][move.from[0]];
+    console.warn('[ai] 엔진이 비합법/상대편 수 반환 — 로컬 합법수로 대체',
+      { move, fromPiece: p ? p.team + ' ' + p.type : 'empty' });
+  }
+  return getAIMoveFallback(state.board, aiTeam, state.difficulty) || legal[0];
+}
+
 // Get top 2 recommended moves for a team
 function getRecommendedMoves(board, team, count = 2) {
   const enemy = team === CHO ? HAN : CHO;
@@ -1764,7 +1783,9 @@ function executeMove(fromC, fromR, toC, toR) {
       state.aiThinking = true;
       render();
       setTimeout(async () => {
-        const aiMove = await getAIMove(state.board, HAN, state.difficulty);
+        let aiMove = await getAIMove(state.board, HAN, state.difficulty);
+        // 방어: 엔진(WASM) 데싱크로 '초(내 편)' 말이나 비합법 수가 와도 그대로 두지 않는다.
+        aiMove = ensureLegalAIMove(aiMove, HAN);
         if (aiMove) {
           state.aiThinking = false;
           pushUndoSnapshot(); // AI 수 직전 스냅샷 (turn === HAN)
