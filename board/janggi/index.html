@@ -375,6 +375,27 @@ select {
 .piece.last-moved {
   filter: drop-shadow(0 0 5px rgba(201,154,62,0.9)) drop-shadow(0 0 10px rgba(201,154,62,0.5));
 }
+/* 마지막 수 표시 — 출발 칸(떠난 자리)·도착 칸(놓인 자리)을 칸 단위로 하이라이트 */
+.cell.last-from::before,
+.cell.last-to::before {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 90%; height: 90%;
+  transform: translate(-50%, -50%);
+  border-radius: 7px;
+  pointer-events: none;
+  z-index: 0;
+}
+.cell.last-from::before {
+  border: 2px dashed rgba(201,154,62,0.7);
+  background: rgba(201,154,62,0.12);
+}
+.cell.last-to::before {
+  border: 2px solid rgba(243,207,94,0.9);
+  background: rgba(243,207,94,0.20);
+  box-shadow: 0 0 9px rgba(243,207,94,0.5);
+}
 @keyframes checkFlash {
   0%, 100% { filter: drop-shadow(0 0 6px rgba(255,60,60,1)) drop-shadow(0 0 14px rgba(255,0,0,0.7)); }
   50%      { filter: drop-shadow(0 0 18px rgba(255,80,80,1)) drop-shadow(0 0 32px rgba(255,0,0,1)); }
@@ -1664,16 +1685,28 @@ function scheduleRecommend(team) {
   }, 0);
 }
 
+// 왕(장수)을 잡는 수가 적용되려 하면 — 보드에서 왕을 지우지 말고 즉시 그 수를 둔 쪽 승리로 종료.
+// 정상 플레이라면 체크메이트가 먼저 감지되므로 평소엔 호출되지 않는 안전망(데싱크 등 대비).
+function endIfKingCapture(board, toC, toR, moverTeam) {
+  const target = board[toR] && board[toR][toC];
+  if (!target || target.type !== TYPES.KING) return false;
+  state.gameOver = true;
+  state.winner = moverTeam;
+  state.selected = null;
+  state.legalMoves = [];
+  state.recommended = [];
+  state.aiThinking = false;
+  playWinSound(moverTeam);
+  render();
+  return true;
+}
+
 function executeMove(fromC, fromR, toC, toR) {
   const piece = state.board[fromR][fromC];
   // 안전장치: 잘못된 호출(턴 불일치/빈 칸/적 말)은 무시
   if (!piece || piece.team !== state.turn) return;
-  // 안전장치: 적 왕을 직접 잡는 호출은 거부 (체크메이트 검사가 먼저 끝났어야 함)
-  const target = state.board[toR][toC];
-  if (target && target.type === TYPES.KING) {
-    console.warn('[guard] king-capture call blocked', {fromC, fromR, toC, toR});
-    return;
-  }
+  // 적 왕(장수)을 잡는 수 — 왕을 사라지게 두지 말고 즉시 둔 쪽 승리로 종료(장기: 장수 잡으면 승).
+  if (endIfKingCapture(state.board, toC, toR, state.turn)) return;
   const isCapture = state.board[toR][toC] !== null;
 
   const executeMoveFinal = () => {
@@ -1747,6 +1780,8 @@ function executeMove(fromC, fromR, toC, toR) {
           const executeAIMoveFinal = () => {
             // Restore piece at original position before makeMove (makeMove needs it)
             state.board[aiMove.from[1]][aiMove.from[0]] = aiPiece;
+            // 안전망: AI 수가 왕을 잡는 모양이면(데싱크 등) 왕을 지우지 말고 즉시 종료
+            if (endIfKingCapture(state.board, aiMove.to[0], aiMove.to[1], HAN)) return;
             const { board: nb, captured: cap } = makeMove(state.board, aiMove.from[0], aiMove.from[1], aiMove.to[0], aiMove.to[1]);
             if (cap) {
               state.captured[cap.team].push(cap);
@@ -1885,7 +1920,8 @@ function render() {
         cellContent += `<div class="recommend-ghost">${pieceMarkup(selectedPiece.team, selectedPiece.type, gW, gH)}</div>`;
       }
 
-      boardCells += `<div class="cell" data-col="${c}" data-row="${r}">${cellContent}</div>`;
+      const lastCls = isLastFrom ? ' last-from' : (isLastTo ? ' last-to' : '');
+      boardCells += `<div class="cell${lastCls}" data-col="${c}" data-row="${r}">${cellContent}</div>`;
     }
   }
 
@@ -2299,6 +2335,8 @@ function applyOpponentMove(from, to) {
   render();
   const finalize = () => {
     state.board[fr][fc] = piece; // makeMove 전에 복원
+    // 안전망: 상대 수가 왕을 잡는 모양이면 왕을 지우지 말고 즉시 종료(둔 쪽 승)
+    if (endIfKingCapture(state.board, tc, tr, piece.team)) return;
     const { board: nb, captured } = makeMove(state.board, fc, fr, tc, tr);
     if (captured) { state.captured[captured.team].push(captured); playCaptureSound(); }
     else playMoveSound();
