@@ -1247,9 +1247,16 @@ $('#encAgain').addEventListener('click', function(){
 });
 $('#clearReplay').addEventListener('click', function(){
   hideOv('#ovClear');
-  later(function(){ playArrangement(function(){ showOv('#ovClear'); }); }, 320);
+  /* 다시 듣기가 중간에 끊겨도 완성 화면으로 반드시 되돌아온다 */
+  pendingClear = showClearOv;
+  later(function(){
+    pendingClear = null; /* playArrangement 내부 stopPlayback이 삼키지 않도록 */
+    playArrangement(function(){ finishClear(false); });
+    pendingClear = showClearOv;
+  }, 320);
 });
-$('#clearNext').addEventListener('click', function(){
+/* '한 곡 완성' 화면에서 빠져나가는 유일한 경로 — 앙코르로 가거나 다음 곡으로 */
+function advanceFromClear(){
   hideOv('#ovClear');
   if (doneCount() >= SONGS.length){
     later(function(){ showOv('#ovEncore'); Snd.sparkle(0, 0.06); }, 340);
@@ -1263,11 +1270,14 @@ $('#clearNext').addEventListener('click', function(){
   Snd.soft();
   loadSong(next, false);
   renderTabs();
-});
+}
+$('#clearNext').addEventListener('click', advanceFromClear);
 document.addEventListener('keydown', function(e){
   if (e.key === 'Escape'){
     if ($('#fpScreen').classList.contains('show')) closeFp();
-    else { hideOv('#ovClear'); hideOv('#ovEncore'); }
+    /* 그냥 닫으면 앙코르 경로가 사라지므로 '다음' 버튼과 같은 진행 처리 */
+    else if ($('#ovClear').classList.contains('show')) advanceFromClear();
+    /* 앙코르는 종료 화면 — 자체 버튼(자유 연주/처음부터)으로만 벗어난다 */
   }
 });
 window.addEventListener('pointerdown', function once(){
