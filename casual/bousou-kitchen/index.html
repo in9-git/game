@@ -32,6 +32,7 @@ body{
   box-shadow:0 2px 8px rgba(220,130,180,.3);transition:transform .15s;
 }
 .icon-btn:hover{transform:scale(1.1);}
+.home-btn{margin-right:auto;text-decoration:none;color:#c2557f;font-weight:800;}
 
 /* ── メインコンテナ ── */
 .container{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:12px;padding-top:54px;}
@@ -274,6 +275,7 @@ header h1{
 <div id="petals"></div>
 
 <div class="top-bar">
+  <a class="icon-btn home-btn" href="../../index.html" title="ホーム">←</a>
   <button class="icon-btn" id="music-btn" onclick="toggleMusic()" title="BGM">🎵</button>
   <button class="icon-btn" onclick="openZukan()" title="図鑑">📖</button>
 </div>

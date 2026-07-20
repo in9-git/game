@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2b2117">
+<title>모래정원 빗질 · Zen Rake Garden</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🪷</text></svg>">
+<style>
+:root{
+  --sand:#E8DCC8; --sand-hi:#F5ECD9; --sand-lo:#D8C8AC;
+  --wood:#5d4630; --wood-hi:#77593c; --wood-lo:#3a2c1d;
+  --moss:#6b7f4f; --moss-hi:#84996a; --moss-lo:#4d6136;
+  --ink:#efe6d2; --ink-dim:#c4b394; --paper:#f6eedb;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Apple SD Gothic Neo','Noto Serif KR','Hiragino Mincho ProN',Georgia,'Malgun Gothic',serif;
+  background:
+    radial-gradient(140% 90% at 50% -20%, #4a3a26 0%, #33271a 45%, #1e1710 100%);
+  color:var(--ink);
+  overflow-x:hidden;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+}
+#app{
+  min-height:100dvh;
+  display:flex;flex-direction:column;
+  max-width:720px;margin:0 auto;
+  padding:8px 10px calc(10px + env(safe-area-inset-bottom));
+  gap:8px;
+}
+/* ---------- header ---------- */
+header{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  padding:4px 2px;
+}
+.home{
+  color:var(--ink-dim);text-decoration:none;font-size:.85rem;white-space:nowrap;
+  padding:7px 12px;border-radius:999px;
+  background:rgba(255,244,220,.07);border:1px solid rgba(255,244,220,.12);
+  transition:background .25s,color .25s;
+}
+.home:hover{background:rgba(255,244,220,.14);color:var(--ink)}
+.titles{text-align:center;flex:1;min-width:0}
+.titles h1{
+  font-size:clamp(1.12rem,4.6vw,1.55rem);font-weight:700;letter-spacing:.06em;
+  color:var(--ink);text-shadow:0 2px 8px rgba(0,0,0,.4);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.titles .sub{
+  font-size:.66rem;color:var(--ink-dim);letter-spacing:.08em;margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.topbtns{display:flex;gap:6px}
+.chip{
+  border:1px solid rgba(255,244,220,.14);background:rgba(255,244,220,.07);
+  color:var(--ink);border-radius:999px;padding:7px 10px;font-size:.8rem;
+  cursor:pointer;white-space:nowrap;transition:background .25s,transform .15s;
+  font-family:inherit;
+}
+.chip:hover{background:rgba(255,244,220,.15)}
+.chip:active{transform:scale(.94)}
+/* ---------- garden frame ---------- */
+#frame{
+  position:relative;flex:1;min-height:300px;
+  border-radius:22px;padding:13px;
+  background:
+    linear-gradient(160deg, rgba(255,235,200,.10), rgba(0,0,0,.22)),
+    repeating-linear-gradient(93deg,#6a5138 0 15px,#5c452e 15px 27px,#664d33 27px 44px),
+    var(--wood);
+  box-shadow:
+    0 18px 44px rgba(0,0,0,.5),
+    inset 0 1px 0 rgba(255,240,210,.18),
+    inset 0 -3px 8px rgba(0,0,0,.35);
+}
+#stage{position:relative;width:100%;height:100%;border-radius:12px;overflow:hidden;background:var(--sand)}
+#garden{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#stage::after{
+  content:'';position:absolute;inset:0;border-radius:12px;pointer-events:none;
+  box-shadow:inset 0 6px 20px rgba(92,64,32,.38), inset 0 -3px 10px rgba(92,64,32,.18), inset 0 0 2px rgba(60,40,20,.5);
+}
+#veil{
+  position:absolute;inset:0;border-radius:12px;pointer-events:none;opacity:0;
+  background:linear-gradient(180deg,var(--sand-hi),var(--sand) 55%,var(--sand-lo));
+  transition:opacity .6s ease;z-index:3;
+}
+#veil.show{opacity:1}
+/* ---------- hint ---------- */
+#hint{
+  text-align:center;font-size:.7rem;color:var(--ink-dim);letter-spacing:.03em;
+  line-height:1.5;padding:0 6px;
+}
+/* ---------- controls ---------- */
+#controls{display:flex;flex-direction:column;gap:8px}
+#tray{
+  display:flex;gap:6px;justify-content:center;flex-wrap:nowrap;
+  padding:7px;border-radius:18px;
+  background:linear-gradient(180deg,rgba(255,240,210,.08),rgba(0,0,0,.16));
+  border:1px solid rgba(255,240,210,.1);
+}
+.tool{
+  width:48px;height:48px;flex:0 1 48px;border-radius:14px;cursor:pointer;
+  background:linear-gradient(180deg,#f7efdd,#e5d6ba);
+  border:1px solid #b9a47f;
+  box-shadow:0 3px 6px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.6);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .2s;
+  padding:0;
+}
+.tool canvas{width:40px;height:40px;display:block;pointer-events:none}
+.tool:active{transform:scale(.9)}
+.tool.sel{
+  background:linear-gradient(180deg,#e9f0d8,#cdd9b2);
+  border-color:var(--moss);
+  box-shadow:0 0 0 2px var(--moss), 0 4px 10px rgba(77,97,54,.45), inset 0 1px 0 rgba(255,255,255,.6);
+  transform:translateY(-2px);
+}
+#row2{display:flex;gap:8px;align-items:stretch;justify-content:center;flex-wrap:wrap}
+#tineWrap{
+  display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:14px;
+  background:rgba(255,240,210,.06);border:1px solid rgba(255,240,210,.09);
+}
+#tineWrap .lbl{font-size:.64rem;color:var(--ink-dim);margin-right:2px;letter-spacing:.03em}
+.tine{
+  width:36px;height:34px;border-radius:10px;cursor:pointer;border:1px solid rgba(255,240,210,.14);
+  background:rgba(255,240,210,.06);color:var(--ink-dim);
+  display:flex;align-items:center;justify-content:center;gap:2.5px;
+  transition:transform .15s, background .2s;padding:0;
+}
+.tine i{display:block;width:2px;height:15px;background:currentColor;border-radius:1px}
+.tine:active{transform:scale(.92)}
+.tine.sel{background:var(--moss-lo);color:#e8f0d8;border-color:var(--moss-hi);box-shadow:inset 0 1px 3px rgba(0,0,0,.3)}
+.act{
+  border-radius:14px;padding:10px 16px;font-size:.85rem;cursor:pointer;font-family:inherit;
+  letter-spacing:.03em;transition:transform .15s, filter .2s;border:1px solid transparent;
+  display:flex;align-items:center;gap:6px;
+}
+.act:active{transform:scale(.95)}
+#resetBtn{
+  background:linear-gradient(180deg,rgba(255,240,210,.1),rgba(255,240,210,.03));
+  border-color:rgba(255,240,210,.16);color:var(--ink);
+}
+#resetBtn:hover{filter:brightness(1.15)}
+#saveBtn{
+  background:linear-gradient(180deg,var(--moss-hi),var(--moss-lo));
+  color:#f3f7e8;box-shadow:0 4px 12px rgba(60,80,40,.45), inset 0 1px 0 rgba(255,255,255,.25);
+}
+#saveBtn:hover{filter:brightness(1.08)}
+/* ---------- toast ---------- */
+#toast{
+  position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(14px);
+  background:rgba(38,30,20,.92);color:var(--paper);border:1px solid rgba(255,240,210,.2);
+  padding:10px 20px;border-radius:999px;font-size:.83rem;letter-spacing:.02em;
+  opacity:0;pointer-events:none;transition:opacity .4s ease, transform .4s ease;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);white-space:nowrap;z-index:40;max-width:92vw;
+  overflow:hidden;text-overflow:ellipsis;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* ---------- confirm ---------- */
+#confirm{
+  position:fixed;inset:0;background:rgba(18,13,8,.55);backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;z-index:50;
+  opacity:0;pointer-events:none;transition:opacity .3s ease;
+}
+#confirm.show{opacity:1;pointer-events:auto}
+.card{
+  background:linear-gradient(180deg,var(--paper),#eadfc4);color:#4a3a25;
+  border-radius:20px;padding:26px 28px;max-width:300px;width:86vw;text-align:center;
+  box-shadow:0 20px 50px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.8);
+  transform:translateY(8px) scale(.97);transition:transform .3s cubic-bezier(.34,1.4,.64,1);
+}
+#confirm.show .card{transform:none}
+.card h2{font-size:1.05rem;margin-bottom:8px;letter-spacing:.04em}
+.card p{font-size:.8rem;color:#7c6b4e;margin-bottom:18px;line-height:1.5}
+.card .btns{display:flex;gap:8px;justify-content:center}
+.card button{
+  flex:1;border-radius:12px;padding:10px 8px;font-size:.85rem;cursor:pointer;font-family:inherit;
+  border:1px solid #c5b28c;transition:transform .15s,filter .2s;
+}
+.card button:active{transform:scale(.95)}
+#cfYes{background:linear-gradient(180deg,var(--moss-hi),var(--moss-lo));border-color:var(--moss-lo);color:#f3f7e8}
+#cfNo{background:#fbf5e6;color:#6a5738}
+/* ---------- responsive ---------- */
+@media (min-width:600px){
+  #app{padding:16px 18px}
+  .tool{width:54px;height:54px;flex-basis:54px}
+  #hint{font-size:.76rem}
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.01s !important;animation:none !important}
+  #veil{transition-duration:.01s}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a class="home" href="../../index.html">← <span id="homeTxt">홈</span></a>
+    <div class="titles">
+      <h1 id="titleMain">모래정원 빗질</h1>
+      <div class="sub" id="titleSub">枯山水にわ · Zen Rake Garden</div>
+    </div>
+    <div class="topbtns">
+      <button class="chip" id="soundBtn" aria-label="sound">🔊</button>
+      <button class="chip" id="langBtn" aria-label="language">🇰🇷 KO</button>
+    </div>
+  </header>
+
+  <div id="frame">
+    <div id="stage">
+      <canvas id="garden"></canvas>
+      <div id="veil"></div>
+    </div>
+  </div>
+
+  <div id="hint"></div>
+
+  <div id="controls">
+    <div id="tray">
+      <button class="tool sel" data-tool="rake"><canvas data-icon="rake"></canvas></button>
+      <button class="tool" data-tool="stone0"><canvas data-icon="stone0"></canvas></button>
+      <button class="tool" data-tool="stone1"><canvas data-icon="stone1"></canvas></button>
+      <button class="tool" data-tool="stone2"><canvas data-icon="stone2"></canvas></button>
+      <button class="tool" data-tool="moss"><canvas data-icon="moss"></canvas></button>
+      <button class="tool" data-tool="leaf"><canvas data-icon="leaf"></canvas></button>
+      <button class="tool" data-tool="lantern"><canvas data-icon="lantern"></canvas></button>
+    </div>
+    <div id="row2">
+      <div id="tineWrap">
+        <span class="lbl" id="tineLbl">갈퀴 굵기</span>
+        <button class="tine" data-n="2"><i></i><i></i></button>
+        <button class="tine sel" data-n="3"><i></i><i></i><i></i></button>
+        <button class="tine" data-n="4"><i></i><i></i><i></i><i></i></button>
+        <button class="tine" data-n="5"><i></i><i></i><i></i><i></i><i></i></button>
+      </div>
+      <button class="act" id="resetBtn">〰 <span id="resetTxt">모래 고르기</span></button>
+      <button class="act" id="saveBtn">📷 <span id="saveTxt">사진 저장</span></button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div id="confirm">
+  <div class="card">
+    <h2 id="cfTitle">모래를 고를까요?</h2>
+    <p id="cfBody">정원이 처음처럼 비워져요.</p>
+    <div class="btns">
+      <button id="cfNo">그대로 두기</button>
+      <button id="cfYes">고르기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ================================================================
+   모래정원 빗질 — Zen Rake Garden  (game.in-9.com)
+   ================================================================ */
+
+/* ---------------- i18n ---------------- */
+const I18N = {
+  ko:{
+    title:'모래정원 빗질', home:'홈',
+    hint:'드래그해 모래를 빗어요 · 트레이에서 골라 탭으로 놓아요 · 길게 누르면 살며시 치워져요',
+    rake:'갈퀴', stone0:'둥근 돌', stone1:'선 돌', stone2:'넓은 돌',
+    moss:'이끼', leaf:'단풍잎', lantern:'석등',
+    tines:'갈퀴 굵기', reset:'모래 고르기', save:'사진 저장',
+    savedToast:'오늘의 정원을 담았어요 🪷', resetToast:'모래를 곱게 골랐어요',
+    restoreToast:'지난 정원을 이어서 가꿔요', removeToast:'살며시 치웠어요',
+    saveFail:'저장에 실패했어요',
+    cfTitle:'모래를 고를까요?', cfBody:'정원이 처음처럼 비워져요.',
+    cfYes:'고르기', cfNo:'그대로 두기',
+    docTitle:'모래정원 빗질 · Zen Rake Garden'
+  },
+  ja:{
+    title:'枯山水にわ', home:'ホーム',
+    hint:'ドラッグで砂紋を描きます · トレイから選んでタップで置きます · 長押しでそっと片づきます',
+    rake:'熊手', stone0:'丸い石', stone1:'立て石', stone2:'平たい石',
+    moss:'苔', leaf:'紅葉', lantern:'灯籠',
+    tines:'熊手の幅', reset:'砂をならす', save:'写真を保存',
+    savedToast:'今日のお庭をおさめました 🪷', resetToast:'砂をきれいにならしました',
+    restoreToast:'前のお庭のつづきです', removeToast:'そっと片づけました',
+    saveFail:'保存できませんでした',
+    cfTitle:'砂をならしますか？', cfBody:'お庭がまっさらに戻ります。',
+    cfYes:'ならす', cfNo:'このままにする',
+    docTitle:'枯山水にわ · Zen Rake Garden'
+  },
+  en:{
+    title:'Zen Rake Garden', home:'Home',
+    hint:'Drag to rake the sand · pick from the tray and tap to place · long-press to gently remove',
+    rake:'Rake', stone0:'Round stone', stone1:'Standing stone', stone2:'Flat stone',
+    moss:'Moss', leaf:'Maple leaf', lantern:'Stone lantern',
+    tines:'Rake width', reset:'Smooth the sand', save:'Save photo',
+    savedToast:"Today's garden, captured 🪷", resetToast:'The sand is smooth again',
+    restoreToast:'Your last garden awaits', removeToast:'Gently removed',
+    saveFail:'Could not save',
+    cfTitle:'Smooth the sand?', cfBody:'Your garden will start anew.',
+    cfYes:'Smooth it', cfNo:'Keep it',
+    docTitle:'Zen Rake Garden · 枯山水'
+  }
+};
+const LANGS = ['ko','ja','en'];
+const FLAGS = {ko:'🇰🇷 KO', ja:'🇯🇵 JA', en:'🇬🇧 EN'};
+let lang = 'ko';
+try{
+  const st = localStorage.getItem('in9-lang');
+  if(st && I18N[st]) lang = st;
+  else{
+    const nv = (navigator.language||'').toLowerCase();
+    if(nv.startsWith('ja')) lang='ja';
+    else if(nv.startsWith('en')) lang='en';
+  }
+}catch(e){}
+function t(k){ return (I18N[lang] && I18N[lang][k]) || I18N.ko[k] || k; }
+
+const $ = s => document.querySelector(s);
+
+function applyLang(){
+  document.documentElement.lang = lang;
+  document.title = t('docTitle');
+  $('#titleMain').textContent = t('title');
+  const others = LANGS.filter(l=>l!==lang).map(l=>I18N[l].title);
+  $('#titleSub').textContent = others.join(' · ');
+  $('#homeTxt').textContent = t('home');
+  $('#hint').textContent = t('hint');
+  $('#tineLbl').textContent = t('tines');
+  $('#resetTxt').textContent = t('reset');
+  $('#saveTxt').textContent = t('save');
+  $('#cfTitle').textContent = t('cfTitle');
+  $('#cfBody').textContent = t('cfBody');
+  $('#cfYes').textContent = t('cfYes');
+  $('#cfNo').textContent = t('cfNo');
+  $('#langBtn').textContent = FLAGS[lang];
+  document.querySelectorAll('.tool').forEach(b=>{
+    const key = b.dataset.tool;
+    b.title = t(key); b.setAttribute('aria-label', t(key));
+  });
+  /* 라벨 길이가 바뀌면 #row2 줄 수·#hint 줄바꿈이 달라져 #stage 높이가 즉시 변한다.
+     window resize 는 발생하지 않으므로 여기서 직접 재계산 (같은 크기면 조기 return). */
+  resize();
+}
+$('#langBtn').addEventListener('click', ()=>{
+  lang = LANGS[(LANGS.indexOf(lang)+1)%LANGS.length];
+  try{ localStorage.setItem('in9-lang', lang); }catch(e){}
+  applyLang();
+});
+
+/* ---------------- utils ---------------- */
+const RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clamp = (v,a,b)=>Math.min(b,Math.max(a,v));
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let z = Math.imul(a ^ a>>>15, 1 | a);
+    z = z + Math.imul(z ^ z>>>7, 61 | z) ^ z;
+    return ((z ^ z>>>14)>>>0)/4294967296;
+  };
+}
+function rr(g,x,y,w,h,r){
+  r = Math.min(r, w/2, h/2);
+  g.beginPath();
+  g.moveTo(x+r,y);
+  g.arcTo(x+w,y,x+w,y+h,r);
+  g.arcTo(x+w,y+h,x,y+h,r);
+  g.arcTo(x,y+h,x,y,r);
+  g.arcTo(x,y,x+w,y,r);
+  g.closePath();
+}
+
+/* ---------------- canvas setup ---------------- */
+const stage  = $('#stage');
+const canvas = $('#garden');
+const ctx    = canvas.getContext('2d');
+const sandC  = document.createElement('canvas');
+const sc     = sandC.getContext('2d');
+const vignC  = document.createElement('canvas');
+const dpr    = clamp(window.devicePixelRatio||1, 1, 2.5);
+let W=0, H=0;
+
+const SAND = {
+  top:'#F0E5D0', mid:'#E8DCC8', bot:'#DECFB2',
+  base:'rgba(233,221,199,0.55)',
+  dark:'rgba(128,106,79,0.5)',
+  core:'rgba(108,88,64,0.45)',
+  light:'rgba(255,249,232,0.8)'
+};
+const TINE_SP = 9;
+
+/* ---------------- state ---------------- */
+let marks   = [];   // timeline: {k:'s',n,pts:[x,y,...]} | {k:'r',x,y,r0,c}
+let objects = [];   // {t,v,x,y,seed,r,rot,s,ci,born}
+let tool    = 'rake';
+let tines   = 3;
+let dirty   = true;
+let parts   = [];
+const SAVE_KEY = 'zen-garden-v1';
+
+/* ---------------- sand base ---------------- */
+function initSand(){
+  const g = sc;
+  g.setTransform(dpr,0,0,dpr,0,0);
+  const grd = g.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0, SAND.top);
+  grd.addColorStop(.55, SAND.mid);
+  grd.addColorStop(1, SAND.bot);
+  g.fillStyle = grd;
+  g.fillRect(0,0,W,H);
+  // soft organic blotches
+  const rnd = mulberry32(20260720);
+  for(let i=0;i<14;i++){
+    const x=rnd()*W, y=rnd()*H, r=40+rnd()*110;
+    const bg = g.createRadialGradient(x,y,0,x,y,r);
+    const dark = rnd()<.5;
+    bg.addColorStop(0, dark?'rgba(150,128,100,0.05)':'rgba(255,248,230,0.06)');
+    bg.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=bg; g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
+  }
+  // grain speckles
+  const n = Math.floor(W*H/150);
+  for(let i=0;i<n;i++){
+    const x=rnd()*W, y=rnd()*H;
+    g.fillStyle = rnd()<.5 ? 'rgba(140,118,90,0.06)' : 'rgba(255,250,235,0.07)';
+    g.fillRect(x,y, .7+rnd()*.9, .7+rnd()*.9);
+  }
+}
+
+function renderVignette(){
+  vignC.width = Math.round(W*dpr); vignC.height = Math.round(H*dpr);
+  const g = vignC.getContext('2d');
+  g.setTransform(dpr,0,0,dpr,0,0);
+  const rad = g.createRadialGradient(W/2,H/2, Math.min(W,H)*.42, W/2,H/2, Math.max(W,H)*.78);
+  rad.addColorStop(0,'rgba(0,0,0,0)');
+  rad.addColorStop(1,'rgba(88,62,32,0.2)');
+  g.fillStyle=rad; g.fillRect(0,0,W,H);
+  const topl = g.createLinearGradient(0,0,0,70);
+  topl.addColorStop(0,'rgba(255,250,235,0.12)');
+  topl.addColorStop(1,'rgba(255,250,235,0)');
+  g.fillStyle=topl; g.fillRect(0,0,W,70);
+}
+
+/* ---------------- rake strokes ---------------- */
+function line(g,x0,y0,x1,y1){ g.beginPath(); g.moveTo(x0,y0); g.lineTo(x1,y1); g.stroke(); }
+
+function rakeSeg(x0,y0,x1,y1,n){
+  const dx=x1-x0, dy=y1-y0;
+  const len=Math.hypot(dx,dy); if(len<0.4) return;
+  const nx=-dy/len, ny=dx/len;
+  const g=sc;
+  g.lineCap='round'; g.lineJoin='round';
+  // base swath — the rake's flat body smooths older marks
+  g.strokeStyle=SAND.base;
+  g.lineWidth=TINE_SP*n+5;
+  line(g,x0,y0,x1,y1);
+  const half=(n-1)/2;
+  for(let i=0;i<n;i++){
+    const o=(i-half)*TINE_SP, ox=nx*o, oy=ny*o;
+    g.lineWidth=3.1; g.strokeStyle=SAND.dark;
+    line(g, x0+ox, y0+oy+1.4, x1+ox, y1+oy+1.4);
+    g.lineWidth=1.7; g.strokeStyle=SAND.core;
+    line(g, x0+ox, y0+oy+0.4, x1+ox, y1+oy+0.4);
+    g.lineWidth=2.1; g.strokeStyle=SAND.light;
+    line(g, x0+ox, y0+oy-1.2, x1+ox, y1+oy-1.2);
+  }
+  dirty=true;
+}
+
+function ringMark(m){
+  const g=sc;
+  g.lineCap='round';
+  for(let i=0;i<m.c;i++){
+    const r=m.r0+i*12;
+    g.strokeStyle=SAND.base; g.lineWidth=9;
+    g.beginPath(); g.arc(m.x,m.y,r,0,Math.PI*2); g.stroke();
+    g.strokeStyle=SAND.dark; g.lineWidth=2.6;
+    g.beginPath(); g.arc(m.x,m.y+1.3,r,0,Math.PI*2); g.stroke();
+    g.strokeStyle=SAND.light; g.lineWidth=2;
+    g.beginPath(); g.arc(m.x,m.y-1.1,r,0,Math.PI*2); g.stroke();
+  }
+  dirty=true;
+}
+
+function replay(){
+  initSand();
+  for(const m of marks){
+    if(m.k==='s'){
+      const p=m.pts;
+      if(p.length===2) rakeSeg(p[0],p[1],p[0]+2,p[1]+1,m.n);
+      for(let i=2;i<p.length;i+=2) rakeSeg(p[i-2],p[i-1],p[i],p[i+1],m.n);
+    }else if(m.k==='r'){
+      ringMark(m);
+    }
+  }
+  dirty=true;
+}
+
+/* ---------------- object drawing ---------------- */
+function blobPath(g, rx, ry, seed){
+  const rnd=mulberry32(seed);
+  const ph1=rnd()*Math.PI*2, ph2=rnd()*Math.PI*2;
+  const a1=.09+rnd()*.07, a2=.04+rnd()*.05;
+  const K=16, pts=[];
+  for(let i=0;i<K;i++){
+    const a=i/K*Math.PI*2;
+    const f=1 + a1*Math.sin(3*a+ph1) + a2*Math.sin(5*a+ph2);
+    pts.push([Math.cos(a)*rx*f, Math.sin(a)*ry*f]);
+  }
+  g.beginPath();
+  let mx=(pts[K-1][0]+pts[0][0])/2, my=(pts[K-1][1]+pts[0][1])/2;
+  g.moveTo(mx,my);
+  for(let i=0;i<K;i++){
+    const p=pts[i], q=pts[(i+1)%K];
+    g.quadraticCurveTo(p[0],p[1],(p[0]+q[0])/2,(p[1]+q[1])/2);
+  }
+  g.closePath();
+}
+
+function softShadow(g, x, y, rx, ry, a){
+  const sh=g.createRadialGradient(x,y,0,x,y,rx);
+  sh.addColorStop(0,'rgba(86,64,38,'+a+')');
+  sh.addColorStop(1,'rgba(86,64,38,0)');
+  g.save();
+  g.translate(x,y); g.scale(1, ry/rx); g.translate(-x,-y);
+  g.fillStyle=sh; g.beginPath(); g.arc(x,y,rx,0,Math.PI*2); g.fill();
+  g.restore();
+}
+
+function drawStone(g,o){
+  const dims=[[1,.82],[.6,1.3],[1.45,.58]][o.v];
+  const rx=o.r*dims[0], ry=o.r*dims[1];
+  g.save();
+  g.translate(o.x,o.y);
+  softShadow(g, 2, ry*.78, rx*1.15, ry*.42, .3);
+  g.rotate(o.rot);
+  blobPath(g, rx, ry, o.seed);
+  const body=g.createRadialGradient(-rx*.35,-ry*.5, o.r*.15, 0,0, Math.max(rx,ry)*1.35);
+  body.addColorStop(0,'#aba295');
+  body.addColorStop(.55,'#837b6e');
+  body.addColorStop(1,'#575147');
+  g.fillStyle=body; g.fill();
+  g.save();
+  g.clip();
+  const hl=g.createRadialGradient(-rx*.4,-ry*.55,0,-rx*.4,-ry*.55,Math.max(rx,ry)*.9);
+  hl.addColorStop(0,'rgba(255,250,238,0.3)');
+  hl.addColorStop(1,'rgba(255,250,238,0)');
+  g.fillStyle=hl; g.fillRect(-rx*1.6,-ry*1.6,rx*3.2,ry*3.2);
+  const rnd=mulberry32(o.seed+7);
+  for(let i=0;i<9;i++){
+    g.fillStyle = rnd()<.5?'rgba(40,34,28,0.12)':'rgba(240,235,225,0.12)';
+    g.beginPath();
+    g.arc((rnd()-.5)*rx*1.6,(rnd()-.5)*ry*1.6, .8+rnd()*1.6, 0, Math.PI*2);
+    g.fill();
+  }
+  g.restore();
+  g.restore();
+}
+
+function drawMoss(g,o){
+  const rnd=mulberry32(o.seed);
+  g.save();
+  g.translate(o.x,o.y);
+  softShadow(g, 1, o.r*.5, o.r*1.2, o.r*.5, .24);
+  for(let i=0;i<7;i++){
+    const dx=(rnd()-.5)*o.r*1.25, dy=(rnd()-.5)*o.r*.85, cr=o.r*(.36+rnd()*.3);
+    const mg=g.createRadialGradient(dx-cr*.35,dy-cr*.4,cr*.1,dx,dy,cr);
+    mg.addColorStop(0,'#97ab66');
+    mg.addColorStop(.6,'#617546');
+    mg.addColorStop(1,'#47572e');
+    g.fillStyle=mg;
+    g.beginPath(); g.arc(dx,dy,cr,0,Math.PI*2); g.fill();
+  }
+  for(let i=0;i<12;i++){
+    g.fillStyle='rgba(190,208,130,0.5)';
+    g.beginPath();
+    g.arc((rnd()-.5)*o.r*1.4,(rnd()-.5)*o.r, .7+rnd()*.9, 0, Math.PI*2);
+    g.fill();
+  }
+  g.restore();
+}
+
+const LEAF_ANG=[-170,-150,-130,-110,-90,-70,-50,-30,-10].map(d=>d*Math.PI/180);
+const LEAF_F  =[.72,.42,.9,.46,1,.46,.9,.42,.72];
+const LEAF_COL=[['#cf6a33','#9d3a1c'],['#c14e28','#87301a'],['#d98a3a','#aa561f']];
+
+function drawLeaf(g,o){
+  g.save();
+  g.translate(o.x,o.y);
+  softShadow(g, 2, 4, o.r*.95, o.r*.45, .18);
+  g.rotate(o.rot);
+  const r=o.r, col=LEAF_COL[o.ci];
+  const lg=g.createLinearGradient(0,-r,0,r*.6);
+  lg.addColorStop(0,col[0]); lg.addColorStop(1,col[1]);
+  g.fillStyle=lg;
+  g.beginPath();
+  g.moveTo(0,r*.55);
+  for(let i=0;i<LEAF_ANG.length;i++){
+    const f=r*LEAF_F[i];
+    g.lineTo(Math.cos(LEAF_ANG[i])*f, Math.sin(LEAF_ANG[i])*f);
+  }
+  g.closePath();
+  g.fill();
+  g.strokeStyle='rgba(122,42,16,0.35)';
+  g.lineWidth=1;
+  for(let i=0;i<LEAF_ANG.length;i+=2){
+    const f=r*LEAF_F[i]*.78;
+    line(g, 0, r*.18, Math.cos(LEAF_ANG[i])*f, Math.sin(LEAF_ANG[i])*f);
+  }
+  g.strokeStyle='#7c3c1c'; g.lineWidth=1.8; g.lineCap='round';
+  line(g, 0, r*.5, 0, r*.95);
+  g.restore();
+}
+
+function drawLantern(g,o){
+  const s=o.s||1;
+  g.save();
+  g.translate(o.x,o.y);
+  g.scale(s,s);
+  softShadow(g, 2, 3, 30, 11, .3);
+  const grad=(y0,y1,l,m,d)=>{
+    const gr=g.createLinearGradient(-20,y0,20,y1);
+    gr.addColorStop(0,l); gr.addColorStop(.5,m); gr.addColorStop(1,d);
+    return gr;
+  };
+  const L='#aca69b', M='#847d72', D='#5a544b';
+  // base slab
+  rr(g,-19,-10,38,10,3); g.fillStyle=grad(-10,0,L,M,D); g.fill();
+  // pedestal
+  rr(g,-7,-31,14,22,2); g.fillStyle=grad(-31,-9,M,'#767065',D); g.fill();
+  // middle slab
+  rr(g,-14,-37,28,7,3); g.fillStyle=grad(-37,-30,L,M,D); g.fill();
+  // firebox
+  rr(g,-11,-57,22,21,2); g.fillStyle=grad(-57,-36,L,M,D); g.fill();
+  // window glow
+  const glow=g.createRadialGradient(0,-47,1,0,-47,15);
+  glow.addColorStop(0,'rgba(255,206,128,0.85)');
+  glow.addColorStop(.5,'rgba(255,190,110,0.25)');
+  glow.addColorStop(1,'rgba(255,190,110,0)');
+  g.fillStyle=glow; g.beginPath(); g.arc(0,-47,15,0,Math.PI*2); g.fill();
+  rr(g,-5,-54,10,15,1.5);
+  const wg=g.createLinearGradient(0,-54,0,-39);
+  wg.addColorStop(0,'#ffdfa6'); wg.addColorStop(.5,'#f7bd6b'); wg.addColorStop(1,'#c88a45');
+  g.fillStyle=wg; g.fill();
+  // roof
+  g.beginPath();
+  g.moveTo(-26,-56);
+  g.quadraticCurveTo(-13,-59,-3,-72);
+  g.lineTo(3,-72);
+  g.quadraticCurveTo(13,-59,26,-56);
+  g.quadraticCurveTo(0,-62,-26,-56);
+  g.closePath();
+  const rg=g.createLinearGradient(0,-72,0,-55);
+  rg.addColorStop(0,'#938d82'); rg.addColorStop(1,'#4d483f');
+  g.fillStyle=rg; g.fill();
+  g.strokeStyle='rgba(255,252,240,0.18)'; g.lineWidth=1;
+  g.beginPath();
+  g.moveTo(-25,-56.5);
+  g.quadraticCurveTo(-13,-59.5,-3,-72);
+  g.stroke();
+  // finial
+  g.fillStyle=M;
+  g.fillRect(-1.5,-75,3,4);
+  g.beginPath(); g.arc(0,-77.5,3.4,0,Math.PI*2);
+  g.fillStyle=grad(-81,-74,L,M,D); g.fill();
+  g.restore();
+}
+
+function drawObject(g,o){
+  let k=1;
+  if(o.born && !RM){
+    k=clamp((performance.now()-o.born)/280, 0, 1);
+    if(k<1){
+      const c=1.70158, kk=k-1;
+      k=1+(kk*kk*((c+1)*kk+c)); // easeOutBack
+      k=.6+.4*clamp(k,0,1.25);
+    }
+  }
+  if(k!==1){
+    g.save();
+    g.translate(o.x,o.y); g.scale(k,k); g.translate(-o.x,-o.y);
+  }
+  if(o.t==='stone') drawStone(g,o);
+  else if(o.t==='moss') drawMoss(g,o);
+  else if(o.t==='leaf') drawLeaf(g,o);
+  else if(o.t==='lantern') drawLantern(g,o);
+  if(k!==1) g.restore();
+}
+
+/* ---------------- render loop ---------------- */
+let lpTimer=0, lpStart=0, lpTarget=null;
+
+function render(){
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.drawImage(sandC,0,0,W,H);
+  const sorted=[...objects].sort((a,b)=>a.y-b.y);
+  for(const o of sorted) drawObject(ctx,o);
+  const now=performance.now();
+  for(const p of parts){
+    ctx.globalAlpha=clamp(1-p.age/p.life,0,1)*.85;
+    ctx.fillStyle=p.col;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  if(lpTimer && lpTarget && now-lpStart>140){
+    const prog=clamp((now-lpStart)/560,0,1);
+    const cy=lpTarget.y+(lpTarget.hy||0);
+    ctx.strokeStyle='rgba(255,252,240,0.75)';
+    ctx.lineWidth=3; ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.arc(lpTarget.x, cy, (lpTarget.hr||30)+8, -Math.PI/2, -Math.PI/2+prog*Math.PI*2);
+    ctx.stroke();
+  }
+  ctx.drawImage(vignC,0,0,W,H);
+  dirty=false;
+}
+
+let lastTick=0;
+function tick(ts){
+  const dt=Math.min(.05,(ts-lastTick)/1000||0.016);
+  lastTick=ts;
+  if(parts.length){
+    for(const p of parts){
+      p.age+=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=170*dt;
+    }
+    parts=parts.filter(p=>p.age<p.life);
+    dirty=true;
+  }
+  const now=performance.now();
+  if(objects.some(o=>o.born && now-o.born<300)) dirty=true;
+  if(lpTimer) dirty=true;
+  if(SFX.raking && now-SFX.lastMove>150) SFX.rakeQuiet();
+  if(dirty) render();
+  requestAnimationFrame(tick);
+}
+
+function puffAt(x,y,n,col){
+  if(RM) return;
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, v=30+Math.random()*80;
+    parts.push({
+      x:x+(Math.random()-.5)*8, y:y+(Math.random()-.5)*8,
+      vx:Math.cos(a)*v, vy:Math.sin(a)*v-40,
+      r:1.2+Math.random()*2.2, age:0, life:.5+Math.random()*.4,
+      col: col||'rgba(214,196,164,1)'
+    });
+  }
+}
+
+/* ---------------- audio ---------------- */
+const SFX={
+  ac:null, master:null, rakeGain:null, rakeBP:null,
+  on:true, raking:false, lastMove:0,
+  ensure(){
+    if(this.ac){ if(this.ac.state==='suspended') this.ac.resume().catch(()=>{}); return; }
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return;
+    try{
+      this.ac=new AC();
+      this.master=this.ac.createGain();
+      this.master.gain.value=this.on?0.9:0;
+      this.master.connect(this.ac.destination);
+      const len=this.ac.sampleRate*1.5;
+      const buf=this.ac.createBuffer(1,len,this.ac.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+      const src=this.ac.createBufferSource();
+      src.buffer=buf; src.loop=true;
+      this.rakeBP=this.ac.createBiquadFilter();
+      this.rakeBP.type='bandpass'; this.rakeBP.frequency.value=1500; this.rakeBP.Q.value=.8;
+      const lp=this.ac.createBiquadFilter();
+      lp.type='lowpass'; lp.frequency.value=5200;
+      this.rakeGain=this.ac.createGain(); this.rakeGain.gain.value=0;
+      src.connect(this.rakeBP); this.rakeBP.connect(lp); lp.connect(this.rakeGain); this.rakeGain.connect(this.master);
+      src.start();
+    }catch(e){ this.ac=null; }
+  },
+  rake(speed){
+    if(!this.ac||!this.rakeGain) return;
+    this.raking=true; this.lastMove=performance.now();
+    const tN=this.ac.currentTime;
+    const amp=clamp(.02+speed*.00009, 0, .14);
+    this.rakeGain.gain.setTargetAtTime(amp, tN, .05);
+    this.rakeBP.frequency.setTargetAtTime(clamp(1000+speed*1.3, 1000, 2600), tN, .07);
+  },
+  rakeQuiet(){
+    if(!this.ac||!this.rakeGain) return;
+    this.rakeGain.gain.setTargetAtTime(0, this.ac.currentTime, .09);
+  },
+  rakeStop(){
+    this.raking=false;
+    this.rakeQuiet();
+  },
+  bell(f,vol){
+    if(!this.ac||!this.on) return;
+    const tN=this.ac.currentTime, v=vol||.2;
+    const mk=(freq,amp,dur)=>{
+      const o=this.ac.createOscillator(), gn=this.ac.createGain();
+      o.type='sine'; o.frequency.value=freq;
+      gn.gain.setValueAtTime(.0001,tN);
+      gn.gain.exponentialRampToValueAtTime(amp,tN+.008);
+      gn.gain.exponentialRampToValueAtTime(.0001,tN+dur);
+      o.connect(gn); gn.connect(this.master);
+      o.start(tN); o.stop(tN+dur+.05);
+    };
+    mk(f, v, 1.7);
+    mk(f*2.756, v*.28, .6);
+    mk(f*5.4, v*.08, .25);
+  },
+  puffS(){
+    if(!this.ac||!this.on) return;
+    const tN=this.ac.currentTime;
+    const len=this.ac.sampleRate*.16;
+    const buf=this.ac.createBuffer(1,len,this.ac.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*(1-i/len);
+    const src=this.ac.createBufferSource(); src.buffer=buf;
+    const lp=this.ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=520;
+    const gn=this.ac.createGain(); gn.gain.value=.14;
+    src.connect(lp); lp.connect(gn); gn.connect(this.master);
+    src.start(tN);
+  },
+  sweep(){
+    if(!this.ac||!this.on) return;
+    const tN=this.ac.currentTime;
+    const len=this.ac.sampleRate*.9;
+    const buf=this.ac.createBuffer(1,len,this.ac.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*(1-i/len);
+    const src=this.ac.createBufferSource(); src.buffer=buf;
+    const lp=this.ac.createBiquadFilter(); lp.type='lowpass';
+    lp.frequency.setValueAtTime(2000,tN);
+    lp.frequency.exponentialRampToValueAtTime(240,tN+.85);
+    const gn=this.ac.createGain();
+    gn.gain.setValueAtTime(.07,tN);
+    gn.gain.exponentialRampToValueAtTime(.0001,tN+.9);
+    src.connect(lp); lp.connect(gn); gn.connect(this.master);
+    src.start(tN);
+  },
+  chime(){
+    if(!this.ac||!this.on) return;
+    this.bell(659.25,.16);
+    setTimeout(()=>this.bell(987.77,.12), 160);
+  },
+  setOn(b){
+    this.on=b;
+    if(this.master) this.master.gain.value=b?0.9:0;
+    try{ localStorage.setItem('zen-garden-sound', b?'1':'0'); }catch(e){}
+  }
+};
+try{ SFX.on = localStorage.getItem('zen-garden-sound')!=='0'; }catch(e){}
+$('#soundBtn').textContent = SFX.on?'🔊':'🔇';
+$('#soundBtn').addEventListener('click',()=>{
+  SFX.ensure();
+  SFX.setOn(!SFX.on);
+  $('#soundBtn').textContent = SFX.on?'🔊':'🔇';
+  if(SFX.on) SFX.bell(880,.1);
+});
+document.addEventListener('pointerdown',()=>SFX.ensure(),{passive:true});
+
+/* ---------------- persistence ---------------- */
+let saveTimer=0;
+function saveState(){
+  try{
+    const objs=objects.map(o=>{
+      const c={...o}; delete c.born; return c;
+    });
+    localStorage.setItem(SAVE_KEY, JSON.stringify({w:W,h:H,marks,objects:objs}));
+  }catch(e){}
+}
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(saveState, 800);
+}
+function loadState(){
+  let s=null;
+  try{ s=JSON.parse(localStorage.getItem(SAVE_KEY)); }catch(e){ return false; }
+  if(!s || !Array.isArray(s.marks) || !Array.isArray(s.objects)) return false;
+  const sx=s.w? W/s.w : 1, sy=s.h? H/s.h : 1;
+  const sk=clamp(Math.min(sx,sy), .4, 2.2);
+  marks=[]; objects=[];
+  for(const m of s.marks){
+    if(m.k==='s' && Array.isArray(m.pts)){
+      const pts=m.pts.map((v,i)=> i%2===0 ? v*sx : v*sy);
+      marks.push({k:'s', n:clamp(m.n|0,2,5), pts});
+    }else if(m.k==='r'){
+      marks.push({k:'r', x:m.x*sx, y:m.y*sy, r0:m.r0*sk, c:clamp(m.c|0,1,4)});
+    }
+  }
+  for(const o of s.objects){
+    if(!o || !o.t) continue;
+    const c={...o, x:o.x*sx, y:o.y*sy};
+    if(c.r) c.r*=sk;
+    if(c.s) c.s*=sk;
+    if(c.hr) c.hr*=sk;
+    if(c.hy) c.hy*=sk;
+    objects.push(c);
+  }
+  replay();
+  return marks.length>0 || objects.length>0;
+}
+
+/* ---------------- resize ---------------- */
+function resize(){
+  const rect=stage.getBoundingClientRect();
+  const nW=Math.max(120,Math.round(rect.width));
+  const nH=Math.max(120,Math.round(rect.height));
+  if(nW===W && nH===H) return;
+  if(W && H){
+    const sx=nW/W, sy=nH/H, sk=clamp(Math.min(sx,sy),.4,2.2);
+    for(const m of marks){
+      if(m.k==='s'){ for(let i=0;i<m.pts.length;i+=2){ m.pts[i]*=sx; m.pts[i+1]*=sy; } }
+      else{ m.x*=sx; m.y*=sy; m.r0*=sk; }
+    }
+    for(const o of objects){
+      o.x*=sx; o.y*=sy;
+      if(o.r) o.r*=sk;
+      if(o.s) o.s*=sk;
+      if(o.hr) o.hr*=sk;
+      if(o.hy) o.hy*=sk;
+    }
+  }
+  W=nW; H=nH;
+  canvas.width=Math.round(W*dpr); canvas.height=Math.round(H*dpr);
+  sandC.width=canvas.width; sandC.height=canvas.height;
+  renderVignette();
+  replay();
+}
+let rsTimer=0;
+function scheduleResize(delay){
+  clearTimeout(rsTimer);
+  rsTimer=setTimeout(resize,delay);
+}
+window.addEventListener('resize',()=>scheduleResize(150));
+/* 폰트 로드·레이아웃 리플로우 등 window resize 없이 #stage 만 변하는 경우 대응 */
+if(window.ResizeObserver){
+  new ResizeObserver(()=>scheduleResize(60)).observe(stage);
+}
+
+/* ---------------- placement ---------------- */
+const PENTA=[523.25,587.33,659.25,783.99,880];
+
+function makeObject(toolName,x,y){
+  const seed=(Math.random()*1e9)|0;
+  if(toolName.startsWith('stone')){
+    const v=+toolName.slice(5);
+    const r=24+Math.random()*9;
+    return {t:'stone',v,x,y,seed,r,rot:(Math.random()-.5)*.5,hr:r*1.35,hy:0};
+  }
+  if(toolName==='moss'){
+    const r=19+Math.random()*7;
+    return {t:'moss',x,y,seed,r,hr:r*1.2,hy:0};
+  }
+  if(toolName==='leaf'){
+    const r=15+Math.random()*5;
+    return {t:'leaf',x,y,seed,r,rot:Math.random()*Math.PI*2,ci:(Math.random()*3)|0,hr:r+8,hy:0};
+  }
+  if(toolName==='lantern'){
+    const s=.95+Math.random()*.15;
+    return {t:'lantern',x,y,seed,s,hr:42*s,hy:-36*s};
+  }
+  return null;
+}
+
+function ringRadiusFor(o){
+  if(o.t==='stone') return o.r*1.25+8;
+  if(o.t==='moss')  return o.r*1.2+8;
+  if(o.t==='leaf')  return o.r+9;
+  return 34*(o.s||1);
+}
+
+function placeObject(toolName,x,y){
+  x=clamp(x,18,W-18); y=clamp(y,26,H-14);
+  const o=makeObject(toolName,x,y);
+  if(!o) return;
+  o.born=performance.now();
+  const rings={k:'r',x,y,r0:ringRadiusFor(o),c:o.t==='leaf'?2:3};
+  marks.push(rings);
+  if(marks.length>260) marks.splice(0, marks.length-260);
+  ringMark(rings);
+  objects.push(o);
+  if(objects.length>80) objects.shift();
+  puffAt(x,y,8);
+  SFX.bell(PENTA[(Math.random()*PENTA.length)|0]);
+  if(navigator.vibrate){ try{ navigator.vibrate(8); }catch(e){} }
+  scheduleSave();
+  dirty=true;
+}
+
+function findObjectAt(x,y){
+  const sorted=[...objects].sort((a,b)=>b.y-a.y);
+  for(const o of sorted){
+    const dx=x-o.x, dy=y-(o.y+(o.hy||0));
+    if(Math.hypot(dx,dy) <= (o.hr||30)) return o;
+  }
+  return null;
+}
+
+function removeObject(o){
+  const i=objects.indexOf(o);
+  if(i<0) return;
+  objects.splice(i,1);
+  puffAt(o.x, o.y+(o.hy||0), 12, 'rgba(196,178,146,1)');
+  SFX.puffS();
+  if(navigator.vibrate){ try{ navigator.vibrate(14); }catch(e){} }
+  toast(t('removeToast'));
+  scheduleSave();
+  dirty=true;
+}
+
+/* ---------------- pointer input ---------------- */
+/* 탭 슬롭: iOS ~10px, Android 8~16dp. 손가락으로 툭 놓을 때의 흔들림을 탭으로 인정. */
+const TAP_SLOP=14;
+let pid=null, downPt=null, moved=false, consumed=false;
+let stroke=null, lastAp=null, lastMv=null, lastMvT=0;
+
+function posOf(e){
+  const rect=canvas.getBoundingClientRect();
+  return {x:e.clientX-rect.left, y:e.clientY-rect.top};
+}
+function cancelLP(){
+  if(lpTimer){ clearTimeout(lpTimer); lpTimer=0; }
+  lpTarget=null;
+  dirty=true;
+}
+
+canvas.addEventListener('pointerdown',e=>{
+  if(pid!==null) return;
+  e.preventDefault();
+  pid=e.pointerId;
+  try{ canvas.setPointerCapture(pid); }catch(err){}
+  SFX.ensure();
+  const p=posOf(e);
+  downPt=p; lastMv=p; lastMvT=performance.now();
+  moved=false; consumed=false; stroke=null; lastAp=null;
+  const hit=findObjectAt(p.x,p.y);
+  if(hit){
+    lpTarget=hit; lpStart=performance.now();
+    lpTimer=setTimeout(()=>{
+      lpTimer=0;
+      removeObject(hit);
+      lpTarget=null;
+      consumed=true;
+    },560);
+  }
+});
+
+canvas.addEventListener('pointermove',e=>{
+  if(e.pointerId!==pid) return;
+  e.preventDefault();
+  const p=posOf(e);
+  const now=performance.now();
+  if(!moved && Math.hypot(p.x-downPt.x,p.y-downPt.y)>TAP_SLOP){
+    moved=true;
+    cancelLP();
+  }
+  if(tool==='rake' && !consumed && moved){
+    if(!stroke){
+      stroke={k:'s',n:tines,pts:[downPt.x,downPt.y]};
+      lastAp=downPt;
+    }
+    if(Math.hypot(p.x-lastAp.x,p.y-lastAp.y)>=4){
+      rakeSeg(lastAp.x,lastAp.y,p.x,p.y,tines);
+      stroke.pts.push(Math.round(p.x*10)/10, Math.round(p.y*10)/10);
+      lastAp=p;
+    }
+    const dt=now-lastMvT;
+    if(dt>0){
+      const speed=Math.hypot(p.x-lastMv.x,p.y-lastMv.y)/dt*1000;
+      SFX.rake(speed);
+    }
+  }
+  lastMv=p; lastMvT=now;
+});
+
+function endPointer(e){
+  if(e.pointerId!==pid) return;
+  const p=posOf(e);
+  cancelLP();
+  SFX.rakeStop();
+  if(stroke){
+    if(stroke.pts.length>=4){
+      marks.push(stroke);
+      if(marks.length>260) marks.splice(0, marks.length-260);
+      scheduleSave();
+    }
+  }else if(!consumed && e.type==='pointerup'){
+    if(tool==='rake'){
+      /* 갈퀴는 움직였다면 이미 stroke 로 처리됨. 제자리 탭만 점 자국. */
+      if(!moved && !findObjectAt(p.x,p.y)){
+        const dab={k:'s',n:tines,pts:[p.x,p.y]};
+        rakeSeg(p.x,p.y,p.x+2,p.y+1,tines);
+        marks.push(dab);
+        scheduleSave();
+      }
+    }else if(!findObjectAt(p.x,p.y)){
+      /* 배치 도구는 이산 동작 — 끄는 동안 아무 피드백도 없으므로
+         손가락이 흔들렸는지와 무관하게 뗀 자리에 놓는다. */
+      placeObject(tool,p.x,p.y);
+    }
+  }
+  stroke=null; pid=null;
+}
+canvas.addEventListener('pointerup',endPointer);
+canvas.addEventListener('pointercancel',endPointer);
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+
+/* ---------------- toolbar ---------------- */
+document.querySelectorAll('.tool').forEach(b=>{
+  b.addEventListener('click',()=>{
+    tool=b.dataset.tool;
+    document.querySelectorAll('.tool').forEach(x=>x.classList.toggle('sel',x===b));
+    canvas.style.cursor = tool==='rake' ? 'crosshair' : 'copy';
+  });
+});
+document.querySelectorAll('.tine').forEach(b=>{
+  b.addEventListener('click',()=>{
+    tines=clamp(+b.dataset.n,2,5);
+    document.querySelectorAll('.tine').forEach(x=>x.classList.toggle('sel',x===b));
+    tool='rake';
+    document.querySelectorAll('.tool').forEach(x=>x.classList.toggle('sel',x.dataset.tool==='rake'));
+    canvas.style.cursor='crosshair';
+  });
+});
+
+/* ---------------- tray icons ---------------- */
+function buildTrayIcons(){
+  document.querySelectorAll('[data-icon]').forEach(cv=>{
+    const kind=cv.dataset.icon;
+    cv.width=40*dpr; cv.height=40*dpr;
+    const g=cv.getContext('2d');
+    g.setTransform(dpr,0,0,dpr,0,0);
+    if(kind==='rake'){
+      g.save();
+      g.translate(20,20); g.rotate(-.72);
+      g.strokeStyle='#8a6b45'; g.lineWidth=3.6; g.lineCap='round';
+      line(g,0,-14,0,9);
+      g.fillStyle='#6f5333';
+      rr(g,-10,9,20,4.5,2); g.fill();
+      g.strokeStyle='#5d4428'; g.lineWidth=2;
+      for(let i=0;i<4;i++) line(g,-7.5+i*5,13.5,-7.5+i*5,18.5);
+      g.restore();
+    }else if(kind.startsWith('stone')){
+      drawStone(g,{t:'stone',v:+kind.slice(5),x:20,y:21,seed:11+(+kind.slice(5))*37,r:12,rot:.1});
+    }else if(kind==='moss'){
+      drawMoss(g,{t:'moss',x:20,y:21,seed:99,r:12});
+    }else if(kind==='leaf'){
+      drawLeaf(g,{t:'leaf',x:20,y:21,seed:5,r:13,rot:.5,ci:0});
+    }else if(kind==='lantern'){
+      drawLantern(g,{t:'lantern',x:20,y:37,seed:1,s:.42});
+    }
+  });
+}
+
+/* ---------------- toast / confirm / actions ---------------- */
+let toastTimer=0;
+function toast(msg){
+  const el=$('#toast');
+  el.textContent=msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2400);
+}
+
+$('#resetBtn').addEventListener('click',()=>{
+  SFX.ensure();
+  if(marks.length===0 && objects.length===0){ toast(t('resetToast')); return; }
+  $('#confirm').classList.add('show');
+});
+$('#cfNo').addEventListener('click',()=>$('#confirm').classList.remove('show'));
+$('#confirm').addEventListener('click',e=>{
+  if(e.target===$('#confirm')) $('#confirm').classList.remove('show');
+});
+$('#cfYes').addEventListener('click',()=>{
+  $('#confirm').classList.remove('show');
+  SFX.sweep();
+  const veil=$('#veil');
+  veil.classList.add('show');
+  setTimeout(()=>{
+    marks=[]; objects=[]; parts=[];
+    replay();
+    saveState();
+    veil.classList.remove('show');
+    toast(t('resetToast'));
+  }, RM?40:640);
+});
+
+function stamp(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes());
+}
+$('#saveBtn').addEventListener('click',()=>{
+  SFX.ensure();
+  try{
+    render();
+    const pad=Math.round(26*dpr);
+    const ec=document.createElement('canvas');
+    ec.width=canvas.width+pad*2; ec.height=canvas.height+pad*2;
+    const g=ec.getContext('2d');
+    const wgr=g.createLinearGradient(0,0,ec.width,ec.height);
+    wgr.addColorStop(0,'#6d5439'); wgr.addColorStop(.5,'#553f2a'); wgr.addColorStop(1,'#3a2b1b');
+    g.fillStyle=wgr; g.fillRect(0,0,ec.width,ec.height);
+    for(let i=0;i<46;i++){
+      const x=Math.random()*ec.width;
+      g.fillStyle=Math.random()<.5?'rgba(0,0,0,0.05)':'rgba(255,230,190,0.04)';
+      g.fillRect(x,0,1+Math.random()*4,ec.height);
+    }
+    g.strokeStyle='rgba(255,240,210,0.22)'; g.lineWidth=2;
+    g.strokeRect(pad-4,pad-4,canvas.width+8,canvas.height+8);
+    g.strokeStyle='rgba(0,0,0,0.35)'; g.lineWidth=2;
+    g.strokeRect(pad-8,pad-8,canvas.width+16,canvas.height+16);
+    g.drawImage(canvas,pad,pad);
+    const a=document.createElement('a');
+    a.href=ec.toDataURL('image/png');
+    a.download='zen-garden-'+stamp()+'.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    SFX.chime();
+    toast(t('savedToast'));
+  }catch(err){
+    toast(t('saveFail'));
+  }
+});
+
+window.addEventListener('pagehide',saveState);
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden') saveState();
+});
+
+/* ---------------- boot ---------------- */
+applyLang();
+buildTrayIcons();
+resize();
+if(loadState()) toast(t('restoreToast'));
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

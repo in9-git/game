@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="씨앗을 심고 물을 주면 꽃과 함께 따뜻한 편지가 피어나는 작은 온실 게임">
+<title>씨앗 편지 — たね手紙 · Seed Letters</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
+html, body { height:100%; }
+body {
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR","Hiragino Sans","Yu Gothic",sans-serif;
+  background:linear-gradient(180deg,#fdf3df 0%,#fbe4cd 46%,#f2dcc0 100%) fixed;
+  color:#5b4a3f;
+  -webkit-user-select:none; user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-touch-callout:none;
+  overflow-x:hidden;
+}
+#app {
+  max-width:520px; margin:0 auto;
+  min-height:100vh; min-height:100dvh;
+  display:flex; flex-direction:column;
+  padding:10px 14px calc(12px + env(safe-area-inset-bottom));
+}
+
+/* ---------- header ---------- */
+header {
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+  gap:6px; padding:4px 0 2px;
+}
+.home-btn {
+  justify-self:start;
+  display:inline-flex; align-items:center; gap:4px;
+  text-decoration:none; color:#7a685a; font-size:13px; font-weight:600;
+  background:rgba(255,255,255,.62); border-radius:999px;
+  padding:7px 13px; box-shadow:0 3px 10px rgba(150,110,80,.12);
+}
+.titles { text-align:center; }
+.titles h1 {
+  font-size:24px; letter-spacing:.14em; color:#5b4a3f; font-weight:800;
+  text-shadow:0 1px 0 rgba(255,255,255,.7);
+  white-space:nowrap;
+}
+.titles .sub {
+  font-size:10px; letter-spacing:.16em; color:#a8927c; margin-top:2px;
+  white-space:nowrap;
+}
+.top-actions { justify-self:end; display:flex; gap:6px; }
+.icon-btn {
+  width:38px; height:38px; border:none; border-radius:50%;
+  background:rgba(255,255,255,.68); font-size:17px; cursor:pointer;
+  box-shadow:0 3px 10px rgba(150,110,80,.14);
+  display:grid; place-items:center;
+  transition:transform .18s ease;
+}
+.icon-btn:active { transform:scale(.9); }
+
+/* ---------- chip ---------- */
+.chip-row { display:flex; justify-content:center; margin:8px 0 4px; }
+#albumChip {
+  border:none; cursor:pointer;
+  background:rgba(255,255,255,.72); color:#6b5140;
+  font-size:13px; font-weight:700; letter-spacing:.04em;
+  padding:8px 18px; border-radius:999px;
+  box-shadow:0 4px 12px rgba(150,110,80,.15);
+  transition:transform .18s ease;
+}
+#albumChip:active { transform:scale(.94); }
+
+/* ---------- greenhouse ---------- */
+#greenhouse {
+  position:relative; flex:1; min-height:392px; margin-top:8px;
+  border-radius:150px 150px 26px 26px;
+  border:2px solid rgba(178,201,172,.85);
+  background:
+    radial-gradient(circle at 22% 10%, rgba(255,219,153,.6), rgba(255,219,153,0) 46%),
+    linear-gradient(180deg, rgba(255,255,255,.58) 0%, rgba(255,255,255,.22) 42%, rgba(255,250,238,.12) 100%);
+  box-shadow:
+    inset 0 0 40px rgba(255,255,255,.5),
+    0 18px 40px rgba(160,115,80,.18);
+  overflow:hidden;
+}
+#greenhouse::before { /* glass mullions */
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:
+    linear-gradient(90deg, transparent calc(33.4% - 1px), rgba(255,255,255,.75) calc(33.4% - 1px), rgba(255,255,255,.75) calc(33.4% + 1px), transparent calc(33.4% + 1px)),
+    linear-gradient(90deg, transparent calc(66.7% - 1px), rgba(255,255,255,.75) calc(66.7% - 1px), rgba(255,255,255,.75) calc(66.7% + 1px), transparent calc(66.7% + 1px)),
+    linear-gradient(180deg, transparent calc(30% - 1px), rgba(255,255,255,.65) calc(30% - 1px), rgba(255,255,255,.65) calc(30% + 1px), transparent calc(30% + 1px));
+  opacity:.6;
+}
+#greenhouse::after { /* warm floor glow */
+  content:""; position:absolute; left:0; right:0; bottom:0; height:14%;
+  background:linear-gradient(180deg, rgba(198,155,116,0), rgba(198,155,116,.30));
+  pointer-events:none;
+}
+.vine { position:absolute; top:5%; font-size:22px; opacity:.85; pointer-events:none; }
+.vine.v-l { left:7%; }
+.vine.v-r { right:7%; transform:scaleX(-1); }
+.garland {
+  display:none; position:absolute; top:3.5%; left:0; right:0;
+  text-align:center; font-size:15px; letter-spacing:.7em; text-indent:.7em;
+  pointer-events:none;
+}
+#greenhouse.full .garland { display:block; animation:bob 3.4s ease-in-out infinite alternate; }
+#intro {
+  position:absolute; top:15%; left:50%; transform:translateX(-50%);
+  max-width:82%; text-align:center;
+  background:rgba(255,255,255,.8); color:#7a685a;
+  font-size:12px; line-height:1.5; font-weight:600;
+  padding:9px 16px; border-radius:16px;
+  box-shadow:0 4px 12px rgba(150,110,80,.14);
+  pointer-events:none;
+  animation:bob 2.6s ease-in-out infinite alternate;
+}
+.shelf {
+  position:absolute; left:4%; right:4%; height:14px;
+  bottom:calc(5% + 20px);
+  background:linear-gradient(180deg,#cf9f70 0%,#b17c4e 70%,#9c6a41 100%);
+  border-radius:8px;
+  box-shadow:0 6px 14px rgba(120,80,50,.25);
+}
+#potsRow {
+  position:absolute; left:2%; right:2%; bottom:5%;
+  display:flex; justify-content:space-around; align-items:flex-end;
+  z-index:2;
+}
+
+/* ---------- slot / pot / plant ---------- */
+.slot {
+  width:31%; display:flex; flex-direction:column; align-items:center;
+  touch-action:none; cursor:pointer;
+}
+.plant-area {
+  position:relative; width:100%; aspect-ratio:100/132;
+  margin-bottom:-16px; z-index:2;
+}
+.plant-svg { width:100%; height:100%; display:block; overflow:visible; }
+.plant-svg .stem { fill:none; stroke:#5d8f5b; stroke-width:3.4; stroke-linecap:round; }
+.plant-svg .leaf path { fill:#69a267; stroke:#4f8050; stroke-width:.6; }
+.plant-svg .mound { fill:#7a5843; }
+.plant-svg .bloomT { transform-box:fill-box; transform-origin:50% 100%; }
+.plant-svg .bloomT.pop { animation:bloomPop .95s cubic-bezier(.34,1.56,.64,1); }
+.plant-svg .plantG { transform-box:view-box; transform-origin:50% 96%; }
+.plant-svg.alive .plantG { animation:sway 4.6s ease-in-out infinite alternate; }
+.slot.watering .plant-svg.alive .plantG { animation-duration:2.2s; }
+@keyframes sway { from { transform:rotate(-1.9deg); } to { transform:rotate(1.9deg); } }
+@keyframes bloomPop {
+  0% { transform:scale(0); }
+  62% { transform:scale(1.28); }
+  100% { transform:scale(1); }
+}
+.seedhint {
+  position:absolute; left:50%; bottom:10%; transform:translateX(-50%);
+  width:38px; height:38px; border-radius:50%;
+  border:2px dashed #96bb92; background:rgba(255,255,255,.72);
+  display:none; place-items:center; font-size:17px;
+  animation:bob 2.2s ease-in-out infinite alternate;
+  pointer-events:none;
+}
+.slot.s-empty .seedhint { display:grid; }
+@keyframes bob { from { transform:translateX(-50%) translateY(0); } to { transform:translateX(-50%) translateY(-7px); } }
+.drops { position:absolute; inset:0; pointer-events:none; z-index:3; }
+.drop {
+  position:absolute; width:7px; height:10px;
+  background:linear-gradient(180deg,#c9e8f8,#7fc4ec);
+  border-radius:50% 50% 60% 60%;
+  animation:dropFall .62s cubic-bezier(.55,0,.85,.36) forwards;
+  pointer-events:none;
+}
+@keyframes dropFall {
+  0% { transform:translateY(0) scale(1); opacity:0; }
+  14% { opacity:.95; }
+  100% { transform:translateY(var(--fall)) scale(.85); opacity:.08; }
+}
+.spark {
+  position:absolute; width:8px; height:8px; border-radius:50%;
+  animation:sparkFly .9s ease-out forwards;
+  pointer-events:none; z-index:4;
+}
+@keyframes sparkFly {
+  from { transform:translate(-50%,-50%) scale(1); opacity:1; }
+  to { transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.15); opacity:0; }
+}
+.can {
+  position:absolute; top:-15%; right:-9%; width:60%;
+  opacity:0; transform:rotate(-5deg); transform-origin:62% 55%;
+  transition:opacity .25s ease, transform .35s cubic-bezier(.34,1.2,.64,1);
+  pointer-events:none; z-index:4;
+}
+.can svg { width:100%; display:block; filter:drop-shadow(0 3px 4px rgba(110,140,105,.35)); }
+.slot.watering .can { opacity:1; transform:rotate(-30deg); }
+.pot {
+  position:relative; width:72%; height:52px; z-index:1;
+  background:linear-gradient(180deg,#d08b68 0%,#b96f4d 58%,#a35f42 100%);
+  border-radius:6px 6px 20px 20px;
+  box-shadow:inset 0 -9px 14px rgba(0,0,0,.15), inset 0 3px 5px rgba(255,255,255,.25), 0 8px 14px rgba(150,90,60,.28);
+}
+.pot::before { /* rim */
+  content:""; position:absolute; top:-8px; left:-6%; right:-6%; height:15px;
+  background:linear-gradient(180deg,#de9b77 0%,#c07a55 100%);
+  border-radius:7px;
+  box-shadow:0 3px 5px rgba(120,70,45,.25);
+}
+.soil {
+  position:absolute; top:-4px; left:12%; right:12%; height:9px;
+  background:radial-gradient(ellipse at 50% 40%, #7c5a41, #63462f);
+  border-radius:50%; z-index:1;
+}
+.pbar {
+  width:62%; height:5px; margin-top:9px;
+  background:rgba(120,90,70,.18); border-radius:3px;
+  opacity:0; transition:opacity .3s; overflow:hidden;
+}
+.slot.s-growing .pbar { opacity:1; }
+.pbar i {
+  display:block; height:100%; width:0;
+  background:linear-gradient(90deg,#a9cba4,#6fa26c);
+  border-radius:3px; transition:width .25s ease;
+}
+.hint {
+  margin-top:5px; height:15px; font-size:11px; font-weight:600;
+  color:#8a7361; text-align:center; letter-spacing:.02em;
+  white-space:nowrap;
+}
+.slot.s-bloomed .hint { color:#6d9a6a; }
+
+/* ---------- overlays ---------- */
+.overlay {
+  position:fixed; inset:0; z-index:50;
+  background:rgba(92,70,56,.4);
+  -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+  display:none; align-items:center; justify-content:center;
+  padding:18px;
+  animation:fadeIn .22s ease;
+}
+.overlay.show { display:flex; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+.ov-sheet { align-items:flex-end; padding:0; }
+
+.sheet {
+  width:100%; max-width:560px; margin:0 auto;
+  background:#fffaf2; border-radius:24px 24px 0 0;
+  padding:14px 18px calc(18px + env(safe-area-inset-bottom));
+  box-shadow:0 -12px 40px rgba(90,60,40,.28);
+  animation:slideUp .32s cubic-bezier(.2,.8,.3,1);
+  max-height:82vh; max-height:82dvh; overflow-y:auto;
+}
+@keyframes slideUp { from { transform:translateY(60px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+.sheet-grab { width:44px; height:5px; border-radius:3px; background:#e3d5c2; margin:0 auto 12px; }
+.sheet h2 { font-size:17px; text-align:center; color:#5b4a3f; }
+.sheet-note { font-size:11.5px; text-align:center; color:#a8927c; margin:5px 0 14px; }
+.seed-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.seed-cell {
+  border:none; font-family:inherit;
+  background:#fdf3df; border-radius:15px; padding:11px 4px 9px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  box-shadow:0 3px 8px rgba(160,120,80,.12);
+  cursor:pointer; transition:transform .16s ease;
+}
+button.seed-cell:active { transform:scale(.93); }
+.seed-cell .sc-e { font-size:24px; line-height:1.2; }
+.seed-cell .sc-n { font-size:11.5px; font-weight:700; color:#6b5140; }
+.seed-cell .sc-t { font-size:9.5px; color:#a8927c; }
+.seed-cell.next {
+  background:linear-gradient(180deg,#eef6ea,#ddedd8);
+  box-shadow:0 0 0 2px #8cb789, 0 5px 14px rgba(111,162,108,.3);
+  animation:glowPulse 1.8s ease-in-out infinite alternate;
+}
+.seed-cell.next .sc-t { color:#5c8a5a; font-weight:700; }
+@keyframes glowPulse {
+  from { box-shadow:0 0 0 2px #8cb789, 0 4px 10px rgba(111,162,108,.22); }
+  to { box-shadow:0 0 0 3px #9dc39a, 0 6px 18px rgba(111,162,108,.42); }
+}
+.seed-cell.dim, .seed-cell.locked { opacity:.5; cursor:default; box-shadow:none; }
+.seed-cell.locked { background:#f6ecdc; border:1.5px dashed #dcc9ab; }
+.sheet-closebtn { margin-top:14px; width:100%; }
+
+/* ---------- cards / buttons ---------- */
+.flower-card, .end-card, .album {
+  background:linear-gradient(180deg,#fffdf7 0%,#fff4e4 100%);
+  border-radius:24px; padding:24px 22px;
+  width:100%; max-width:340px; text-align:center;
+  box-shadow:0 24px 60px rgba(90,60,40,.38);
+  animation:popIn .45s cubic-bezier(.34,1.4,.64,1);
+}
+@keyframes popIn { from { transform:scale(.7); opacity:0; } to { transform:scale(1); opacity:1; } }
+.fc-new {
+  display:inline-block; font-size:11px; font-weight:700; color:#5c8a5a;
+  background:#eaf3e6; border-radius:999px; padding:4px 12px; margin-bottom:10px;
+}
+.fc-emoji {
+  font-size:56px; line-height:1.25; width:96px; height:96px; margin:0 auto;
+  display:grid; place-items:center;
+  background:radial-gradient(circle, rgba(255,236,200,.9), rgba(255,236,200,0) 72%);
+}
+.fc-name { font-size:21px; color:#5b4a3f; margin-top:6px; letter-spacing:.06em; }
+.fc-meaning {
+  display:inline-block; font-size:12px; color:#5c8a5a; font-weight:600;
+  background:#eef4e8; border-radius:999px; padding:5px 13px; margin-top:9px;
+}
+.fc-div { color:#d8b98e; font-size:15px; margin:13px 0 11px; }
+.fc-letter {
+  font-family:Georgia,"Times New Roman","Noto Serif KR",serif;
+  font-size:15px; line-height:1.75; color:#6b584a;
+  padding:0 4px;
+}
+.fc-sign { font-size:11.5px; color:#a8927c; margin-top:10px; }
+.fc-actions { display:flex; flex-direction:column; gap:9px; margin-top:18px; }
+.btn {
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:12px 18px; border-radius:15px; border:none;
+  font-family:inherit; font-size:14px; font-weight:700; letter-spacing:.03em;
+  cursor:pointer; text-decoration:none;
+  transition:transform .16s ease;
+}
+.btn:active { transform:scale(.95); }
+.btn-primary {
+  background:linear-gradient(180deg,#8cb789,#6fa26c); color:#fff;
+  box-shadow:0 6px 15px rgba(111,162,108,.42);
+}
+.btn-ghost { background:#f1e8da; color:#7a685a; }
+
+/* ---------- album ---------- */
+.album { max-width:420px; max-height:82vh; max-height:82dvh; overflow-y:auto; text-align:left; }
+.album h2 { text-align:center; font-size:18px; color:#5b4a3f; }
+.al-count { text-align:center; font-size:12px; color:#a8927c; margin:5px 0 14px; }
+.al-banner {
+  background:linear-gradient(180deg,#eef6ea,#ddedd8);
+  border-radius:16px; padding:14px; text-align:center;
+  font-size:13px; font-weight:700; color:#4a6b49; margin-bottom:13px;
+  box-shadow:inset 0 0 0 1.5px #b9d4b4;
+}
+.al-banner .btn { margin-top:9px; font-size:12.5px; padding:9px 15px; }
+.al-list { display:flex; flex-direction:column; gap:10px; }
+.al-item {
+  display:flex; gap:11px; align-items:flex-start;
+  background:#fffdf8; border:1px solid #eee0cc; border-radius:15px;
+  padding:12px 13px;
+  box-shadow:0 3px 8px rgba(160,120,80,.08);
+}
+.al-item:nth-child(odd) { transform:rotate(-.35deg); }
+.al-item:nth-child(even) { transform:rotate(.35deg); }
+.al-item.al-locked { opacity:.5; border-style:dashed; }
+.al-emoji { font-size:27px; line-height:1.25; }
+.al-name { font-size:13.5px; font-weight:800; color:#5b4a3f; }
+.al-meaning {
+  display:inline-block; font-size:10.5px; color:#5c8a5a; font-weight:600;
+  background:#eef4e8; border-radius:999px; padding:2px 8px; margin-left:5px;
+}
+.al-letter {
+  font-family:Georgia,"Times New Roman","Noto Serif KR",serif;
+  font-size:12.5px; line-height:1.65; color:#7a685a; margin-top:4px;
+}
+.album .sheet-closebtn { margin-top:15px; }
+
+/* ---------- ending ---------- */
+.ov-end { background:rgba(92,70,56,.5); }
+.petals { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+.petals span {
+  position:absolute; top:-50px;
+  animation:petalFall linear infinite;
+}
+@keyframes petalFall {
+  to { transform:translateY(112vh) rotate(330deg); }
+}
+.end-card { position:relative; z-index:1; }
+.wreath { position:relative; width:200px; height:200px; margin:0 auto 6px; }
+.wreath > span {
+  position:absolute; left:50%; top:50%; font-size:23px;
+  transform:translate(-50%,-50%) rotate(var(--a)) translateY(-84px) rotate(calc(var(--a) * -1));
+}
+.wreath-c {
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  font-size:42px;
+}
+.end-card h2 { font-size:20px; color:#5b4a3f; letter-spacing:.05em; }
+.end-msg {
+  font-family:Georgia,"Times New Roman","Noto Serif KR",serif;
+  font-size:14.5px; line-height:1.7; color:#6b584a; margin-top:9px;
+}
+.end-sub { font-size:12px; color:#a8927c; margin-top:7px; }
+
+.confirm-card h2 { font-size:17px; }
+.confirm-card p { font-size:13px; color:#8a7361; margin-top:9px; line-height:1.6; }
+
+/* ---------- small screens / desktop ---------- */
+@media (max-width:380px) {
+  .titles h1 { font-size:21px; letter-spacing:.1em; }
+  .icon-btn { width:35px; height:35px; }
+  .pot { height:46px; }
+}
+@media (min-width:521px) {
+  #greenhouse { min-height:440px; }
+}
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .plant-svg.alive .plantG, .seedhint, #intro, .garland, .vine,
+  .seed-cell.next, .petals span, .wreath { animation:none !important; }
+  .can { transition:opacity .2s; }
+  .flower-card, .end-card, .album, .sheet { animation:none; }
+  .plant-svg .bloomT.pop { animation:none; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a class="home-btn" href="../../index.html">←&nbsp;<span id="homeTxt">홈</span></a>
+    <div class="titles">
+      <h1 id="titleMain">씨앗 편지</h1>
+      <div class="sub" id="titleSub">たね手紙 · Seed Letters</div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="langBtn" aria-label="language">🇰🇷</button>
+      <button class="icon-btn" id="soundBtn" aria-label="sound">🔊</button>
+    </div>
+  </header>
+
+  <div class="chip-row">
+    <button id="albumChip">💌 0/12</button>
+  </div>
+
+  <main id="greenhouse">
+    <span class="vine v-l">🌿</span>
+    <span class="vine v-r">🌿</span>
+    <div class="garland">🌸🌼🌷🪻🌺🏵️💮🌻</div>
+    <div id="intro"></div>
+    <div class="shelf"></div>
+    <div id="potsRow"></div>
+  </main>
+</div>
+
+<div class="overlay ov-sheet" id="sheetOv"><div class="sheet" id="sheetBox"></div></div>
+<div class="overlay" id="cardOv"><div class="flower-card" id="cardBox"></div></div>
+<div class="overlay" id="albumOv"><div class="album" id="albumBox"></div></div>
+<div class="overlay" id="confirmOv"><div class="flower-card confirm-card" id="confirmBox"></div></div>
+<div class="overlay ov-end" id="endOv"><div class="petals" id="petalBox"></div><div class="end-card" id="endBox"></div></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= data ================= */
+var FLOWERS=[
+ {id:'tulip',e:'🌷',bud:'#f2789f',
+  name:{ko:'튤립',ja:'チューリップ',en:'Tulip'},
+  meaning:{ko:'사랑의 고백',ja:'愛の告白',en:'A confession of love'},
+  letter:{ko:'당신의 오늘이 조금 더 따뜻했으면 해요.',
+          ja:'あなたの今日が、少しあたたかくなりますように。',
+          en:'I hope your today feels a little warmer.'}},
+ {id:'daisy',e:'🌼',bud:'#f5d76e',
+  name:{ko:'데이지',ja:'デイジー',en:'Daisy'},
+  meaning:{ko:'희망',ja:'希望',en:'Hope'},
+  letter:{ko:'작게 시작해도 괜찮아요. 새싹은 늘 작으니까요.',
+          ja:'小さく始めて大丈夫。芽はいつも小さいから。',
+          en:'It is okay to start small — every sprout does.'}},
+ {id:'sunflower',e:'🌻',bud:'#f0b429',
+  name:{ko:'해바라기',ja:'ひまわり',en:'Sunflower'},
+  meaning:{ko:'변함없는 마음',ja:'変わらぬ想い',en:'A steady heart'},
+  letter:{ko:'흐린 날에도 해는 늘 그 자리에 있어요.',
+          ja:'くもりの日も、太陽はいつもそこにいます。',
+          en:'Even on cloudy days, the sun is still there.'}},
+ {id:'cherry',e:'🌸',bud:'#f7b7cc',
+  name:{ko:'벚꽃',ja:'桜',en:'Cherry Blossom'},
+  meaning:{ko:'아름다운 마음',ja:'心の美しさ',en:'A beautiful mind'},
+  letter:{ko:'지금 이 순간도 언젠가 그리워질 봄이에요.',
+          ja:'この瞬間も、いつか恋しくなる春です。',
+          en:'This very moment is a spring you will miss someday.'}},
+ {id:'rose',e:'🌹',bud:'#d64d6e',
+  name:{ko:'장미',ja:'バラ',en:'Rose'},
+  meaning:{ko:'사랑',ja:'愛',en:'Love'},
+  letter:{ko:'말하지 않아도 마음은 향기로 전해져요.',
+          ja:'言葉にしなくても、心は香りで伝わります。',
+          en:'Even unspoken, the heart carries like fragrance.'}},
+ {id:'hyacinth',e:'🪻',bud:'#9b8bd0',
+  name:{ko:'히아신스',ja:'ヒヤシンス',en:'Hyacinth'},
+  meaning:{ko:'차분한 사랑',ja:'静かな愛',en:'Quiet love'},
+  letter:{ko:'하루 끝에는 스스로를 꼭 칭찬해 주세요.',
+          ja:'一日の終わりに、自分をほめてあげてください。',
+          en:'At the end of the day, remember to praise yourself.'}},
+ {id:'hibiscus',e:'🌺',bud:'#ef6a6a',
+  name:{ko:'히비스커스',ja:'ハイビスカス',en:'Hibiscus'},
+  meaning:{ko:'섬세한 아름다움',ja:'繊細な美',en:'Delicate beauty'},
+  letter:{ko:'쉬어 가는 것도 여행의 한 부분이에요.',
+          ja:'休むことも、旅の一部です。',
+          en:'Resting is part of the journey, too.'}},
+ {id:'marigold',e:'🏵️',bud:'#efa53f',
+  name:{ko:'마리골드',ja:'マリーゴールド',en:'Marigold'},
+  meaning:{ko:'반드시 오는 행복',ja:'必ず来る幸せ',en:'Happiness that will come'},
+  letter:{ko:'행복은 꼭 와요. 조금 늦을 뿐이에요.',
+          ja:'幸せはきっと来ます。少し遅れているだけ。',
+          en:'Happiness will come — it is only running late.'}},
+ {id:'lotus',e:'🪷',bud:'#ef9ec1',
+  name:{ko:'연꽃',ja:'蓮',en:'Lotus'},
+  meaning:{ko:'맑은 마음',ja:'清らかな心',en:'A clear heart'},
+  letter:{ko:'흐린 물에서도 꽃은 피어요. 당신처럼요.',
+          ja:'濁った水でも花は咲きます。あなたのように。',
+          en:'Flowers bloom even in murky water — like you.'}},
+ {id:'plum',e:'💮',bud:'#e8a3b8',
+  name:{ko:'매화',ja:'梅',en:'Plum Blossom'},
+  meaning:{ko:'고결한 마음',ja:'気高い心',en:'A noble heart'},
+  letter:{ko:'겨울을 지나온 향기가 가장 깊어요.',
+          ja:'冬を越えた香りが、いちばん深いのです。',
+          en:'The deepest scent is the one that crossed winter.'}},
+ {id:'clover',e:'🍀',bud:'#7cbf6b',
+  name:{ko:'클로버',ja:'クローバー',en:'Clover'},
+  meaning:{ko:'행운',ja:'幸運',en:'Good luck'},
+  letter:{ko:'오늘 당신 곁에 작은 행운이 숨어 있어요.',
+          ja:'今日、あなたのそばに小さな幸運がかくれています。',
+          en:'A small bit of luck is hiding near you today.'}},
+ {id:'cactus',e:'🌵',bud:'#ef7fae',
+  name:{ko:'선인장꽃',ja:'サボテンの花',en:'Cactus Flower'},
+  meaning:{ko:'열정',ja:'情熱',en:'Passion'},
+  letter:{ko:'가시 돋친 날에도 꽃 피울 힘이 있어요.',
+          ja:'とげのある日にも、花を咲かせる力があります。',
+          en:'Even on thorny days, you have the strength to bloom.'}}
+];
+var FLOWER_MAP={};
+FLOWERS.forEach(function(f){FLOWER_MAP[f.id]=f;});
+function byId(id){return FLOWER_MAP[id]||null;}
+
+var I18N={
+ ko:{home:'홈',intro:'빈 화분을 탭해서 첫 씨앗을 심어 보세요',
+  tapToPlant:'탭해서 씨앗 심기',holdToWater:'꾹 눌러 물 주기',
+  seedSheetTitle:'어떤 씨앗을 심을까요?',seedNote:'새 씨앗 봉투는 순서대로 도착해요',
+  nextSeed:'다음 씨앗 봉투',replantTag:'다시 심기',lockedTag:'아직 봉인',growingTag:'자라는 중',
+  close:'닫기',meaningLabel:'꽃말',keep:'편지 간직하기',emptyPot:'화분 비우기',
+  newLetter:'새 편지가 도착했어요',sign:'— 작은 온실에서',
+  albumTitle:'편지 앨범',notYet:'아직 만나지 못한 꽃이에요',mystery:'???',
+  completeTitle:'정원이 가득 찼어요',completeMsg:'열두 송이 꽃, 열두 통의 편지 — 고마워요.',
+  endSub:'오늘은 여기까지. 천천히 쉬어 가요.',
+  albumBtn:'앨범 보기',newGarden:'새 정원 가꾸기',homeBtn:'홈으로',
+  resetTitle:'정원을 새로 시작할까요?',resetMsg:'모아 둔 꽃과 편지가 모두 사라져요.',
+  cancel:'아직은요',confirmReset:'새로 시작'},
+ ja:{home:'ホーム',intro:'空の植木鉢をタップして、最初の種をまきましょう',
+  tapToPlant:'タップして種まき',holdToWater:'長押しで水やり',
+  seedSheetTitle:'どの種をまきますか？',seedNote:'新しい種は順番にとどきます',
+  nextSeed:'つぎの種袋',replantTag:'もう一度',lockedTag:'まだ封印',growingTag:'そだち中',
+  close:'とじる',meaningLabel:'花言葉',keep:'手紙をたいせつにする',emptyPot:'鉢を空ける',
+  newLetter:'新しい手紙がとどきました',sign:'— 小さな温室より',
+  albumTitle:'手紙アルバム',notYet:'まだ出会っていない花です',mystery:'???',
+  completeTitle:'庭がいっぱいになりました',completeMsg:'十二の花と、十二の手紙 — ありがとう。',
+  endSub:'今日はここまで。ゆっくり休んでね。',
+  albumBtn:'アルバムを見る',newGarden:'新しい庭をはじめる',homeBtn:'ホームへ',
+  resetTitle:'庭を新しくはじめますか？',resetMsg:'集めた花と手紙はすべて消えます。',
+  cancel:'まだにする',confirmReset:'はじめる'},
+ en:{home:'Home',intro:'Tap an empty pot to plant your first seed',
+  tapToPlant:'Tap to plant a seed',holdToWater:'Hold to water',
+  seedSheetTitle:'Which seed shall we plant?',seedNote:'New seed packets arrive in order',
+  nextSeed:'Next seed packet',replantTag:'Plant again',lockedTag:'Still sealed',growingTag:'Growing',
+  close:'Close',meaningLabel:'Flower language',keep:'Keep this letter',emptyPot:'Clear the pot',
+  newLetter:'A new letter has arrived',sign:'— from the little greenhouse',
+  albumTitle:'Letter Album',notYet:'A flower you have not met yet',mystery:'???',
+  completeTitle:'The garden is full',completeMsg:'Twelve blooms, twelve letters — thank you.',
+  endSub:'That is all for today. Rest easy.',
+  albumBtn:'Open album',newGarden:'Start a new garden',homeBtn:'Home',
+  resetTitle:'Start a new garden?',resetMsg:'All flowers and letters will be gone.',
+  cancel:'Not yet',confirmReset:'Start fresh'}
+};
+var FLAGS={ko:'🇰🇷',ja:'🇯🇵',en:'🇬🇧'};
+var LANG_ORDER=['ko','ja','en'];
+
+/* ================= state ================= */
+var LS_KEY='seed-letters-v1', LANG_KEY='in9-lang', SND_KEY='seed-letters-sound';
+var GROW_SECS=17;
+var REDUCED=false;
+try{ REDUCED=window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+
+function lsGet(k){ try{return localStorage.getItem(k);}catch(e){return null;} }
+function lsSet(k,v){ try{localStorage.setItem(k,v);}catch(e){} }
+
+var lang=(function(){
+  var s=lsGet(LANG_KEY);
+  if(s==='ko'||s==='ja'||s==='en') return s;
+  var n=(navigator.language||'').toLowerCase();
+  if(n.indexOf('ja')===0) return 'ja';
+  if(n.indexOf('en')===0) return 'en';
+  return 'ko';
+})();
+function T(){ return I18N[lang]; }
+function fname(f){ return f.name[lang]; }
+
+function defaultState(){ return {v:1,pots:[null,null,null],collected:[],endingShown:false}; }
+function loadState(){
+  try{
+    var raw=lsGet(LS_KEY);
+    if(!raw) return defaultState();
+    var s=JSON.parse(raw);
+    if(!s||s.v!==1||!Array.isArray(s.pots)||!Array.isArray(s.collected)) return defaultState();
+    var pots=[0,1,2].map(function(i){
+      var p=s.pots[i];
+      if(!p||!byId(p.id)) return null;
+      var pr=Math.min(1,Math.max(0,Number(p.progress)||0));
+      return {id:p.id,progress:pr,bloomed:!!p.bloomed};
+    });
+    var coll=s.collected.filter(function(id){return !!byId(id);});
+    return {v:1,pots:pots,collected:coll,endingShown:!!s.endingShown};
+  }catch(e){ return defaultState(); }
+}
+var state=loadState();
+function save(){ try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){} }
+function isComplete(){ return state.collected.length>=FLOWERS.length; }
+
+/* ================= audio ================= */
+var SFX={
+ ctx:null,master:null,water:null,
+ on:lsGet(SND_KEY)!=='0',
+ ensure:function(){
+   if(!this.ctx){
+     var AC=window.AudioContext||window.webkitAudioContext;
+     if(!AC) return;
+     try{
+       this.ctx=new AC();
+       this.master=this.ctx.createGain();
+       this.master.gain.value=0.9;
+       this.master.connect(this.ctx.destination);
+     }catch(e){ this.ctx=null; return; }
+   }
+   if(this.ctx&&this.ctx.state==='suspended'){ this.ctx.resume().catch(function(){}); }
+ },
+ tone:function(f,dur,type,vol,delay,slideTo){
+   if(!this.on||!this.ctx) return;
+   try{
+     var t0=this.ctx.currentTime+(delay||0);
+     var o=this.ctx.createOscillator(), g=this.ctx.createGain();
+     o.type=type||'sine';
+     o.frequency.setValueAtTime(f,t0);
+     if(slideTo){ o.frequency.exponentialRampToValueAtTime(Math.max(30,slideTo),t0+dur); }
+     g.gain.setValueAtTime(0.0001,t0);
+     g.gain.linearRampToValueAtTime(vol||0.08,t0+0.015);
+     g.gain.exponentialRampToValueAtTime(0.0008,t0+dur);
+     o.connect(g); g.connect(this.master);
+     o.start(t0); o.stop(t0+dur+0.06);
+   }catch(e){}
+ },
+ tick:function(){ this.tone(660,0.07,'sine',0.035); },
+ pop:function(n){ this.tone(430+n*70,0.16,'triangle',0.05); },
+ thump:function(){ this.tone(170,0.2,'sine',0.14,0,80); },
+ plip:function(){ this.tone(900+Math.random()*600,0.1,'sine',0.04,0,480); },
+ bloomChime:function(){
+   var N=[523.25,659.25,783.99,1046.5], s=this;
+   N.forEach(function(f,i){ s.tone(f,0.9,'sine',0.065,i*0.12); });
+   s.tone(261.63,1.2,'triangle',0.028,0);
+ },
+ grand:function(){
+   var N=[392,523.25,659.25,783.99,1046.5,1318.5], s=this;
+   N.forEach(function(f,i){ s.tone(f,1.1,'sine',0.055,i*0.16); });
+   s.tone(196,1.8,'triangle',0.03,0.1);
+ },
+ waterStart:function(){
+   if(!this.on||!this.ctx||this.water) return;
+   try{
+     var ctx=this.ctx;
+     var len=Math.floor(ctx.sampleRate*0.8);
+     var buf=ctx.createBuffer(1,len,ctx.sampleRate);
+     var d=buf.getChannelData(0);
+     for(var i=0;i<len;i++){ d[i]=Math.random()*2-1; }
+     var src=ctx.createBufferSource(); src.buffer=buf; src.loop=true;
+     var lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=850; lp.Q.value=0.6;
+     var g=ctx.createGain(); g.gain.value=0;
+     src.connect(lp); lp.connect(g); g.connect(this.master);
+     src.start();
+     g.gain.linearRampToValueAtTime(0.05,ctx.currentTime+0.25);
+     this.water={src:src,g:g};
+   }catch(e){ this.water=null; }
+ },
+ waterStop:function(){
+   if(!this.water||!this.ctx) return;
+   var w=this.water; this.water=null;
+   try{
+     var t=this.ctx.currentTime;
+     w.g.gain.cancelScheduledValues(t);
+     w.g.gain.setValueAtTime(w.g.gain.value,t);
+     w.g.gain.linearRampToValueAtTime(0,t+0.25);
+     setTimeout(function(){ try{w.src.stop();}catch(e){} },400);
+   }catch(e){}
+ }
+};
+
+/* ================= dom refs ================= */
+function $(s){ return document.querySelector(s); }
+var greenhouse=$('#greenhouse'), potsRow=$('#potsRow'), introEl=$('#intro');
+var chipEl=$('#albumChip'), homeTxt=$('#homeTxt');
+var titleMain=$('#titleMain'), titleSub=$('#titleSub');
+var langBtn=$('#langBtn'), soundBtn=$('#soundBtn');
+var sheetOv=$('#sheetOv'), sheetBox=$('#sheetBox');
+var cardOv=$('#cardOv'), cardBox=$('#cardBox');
+var albumOv=$('#albumOv'), albumBox=$('#albumBox');
+var confirmOv=$('#confirmOv'), confirmBox=$('#confirmBox');
+var endOv=$('#endOv'), endBox=$('#endBox'), petalBox=$('#petalBox');
+
+var CAN_SVG='<svg viewBox="0 0 64 44" aria-hidden="true">'
+ +'<path d="M23 24 L8 11" stroke="#94b591" stroke-width="5.5" stroke-linecap="round"/>'
+ +'<circle cx="7" cy="10" r="4.4" fill="#a8c4a4" stroke="#6d906b" stroke-width="1.3"/>'
+ +'<path d="M45 16 Q58 10 52 28" fill="none" stroke="#6d906b" stroke-width="3" stroke-linecap="round"/>'
+ +'<rect x="20" y="13" width="30" height="24" rx="7" fill="#94b591" stroke="#6d906b" stroke-width="1.5"/>'
+ +'<ellipse cx="35" cy="14" rx="11" ry="3" fill="#a8c4a4" stroke="#6d906b" stroke-width="1.2"/>'
+ +'</svg>';
+
+var LEAF_PATH='M0 0 Q8 -8 17 -3 Q9 5 0 0 Z';
+function plantSvgHTML(){
+  var leaves='';
+  for(var n=0;n<4;n++){
+    leaves+='<g class="leaf l'+n+'" opacity="0"><path d="'+LEAF_PATH+'"></path></g>';
+  }
+  return '<svg class="plant-svg" viewBox="0 0 100 130" aria-hidden="true">'
+   +'<g class="plantG">'
+   +'<ellipse class="mound" cx="50" cy="125" rx="8" ry="3" opacity="0"></ellipse>'
+   +'<path class="stem" d=""></path>'
+   +leaves
+   +'<circle class="bud" cx="50" cy="120" r="0" fill="#e88fb0"></circle>'
+   +'<text class="bloomT" x="50" y="50" text-anchor="middle" font-size="31" style="display:none"></text>'
+   +'</g></svg>';
+}
+
+var slots=[];
+(function buildSlots(){
+  for(var i=0;i<3;i++){
+    var el=document.createElement('div');
+    el.className='slot s-empty';
+    el.innerHTML=
+      '<div class="plant-area">'
+      + plantSvgHTML()
+      + '<div class="drops"></div>'
+      + '<div class="seedhint"><span>🌱</span></div>'
+      + '<div class="can">'+CAN_SVG+'</div>'
+      + '</div>'
+      + '<div class="pot"><div class="soil"></div></div>'
+      + '<div class="pbar"><i></i></div>'
+      + '<div class="hint"></div>';
+    potsRow.appendChild(el);
+    slots.push({
+      el:el,
+      area:el.querySelector('.plant-area'),
+      svg:el.querySelector('.plant-svg'),
+      stem:el.querySelector('.stem'),
+      mound:el.querySelector('.mound'),
+      leaves:el.querySelectorAll('.leaf'),
+      bud:el.querySelector('.bud'),
+      bloomT:el.querySelector('.bloomT'),
+      drops:el.querySelector('.drops'),
+      barI:el.querySelector('.pbar i'),
+      hint:el.querySelector('.hint'),
+      justBloomedAt:0
+    });
+  }
+})();
+
+/* ================= plant rendering ================= */
+var LEAF_TH=[0.14,0.32,0.50,0.66];
+var LEAF_F=[0.32,0.50,0.66,0.80];
+var LEAF_SIDE=[-1,1,-1,1];
+var LEAF_BASE=[0.75,0.95,1.1,1.2];
+function easeOutBack(t){
+  var c1=1.70158,c3=c1+1;
+  return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2);
+}
+
+function renderPlant(i){
+  var pot=state.pots[i], r=slots[i];
+  if(!pot){
+    r.stem.setAttribute('d','');
+    r.mound.setAttribute('opacity','0');
+    for(var n0=0;n0<4;n0++){ r.leaves[n0].setAttribute('opacity','0'); }
+    r.bud.setAttribute('r','0');
+    r.bloomT.style.display='none';
+    return;
+  }
+  var f=byId(pot.id);
+  var p=pot.progress;
+  var h=6+p*76;
+  r.stem.setAttribute('d','M50 126 Q47 '+(126-h*0.55).toFixed(1)+' 50 '+(126-h).toFixed(1));
+  r.mound.setAttribute('opacity',String(Math.max(0.15,0.85-p*0.7).toFixed(2)));
+  for(var n=0;n<4;n++){
+    var leaf=r.leaves[n];
+    if(p>LEAF_TH[n]){
+      var a=Math.min(1,(p-LEAF_TH[n])/0.13);
+      var s=LEAF_BASE[n]*easeOutBack(a);
+      var y=126-h*LEAF_F[n];
+      leaf.setAttribute('opacity','1');
+      leaf.setAttribute('transform','translate(50 '+y.toFixed(1)+') scale('+(LEAF_SIDE[n]*s).toFixed(3)+' '+s.toFixed(3)+') rotate(-9)');
+    }else{
+      leaf.setAttribute('opacity','0');
+    }
+  }
+  if(!pot.bloomed && p>0.72){
+    var ba=Math.min(1,(p-0.72)/0.24);
+    r.bud.setAttribute('r',(5.6*easeOutBack(ba)).toFixed(2));
+    r.bud.setAttribute('cy',(126-h-1).toFixed(1));
+    r.bud.setAttribute('fill',f?f.bud:'#e88fb0');
+  }else{
+    r.bud.setAttribute('r','0');
+  }
+  if(pot.bloomed && f){
+    r.bloomT.textContent=f.e;
+    r.bloomT.setAttribute('y',(126-h+9).toFixed(1));
+    r.bloomT.style.display='';
+  }else{
+    r.bloomT.style.display='none';
+  }
+}
+
+function updateBar(i){
+  var pot=state.pots[i], r=slots[i];
+  r.barI.style.width=(pot&&!pot.bloomed)?((pot.progress*100).toFixed(1)+'%'):'0%';
+}
+
+function renderSlot(i){
+  var pot=state.pots[i], r=slots[i], t=T();
+  r.el.classList.toggle('s-empty',!pot);
+  r.el.classList.toggle('s-growing',!!pot&&!pot.bloomed);
+  r.el.classList.toggle('s-bloomed',!!pot&&pot.bloomed);
+  if(!pot){ r.hint.textContent=t.tapToPlant; }
+  else if(pot.bloomed){ var f=byId(pot.id); r.hint.textContent=f?fname(f):''; }
+  else{ r.hint.textContent=t.holdToWater; }
+  r.svg.classList.toggle('alive',!!pot&&pot.progress>0.05);
+  renderPlant(i); updateBar(i);
+}
+
+function updateChip(){
+  chipEl.textContent=(isComplete()?'🌸 ':'💌 ')+state.collected.length+'/'+FLOWERS.length;
+}
+
+function updateIntro(){
+  var fresh=state.collected.length===0
+    && !state.pots[0] && !state.pots[1] && !state.pots[2];
+  introEl.style.display=fresh?'block':'none';
+}
+
+function renderAll(){
+  for(var i=0;i<3;i++){ renderSlot(i); }
+  updateChip(); updateIntro();
+  greenhouse.classList.toggle('full',isComplete());
+}
+
+/* ================= watering ================= */
+var W={i:-1,raf:0,last:0,drop:0};
+
+function startWater(i){
+  if(W.i===i) return;
+  if(W.i>=0) stopWater(W.i);
+  var pot=state.pots[i];
+  if(!pot||pot.bloomed) return;
+  W.i=i; W.last=performance.now(); W.drop=0;
+  slots[i].el.classList.add('watering');
+  SFX.waterStart();
+  W.raf=requestAnimationFrame(stepWater);
+}
+function stepWater(t){
+  if(W.i<0) return;
+  var i=W.i, pot=state.pots[i];
+  if(!pot||pot.bloomed){ stopWater(i); return; }
+  var dt=Math.min(0.06,(t-W.last)/1000);
+  W.last=t;
+  var prev=pot.progress;
+  pot.progress=Math.min(1,pot.progress+dt/GROW_SECS);
+  stageCheck(prev,pot.progress);
+  W.drop-=dt;
+  if(W.drop<=0){ spawnDrop(i); W.drop=0.09+Math.random()*0.08; }
+  if(prev<=0.05&&pot.progress>0.05){ slots[i].svg.classList.add('alive'); }
+  renderPlant(i); updateBar(i);
+  if(pot.progress>=1){ stopWater(i); bloom(i); return; }
+  W.raf=requestAnimationFrame(stepWater);
+}
+function stopWater(i){
+  if(W.i!==i) return;
+  W.i=-1;
+  cancelAnimationFrame(W.raf);
+  slots[i].el.classList.remove('watering');
+  SFX.waterStop();
+  save();
+}
+function stageCheck(prev,p){
+  for(var n=0;n<4;n++){
+    if(prev<LEAF_TH[n]&&p>=LEAF_TH[n]){ SFX.pop(n); }
+  }
+  if(prev<0.72&&p>=0.72){ SFX.pop(4); }
+}
+function spawnDrop(i){
+  if(REDUCED) return;
+  var r=slots[i];
+  var d=document.createElement('i');
+  d.className='drop';
+  d.style.left=(42+Math.random()*20)+'%';
+  d.style.top=(9+Math.random()*8)+'%';
+  d.style.setProperty('--fall',(r.area.clientHeight*0.62+Math.random()*14)+'px');
+  r.drops.appendChild(d);
+  d.addEventListener('animationend',function(){ d.remove(); });
+  if(Math.random()<0.34) SFX.plip();
+}
+
+/* ================= bloom / collect ================= */
+function bloom(i){
+  var pot=state.pots[i];
+  if(!pot) return;
+  pot.bloomed=true; pot.progress=1;
+  var f=byId(pot.id);
+  if(state.collected.indexOf(pot.id)<0){ state.collected.push(pot.id); }
+  slots[i].justBloomedAt=Date.now();
+  renderSlot(i); updateChip();
+  if(!REDUCED){
+    slots[i].bloomT.classList.add('pop');
+    (function(el){ setTimeout(function(){ el.classList.remove('pop'); },1100); })(slots[i].bloomT);
+    burst(i,f);
+  }
+  SFX.bloomChime();
+  save();
+  setTimeout(function(){ openCard(pot.id,i,true); },720);
+}
+
+function burst(i,f){
+  var area=slots[i].area;
+  for(var k=0;k<12;k++){
+    var s=document.createElement('span');
+    s.className='spark';
+    var a=Math.random()*Math.PI*2, d=30+Math.random()*45;
+    s.style.setProperty('--dx',(Math.cos(a)*d).toFixed(1)+'px');
+    s.style.setProperty('--dy',(Math.sin(a)*d-22).toFixed(1)+'px');
+    s.style.background=(k%3===0)?'#ffd98a':(f?f.bud:'#f2a0b8');
+    s.style.left='50%'; s.style.top='28%';
+    area.appendChild(s);
+    s.addEventListener('animationend',function(ev){ ev.target.remove(); });
+  }
+}
+
+/* ================= overlays ================= */
+function show(ov){ ov.classList.add('show'); }
+/* 엔딩 도달 조건은 오직 저장된 state에서만 판단한다.
+   런타임 플래그에 의존하면 새로고침 시 엔딩이 영영 사라진다. */
+function maybeEnd(){
+  if(!isComplete()||state.endingShown) return false;
+  openEnd();
+  return true;
+}
+function closeOv(ov){
+  ov.classList.remove('show');
+  if(ov===endOv){ petalBox.innerHTML=''; }
+  if(ov===cardOv){ maybeEnd(); }
+}
+[sheetOv,cardOv,albumOv,confirmOv,endOv].forEach(function(ov){
+  ov.addEventListener('click',function(e){ if(e.target===ov){ closeOv(ov); } });
+});
+
+var pendingPot=-1;
+
+function openSeedSheet(potIdx){
+  pendingPot=potIdx;
+  var t=T();
+  var collSet={};
+  state.collected.forEach(function(id){ collSet[id]=true; });
+  var plantedSet={};
+  state.pots.forEach(function(p){ if(p) plantedSet[p.id]=true; });
+  var nextId=null;
+  for(var i=0;i<FLOWERS.length;i++){
+    var fid=FLOWERS[i].id;
+    if(!collSet[fid]&&!plantedSet[fid]){ nextId=fid; break; }
+  }
+  var cells=FLOWERS.map(function(f){
+    if(plantedSet[f.id]){
+      return '<div class="seed-cell dim"><span class="sc-e">🌱</span><span class="sc-n">'+ (collSet[f.id]?fname(f):t.mystery) +'</span><span class="sc-t">'+t.growingTag+'</span></div>';
+    }
+    if(collSet[f.id]){
+      return '<button class="seed-cell" data-act="plant" data-id="'+f.id+'"><span class="sc-e">'+f.e+'</span><span class="sc-n">'+fname(f)+'</span><span class="sc-t">'+t.replantTag+'</span></button>';
+    }
+    if(f.id===nextId){
+      return '<button class="seed-cell next" data-act="plant" data-id="'+f.id+'"><span class="sc-e">✉️</span><span class="sc-n">'+t.mystery+'</span><span class="sc-t">'+t.nextSeed+'</span></button>';
+    }
+    return '<div class="seed-cell locked"><span class="sc-e">✉️</span><span class="sc-n">'+t.mystery+'</span><span class="sc-t">'+t.lockedTag+'</span></div>';
+  }).join('');
+  sheetBox.innerHTML=
+    '<div class="sheet-grab"></div>'
+    +'<h2>'+t.seedSheetTitle+'</h2>'
+    +'<p class="sheet-note">'+t.seedNote+'</p>'
+    +'<div class="seed-grid">'+cells+'</div>'
+    +'<button class="btn btn-ghost sheet-closebtn" data-act="close-ov">'+t.close+'</button>';
+  show(sheetOv);
+  SFX.tick();
+}
+
+function plantSeed(potIdx,id){
+  if(potIdx<0||potIdx>2||state.pots[potIdx]||!byId(id)) return;
+  state.pots[potIdx]={id:id,progress:0,bloomed:false};
+  closeOv(sheetOv);
+  renderSlot(potIdx); updateIntro();
+  save();
+  SFX.thump();
+}
+
+function openCard(id,potIdx,isNew){
+  var f=byId(id);
+  if(!f) return;
+  var t=T();
+  var hasPot=(typeof potIdx==='number')&&potIdx>=0&&state.pots[potIdx]&&state.pots[potIdx].id===id&&state.pots[potIdx].bloomed;
+  cardBox.innerHTML=
+    (isNew?('<div class="fc-new">💌 '+t.newLetter+'</div>'):'')
+    +'<div class="fc-emoji">'+f.e+'</div>'
+    +'<h2 class="fc-name">'+fname(f)+'</h2>'
+    +'<div class="fc-meaning">'+t.meaningLabel+' · '+f.meaning[lang]+'</div>'
+    +'<div class="fc-div">❧</div>'
+    +'<p class="fc-letter">'+f.letter[lang]+'</p>'
+    +'<p class="fc-sign">'+t.sign+'</p>'
+    +'<div class="fc-actions">'
+    +'<button class="btn btn-primary" data-act="close-ov">'+t.keep+'</button>'
+    +(hasPot?('<button class="btn btn-ghost" data-act="empty-pot" data-pot="'+potIdx+'">'+t.emptyPot+'</button>'):'')
+    +'</div>';
+  show(cardOv);
+}
+
+function openAlbum(){
+  var t=T();
+  var items=FLOWERS.map(function(f){
+    var got=state.collected.indexOf(f.id)>=0;
+    if(got){
+      return '<div class="al-item">'
+        +'<div class="al-emoji">'+f.e+'</div>'
+        +'<div class="al-body"><div class="al-name">'+fname(f)
+        +'<span class="al-meaning">'+f.meaning[lang]+'</span></div>'
+        +'<p class="al-letter">'+f.letter[lang]+'</p></div></div>';
+    }
+    return '<div class="al-item al-locked">'
+      +'<div class="al-emoji">✉️</div>'
+      +'<div class="al-body"><div class="al-name">'+t.mystery+'</div>'
+      +'<p class="al-letter">'+t.notYet+'</p></div></div>';
+  }).join('');
+  var banner=isComplete()
+    ? ('<div class="al-banner">🌸 '+t.completeTitle+'<br>'
+       +'<button class="btn btn-ghost" data-act="ask-reset">'+t.newGarden+'</button></div>')
+    : '';
+  albumBox.innerHTML=
+    '<h2>💌 '+t.albumTitle+'</h2>'
+    +'<p class="al-count">'+state.collected.length+' / '+FLOWERS.length+'</p>'
+    +banner
+    +'<div class="al-list">'+items+'</div>'
+    +'<button class="btn btn-ghost sheet-closebtn" data-act="close-ov" style="width:100%">'+t.close+'</button>';
+  show(albumOv);
+  SFX.tick();
+}
+
+function openEnd(){
+  var t=T();
+  var wreath=FLOWERS.map(function(f,i){
+    return '<span style="--a:'+(i*30)+'deg">'+f.e+'</span>';
+  }).join('');
+  endBox.innerHTML=
+    '<div class="wreath">'+wreath+'<div class="wreath-c">💌</div></div>'
+    +'<h2>'+t.completeTitle+'</h2>'
+    +'<p class="end-msg">'+t.completeMsg+'</p>'
+    +'<p class="end-sub">'+t.endSub+'</p>'
+    +'<div class="fc-actions">'
+    +'<button class="btn btn-primary" data-act="end-album">'+t.albumBtn+'</button>'
+    +'<button class="btn btn-ghost" data-act="ask-reset">'+t.newGarden+'</button>'
+    +'<a class="btn btn-ghost" href="../../index.html">'+t.homeBtn+'</a>'
+    +'</div>';
+  spawnPetals();
+  greenhouse.classList.add('full');
+  state.endingShown=true;
+  save();
+  show(endOv);
+  SFX.grand();
+}
+
+function spawnPetals(){
+  if(REDUCED) return;
+  var em=['🌸','🌼','🌷','💮','🪻'];
+  var html='';
+  for(var k=0;k<24;k++){
+    html+='<span style="left:'+(Math.random()*100).toFixed(1)+'%;'
+      +'animation-duration:'+(5+Math.random()*5).toFixed(1)+'s;'
+      +'animation-delay:'+(-Math.random()*8).toFixed(1)+'s;'
+      +'font-size:'+(12+Math.random()*12).toFixed(0)+'px">'
+      +em[k%em.length]+'</span>';
+  }
+  petalBox.innerHTML=html;
+}
+
+function openConfirmReset(){
+  var t=T();
+  confirmBox.innerHTML=
+    '<div class="fc-emoji" style="font-size:44px;width:72px;height:72px">🪴</div>'
+    +'<h2>'+t.resetTitle+'</h2>'
+    +'<p>'+t.resetMsg+'</p>'
+    +'<div class="fc-actions">'
+    +'<button class="btn btn-ghost" data-act="close-ov">'+t.cancel+'</button>'
+    +'<button class="btn btn-primary" data-act="do-reset">'+t.confirmReset+'</button>'
+    +'</div>';
+  show(confirmOv);
+}
+
+function doReset(){
+  state=defaultState();
+  save();
+  [sheetOv,cardOv,albumOv,confirmOv,endOv].forEach(function(ov){ ov.classList.remove('show'); });
+  petalBox.innerHTML='';
+  renderAll();
+  SFX.tick();
+}
+
+/* ================= actions (delegated) ================= */
+document.addEventListener('click',function(e){
+  var b=e.target.closest?e.target.closest('[data-act]'):null;
+  if(!b) return;
+  var act=b.getAttribute('data-act');
+  if(act==='close-ov'){
+    var ov=b.closest('.overlay');
+    if(ov) closeOv(ov);
+    SFX.tick();
+  }else if(act==='plant'){
+    plantSeed(pendingPot,b.getAttribute('data-id'));
+  }else if(act==='empty-pot'){
+    var idx=parseInt(b.getAttribute('data-pot'),10);
+    if(idx>=0&&idx<=2){ state.pots[idx]=null; save(); renderSlot(idx); updateIntro(); }
+    closeOv(cardOv);
+    SFX.tick();
+  }else if(act==='ask-reset'){
+    openConfirmReset();
+    SFX.tick();
+  }else if(act==='do-reset'){
+    doReset();
+  }else if(act==='end-album'){
+    closeOv(endOv);
+    openAlbum();
+  }
+});
+
+/* ================= slot interactions ================= */
+slots.forEach(function(r,i){
+  r.el.addEventListener('pointerdown',function(ev){
+    SFX.ensure();
+    var pot=state.pots[i];
+    if(pot&&!pot.bloomed){
+      ev.preventDefault();
+      try{ r.el.setPointerCapture(ev.pointerId); }catch(e){}
+      startWater(i);
+    }
+  });
+  function stop(){ stopWater(i); }
+  r.el.addEventListener('pointerup',stop);
+  r.el.addEventListener('pointercancel',stop);
+  r.el.addEventListener('lostpointercapture',stop);
+  r.el.addEventListener('click',function(){
+    var pot=state.pots[i];
+    if(!pot){ openSeedSheet(i); }
+    else if(pot.bloomed){
+      if(Date.now()-r.justBloomedAt<900) return;
+      openCard(pot.id,i,false);
+      SFX.tick();
+    }
+  });
+});
+
+/* ================= language / sound ================= */
+var NAMES={ ko:'씨앗 편지', ja:'たね手紙', en:'Seed Letters' };
+function otherNames(){
+  return ['ko','ja','en'].filter(function(l){return l!==lang;})
+    .map(function(l){return NAMES[l];}).join(' · ');
+}
+function applyLang(){
+  var t=T();
+  document.documentElement.lang=lang;
+  titleMain.textContent=NAMES[lang];
+  titleSub.textContent=otherNames();
+  homeTxt.textContent=t.home;
+  langBtn.textContent=FLAGS[lang];
+  introEl.textContent='🫘 '+t.intro;
+  renderAll();
+}
+langBtn.addEventListener('click',function(){
+  SFX.ensure();
+  var idx=LANG_ORDER.indexOf(lang);
+  lang=LANG_ORDER[(idx+1)%LANG_ORDER.length];
+  lsSet(LANG_KEY,lang);
+  applyLang();
+  SFX.tick();
+});
+function updateSoundBtn(){ soundBtn.textContent=SFX.on?'🔊':'🔇'; }
+soundBtn.addEventListener('click',function(){
+  SFX.ensure();
+  SFX.on=!SFX.on;
+  lsSet(SND_KEY,SFX.on?'1':'0');
+  if(!SFX.on){ SFX.waterStop(); }
+  updateSoundBtn();
+  SFX.tick();
+});
+chipEl.addEventListener('click',function(){ SFX.ensure(); openAlbum(); });
+
+/* ================= lifecycle ================= */
+document.addEventListener('pointerdown',function(){ SFX.ensure(); },{passive:true});
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden&&W.i>=0){ stopWater(W.i); }
+});
+window.addEventListener('pagehide',function(){
+  if(W.i>=0){ stopWater(W.i); }
+  save();
+});
+
+applyLang();
+updateSoundBtn();
+/* 12/12 인데 엔딩을 아직 못 본 상태로 부팅했다면 (카드를 닫기 전에 새로고침 등)
+   여기서 최종 연출을 복구한다. */
+maybeEnd();
+})();
+</script>
+</body>
+</html>

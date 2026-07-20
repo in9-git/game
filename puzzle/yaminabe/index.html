@@ -1,60 +1,1465 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>闇鍋パズル</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b0818">
+<meta name="description" content="야미나베 — 뚜껑 속 재료 3개를 힌트로 추리하는 아늑한 냄비 퍼즐">
+<title>야미나베 · 闇鍋パズル · Yaminabe</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍲</text></svg>">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    height:100%;
+    background:#0b0818;
+    overscroll-behavior:none;
+    font-family:-apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR",
+                "Hiragino Kaku Gothic ProN", "Yu Gothic", "Segoe UI", sans-serif;
+    -webkit-text-size-adjust:100%;
+    -webkit-user-select:none; user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    color:#f6ead6;
+  }
+  button { font-family:inherit; color:inherit; border:0; background:none; cursor:pointer; }
+
+  :root {
+    --bg0:#0b0818;
+    --bg1:#170f33;
+    --bg2:#241748;
+    --plum:#3a2260;
+    --warm:#ffb765;
+    --warm2:#ff8f45;
+    --glow:#ffd9a0;
+    --gold:#f3c67e;
+    --cream:#f6ead6;
+    --muted:#a596c6;
+    --iron:#241d33;
+    --iron2:#4b3d63;
+    --line:rgba(243,198,126,.16);
+    --card:rgba(255,255,255,.045);
+    --ease:cubic-bezier(.22,.9,.3,1);
+  }
+
+  /* ================= shell ================= */
+  #app {
+    position:fixed; inset:0;
+    display:flex; flex-direction:column;
+    background:
+      radial-gradient(ellipse 120% 70% at 50% 46%, rgba(90,50,120,.42), transparent 62%),
+      radial-gradient(ellipse 80% 50% at 50% 62%, rgba(255,150,70,.13), transparent 66%),
+      linear-gradient(175deg, #0d0a20 0%, #171034 38%, #1d1240 62%, #0d0920 100%);
+  }
+  #app::after {
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse 78% 60% at 50% 48%, transparent 40%, rgba(6,4,16,.72) 100%);
+  }
+
+  /* ================= header ================= */
+  header {
+    position:relative; z-index:6;
+    flex:0 0 auto;
+    display:flex; align-items:center; gap:8px;
+    padding:calc(env(safe-area-inset-top,0px) + 9px) 12px 9px;
+  }
+  .hbtn {
+    flex:0 0 auto;
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:38px; height:34px; padding:0 10px;
+    font-size:13px; font-weight:600; letter-spacing:.02em;
+    color:var(--cream);
+    background:rgba(255,255,255,.06);
+    border:1px solid var(--line);
+    border-radius:11px;
+    transition:transform .18s var(--ease), background .2s, border-color .2s;
+  }
+  .hbtn:hover { background:rgba(255,255,255,.11); border-color:rgba(243,198,126,.34); }
+  .hbtn:active { transform:scale(.93); }
+  .titles { flex:1 1 auto; text-align:center; min-width:0; line-height:1.12; }
+  .titles h1 {
+    font-size:clamp(17px, 5.2vw, 23px); font-weight:800;
+    letter-spacing:.02em;
+    background:linear-gradient(180deg, #fff3dc, var(--gold) 62%, #d99f5a);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 26px rgba(255,180,100,.22);
+  }
+  .titles p {
+    margin-top:2px; font-size:10px; font-weight:500;
+    color:var(--muted); letter-spacing:.06em;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .hgroup { display:flex; gap:6px; flex:0 0 auto; }
+
+  /* ================= scene ================= */
+  #scene {
+    position:relative; z-index:4;
+    flex:0 0 auto;
+    height:clamp(190px, 31vh, 290px);
+    overflow:hidden;
+  }
+  #potWrap { position:absolute; inset:0; display:block; }
+  #potSvg { position:absolute; inset:0; width:100%; height:100%; }
+  #fx { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+
+  .candle { position:absolute; bottom:14%; width:16px; }
+  .candle.l { left:9%; } .candle.r { right:9%; }
+  .cbody {
+    height:38px; border-radius:4px 4px 3px 3px;
+    background:linear-gradient(180deg,#f2e2c4,#d8bf98 55%,#b99b71);
+    box-shadow:0 0 18px rgba(255,180,110,.3), inset -3px 0 5px rgba(0,0,0,.18);
+  }
+  .cflame {
+    position:absolute; left:50%; top:-17px; width:11px; height:20px;
+    margin-left:-5.5px; border-radius:50% 50% 46% 46%;
+    background:radial-gradient(ellipse at 50% 78%, #fff6d8 8%, var(--warm) 42%, rgba(255,110,40,.72) 74%, transparent 100%);
+    filter:blur(.4px);
+    transform-origin:50% 100%;
+    animation:flick 1.7s ease-in-out infinite alternate;
+    box-shadow:0 0 22px 7px rgba(255,158,72,.36);
+  }
+  .candle.r .cflame { animation-duration:2.2s; animation-delay:-.7s; }
+  @keyframes flick {
+    0%   { transform:scale(1,1) rotate(-2.5deg); opacity:.92; }
+    50%  { transform:scale(1.07,.92) rotate(1.5deg); opacity:1; }
+    100% { transform:scale(.94,1.09) rotate(2.5deg); opacity:.86; }
+  }
+
+  #toast {
+    position:absolute; left:50%; top:12%;
+    transform:translate(-50%,-8px) scale(.86);
+    z-index:5;
+    padding:9px 18px; border-radius:999px;
+    font-size:15px; font-weight:800; white-space:nowrap;
+    color:#2a1608;
+    background:linear-gradient(180deg,#ffe6bb,var(--warm));
+    box-shadow:0 10px 30px rgba(255,150,70,.34), 0 0 0 1px rgba(255,255,255,.35) inset;
+    opacity:0; pointer-events:none;
+    transition:opacity .3s var(--ease), transform .42s var(--ease);
+  }
+  #toast.show { opacity:1; transform:translate(-50%,0) scale(1); }
+  #toast.zero { background:linear-gradient(180deg,#cfc3e8,#9d8dc0); color:#231636; box-shadow:0 10px 26px rgba(90,60,140,.4); }
+  #toast.all  { background:linear-gradient(180deg,#e8ffd8,#8fd97a); color:#12300a; box-shadow:0 10px 30px rgba(120,200,100,.36); }
+
+  /* ================= panel ================= */
+  #panel {
+    position:relative; z-index:5;
+    flex:1 1 auto; min-height:0;
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+    padding:4px 12px calc(env(safe-area-inset-bottom,0px) + 14px);
+  }
+  .wrap { max-width:460px; margin:0 auto; }
+
+  .statusbar {
+    display:flex; align-items:center; gap:9px;
+    padding:8px 2px 10px;
+  }
+  .roundtxt { font-size:12px; font-weight:700; color:var(--gold); letter-spacing:.04em; white-space:nowrap; }
+  .dots { display:flex; gap:5px; flex:1 1 auto; }
+  .dot {
+    flex:1 1 auto; height:5px; max-width:32px; border-radius:99px;
+    background:rgba(255,255,255,.12);
+    transition:background .35s var(--ease), box-shadow .35s var(--ease);
+  }
+  .dot.used { background:linear-gradient(90deg, var(--warm2), var(--warm)); box-shadow:0 0 9px rgba(255,150,70,.45); }
+  .dot.now  { background:rgba(243,198,126,.42); box-shadow:0 0 8px rgba(243,198,126,.4); }
+
+  .card {
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:11px 12px;
+    margin-bottom:10px;
+    box-shadow:0 6px 22px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .card h2 {
+    font-size:11px; font-weight:700; letter-spacing:.09em;
+    color:var(--muted); text-transform:uppercase;
+    margin-bottom:8px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .card h2 .n { color:var(--gold); font-size:10px; letter-spacing:0; }
+
+  /* hints */
+  #hintList { display:flex; flex-direction:column; gap:6px; }
+  .hint {
+    display:flex; align-items:flex-start; gap:8px;
+    padding:8px 10px; border-radius:11px;
+    font-size:13px; line-height:1.42; color:var(--cream);
+    background:linear-gradient(100deg, rgba(255,183,101,.11), rgba(255,183,101,.03));
+    border:1px solid rgba(255,183,101,.16);
+    animation:hintIn .5s var(--ease) both;
+  }
+  .hint .hi { flex:0 0 auto; font-size:14px; line-height:1.3; filter:saturate(.9); }
+  .hint.fresh { border-color:rgba(255,183,101,.44); box-shadow:0 0 20px rgba(255,150,70,.16); }
+  @keyframes hintIn { from { opacity:0; transform:translateY(-7px); } to { opacity:1; transform:none; } }
+  .empty { font-size:12px; color:var(--muted); padding:4px 2px; line-height:1.5; }
+
+  /* history */
+  #histList { display:flex; flex-direction:column; gap:5px; }
+  .hrow {
+    display:flex; align-items:center; gap:8px;
+    padding:5px 8px; border-radius:10px;
+    background:rgba(255,255,255,.035);
+    animation:hintIn .4s var(--ease) both;
+  }
+  .hrow .rn { font-size:10px; font-weight:700; color:var(--muted); width:16px; flex:0 0 auto; }
+  .hrow .items { flex:1 1 auto; font-size:18px; letter-spacing:2px; line-height:1.2; }
+  .badge {
+    flex:0 0 auto; min-width:38px; text-align:center;
+    padding:3px 8px; border-radius:99px;
+    font-size:11px; font-weight:800;
+    background:rgba(255,255,255,.09); color:var(--muted);
+  }
+  .badge.b1, .badge.b2 { background:linear-gradient(180deg,#ffd9a0,var(--warm)); color:#3a2005; }
+  .badge.b3 { background:linear-gradient(180deg,#e0ffcd,#8ed877); color:#123006; }
+
+  /* tray */
+  #tray {
+    display:grid; grid-template-columns:repeat(5,1fr); gap:6px;
+  }
+  .chip {
+    position:relative;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    padding:8px 2px 6px;
+    border-radius:13px;
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.025));
+    border:1.5px solid rgba(255,255,255,.09);
+    transition:transform .2s var(--ease), border-color .2s, background .25s, box-shadow .25s;
+  }
+  .chip .em { font-size:23px; line-height:1.1; filter:drop-shadow(0 2px 5px rgba(0,0,0,.45)); }
+  .chip .nm { font-size:9px; font-weight:600; color:var(--muted); letter-spacing:-.02em;
+              max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chip:active { transform:scale(.92); }
+  .chip.on {
+    background:linear-gradient(180deg, rgba(255,183,101,.28), rgba(255,140,66,.12));
+    border-color:var(--gold);
+    box-shadow:0 0 0 3px rgba(243,198,126,.14), 0 6px 18px rgba(255,150,70,.26);
+    transform:translateY(-3px);
+  }
+  .chip.on .nm { color:var(--cream); }
+  .chip.on::after {
+    content:""; position:absolute; top:4px; right:5px;
+    width:6px; height:6px; border-radius:50%;
+    background:var(--gold); box-shadow:0 0 8px var(--gold);
+  }
+  .chip.dim { opacity:.42; }
+
+  #ladleBtn {
+    width:100%; margin-top:11px;
+    padding:15px 12px; border-radius:16px;
+    font-size:16px; font-weight:800; letter-spacing:.02em;
+    color:#3a1f04;
+    background:linear-gradient(180deg,#ffdca8,var(--warm) 55%,#f08c3c);
+    box-shadow:0 8px 24px rgba(255,140,60,.3), inset 0 1px 0 rgba(255,255,255,.5);
+    transition:transform .18s var(--ease), opacity .25s, box-shadow .25s;
+  }
+  #ladleBtn:active { transform:scale(.975); }
+  #ladleBtn:disabled {
+    cursor:default; opacity:.42;
+    background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.06));
+    color:var(--muted); box-shadow:none;
+  }
+
+  /* ================= overlays ================= */
+  .ov {
+    position:fixed; inset:0; z-index:40;
+    display:flex; align-items:center; justify-content:center;
+    padding:18px;
+    background:rgba(8,5,20,.82);
+    -webkit-backdrop-filter:blur(9px); backdrop-filter:blur(9px);
+    opacity:0; pointer-events:none;
+    transition:opacity .38s var(--ease);
+  }
+  .ov.show { opacity:1; pointer-events:auto; }
+  .sheet {
+    width:100%; max-width:420px;
+    max-height:calc(100% - 12px); overflow-y:auto;
+    padding:22px 20px 20px;
+    border-radius:24px;
+    background:linear-gradient(170deg, #2b1c50, #1a1136 58%, #150e2b);
+    border:1px solid rgba(243,198,126,.2);
+    box-shadow:0 26px 70px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.09);
+    transform:translateY(16px) scale(.97);
+    transition:transform .44s var(--ease);
+    text-align:center;
+  }
+  .ov.show .sheet { transform:none; }
+  .sheet .bigemo { font-size:44px; line-height:1; filter:drop-shadow(0 6px 16px rgba(255,150,70,.4)); }
+  .sheet h2 { margin-top:10px; font-size:22px; font-weight:800; color:var(--cream); letter-spacing:.01em; }
+  .sheet .sub { margin-top:4px; font-size:11px; color:var(--muted); letter-spacing:.08em; }
+
+  .explain {
+    margin-top:16px; text-align:left;
+    padding:14px 15px; border-radius:16px;
+    background:linear-gradient(140deg, rgba(255,183,101,.13), rgba(255,183,101,.035));
+    border:1px solid rgba(255,183,101,.24);
+  }
+  .explain h3 {
+    font-size:13px; font-weight:800; color:var(--gold);
+    margin-bottom:7px; display:flex; align-items:center; gap:6px;
+  }
+  .explain p { font-size:12.5px; line-height:1.68; color:#e8dcc9; }
+
+  .rules { margin-top:14px; text-align:left; }
+  .rules h3 { font-size:11px; font-weight:700; letter-spacing:.09em; color:var(--muted); text-transform:uppercase; margin-bottom:7px; }
+  .rules li { list-style:none; display:flex; gap:8px; font-size:12.5px; line-height:1.55; color:#ded2c2; margin-bottom:5px; }
+  .rules li b { flex:0 0 auto; color:var(--warm); font-weight:800; font-size:11px; padding-top:2px; }
+
+  .btnrow { display:flex; gap:9px; margin-top:18px; }
+  .pbtn {
+    flex:1 1 0;
+    padding:14px 10px; border-radius:15px;
+    font-size:15px; font-weight:800;
+    color:#3a1f04;
+    background:linear-gradient(180deg,#ffdca8,var(--warm) 55%,#f08c3c);
+    box-shadow:0 8px 22px rgba(255,140,60,.28), inset 0 1px 0 rgba(255,255,255,.5);
+    transition:transform .18s var(--ease);
+  }
+  .pbtn:active { transform:scale(.97); }
+  .sbtn {
+    flex:1 1 0;
+    padding:14px 10px; border-radius:15px;
+    font-size:15px; font-weight:700; color:var(--cream);
+    background:rgba(255,255,255,.07);
+    border:1px solid var(--line);
+    transition:transform .18s var(--ease), background .2s;
+  }
+  .sbtn:active { transform:scale(.97); }
+  .sbtn:hover { background:rgba(255,255,255,.12); }
+
+  .answerRow { display:flex; justify-content:center; gap:10px; margin-top:16px; flex-wrap:wrap; }
+  .ansCard {
+    width:78px; padding:10px 4px 8px; border-radius:14px;
+    background:linear-gradient(180deg, rgba(255,183,101,.2), rgba(255,183,101,.05));
+    border:1px solid rgba(243,198,126,.3);
+    animation:popIn .5s var(--ease) both;
+  }
+  .ansCard .e { font-size:28px; line-height:1.15; filter:drop-shadow(0 3px 8px rgba(0,0,0,.4)); }
+  .ansCard .n { font-size:10px; font-weight:700; color:var(--cream); margin-top:3px; }
+  .ansCard:nth-child(2) { animation-delay:.11s; }
+  .ansCard:nth-child(3) { animation-delay:.22s; }
+  @keyframes popIn { from { opacity:0; transform:translateY(10px) scale(.85); } to { opacity:1; transform:none; } }
+
+  #bowlSvg { width:158px; height:112px; margin:12px auto 0; display:block; }
+  .closing { margin-top:14px; font-size:12px; color:var(--muted); line-height:1.6; font-style:italic; }
+
+  /* wide screens */
+  @media (min-width:880px) {
+    #scene { height:min(46vh, 360px); }
+    #panel { padding-top:6px; }
+    .wrap {
+      max-width:840px;
+      display:grid; grid-template-columns:1fr 1fr; gap:0 14px;
+      align-items:start; align-content:start;
+    }
+    .statusbar { grid-column:1 / -1; grid-row:1; }
+    .cTray  { grid-column:1; grid-row:2 / span 2; }
+    .cHints { grid-column:2; grid-row:2; }
+    .cHist  { grid-column:2; grid-row:3; }
+    .titles h1 { font-size:25px; }
+    #tray { gap:8px; }
+    .chip .em { font-size:27px; }
+    .chip .nm { font-size:10px; }
+  }
+  @media (max-height:620px) {
+    #scene { height:clamp(150px, 26vh, 200px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration:.001ms !important; animation-iteration-count:1 !important;
+      transition-duration:.08s !important;
+    }
+  }
+</style>
 </head>
 <body>
-<h2>🍲 魔界の闇鍋パズル</h2>
-<p>残り<span id="time">30</span>秒 / スコア:<span id="score">0</span></p>
-<p id="msg" style="color:red; font-weight:bold;">素材を2つ選んで合成しろ！</p>
-<button onclick="pick('目玉')" style="padding:10px; font-size:16px;">👁️目玉</button>
-<button onclick="pick('毒草')" style="padding:10px; font-size:16px;">🌿毒草</button>
-<button onclick="pick('トカゲ')" style="padding:10px; font-size:16px;">🦎トカゲ</button>
-<br><br>
-<button onclick="mix()" style="padding:15px; font-size:20px; background:orange;">【鍋に入れて合成！】</button>
-<h3>📖 ヤバいアイテム図鑑</h3>
-<ul id="zukan"></ul>
+<div id="app">
+
+  <header>
+    <a class="hbtn" id="homeLink" href="../../index.html">← 홈</a>
+    <div class="titles">
+      <h1 id="mainTitle">야미나베</h1>
+      <p id="subTitle">闇鍋パズル · Yaminabe</p>
+    </div>
+    <div class="hgroup">
+      <button class="hbtn" id="infoBtn" aria-label="info">ⓘ</button>
+      <button class="hbtn" id="soundBtn" aria-label="sound">🔊</button>
+      <button class="hbtn" id="langBtn" aria-label="language">🇰🇷</button>
+    </div>
+  </header>
+
+  <div id="scene">
+    <div class="candle l"><div class="cflame"></div><div class="cbody"></div></div>
+    <div class="candle r"><div class="cflame"></div><div class="cbody"></div></div>
+
+    <div id="potWrap">
+      <svg id="potSvg" viewBox="0 0 320 220" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <defs>
+          <linearGradient id="gIron" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"  stop-color="#5b4a76"/>
+            <stop offset="34%" stop-color="#3a2f52"/>
+            <stop offset="100%" stop-color="#191327"/>
+          </linearGradient>
+          <linearGradient id="gLid" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"  stop-color="#6f5c8e"/>
+            <stop offset="46%" stop-color="#443761"/>
+            <stop offset="100%" stop-color="#241c38"/>
+          </linearGradient>
+          <radialGradient id="gBroth" cx="50%" cy="42%" r="62%">
+            <stop offset="0%"  stop-color="#ffcf8e"/>
+            <stop offset="52%" stop-color="#e0913f"/>
+            <stop offset="100%" stop-color="#a35c22"/>
+          </radialGradient>
+          <radialGradient id="gFire" cx="50%" cy="88%" r="62%">
+            <stop offset="0%"  stop-color="#fff2cc"/>
+            <stop offset="34%" stop-color="#ffb14a"/>
+            <stop offset="72%" stop-color="rgba(255,110,36,.62)"/>
+            <stop offset="100%" stop-color="rgba(255,80,20,0)"/>
+          </radialGradient>
+          <linearGradient id="gShine" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="rgba(255,220,170,0)"/>
+            <stop offset="42%"  stop-color="rgba(255,224,178,.34)"/>
+            <stop offset="100%" stop-color="rgba(255,220,170,0)"/>
+          </linearGradient>
+          <clipPath id="clipPot">
+            <ellipse cx="160" cy="96" rx="104" ry="25"/>
+          </clipPath>
+        </defs>
+
+        <ellipse cx="160" cy="196" rx="118" ry="15" fill="rgba(255,140,60,.16)"/>
+        <g id="fireG">
+          <ellipse cx="160" cy="182" rx="86" ry="26" fill="url(#gFire)" opacity=".72"/>
+          <path d="M132 190 q6-22 12-27 q1 12 7 16 q5-9 4-19 q13 14 11 30z" fill="#ffb14a" opacity=".82"/>
+          <path d="M172 191 q5-19 11-24 q1 11 6 14 q4-8 3-17 q12 13 10 27z" fill="#ffcf6c" opacity=".72"/>
+        </g>
+
+        <g id="potBody">
+          <path d="M56 96 h208 v22 q0 62 -104 62 q-104 0 -104 -62 z" fill="url(#gIron)"/>
+          <path d="M56 118 q0 62 104 62 q104 0 104 -62 v10 q0 62 -104 62 q-104 0 -104 -62z" fill="rgba(0,0,0,.28)"/>
+          <ellipse cx="160" cy="96" rx="104" ry="25" fill="#0f0b1c"/>
+          <path d="M56 96 h208 v9 q0 6 -104 6 q-104 0 -104 -6z" fill="url(#gShine)" opacity=".6"/>
+          <path d="M50 104 q-20 4 -20 18 q0 14 20 17" fill="none" stroke="#3d3157" stroke-width="7" stroke-linecap="round"/>
+          <path d="M270 104 q20 4 20 18 q0 14 -20 17" fill="none" stroke="#3d3157" stroke-width="7" stroke-linecap="round"/>
+          <ellipse cx="160" cy="146" rx="70" ry="16" fill="rgba(255,170,90,.07)"/>
+        </g>
+
+        <g id="brothG" opacity="0">
+          <g clip-path="url(#clipPot)">
+            <ellipse cx="160" cy="98" rx="102" ry="24" fill="url(#gBroth)"/>
+            <ellipse cx="160" cy="98" rx="102" ry="24" fill="none" stroke="rgba(255,236,200,.4)" stroke-width="2"/>
+            <ellipse cx="118" cy="92" rx="9" ry="3.4" fill="rgba(255,242,214,.34)"/>
+            <ellipse cx="202" cy="104" rx="12" ry="4" fill="rgba(255,242,214,.24)"/>
+          </g>
+          <text id="rv0" x="112" y="104" font-size="27" text-anchor="middle"></text>
+          <text id="rv1" x="160" y="98"  font-size="30" text-anchor="middle"></text>
+          <text id="rv2" x="208" y="105" font-size="27" text-anchor="middle"></text>
+        </g>
+
+        <g id="lidG">
+          <ellipse cx="160" cy="86" rx="112" ry="27" fill="url(#gLid)"/>
+          <path d="M48 86 q0-30 112-30 q112 0 112 30 z" fill="url(#gLid)"/>
+          <path d="M48 86 q0-30 112-30 q112 0 112 30 q0 6 -112 6 q-112 0 -112 -6z" fill="rgba(0,0,0,.16)"/>
+          <ellipse cx="160" cy="70" rx="86" ry="15" fill="none" stroke="rgba(255,222,180,.16)" stroke-width="2"/>
+          <ellipse cx="160" cy="56" rx="13" ry="6" fill="#5c4b7c"/>
+          <ellipse cx="160" cy="51" rx="10" ry="7" fill="#6d5a90"/>
+          <ellipse cx="158" cy="49" rx="5" ry="3" fill="rgba(255,225,185,.3)"/>
+        </g>
+      </svg>
+    </div>
+
+    <canvas id="fx"></canvas>
+    <div id="toast"></div>
+  </div>
+
+  <div id="panel">
+    <div class="wrap">
+      <div class="statusbar">
+        <span class="roundtxt" id="roundTxt">라운드 1 / 6</span>
+        <div class="dots" id="dots"></div>
+      </div>
+
+      <div class="col cHints">
+        <div class="card">
+          <h2><span>👃</span><span id="hintsTitle">모은 힌트</span></h2>
+          <div id="hintList"></div>
+        </div>
+      </div>
+
+      <div class="col cTray">
+        <div class="card">
+          <h2><span>🍲</span><span id="trayTitle">재료 고르기</span><span class="n" id="pickHint"></span></h2>
+          <div id="tray"></div>
+          <button id="ladleBtn" disabled>국자로 떠보기</button>
+        </div>
+      </div>
+
+      <div class="col cHist">
+        <div class="card">
+          <h2><span>🥄</span><span id="histTitle">떠본 기록</span></h2>
+          <div id="histList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- intro -->
+<div class="ov show" id="introOv">
+  <div class="sheet">
+    <div class="bigemo">🍲</div>
+    <h2 id="iTitle">야미나베</h2>
+    <div class="sub" id="iSub">闇鍋パズル · Yaminabe</div>
+
+    <div class="explain">
+      <h3><span>🏮</span><span id="iWhatT">야미나베(闇鍋)란?</span></h3>
+      <p id="iWhatB"></p>
+    </div>
+
+    <div class="rules">
+      <h3 id="iRulesT">놀이 방법</h3>
+      <ul>
+        <li><b>1</b><span id="iR1"></span></li>
+        <li><b>2</b><span id="iR2"></span></li>
+        <li><b>3</b><span id="iR3"></span></li>
+        <li><b>4</b><span id="iR4"></span></li>
+        <li><b>5</b><span id="iR5"></span></li>
+      </ul>
+    </div>
+
+    <div class="btnrow">
+      <button class="pbtn" id="startBtn">냄비에 불 켜기</button>
+    </div>
+  </div>
+</div>
+
+<!-- info -->
+<div class="ov" id="infoOv">
+  <div class="sheet">
+    <div class="bigemo">🏮</div>
+    <h2 id="fWhatT">야미나베(闇鍋)란?</h2>
+    <div class="explain" style="margin-top:14px">
+      <p id="fWhatB"></p>
+    </div>
+    <div class="rules">
+      <h3 id="fRulesT">놀이 방법</h3>
+      <ul>
+        <li><b>1</b><span id="fR1"></span></li>
+        <li><b>2</b><span id="fR2"></span></li>
+        <li><b>3</b><span id="fR3"></span></li>
+        <li><b>4</b><span id="fR4"></span></li>
+        <li><b>5</b><span id="fR5"></span></li>
+      </ul>
+    </div>
+    <div class="btnrow">
+      <button class="sbtn" id="infoCloseBtn">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- end -->
+<div class="ov" id="endOv">
+  <div class="sheet">
+    <div class="bigemo" id="endEmo">🍜</div>
+    <h2 id="endTitle"></h2>
+    <div class="sub" id="endMsg"></div>
+    <div class="answerRow" id="answerRow"></div>
+    <svg id="bowlSvg" viewBox="0 0 200 140" aria-hidden="true">
+      <defs>
+        <linearGradient id="gBowl" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#e9dcc6"/>
+          <stop offset="48%" stop-color="#c6ae8c"/>
+          <stop offset="100%" stop-color="#7d654b"/>
+        </linearGradient>
+        <radialGradient id="gSoup" cx="50%" cy="38%" r="60%">
+          <stop offset="0%" stop-color="#ffd79c"/>
+          <stop offset="58%" stop-color="#e0913f"/>
+          <stop offset="100%" stop-color="#a25c23"/>
+        </radialGradient>
+      </defs>
+      <g id="bowlSteam" opacity=".62">
+        <path d="M74 52 q-9-13 0-24 q9-11 1-22" fill="none" stroke="rgba(255,232,200,.55)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M100 46 q-9-14 0-26 q9-12 1-24" fill="none" stroke="rgba(255,232,200,.45)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M126 52 q-9-13 0-24 q9-11 1-22" fill="none" stroke="rgba(255,232,200,.55)" stroke-width="3" stroke-linecap="round"/>
+      </g>
+      <ellipse cx="100" cy="72" rx="72" ry="20" fill="#6b563f"/>
+      <ellipse cx="100" cy="71" rx="68" ry="17" fill="url(#gSoup)"/>
+      <text id="bw0" x="74" y="76" font-size="20" text-anchor="middle"></text>
+      <text id="bw1" x="100" y="71" font-size="22" text-anchor="middle"></text>
+      <text id="bw2" x="126" y="77" font-size="20" text-anchor="middle"></text>
+      <path d="M30 74 q4 46 70 46 q66 0 70 -46 q-16 16 -70 16 q-54 0 -70 -16z" fill="url(#gBowl)"/>
+      <path d="M30 74 q4 46 70 46 q66 0 70 -46" fill="none" stroke="rgba(255,240,215,.28)" stroke-width="2"/>
+    </svg>
+    <div class="closing" id="endClosing"></div>
+    <div class="btnrow">
+      <button class="pbtn" id="againBtn">한 그릇 더</button>
+      <button class="sbtn" id="endHomeBtn">홈으로</button>
+    </div>
+  </div>
+</div>
+
 <script>
-let timer = 30, score = 0, materials = [];
-let zukanList = new Set();
-let countdown = setInterval(() => {
-  if(timer > 0) {
-    timer--;
-    document.getElementById('time').innerText = timer;
-  }
-}, 1000);
+(function () {
+  'use strict';
 
-function pick(item) {
-  if(materials.length < 2) {
-    materials.push(item);
-    document.getElementById('msg').innerText = "選択中: " + materials.join(" ＋ ");
+  /* ===================== helpers ===================== */
+  function $(id) { return document.getElementById(id); }
+  function fmt(s, o) {
+    return String(s).replace(/\{(\w+)\}/g, function (m, k) {
+      return (o && o[k] !== undefined) ? o[k] : m;
+    });
   }
-}
+  function shuffle(a) {
+    var i, j, t;
+    for (i = a.length - 1; i > 0; i--) {
+      j = Math.floor(Math.random() * (i + 1));
+      t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  var RM = false;
+  try { RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
 
-function mix() {
-  if(timer <= 0) return alert('時間切れ！ブラウザを更新して再挑戦！');
-  if(materials.length < 2) return alert('素材を2つ選んでね！');
-  let recipe = materials.sort().join('＋');
-  let resultItem = '';
-  if(recipe === '毒草＋目玉') {
-    resultItem = '🟢普通の回復薬';
-    score += 10;
+  /* ===================== data ===================== */
+  var INGREDIENTS = [
+    { id:'mushroom', emo:'🍄',  taste:'mild',  texture:'chewy',  sound:'bubble',  name:{ ko:'버섯',     ja:'きのこ',       en:'Mushroom' } },
+    { id:'octopus',  emo:'🐙',  taste:'mild',  texture:'chewy',  sound:'slurp',   name:{ ko:'문어다리', ja:'たこ足',       en:'Octopus'  } },
+    { id:'mochi',    emo:'🍡',  taste:'sweet', texture:'chewy',  sound:'bubble',  name:{ ko:'떡',       ja:'おもち',       en:'Rice Cake'} },
+    { id:'potato',   emo:'🍠',  taste:'sweet', texture:'fluffy', sound:'crackle', name:{ ko:'고구마',   ja:'さつまいも',   en:'Sweet Potato'} },
+    { id:'tofu',     emo:'⬜',  taste:'mild',  texture:'fluffy', sound:'bubble',  name:{ ko:'두부',     ja:'とうふ',       en:'Tofu'     } },
+    { id:'ramen',    emo:'🍜',  taste:'spicy', texture:'chewy',  sound:'slurp',   name:{ ko:'라면사리', ja:'ラーメン',     en:'Ramen'    } },
+    { id:'corn',     emo:'🌽',  taste:'sweet', texture:'crisp',  sound:'crackle', name:{ ko:'옥수수',   ja:'とうもろこし', en:'Corn'     } },
+    { id:'dumpling', emo:'🥟',  taste:'mild',  texture:'fluffy', sound:'slurp',   name:{ ko:'만두',     ja:'餃子',         en:'Dumpling' } },
+    { id:'chili',    emo:'🌶️', taste:'spicy', texture:'crisp',  sound:'crackle', name:{ ko:'고추',     ja:'とうがらし',   en:'Chili'    } },
+    { id:'cabbage',  emo:'🥬',  taste:'mild',  texture:'crisp',  sound:'bubble',  name:{ ko:'배추',     ja:'白菜',         en:'Napa'     } }
+  ];
+  var AXES = [
+    { key:'taste',   icon:'👃', values:['spicy','sweet','mild'] },
+    { key:'texture', icon:'🥢', values:['chewy','fluffy','crisp'] },
+    { key:'sound',   icon:'👂', values:['bubble','crackle','slurp'] }
+  ];
+  var AXIS_OF = { spicy:'taste', sweet:'taste', mild:'taste',
+                  chewy:'texture', fluffy:'texture', crisp:'texture',
+                  bubble:'sound', crackle:'sound', slurp:'sound' };
+  var ICON_OF = { taste:'👃', texture:'🥢', sound:'👂' };
+
+  var MAX_ROUNDS = 6;
+  var SECRET_N = 3;
+
+  /* ===================== i18n ===================== */
+  var LANGS = ['ko', 'ja', 'en'];
+  var FLAGS = { ko:'🇰🇷', ja:'🇯🇵', en:'🇬🇧' };
+  var NAMES = { ko:'야미나베', ja:'闇鍋パズル', en:'Yaminabe' };
+
+  var I18N = {
+    ko: {
+      home:'홈', info:'설명', close:'닫기',
+      whatT:'야미나베(闇鍋)란?',
+      whatB:'일본의 놀이예요. 불 꺼진 깜깜한 방에서 각자 가져온 재료를 몰래 냄비에 넣고 끓여, 무엇이 걸릴지 모른 채 나눠 먹어요. 이 게임에서는 힌트를 모아 냄비 속 재료를 추리해요!',
+      rulesT:'놀이 방법',
+      r1:'뚜껑 덮인 냄비 속에 재료 3개가 숨어 있어요.',
+      r2:'재료 3개를 골라 국자로 떠보세요.',
+      r3:'“몇 개가 냄비에 있는지”와 감각 힌트 하나를 알려드려요. 순서는 상관없어요, 개수만!',
+      r4:'6번 안에 3개를 다 맞히면 뚜껑이 활짝 열려요.',
+      r5:'못 맞혀도 괜찮아요. 마지막엔 꼭 열어 드릴게요.',
+      start:'냄비에 불 켜기',
+      trayTitle:'재료 고르기',
+      hintsTitle:'모은 힌트',
+      histTitle:'떠본 기록',
+      round:'라운드 {r} / {m}',
+      lastRound:'마지막 한 번!',
+      pickMore:'{n}개 더',
+      pickReady:'준비 완료',
+      ladle:'국자로 떠보기',
+      noHint:'아직 힌트가 없어요. 뚜껑을 살짝 들어볼까요?',
+      noHist:'아직 떠본 적이 없어요.',
+      firstSniff:'뚜껑 틈으로 첫 김이 새어 나와요…',
+      resHit:'{n}개가 냄비에 있어요!',
+      resZero:'하나도 안 걸렸어요…',
+      resAll:'세 개 다 맞았어요!',
+      winTitle:'뚜껑이 열렸어요!',
+      winMsg:'{n}번 만에 냄비 속을 알아맞혔어요',
+      loseTitle:'아깝다! 정답은…',
+      loseMsg:'그래도 냄비는 열어 드릴게요',
+      bowlT:'완성된 야미나베',
+      closing:'오늘은 여기까지. 따뜻하게 한 그릇, 잘 먹었습니다.',
+      again:'한 그릇 더', homeBtn:'홈으로',
+      soundOn:'소리 켜짐', soundOff:'소리 꺼짐',
+      countTpl:'{a} 재료가 {n}개 들어 있어요.',
+      adj:{ spicy:'매콤한', sweet:'달큰한', mild:'담백한', chewy:'쫄깃한', fluffy:'포슬한',
+            crisp:'아삭한', bubble:'보글거리는', crackle:'타닥이는', slurp:'후루룩거리는' },
+      on:{
+        spicy:'매콤한 냄새가 훅 올라와요.',
+        sweet:'달큰한 김이 모락모락 올라와요.',
+        mild:'담백하고 맑은 향이 나요.',
+        chewy:'국자에 쫄깃한 게 걸리네요.',
+        fluffy:'포슬포슬 부서지는 게 만져져요.',
+        crisp:'아삭한 게 사각, 하고 씹혀요.',
+        bubble:'보글보글 소리가 나요.',
+        crackle:'타닥타닥 소리가 섞여 있어요.',
+        slurp:'후루룩, 미끄러지는 소리가 나요.'
+      },
+      off:{
+        spicy:'매콤한 기운은 전혀 없어요.',
+        sweet:'달큰한 냄새는 안 나요.',
+        mild:'담백한 향은 느껴지지 않아요.',
+        chewy:'쫄깃한 건 하나도 안 걸려요.',
+        fluffy:'포슬한 건 없는 것 같아요.',
+        crisp:'아삭한 건 안 잡혀요.',
+        bubble:'보글거리는 소리는 안 들려요.',
+        crackle:'타닥이는 소리는 없어요.',
+        slurp:'후루룩거리는 건 없네요.'
+      }
+    },
+    ja: {
+      home:'ホーム', info:'説明', close:'閉じる',
+      whatT:'闇鍋（やみなべ）とは？',
+      whatB:'日本の遊びです。灯りを消した真っ暗な部屋で、それぞれが持ち寄った具材をこっそり鍋に入れて煮込み、何が当たるか分からないまま分け合って食べます。このゲームでは、ヒントを集めて鍋の中の具材を推理します！',
+      rulesT:'遊びかた',
+      r1:'ふたをした鍋の中に、具材が3つ隠れています。',
+      r2:'具材を3つ選んで、おたまですくってみましょう。',
+      r3:'「何個が鍋に入っているか」と、感覚のヒントを1つお知らせします。順番は関係なく、個数だけ！',
+      r4:'6回以内に3つとも当てられたら、ふたが開きます。',
+      r5:'当てられなくても大丈夫。最後には必ず開けてあげます。',
+      start:'鍋に火をつける',
+      trayTitle:'具材をえらぶ',
+      hintsTitle:'集めたヒント',
+      histTitle:'すくった記録',
+      round:'ラウンド {r} / {m}',
+      lastRound:'ラストチャンス！',
+      pickMore:'あと{n}つ',
+      pickReady:'準備OK',
+      ladle:'おたまですくう',
+      noHint:'まだヒントがありません。ふたを少し持ち上げてみましょう。',
+      noHist:'まだすくっていません。',
+      firstSniff:'ふたのすき間から、最初の湯気がもれています…',
+      resHit:'{n}個が鍋に入っています！',
+      resZero:'ひとつも当たりませんでした…',
+      resAll:'3つとも当たりました！',
+      winTitle:'ふたが開きました！',
+      winMsg:'{n}回で鍋の中を当てました',
+      loseTitle:'おしい！正解は…',
+      loseMsg:'それでも鍋は開けてあげます',
+      bowlT:'できあがりの闇鍋',
+      closing:'今日はここまで。あたたかい一杯、ごちそうさまでした。',
+      again:'もう一杯', homeBtn:'ホームへ',
+      soundOn:'音オン', soundOff:'音オフ',
+      countTpl:'{a}具材が{n}個入っています。',
+      adj:{ spicy:'ピリ辛の', sweet:'甘い', mild:'あっさりした', chewy:'もちもちの', fluffy:'ほくほくの',
+            crisp:'シャキシャキの', bubble:'ぐつぐつ鳴る', crackle:'パチパチ鳴る', slurp:'つるっとした' },
+      on:{
+        spicy:'ピリ辛の匂いがふわっと立ちのぼります。',
+        sweet:'甘い湯気がゆらゆら上がっています。',
+        mild:'あっさりした澄んだ香りがします。',
+        chewy:'おたまにもちもちしたものが当たります。',
+        fluffy:'ほくほくと崩れるものがあります。',
+        crisp:'シャキッとした歯ざわりがあります。',
+        bubble:'ぐつぐつと音が鳴っています。',
+        crackle:'パチパチという音が混じっています。',
+        slurp:'つるん、と滑る音がします。'
+      },
+      off:{
+        spicy:'辛い気配はまったくありません。',
+        sweet:'甘い匂いはしません。',
+        mild:'あっさりした香りは感じられません。',
+        chewy:'もちもちしたものは当たりません。',
+        fluffy:'ほくほくしたものは無さそうです。',
+        crisp:'シャキシャキしたものは無いようです。',
+        bubble:'ぐつぐつ鳴る音は聞こえません。',
+        crackle:'パチパチという音はありません。',
+        slurp:'つるっとしたものは無いですね。'
+      }
+    },
+    en: {
+      home:'Home', info:'About', close:'Close',
+      whatT:'What is Yaminabe (闇鍋)?',
+      whatB:"It's a Japanese party game. In a pitch-dark room with the lights out, everyone secretly drops an ingredient they brought into one pot, boils it, and shares it without knowing what they'll fish out. In this game, you gather hints to deduce what is hiding in the pot!",
+      rulesT:'How to play',
+      r1:'Three ingredients are hidden under the lid.',
+      r2:'Pick three ingredients and scoop with the ladle.',
+      r3:'You learn how many of them are in the pot, plus one sensory hint. Order never matters — only the count!',
+      r4:'Get all three right within 6 scoops and the lid opens.',
+      r5:'No worries if you miss. The lid always opens in the end.',
+      start:'Light the stove',
+      trayTitle:'Pick ingredients',
+      hintsTitle:'Hints gathered',
+      histTitle:'Scoop log',
+      round:'Round {r} / {m}',
+      lastRound:'Last chance!',
+      pickMore:'{n} more',
+      pickReady:'Ready',
+      ladle:'Scoop with the ladle',
+      noHint:'No hints yet. Shall we lift the lid a little?',
+      noHist:'No scoops yet.',
+      firstSniff:'The first wisp of steam escapes the lid…',
+      resHit:'{n} of them are in the pot!',
+      resZero:'Not a single one…',
+      resAll:'All three, exactly right!',
+      winTitle:'The lid is open!',
+      winMsg:'You read the pot in {n} scoops',
+      loseTitle:'So close! The answer was…',
+      loseMsg:'The lid opens for you anyway',
+      bowlT:'Yaminabe, served',
+      closing:"That's all for today. One warm bowl — thank you for the meal.",
+      again:'One more bowl', homeBtn:'Home',
+      soundOn:'Sound on', soundOff:'Sound off',
+      countTpl:'There are {n} {a} ingredients in the pot.',
+      adj:{ spicy:'spicy', sweet:'sweet', mild:'mild', chewy:'chewy', fluffy:'fluffy',
+            crisp:'crisp', bubble:'bubbling', crackle:'crackling', slurp:'slippery' },
+      on:{
+        spicy:'A sharp, spicy scent drifts up.',
+        sweet:'Sweet steam curls out from under the lid.',
+        mild:'There is a clean, mild aroma.',
+        chewy:'Something chewy catches on the ladle.',
+        fluffy:'Something soft and fluffy crumbles inside.',
+        crisp:'You feel a crisp, snappy bite.',
+        bubble:'You hear a gentle bubbling.',
+        crackle:'A faint crackling is mixed in.',
+        slurp:'Something slips past with a slurp.'
+      },
+      off:{
+        spicy:'Not a trace of spice.',
+        sweet:'No sweet scent at all.',
+        mild:'No clean, mild aroma here.',
+        chewy:'Nothing chewy catches at all.',
+        fluffy:'Nothing fluffy in there.',
+        crisp:'Nothing crisp turns up.',
+        bubble:'No bubbling to be heard.',
+        crackle:'No crackling at all.',
+        slurp:'Nothing slippery in the pot.'
+      }
+    }
+  };
+
+  var lang = 'ko';
+  function T() { return I18N[lang]; }
+  function detectLang() {
+    var s = null;
+    try { s = localStorage.getItem('in9-lang'); } catch (e) {}
+    if (s && LANGS.indexOf(s) >= 0) return s;
+    var n = (navigator.language || 'ko').toLowerCase();
+    if (n.indexOf('ja') === 0) return 'ja';
+    if (n.indexOf('en') === 0) return 'en';
+    return 'ko';
   }
-  else if(recipe === 'トカゲ＋目玉') {
-    resultItem = '🏃‍♂️走る目玉（図鑑登録！）';
-    zukanList.add('🏃‍♂️走る目玉');
+
+  /* ===================== audio ===================== */
+  var AC = null, muted = false, ambTimer = null;
+  function ac() {
+    if (!AC) {
+      try {
+        var C = window.AudioContext || window.webkitAudioContext;
+        if (!C) return null;
+        AC = new C();
+      } catch (e) { return null; }
+    }
+    return AC;
   }
-  else {
-    resultItem = '🗑️謎のドロドロ（図鑑登録！）';
-    zukanList.add('🗑️謎のドロドロ');
+  function unlock() {
+    var c = ac();
+    if (c && c.state === 'suspended') { c.resume()['catch'](function () {}); }
   }
-  document.getElementById('msg').innerText = "結果：" + resultItem + " ができた！";
-  document.getElementById('score').innerText = score;
-  document.getElementById('zukan').innerHTML = Array.from(zukanList).map(i => "<li>" + i + "</li>").join('');
-  materials = [];
-}
+  function tone(freq, freq2, dur, vol, delay, type) {
+    if (muted) return;
+    var c = ac(); if (!c) return;
+    var t0 = c.currentTime + (delay || 0);
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t0);
+    if (freq2 && freq2 !== freq) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq2), t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + Math.min(0.03, dur * 0.3));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function noise(dur, vol, delay, hz, q) {
+    if (muted) return;
+    var c = ac(); if (!c) return;
+    var t0 = c.currentTime + (delay || 0);
+    var len = Math.max(1, Math.floor(c.sampleRate * dur));
+    var buf = c.createBuffer(1, len, c.sampleRate);
+    var d = buf.getChannelData(0), i;
+    for (i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    var src = c.createBufferSource(); src.buffer = buf;
+    var f = c.createBiquadFilter();
+    f.type = 'bandpass'; f.frequency.value = hz || 900; f.Q.value = q || 1.1;
+    var g = c.createGain();
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(f); f.connect(g); g.connect(c.destination);
+    src.start(t0); src.stop(t0 + dur + 0.02);
+  }
+  function sndTap()    { tone(520, 640, 0.07, 0.05, 0, 'sine'); }
+  function sndUntap()  { tone(380, 300, 0.07, 0.04, 0, 'sine'); }
+  function sndLadle()  { noise(0.26, 0.055, 0, 700, 0.9); tone(200, 320, 0.16, 0.05, 0.02, 'sine'); }
+  function sndBubble() { tone(300 + Math.random() * 200, 520, 0.1, 0.028, 0, 'sine'); }
+  function sndResult(n) {
+    if (n === 0) { tone(150, 108, 0.3, 0.06, 0, 'sine'); return; }
+    if (n === 3) { tone(523, 523, 0.2, 0.05, 0, 'triangle'); tone(659, 659, 0.22, 0.045, 0.09, 'triangle'); tone(784, 784, 0.4, 0.05, 0.18, 'triangle'); return; }
+    tone(392, 480, 0.14, 0.05, 0, 'triangle');
+    if (n === 2) tone(523, 600, 0.16, 0.045, 0.1, 'triangle');
+  }
+  function sndLid() {
+    noise(0.7, 0.075, 0, 1500, 0.6);
+    tone(170, 620, 0.5, 0.055, 0, 'sine');
+    tone(300, 900, 0.45, 0.03, 0.05, 'triangle');
+  }
+  function sndFinale(win) {
+    var base = win ? [523, 659, 784, 1047] : [392, 494, 587, 698];
+    var i;
+    for (i = 0; i < base.length; i++) tone(base[i], base[i], 0.55, 0.045, 0.1 + i * 0.13, 'sine');
+  }
+  function startAmbient() {
+    stopAmbient();
+    ambTimer = setInterval(function () {
+      if (!muted && state === 'play' && Math.random() < 0.55) sndBubble();
+    }, 2600);
+  }
+  function stopAmbient() { if (ambTimer) { clearInterval(ambTimer); ambTimer = null; } }
+
+  /* ===================== canvas fx ===================== */
+  var cv = $('fx'), ctx = cv.getContext('2d');
+  var CW = 0, CH = 0, parts = [], rafId = 0, lastT = 0, spawnAcc = 0;
+
+  function resizeCanvas() {
+    var r = $('scene').getBoundingClientRect();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    CW = r.width; CH = r.height;
+    cv.width = Math.max(1, Math.round(CW * dpr));
+    cv.height = Math.max(1, Math.round(CH * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  /* map potSvg viewBox coords -> canvas px (preserveAspectRatio meet) */
+  function svgPt(x, y) {
+    var s = Math.min(CW / 320, CH / 220);
+    var ox = (CW - 320 * s) / 2, oy = (CH - 220 * s) / 2;
+    return { x: ox + x * s, y: oy + y * s, s: s };
+  }
+
+  function addSteam(px, py, vx, vy, r, life, warm) {
+    parts.push({ t:'s', x:px, y:py, vx:vx, vy:vy, r:r, r0:r, life:life, age:0, warm:warm ? 1 : 0 });
+  }
+  function addEmber(px, py) {
+    parts.push({ t:'e', x:px, y:py, vx:(Math.random() - 0.5) * 12, vy:-14 - Math.random() * 22,
+                 r:1 + Math.random() * 1.4, life:1.4 + Math.random() * 1.2, age:0 });
+  }
+
+  function emitAmbient(dt) {
+    spawnAcc += dt;
+    var rate = RM ? 0.42 : 0.13;
+    while (spawnAcc > rate) {
+      spawnAcc -= rate;
+      var p = svgPt(160, lidOpen ? 92 : 62);
+      var spread = 66 * p.s;
+      addSteam(p.x + (Math.random() - 0.5) * spread, p.y + (Math.random() - 0.5) * 8 * p.s,
+               (Math.random() - 0.5) * 9, -16 - Math.random() * 16,
+               (8 + Math.random() * 9) * p.s, 2.4 + Math.random() * 1.4, lidOpen);
+      if (Math.random() < 0.35) {
+        var f = svgPt(130 + Math.random() * 60, 180);
+        addEmber(f.x, f.y);
+      }
+    }
+  }
+
+  function burst() {
+    var p = svgPt(160, 74), i;
+    var n = RM ? 16 : 62;
+    for (i = 0; i < n; i++) {
+      var a = Math.random() * Math.PI * 2;
+      var sp = 24 + Math.random() * 88;
+      addSteam(p.x + (Math.random() - 0.5) * 40 * p.s, p.y + (Math.random() - 0.5) * 14 * p.s,
+               Math.cos(a) * sp * 0.85, Math.sin(a) * sp * 0.4 - 34 - Math.random() * 30,
+               (10 + Math.random() * 16) * p.s, 1.8 + Math.random() * 1.6, 1);
+    }
+    for (i = 0; i < (RM ? 6 : 22); i++) {
+      var f2 = svgPt(120 + Math.random() * 80, 170);
+      addEmber(f2.x, f2.y);
+    }
+  }
+
+  function tick(ts) {
+    rafId = requestAnimationFrame(tick);
+    if (!lastT) lastT = ts;
+    var dt = Math.min(0.05, (ts - lastT) / 1000);
+    lastT = ts;
+
+    if (running) emitAmbient(dt);
+
+    ctx.clearRect(0, 0, CW, CH);
+    ctx.globalCompositeOperation = 'lighter';
+
+    var i, p, k, a, g;
+    for (i = parts.length - 1; i >= 0; i--) {
+      p = parts[i];
+      p.age += dt;
+      if (p.age >= p.life) { parts.splice(i, 1); continue; }
+      k = p.age / p.life;
+
+      if (p.t === 's') {
+        p.x += (p.vx + Math.sin((p.age + p.r) * 1.7) * 9) * dt;
+        p.y += p.vy * dt;
+        p.vy *= (1 - 0.35 * dt);
+        p.r = p.r0 * (1 + k * 1.9);
+        a = Math.sin(Math.PI * Math.min(1, k * 1.15)) * (p.warm ? 0.3 : 0.19);
+        if (a <= 0.003) continue;
+        g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+        if (p.warm) {
+          g.addColorStop(0, 'rgba(255,224,180,' + a.toFixed(3) + ')');
+          g.addColorStop(0.55, 'rgba(255,190,140,' + (a * 0.4).toFixed(3) + ')');
+        } else {
+          g.addColorStop(0, 'rgba(226,214,240,' + a.toFixed(3) + ')');
+          g.addColorStop(0.55, 'rgba(190,175,220,' + (a * 0.4).toFixed(3) + ')');
+        }
+        g.addColorStop(1, 'rgba(180,165,215,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+      } else {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 5 * dt;
+        a = (1 - k) * 0.75;
+        g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 4);
+        g.addColorStop(0, 'rgba(255,205,120,' + a.toFixed(3) + ')');
+        g.addColorStop(1, 'rgba(255,140,50,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 4, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /* ===================== game state ===================== */
+  var state = 'intro';      // intro | play | reveal | end
+  var running = false;
+  var lidOpen = false;
+  var secret = [];          // ids
+  var round = 1;
+  var picked = [];          // ids
+  var hintQueue = [];
+  var shownHints = [];
+  var history = [];
+  var busy = false;
+  var lastWin = false;
+
+  function buildHintQueue() {
+    var counts = {}, k, v, i, ing;
+    for (i = 0; i < AXES.length; i++) {
+      for (k = 0; k < AXES[i].values.length; k++) counts[AXES[i].values[k]] = 0;
+    }
+    for (i = 0; i < secret.length; i++) {
+      ing = byId(secret[i]);
+      counts[ing.taste]++; counts[ing.texture]++; counts[ing.sound]++;
+    }
+    var soft = [], hard = [];
+    for (v in counts) {
+      if (!Object.prototype.hasOwnProperty.call(counts, v)) continue;
+      if (counts[v] > 0) soft.push({ kind:'on', v:v });
+      else soft.push({ kind:'off', v:v });
+      if (counts[v] >= 2) hard.push({ kind:'count', v:v, n:counts[v] });
+    }
+    shuffle(soft); shuffle(hard);
+    var q = soft.slice(0);
+    // weave the sharper count hints into the middle of the run
+    for (i = 0; i < hard.length; i++) {
+      var at = Math.min(q.length, 2 + i * 2);
+      q.splice(at, 0, hard[i]);
+    }
+    return q;
+  }
+
+  function hintText(h) {
+    var t = T();
+    if (h.kind === 'count') return fmt(t.countTpl, { a:t.adj[h.v], n:h.n });
+    return (h.kind === 'on' ? t.on : t.off)[h.v];
+  }
+
+  function byId(id) {
+    var i;
+    for (i = 0; i < INGREDIENTS.length; i++) if (INGREDIENTS[i].id === id) return INGREDIENTS[i];
+    return null;
+  }
+
+  /* ===================== rendering ===================== */
+  var trayEl = $('tray'), hintListEl = $('hintList'), histListEl = $('histList');
+  var ladleBtn = $('ladleBtn'), toastEl = $('toast'), dotsEl = $('dots');
+  var chipEls = {};
+
+  function buildTray() {
+    trayEl.innerHTML = '';
+    chipEls = {};
+    var i, ing, b;
+    for (i = 0; i < INGREDIENTS.length; i++) {
+      ing = INGREDIENTS[i];
+      b = document.createElement('button');
+      b.className = 'chip';
+      b.type = 'button';
+      b.setAttribute('data-id', ing.id);
+      b.innerHTML = '<span class="em">' + ing.emo + '</span><span class="nm"></span>';
+      (function (id) {
+        b.addEventListener('click', function () { togglePick(id); });
+      })(ing.id);
+      trayEl.appendChild(b);
+      chipEls[ing.id] = b;
+    }
+    renderTrayNames();
+  }
+  function renderTrayNames() {
+    var i, ing;
+    for (i = 0; i < INGREDIENTS.length; i++) {
+      ing = INGREDIENTS[i];
+      var el = chipEls[ing.id];
+      if (el) {
+        el.querySelector('.nm').textContent = ing.name[lang];
+        el.setAttribute('aria-label', ing.name[lang]);
+      }
+    }
+  }
+
+  function togglePick(id) {
+    if (busy || state !== 'play') return;
+    unlock();
+    var ix = picked.indexOf(id);
+    if (ix >= 0) { picked.splice(ix, 1); sndUntap(); }
+    else {
+      if (picked.length >= SECRET_N) return;
+      picked.push(id); sndTap();
+    }
+    renderPick();
+  }
+
+  function renderPick() {
+    var i, id, on;
+    var full = picked.length >= SECRET_N;
+    for (i = 0; i < INGREDIENTS.length; i++) {
+      id = INGREDIENTS[i].id;
+      on = picked.indexOf(id) >= 0;
+      var el = chipEls[id];
+      el.className = 'chip' + (on ? ' on' : (full ? ' dim' : ''));
+    }
+    ladleBtn.disabled = !full || busy;
+    var t = T();
+    $('pickHint').textContent = full ? t.pickReady : fmt(t.pickMore, { n: SECRET_N - picked.length });
+  }
+
+  function renderDots() {
+    dotsEl.innerHTML = '';
+    var i, d;
+    for (i = 1; i <= MAX_ROUNDS; i++) {
+      d = document.createElement('div');
+      d.className = 'dot' + (i < round ? ' used' : (i === round && state === 'play' ? ' now' : ''));
+      dotsEl.appendChild(d);
+    }
+    var t = T();
+    $('roundTxt').textContent = (state === 'play' && round === MAX_ROUNDS)
+      ? t.lastRound : fmt(t.round, { r: Math.min(round, MAX_ROUNDS), m: MAX_ROUNDS });
+  }
+
+  function renderHints() {
+    hintListEl.innerHTML = '';
+    var t = T(), i;
+    if (!shownHints.length) {
+      var e = document.createElement('div');
+      e.className = 'empty'; e.textContent = t.noHint;
+      hintListEl.appendChild(e);
+      return;
+    }
+    for (i = 0; i < shownHints.length; i++) {
+      var h = shownHints[i];
+      var row = document.createElement('div');
+      row.className = 'hint' + (i === shownHints.length - 1 ? ' fresh' : '');
+      row.style.animationDelay = (RM ? 0 : Math.min(i, 5) * 0.03) + 's';
+      var ic = h.kind === 'first' ? '🍲' : ICON_OF[AXIS_OF[h.v]];
+      row.innerHTML = '<span class="hi"></span><span class="tx"></span>';
+      row.querySelector('.hi').textContent = ic;
+      row.querySelector('.tx').textContent = (h.kind === 'first') ? t.firstSniff : hintText(h);
+      hintListEl.appendChild(row);
+    }
+  }
+
+  function renderHistory() {
+    histListEl.innerHTML = '';
+    var t = T(), i;
+    if (!history.length) {
+      var e = document.createElement('div');
+      e.className = 'empty'; e.textContent = t.noHist;
+      histListEl.appendChild(e);
+      return;
+    }
+    for (i = 0; i < history.length; i++) {
+      var h = history[i];
+      var row = document.createElement('div');
+      row.className = 'hrow';
+      var emo = '', j;
+      for (j = 0; j < h.ids.length; j++) emo += byId(h.ids[j]).emo;
+      row.innerHTML = '<span class="rn"></span><span class="items"></span><span class="badge"></span>';
+      row.querySelector('.rn').textContent = h.round;
+      row.querySelector('.items').textContent = emo;
+      var bd = row.querySelector('.badge');
+      bd.textContent = h.hit + ' / 3';
+      bd.className = 'badge b' + h.hit;
+      histListEl.appendChild(row);
+    }
+  }
+
+  function showToast(text, cls) {
+    toastEl.textContent = text;
+    toastEl.className = 'show' + (cls ? ' ' + cls : '');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function () { toastEl.className = ''; }, 2100);
+  }
+
+  /* ===================== flow ===================== */
+  function newGame() {
+    var pool = INGREDIENTS.map(function (x) { return x.id; });
+    shuffle(pool);
+    secret = pool.slice(0, SECRET_N);
+    round = 1;
+    picked = [];
+    history = [];
+    shownHints = [{ kind:'first' }];
+    hintQueue = buildHintQueue();
+    busy = false;
+    lidOpen = false;
+    state = 'play';
+    running = true;
+
+    $('lidG').style.transition = 'none';
+    $('lidG').style.transform = 'none';
+    $('lidG').style.opacity = '1';
+    $('brothG').style.transition = 'none';
+    $('brothG').setAttribute('opacity', '0');
+    setTimeout(function () {
+      $('lidG').style.transition = '';
+      $('brothG').style.transition = '';
+    }, 30);
+    setRevealEmoji('');
+
+    renderPick(); renderDots(); renderHints(); renderHistory();
+    startAmbient();
+  }
+
+  function setRevealEmoji(mode) {
+    var i;
+    for (i = 0; i < 3; i++) {
+      var v = (mode === 'show' && secret[i]) ? byId(secret[i]).emo : '';
+      $('rv' + i).textContent = v;
+      $('bw' + i).textContent = v;
+    }
+  }
+
+  function doLadle() {
+    if (busy || state !== 'play' || picked.length !== SECRET_N) return;
+    unlock();
+    busy = true;
+    ladleBtn.disabled = true;
+    sndLadle();
+
+    var ids = picked.slice(0);
+    var hit = 0, i;
+    for (i = 0; i < ids.length; i++) if (secret.indexOf(ids[i]) >= 0) hit++;
+
+    history.unshift({ round: round, ids: ids, hit: hit });
+    renderHistory();
+
+    setTimeout(function () {
+      var t = T();
+      sndResult(hit);
+      if (hit === SECRET_N) {
+        showToast(t.resAll, 'all');
+        setTimeout(function () { finish(true); }, 900);
+        return;
+      }
+      showToast(hit === 0 ? t.resZero : fmt(t.resHit, { n: hit }), hit === 0 ? 'zero' : '');
+
+      if (round >= MAX_ROUNDS) {
+        setTimeout(function () { finish(false); }, 1500);
+        return;
+      }
+      // next round: reveal a fresh hint
+      if (hintQueue.length) shownHints.push(hintQueue.shift());
+      round++;
+      picked = [];
+      busy = false;
+      renderHints(); renderDots(); renderPick();
+    }, 620);
+  }
+
+  function finish(win) {
+    state = 'reveal';
+    busy = true;
+    stopAmbient();
+    renderDots();
+
+    // reveal remaining hints so the player sees the full picture
+    while (hintQueue.length && shownHints.length < 9) shownHints.push(hintQueue.shift());
+    renderHints();
+
+    setRevealEmoji('show');
+    sndLid();
+    lidOpen = true;
+
+    var lid = $('lidG');
+    lid.style.transition = RM ? 'opacity .2s linear'
+      : 'transform 1s cubic-bezier(.3,-0.2,.25,1), opacity .8s ease .35s';
+    lid.style.transform = 'translate(46px,-84px) rotate(-16deg)';
+    lid.style.opacity = '0';
+
+    setTimeout(function () { burst(); }, RM ? 0 : 190);
+
+    var broth = $('brothG');
+    broth.style.transition = 'opacity .8s ease';
+    setTimeout(function () { broth.setAttribute('opacity', '1'); }, RM ? 0 : 260);
+
+    setTimeout(function () {
+      showEnd(win);
+    }, RM ? 500 : 1700);
+  }
+
+  function showEnd(win) {
+    state = 'end';
+    running = false;
+    lastWin = !!win;
+    var t = T();
+    $('endEmo').textContent = win ? '🍲' : '🥢';
+    $('endTitle').textContent = win ? t.winTitle : t.loseTitle;
+    $('endMsg').textContent = win ? fmt(t.winMsg, { n: round }) : t.loseMsg;
+    $('endClosing').textContent = t.closing;
+    $('againBtn').textContent = t.again;
+    $('endHomeBtn').textContent = t.homeBtn;
+
+    var row = $('answerRow');
+    row.innerHTML = '';
+    var i;
+    for (i = 0; i < secret.length; i++) {
+      var ing = byId(secret[i]);
+      var c = document.createElement('div');
+      c.className = 'ansCard';
+      c.innerHTML = '<div class="e"></div><div class="n"></div>';
+      c.querySelector('.e').textContent = ing.emo;
+      c.querySelector('.n').textContent = ing.name[lang];
+      row.appendChild(c);
+    }
+    setRevealEmoji('show');
+    $('endOv').classList.add('show');
+    sndFinale(win);
+  }
+
+  /* ===================== i18n apply ===================== */
+  function applyI18n() {
+    var t = T();
+    document.documentElement.lang = lang;
+    $('homeLink').textContent = '← ' + t.home;
+    $('langBtn').textContent = FLAGS[lang];
+    $('mainTitle').textContent = NAMES[lang];
+    var others = LANGS.filter(function (l) { return l !== lang; }).map(function (l) { return NAMES[l]; });
+    $('subTitle').textContent = others.join(' · ');
+    $('soundBtn').setAttribute('aria-label', muted ? t.soundOff : t.soundOn);
+    $('infoBtn').setAttribute('aria-label', t.info);
+
+    $('trayTitle').textContent = t.trayTitle;
+    $('hintsTitle').textContent = t.hintsTitle;
+    $('histTitle').textContent = t.histTitle;
+    ladleBtn.textContent = t.ladle;
+
+    $('iTitle').textContent = NAMES[lang];
+    $('iSub').textContent = others.join(' · ');
+    $('iWhatT').textContent = t.whatT;  $('iWhatB').textContent = t.whatB;
+    $('iRulesT').textContent = t.rulesT;
+    $('fWhatT').textContent = t.whatT;  $('fWhatB').textContent = t.whatB;
+    $('fRulesT').textContent = t.rulesT;
+    var i;
+    for (i = 1; i <= 5; i++) {
+      $('iR' + i).textContent = t['r' + i];
+      $('fR' + i).textContent = t['r' + i];
+    }
+    $('startBtn').textContent = t.start;
+    $('infoCloseBtn').textContent = t.close;
+    $('againBtn').textContent = t.again;
+    $('endHomeBtn').textContent = t.homeBtn;
+
+    renderTrayNames();
+    renderPick();
+    renderDots();
+    renderHints();
+    renderHistory();
+
+    if (state === 'end') {
+      $('endTitle').textContent = lastWin ? t.winTitle : t.loseTitle;
+      $('endMsg').textContent = lastWin ? fmt(t.winMsg, { n: round }) : t.loseMsg;
+      $('endClosing').textContent = t.closing;
+      var cards = $('answerRow').children;
+      for (i = 0; i < cards.length && i < secret.length; i++) {
+        cards[i].querySelector('.n').textContent = byId(secret[i]).name[lang];
+      }
+    }
+  }
+
+  /* ===================== wiring ===================== */
+  $('langBtn').addEventListener('click', function () {
+    lang = LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length];
+    try { localStorage.setItem('in9-lang', lang); } catch (e) {}
+    applyI18n();
+    unlock(); sndTap();
+  });
+
+  $('soundBtn').addEventListener('click', function () {
+    muted = !muted;
+    $('soundBtn').textContent = muted ? '🔇' : '🔊';
+    $('soundBtn').setAttribute('aria-label', muted ? T().soundOff : T().soundOn);
+    if (!muted) { unlock(); sndTap(); }
+  });
+
+  $('infoBtn').addEventListener('click', function () {
+    unlock(); sndTap();
+    $('infoOv').classList.add('show');
+  });
+  $('infoCloseBtn').addEventListener('click', function () {
+    $('infoOv').classList.remove('show');
+    sndUntap();
+  });
+  $('infoOv').addEventListener('click', function (e) {
+    if (e.target === $('infoOv')) $('infoOv').classList.remove('show');
+  });
+
+  $('startBtn').addEventListener('click', function () {
+    unlock(); sndTap();
+    $('introOv').classList.remove('show');
+    newGame();
+  });
+
+  ladleBtn.addEventListener('click', doLadle);
+
+  $('againBtn').addEventListener('click', function () {
+    unlock(); sndTap();
+    $('endOv').classList.remove('show');
+    newGame();
+  });
+  $('endHomeBtn').addEventListener('click', function () {
+    window.location.href = '../../index.html';
+  });
+
+  document.addEventListener('pointerdown', unlock, { passive: true });
+  document.addEventListener('touchstart', unlock, { passive: true });
+
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('orientationchange', function () {
+    setTimeout(resizeCanvas, 220);
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) stopAmbient();
+    else if (state === 'play') startAmbient();
+  });
+
+  /* ===================== boot ===================== */
+  lang = detectLang();
+  buildTray();
+  applyI18n();
+  resizeCanvas();
+  // idle steam before the game starts, so the intro scene breathes
+  running = true;
+  rafId = requestAnimationFrame(tick);
+})();
 </script>
 </body>
 </html>

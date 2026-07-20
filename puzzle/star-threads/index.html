@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05061a">
+<title>별자리 잇기 · 星つなぎ · Star Threads</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>✨</text></svg>">
+<style>
+:root{
+  --night0:#03040e; --night1:#080c26; --night2:#131a44; --night3:#241d4d;
+  --gold:#ffd98a; --gold-hi:#fff5d8; --gold-dim:#c9a463; --gold-deep:#a87c34;
+  --ink:#eceafd; --ink-dim:#9fa2cf; --ink-faint:#6d719e;
+  --glass:rgba(160,170,255,.08);
+  --glass-line:rgba(190,200,255,.16);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Apple SD Gothic Neo','Hiragino Sans','Noto Sans KR','Segoe UI',system-ui,sans-serif;
+  background:radial-gradient(150% 100% at 50% -10%, #1d1b4a 0%, #0c1030 40%, #04060f 100%);
+  color:var(--ink);
+  overflow:hidden;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+}
+#app{
+  height:100dvh;display:flex;flex-direction:column;
+  max-width:760px;margin:0 auto;position:relative;
+  padding:6px 10px calc(8px + env(safe-area-inset-bottom));
+  gap:6px;
+}
+/* ---------------- header ---------------- */
+header{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:2px 0}
+.home{
+  display:inline-block;color:var(--ink-dim);text-decoration:none;font-size:.8rem;white-space:nowrap;
+  padding:7px 12px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-line);
+  transition:background .3s,color .3s,transform .15s;
+}
+.home:hover{background:rgba(190,200,255,.16);color:var(--ink)}
+.home:active{transform:scale(.94)}
+.titles{text-align:center;flex:1;min-width:0}
+.titles h1{
+  font-size:clamp(1.1rem,4.8vw,1.6rem);font-weight:700;letter-spacing:.1em;
+  background:linear-gradient(180deg,#fffdf3 0%,#ffe1a4 55%,#cfa055 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 22px rgba(255,206,120,.28);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.titles .sub{
+  font-size:.62rem;color:var(--ink-faint);letter-spacing:.14em;margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.topbtns{display:flex;gap:5px}
+.chip{
+  border:1px solid var(--glass-line);background:var(--glass);color:var(--ink);
+  border-radius:999px;padding:7px 10px;font-size:.78rem;cursor:pointer;white-space:nowrap;
+  font-family:inherit;transition:background .3s,transform .15s,opacity .3s;
+}
+.chip:hover{background:rgba(190,200,255,.16)}
+.chip:active{transform:scale(.92)}
+.chip.off{opacity:.42}
+/* ---------------- stage ---------------- */
+#stage{
+  position:relative;flex:1;min-height:240px;border-radius:24px;overflow:hidden;
+  box-shadow:0 24px 60px rgba(0,0,0,.6), inset 0 1px 0 rgba(200,210,255,.14),
+             0 0 0 1px rgba(150,160,255,.1);
+  background:#04060f;
+}
+#sky{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#stage::after{
+  content:'';position:absolute;inset:0;pointer-events:none;border-radius:24px;
+  box-shadow:inset 0 0 90px rgba(4,6,20,.85), inset 0 0 26px rgba(60,50,120,.3);
+}
+/* ---------------- hud ---------------- */
+#hud{display:flex;flex-direction:column;gap:7px;align-items:center}
+#prompt{
+  font-size:.76rem;color:var(--ink-dim);letter-spacing:.02em;text-align:center;
+  min-height:1.15em;line-height:1.4;transition:opacity .35s;padding:0 4px;
+}
+#hudRow{display:flex;gap:8px;align-items:center;justify-content:center;width:100%}
+.btn{
+  font-family:inherit;font-size:.86rem;font-weight:600;letter-spacing:.03em;
+  padding:11px 20px;border-radius:999px;cursor:pointer;border:1px solid var(--glass-line);
+  background:var(--glass);color:var(--ink);
+  text-decoration:none;display:inline-flex;align-items:center;justify-content:center;
+  transition:transform .16s cubic-bezier(.34,1.56,.64,1),box-shadow .3s,opacity .3s,background .3s;
+}
+.btn:active{transform:scale(.94)}
+.btn:disabled{opacity:.3;cursor:default}
+.btn.gold{
+  background:linear-gradient(175deg,#ffe9b6,#f0bc63 60%,#cd9440);
+  color:#3a2708;border-color:rgba(255,232,180,.6);
+  box-shadow:0 6px 20px rgba(226,170,80,.32), inset 0 1px 0 rgba(255,255,255,.7);
+}
+.btn.gold:not(:disabled):hover{box-shadow:0 8px 28px rgba(240,190,100,.45), inset 0 1px 0 rgba(255,255,255,.8)}
+.btn.gold:disabled{background:linear-gradient(175deg,#5e5a6d,#43405a);color:#a09cb4;box-shadow:none;border-color:rgba(190,200,255,.12)}
+#dots{display:flex;gap:7px;align-items:center}
+.dot{
+  width:11px;height:11px;border-radius:50%;
+  background:rgba(190,200,255,.14);border:1px solid rgba(190,200,255,.2);
+  transition:background .5s,box-shadow .5s,transform .5s cubic-bezier(.34,1.56,.64,1);
+}
+.dot.on{
+  background:radial-gradient(circle at 40% 35%, #fff8e0, #ffcf7a 55%, #d29a3e);
+  box-shadow:0 0 12px rgba(255,205,120,.8);border-color:rgba(255,225,170,.7);transform:scale(1.18);
+}
+/* ---------------- overlays ---------------- */
+.veil{
+  position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+  padding:18px;background:rgba(4,5,18,.62);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+  opacity:0;pointer-events:none;transition:opacity .5s ease;
+}
+.veil.show{opacity:1;pointer-events:auto}
+.card{
+  width:100%;max-width:400px;border-radius:26px;padding:26px 22px 22px;text-align:center;
+  background:linear-gradient(170deg, rgba(46,42,96,.92), rgba(14,16,48,.95));
+  border:1px solid rgba(200,190,255,.2);
+  box-shadow:0 26px 70px rgba(0,0,0,.66), inset 0 1px 0 rgba(255,245,220,.16),
+             0 0 60px rgba(120,100,220,.18);
+  transform:translateY(18px) scale(.96);opacity:0;
+  transition:transform .55s cubic-bezier(.22,1.3,.4,1), opacity .5s;
+  max-height:100%;overflow-y:auto;
+}
+.veil.show .card{transform:none;opacity:1}
+.card .eyebrow{font-size:.68rem;letter-spacing:.24em;color:var(--gold-dim);text-transform:uppercase}
+.card .bigname{
+  font-size:clamp(1.5rem,7vw,2.1rem);font-weight:700;letter-spacing:.04em;line-height:1.28;
+  margin:12px 0 4px;
+  background:linear-gradient(180deg,#fffdf4 0%,#ffe3a8 58%,#d8a75c 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 30px rgba(255,206,120,.35);
+}
+.card .shape{font-size:.68rem;color:var(--ink-faint);letter-spacing:.1em;margin-bottom:14px}
+.card .story{
+  font-size:.85rem;line-height:1.75;color:var(--ink-dim);
+  padding:14px 12px;border-radius:16px;
+  background:rgba(10,12,40,.5);border:1px solid rgba(190,200,255,.1);
+}
+.card .acts{display:flex;flex-direction:column;gap:9px;margin-top:18px;align-items:center}
+.linkish{
+  background:none;border:none;font-family:inherit;font-size:.74rem;color:var(--ink-faint);
+  cursor:pointer;padding:6px 10px;border-radius:999px;transition:color .3s,background .3s;
+  text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(160,160,220,.35);
+}
+.linkish:hover{color:var(--gold);background:rgba(190,200,255,.07)}
+/* finish sheet */
+#finish{
+  position:absolute;left:0;right:0;bottom:0;z-index:18;
+  padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+  border-radius:26px 26px 0 0;text-align:center;
+  background:linear-gradient(180deg, rgba(18,18,54,.55), rgba(6,7,26,.95) 45%);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-top:1px solid rgba(200,190,255,.18);
+  box-shadow:0 -18px 50px rgba(0,0,0,.5);
+  transform:translateY(110%);transition:transform .8s cubic-bezier(.22,1,.36,1);
+}
+#finish.show{transform:none}
+#finTitle{font-size:1.05rem;font-weight:700;letter-spacing:.05em;color:var(--gold);text-shadow:0 0 22px rgba(255,205,120,.35)}
+#finBody{font-size:.76rem;color:var(--ink-dim);line-height:1.65;margin-top:7px;white-space:pre-line}
+#finActs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+/* toast */
+#toast{
+  position:absolute;left:50%;bottom:22%;transform:translate(-50%,10px);z-index:30;
+  padding:10px 18px;border-radius:999px;font-size:.78rem;white-space:nowrap;
+  background:rgba(12,14,44,.9);border:1px solid rgba(200,190,255,.22);color:var(--ink);
+  box-shadow:0 10px 30px rgba(0,0,0,.5);
+  opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (max-width:380px){
+  .btn{padding:10px 16px;font-size:.8rem}
+  #prompt{font-size:.72rem}
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.01ms !important;animation-duration:.01ms !important}
+  .card{transform:none;opacity:1}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a class="home" href="../../index.html">← <span id="homeTxt">홈</span></a>
+    <div class="titles">
+      <h1 id="titleMain">별자리 잇기</h1>
+      <div class="sub" id="titleSub">星つなぎ · Star Threads</div>
+    </div>
+    <div class="topbtns">
+      <button class="chip" id="sndBtn" aria-label="sound">🔊</button>
+      <button class="chip" id="langBtn">🇰🇷 KO</button>
+    </div>
+  </header>
+
+  <div id="stage">
+    <canvas id="sky"></canvas>
+
+    <div class="veil" id="reveal">
+      <div class="card">
+        <div class="eyebrow" id="rvEyebrow">그 별자리의 이름은</div>
+        <div class="bigname" id="rvName">—</div>
+        <div class="shape" id="rvShape"></div>
+        <div class="story" id="rvStory"></div>
+        <div class="acts">
+          <button class="btn gold" id="rvOk">하늘에 올리기</button>
+          <button class="linkish" id="rvReroll">다른 이름도 보기</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="finish">
+      <div id="finTitle">오늘 밤하늘이 가득 찼어요</div>
+      <div id="finBody"></div>
+      <div id="finActs">
+        <button class="btn gold" id="finSave">사진 저장</button>
+        <button class="btn" id="finAgain">다시 하기</button>
+        <a class="btn" id="finHome" href="../../index.html">홈으로</a>
+      </div>
+    </div>
+
+    <div id="toast"></div>
+  </div>
+
+  <div id="hud">
+    <div id="prompt"></div>
+    <div id="hudRow">
+      <button class="btn" id="undoBtn">되돌리기</button>
+      <div id="dots"><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>
+      <button class="btn gold" id="doneBtn">완성</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================
+   별자리 잇기 — 星つなぎ — Star Threads      (game.in-9.com)
+   단일 파일 / 바닐라 JS / 외부 리소스 없음
+   ===================================================================== */
+
+/* ------------------------------------------------------------------
+   1. i18n
+   ------------------------------------------------------------------ */
+const I18N = {
+  ko:{
+    docTitle:'별자리 잇기 · 星つなぎ · Star Threads',
+    title:'별자리 잇기', home:'홈',
+    p_start:'별을 하나 골라 톡 눌러 보세요',
+    p_next:'옆의 별로 이어 볼까요',
+    p_more:'조금 더 이어도 좋아요',
+    p_done:'[완성]을 누르거나, 처음 별을 다시 눌러 닫아요',
+    p_placed:'별자리가 하늘에 자리잡았어요',
+    p_gallery:'오늘의 밤하늘',
+    undo:'되돌리기', done:'완성',
+    eyebrow:'그 별자리의 이름은',
+    ok:'하늘에 올리기', reroll:'다른 이름도 보기',
+    shpClosed:'별 {n}개 · 닫힌 모양', shpOpen:'별 {n}개 · 열린 모양',
+    finTitle:'오늘 밤하늘이 가득 찼어요',
+    finBody:'별자리 셋이 조용히 빛나고 있어요.\n오늘은 여기까지. 푹 쉬어요.',
+    save:'사진 저장', again:'다시 하기', toHome:'홈으로',
+    tSaved:'밤하늘을 사진에 담았어요 ✨',
+    tSaveFail:'저장하지 못했어요',
+    tNewNight:'새 밤하늘이 열렸어요',
+    tMin:'별을 셋 이상 이어 주세요',
+    expTitle:'오늘의 밤하늘', expFoot:'game.in-9.com · 별자리 잇기'
+  },
+  ja:{
+    docTitle:'星つなぎ · 별자리 잇기 · Star Threads',
+    title:'星つなぎ', home:'ホーム',
+    p_start:'星をひとつ えらんで タップ',
+    p_next:'となりの星へ つないでみましょう',
+    p_more:'もう少し つないでも いいですよ',
+    p_done:'[かんせい] を押すか、最初の星を もう一度 押して閉じます',
+    p_placed:'星座が 空に おさまりました',
+    p_gallery:'今夜の空',
+    undo:'ひとつ戻す', done:'かんせい',
+    eyebrow:'その星座の 名前は',
+    ok:'空にあげる', reroll:'べつの名前も見る',
+    shpClosed:'星{n}こ · 閉じたかたち', shpOpen:'星{n}こ · 開いたかたち',
+    finTitle:'今夜の空が いっぱいになりました',
+    finBody:'三つの星座が しずかに 光っています。\n今日はここまで。ゆっくり休んでね。',
+    save:'写真を保存', again:'もういちど', toHome:'ホームへ',
+    tSaved:'夜空を 写真に おさめました ✨',
+    tSaveFail:'保存できませんでした',
+    tNewNight:'あたらしい夜空が ひらきました',
+    tMin:'星を三つ以上 つないでください',
+    expTitle:'今夜の空', expFoot:'game.in-9.com · 星つなぎ'
+  },
+  en:{
+    docTitle:'Star Threads · 별자리 잇기 · 星つなぎ',
+    title:'Star Threads', home:'Home',
+    p_start:'Pick a star and give it a tap',
+    p_next:'Thread it to the star beside it',
+    p_more:'Carry on as long as you like',
+    p_done:'Press [Finish], or tap the first star again to close it',
+    p_placed:'The constellation has taken its place',
+    p_gallery:'Tonight’s sky',
+    undo:'Undo', done:'Finish',
+    eyebrow:'And its name is',
+    ok:'Lift it to the sky', reroll:'try another name',
+    shpClosed:'{n} stars · closed form', shpOpen:'{n} stars · open form',
+    finTitle:'Tonight’s sky is full',
+    finBody:'Three constellations, glowing quietly.\nThat’s enough for tonight. Rest well.',
+    save:'Save photo', again:'Play again', toHome:'Home',
+    tSaved:'The night sky is saved ✨',
+    tSaveFail:'Could not save',
+    tNewNight:'A new night sky opens',
+    tMin:'Please thread at least three stars',
+    expTitle:'Tonight’s sky', expFoot:'game.in-9.com · Star Threads'
+  }
+};
+const LANGS=['ko','ja','en'];
+const FLAGS={ko:'🇰🇷 KO', ja:'🇯🇵 JA', en:'🇬🇧 EN'};
+let lang='ko';
+try{
+  const st=localStorage.getItem('in9-lang');
+  if(st && I18N[st]) lang=st;
+  else{
+    const nv=(navigator.language||'').toLowerCase();
+    if(nv.startsWith('ja')) lang='ja';
+    else if(nv.startsWith('en')) lang='en';
+  }
+}catch(e){}
+function t(k){ return (I18N[lang]&&I18N[lang][k]) || I18N.ko[k] || k; }
+
+/* ------------------------------------------------------------------
+   2. 이름 워드뱅크 — 언어별로 따로 (번역이 아니라 각 언어에서 자연스럽게)
+   ------------------------------------------------------------------ */
+const MODS = {
+  ko:{
+    calm:  ['고요한','잠든','꿈꾸는','다정한','느긋한','오래된','나른한'],
+    lively:['뛰노는','성급한','장난꾸러기','까불대는','반짝이는','신이 난','들뜬'],
+    shy:   ['수줍은','조그만','숨어 있는','소곤대는','눈치 보는','말 없는'],
+    grand: ['커다란','잠들지 않는','왕관 쓴','아주 오래된','늠름한','하늘 끝의'],
+    winged:['날개 돋친','춤추는','흩날리는','떠다니는','바람 든','가벼운']
+  },
+  ja:{
+    calm:  ['しずかな','ねむたい','夢見る','やさしい','のんびりした','ふるい'],
+    lively:['はしゃぐ','せっかちな','いたずらな','きらめく','うきうきした','走りだす'],
+    shy:   ['はにかんだ','ちいさな','かくれんぼの','ささやく','ひかえめな','ひとりぼっちの'],
+    grand: ['おおきな','ねむらない','冠をかぶった','とおいむかしの','どうどうとした','空のはての'],
+    winged:['翼の生えた','おどる','舞いあがる','ただよう','風をはらんだ','かるがるとした']
+  },
+  en:{
+    calm:  ['Dreaming','Sleeping','Quiet','Gentle','Unhurried','Ancient','Drowsy'],
+    lively:['Romping','Impatient','Mischievous','Glimmering','Giddy','Bounding'],
+    shy:   ['Bashful','Little','Hiding','Whispering','Modest','Lonesome'],
+    grand: ['Great','Sleepless','Crowned','Long-Ago','Stately','Far-Sky'],
+    winged:['Winged','Dancing','Soaring','Drifting','Wind-Filled','Featherlight']
+  }
+};
+const NOUNS = {
+  ko:{
+    vessel:['주전자','항아리','찻잔','등불','바구니','우산','종'],
+    beast: ['고래','거북','곰','여우','두꺼비','사슴','물개'],
+    tower: ['탑','등대','사다리','나무','기린','굴뚝','촛대'],
+    bridge:['다리','조각배','언덕','고양이','빨랫줄','벤치','물결'],
+    bolt:  ['번개','화살','갈매기','낚싯바늘','지팡이','연','깃털'],
+    crown: ['왕관','성','부채','나비','꽃다발','팽이','눈송이']
+  },
+  ja:{
+    vessel:['きゅうす','つぼ','湯のみ','ランプ','かご','かさ','鐘'],
+    beast: ['くじら','かめ','くま','きつね','ひきがえる','しか','あざらし'],
+    tower: ['塔','灯台','はしご','木','きりん','えんとつ','燭台'],
+    bridge:['橋','小舟','丘','ねこ','ものほし','ベンチ','さざなみ'],
+    bolt:  ['いなずま','矢','かもめ','つりばり','つえ','たこ','はね'],
+    crown: ['王冠','おしろ','扇','ちょうちょ','花たば','こま','雪のけっしょう']
+  },
+  en:{
+    vessel:['Kettle','Jar','Teacup','Lantern','Basket','Umbrella','Bell'],
+    beast: ['Whale','Tortoise','Bear','Fox','Toad','Deer','Seal'],
+    tower: ['Tower','Lighthouse','Ladder','Tree','Giraffe','Chimney','Candlestick'],
+    bridge:['Bridge','Little Boat','Hill','Cat','Clothesline','Bench','Ripple'],
+    bolt:  ['Lightning','Arrow','Gull','Fishhook','Walking Stick','Kite','Feather'],
+    crown: ['Crown','Castle','Fan','Butterfly','Bouquet','Spinning Top','Snowflake']
+  }
+};
+const STORIES = {
+  ko:{
+    vessel:['누군가 따뜻한 차를 두고 간 자리예요.','오래 비어 있다가, 오늘 밤 다시 채워졌어요.','안에 작은 소원이 하나 담겨 있대요.','기울이면 별빛이 조르르 흘러나올 것 같아요.'],
+    beast: ['밤 바다를 헤엄치다 여기서 잠들었어요.','아주 먼 곳에서 걸어온 발자국이 남아 있어요.','숨을 쉴 때마다 별빛이 조금씩 흔들려요.','이름을 부르면 천천히 고개를 돌린대요.'],
+    tower: ['누가 하늘 끝까지 올라가려고 세워 두었대요.','꼭대기에서는 아침이 제일 먼저 보인다고 해요.','한 칸씩 오르면 소원이 가까워진대요.','바람이 불어도 조금도 흔들리지 않아요.'],
+    bridge:['건너편 밤으로 이어지는 길이에요.','누군가 이 위에서 오래 기다렸던 것 같아요.','천천히 걸어가면 아침에 닿는대요.','아래로는 별들이 강처럼 흘러가요.'],
+    bolt:  ['한순간 반짝하고 지나간 마음이에요.','너무 빨라서 아무도 붙잡지 못했대요.','어딘가로 서둘러 가는 중이었나 봐요.','끝이 어디를 가리키는지는 아무도 몰라요.'],
+    crown: ['오늘 밤하늘에서 가장 신이 난 모양이에요.','누구의 것도 아니라서 모두의 것이래요.','펼쳐지는 동안 잠깐 세상이 환해졌어요.','아주 오래전부터 여기 있었던 것 같아요.']
+  },
+  ja:{
+    vessel:['だれかが あたたかいお茶を 置いていった あとみたい。','ながく空っぽだったけれど、今夜また 満たされました。','なかに 小さな願いが ひとつ 入っているそうです。','かたむけたら 星のひかりが こぼれてきそう。'],
+    beast: ['夜のうみを およいで、ここで ねむりました。','とおくから 歩いてきた あしあとが のこっています。','息をするたび、星あかりが すこし ゆれます。','名前を呼ぶと ゆっくり ふりむくそうです。'],
+    tower: ['空のはてまで のぼろうとして 建てられたとか。','てっぺんからは 朝が いちばん先に 見えるそうです。','ひとつ のぼるごとに 願いが 近づくといいます。','風がふいても すこしも ゆれません。'],
+    bridge:['むこうの夜へ つづく 道です。','だれかが ここで ずっと 待っていたようです。','ゆっくり わたれば 朝に つくそうです。','下では 星が 川のように ながれています。'],
+    bolt:  ['ひとしゅん きらめいて すぎた 気もち。','はやすぎて だれにも つかまえられなかったとか。','どこかへ いそいでいる とちゅうみたい。','さきが どこを さしているかは だれも知りません。'],
+    crown: ['今夜の空で いちばん うきうきした かたち。','だれのものでもないから、みんなのものだそうです。','ひらいた しゅんかん、世界が すこし 明るくなりました。','ずっと むかしから ここに あった みたい。']
+  },
+  en:{
+    vessel:['Someone left a warm cup here and wandered off.','Empty for ages — filled again tonight.','They say one small wish is kept inside.','Tip it and starlight would pour right out.'],
+    beast: ['It swam the night sea and fell asleep here.','Footprints lead back from somewhere very far.','Every breath makes the starlight sway a little.','Call its name and it turns around, slowly.'],
+    tower: ['Built by someone trying to reach the top of the sky.','From up there, morning arrives first.','Each rung climbed brings a wish a little closer.','Not even the wind can make it lean.'],
+    bridge:['A road that carries on into the next night.','Someone waited here a long, long while.','Walk it slowly and you arrive at morning.','Below, the stars run past like a river.'],
+    bolt:  ['A feeling that flashed by in one bright instant.','Too quick — nobody managed to catch it.','It seems to be hurrying somewhere.','Where the tip points, nobody knows.'],
+    crown: ['The most delighted shape in tonight’s sky.','It belongs to no one, so it belongs to everyone.','For a moment as it opened, the world got brighter.','It feels like it has always been here.']
+  }
+};
+
+/* ------------------------------------------------------------------
+   3. 유틸
+   ------------------------------------------------------------------ */
+const $ = s => document.querySelector(s);
+const RM = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)').matches : false;
+const TAU = Math.PI*2;
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const lerp=(a,b,k)=>a+(b-a)*k;
+function mulberry32(a){
+  return function(){
+    a|=0; a=a+0x6D2B79F5|0;
+    let z=Math.imul(a^a>>>15, 1|a);
+    z=z+Math.imul(z^z>>>7, 61|z)^z;
+    return ((z^z>>>14)>>>0)/4294967296;
+  };
+}
+const SESSION_SEED = (Math.random()*1e9)|0;
+let rng = mulberry32(SESSION_SEED);
+
+/* ------------------------------------------------------------------
+   4. 사운드 (WebAudio 생성)
+   ------------------------------------------------------------------ */
+const SFX = {
+  ac:null, master:null, on:true,
+  init(){
+    try{ const s=localStorage.getItem('in9-sound'); if(s==='0') this.on=false; }catch(e){}
+  },
+  ensure(){
+    if(this.ac){ if(this.ac.state==='suspended') this.ac.resume().catch(()=>{}); return; }
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return;
+    try{
+      this.ac=new AC();
+      this.master=this.ac.createGain();
+      this.master.gain.value=this.on?0.85:0;
+      const lp=this.ac.createBiquadFilter();
+      lp.type='lowpass'; lp.frequency.value=7000;
+      this.master.connect(lp); lp.connect(this.ac.destination);
+    }catch(e){ this.ac=null; }
+  },
+  setOn(v){
+    this.on=v;
+    try{ localStorage.setItem('in9-sound', v?'1':'0'); }catch(e){}
+    if(this.master) this.master.gain.setTargetAtTime(v?0.85:0, this.ac.currentTime, .04);
+  },
+  tone(freq, dur, vol, type, delay, glide){
+    if(!this.ac||!this.on) return;
+    const t0=this.ac.currentTime+(delay||0);
+    const o=this.ac.createOscillator(), g=this.ac.createGain();
+    o.type=type||'sine';
+    o.frequency.setValueAtTime(freq,t0);
+    if(glide) o.frequency.exponentialRampToValueAtTime(Math.max(40,freq*glide), t0+dur);
+    g.gain.setValueAtTime(.0001,t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(.0002,vol),t0+.012);
+    g.gain.exponentialRampToValueAtTime(.0001,t0+dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t0); o.stop(t0+dur+.05);
+  },
+  noise(dur, vol, freq, delay){
+    if(!this.ac||!this.on) return;
+    const t0=this.ac.currentTime+(delay||0);
+    const len=Math.max(1,Math.floor(this.ac.sampleRate*dur));
+    const buf=this.ac.createBuffer(1,len,this.ac.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*(1-i/len);
+    const src=this.ac.createBufferSource(); src.buffer=buf;
+    const bp=this.ac.createBiquadFilter(); bp.type='bandpass';
+    bp.frequency.value=freq||3600; bp.Q.value=1.1;
+    const g=this.ac.createGain(); g.gain.value=vol;
+    src.connect(bp); bp.connect(g); g.connect(this.master);
+    src.start(t0);
+  },
+  /* 별을 이을 때 — 오음계로 한 칸씩 올라가는 물방울 */
+  thread(step){
+    this.ensure();
+    const scale=[523.25,587.33,659.25,783.99,880.00,1046.50,1174.66,1318.51,1568.00];
+    const f=scale[Math.min(scale.length-1, step)];
+    this.tone(f,.55,.16,'sine',0);
+    this.tone(f*2,.28,.045,'sine',.005);
+    this.noise(.12,.05,f*2.6,0);
+  },
+  pick(){ this.ensure(); this.tone(392,.35,.11,'sine',0); this.tone(784,.18,.03,'sine',0); },
+  undo(){ this.ensure(); this.tone(330,.28,.09,'sine',0,.72); },
+  complete(){
+    this.ensure();
+    const ch=[523.25,659.25,783.99,1046.50];
+    ch.forEach((f,i)=>{ this.tone(f,1.5,.11,'sine',i*.075); this.tone(f*2,.8,.028,'triangle',i*.075); });
+    this.noise(.6,.06,5200,.02);
+  },
+  settle(){
+    this.ensure();
+    this.tone(261.63,1.9,.10,'sine',0);
+    this.tone(392.00,1.7,.06,'sine',.04);
+    this.tone(1046.5,1.1,.026,'sine',.09);
+  },
+  gallery(){
+    this.ensure();
+    [523.25,659.25,783.99,1046.5,1318.5,1567.98].forEach((f,i)=>{
+      this.tone(f,1.3,.085,'sine',i*.13);
+      this.tone(f*2,.55,.02,'sine',i*.13+.01);
+    });
+  },
+  tap(){ this.ensure(); this.tone(660,.09,.05,'triangle',0); }
+};
+SFX.init();
+
+/* ------------------------------------------------------------------
+   5. 상태
+   ------------------------------------------------------------------ */
+const MAX_NIGHT = 3;
+const PLAY_TOP  = 0.29;   /* 상단 29%는 완성 별자리 선반 */
+const cv=$('#sky'), ctx=cv.getContext('2d');
+const bgc=document.createElement('canvas'), bgx=bgc.getContext('2d');
+let W=1,H=1,DPR=1;
+
+const S = {
+  mode:'play',          // play | placing | gallery
+  stars:[],             // 자유 별
+  amb:[],               // 배경 잔별 (normalized)
+  dust:[],              // 은하수 입자 (normalized, 정적)
+  chain:[],             // 선택된 별 (참조)
+  cons:[],              // 완성된 별자리
+  parts:[],             // 파티클
+  hoverIdx:-1,
+  pointerDown:false,
+  pending:null,         // 완성 대기중 별자리
+  time:0
+};
+
+/* ------------------------------------------------------------------
+   6. 리사이즈 / 배경
+   ------------------------------------------------------------------ */
+function resize(){
+  const r=cv.getBoundingClientRect();
+  const nw=Math.max(1,Math.round(r.width)), nh=Math.max(1,Math.round(r.height));
+  DPR=Math.min(2.5, window.devicePixelRatio||1);
+  const oldW=W, oldH=H;
+  W=nw; H=nh;
+  cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  bgc.width=cv.width; bgc.height=cv.height;
+  bgx.setTransform(DPR,0,0,DPR,0,0);
+  paintBackground();
+  // 별 위치 비례 이동
+  if(oldW>1 && oldH>1 && (oldW!==W || oldH!==H)){
+    const kx=W/oldW, ky=H/oldH;
+    S.stars.forEach(s=>{ s.x*=kx; s.y*=ky; });
+    S.parts.length=0;
+  }
+  relayout();
+}
+function paintBackground(){
+  const g=bgx;
+  g.setTransform(DPR,0,0,DPR,0,0);
+  g.clearRect(0,0,W,H);
+  // 밤하늘 그라디언트
+  let grd=g.createLinearGradient(0,0,W*0.25,H);
+  grd.addColorStop(0,'#0b0c2c');
+  grd.addColorStop(.34,'#0a1038');
+  grd.addColorStop(.66,'#070b26');
+  grd.addColorStop(1,'#03040e');
+  g.fillStyle=grd; g.fillRect(0,0,W,H);
+  // 지평 근처 보랏빛 번짐
+  const glow=g.createRadialGradient(W*0.5,H*1.06,0,W*0.5,H*1.06,H*0.9);
+  glow.addColorStop(0,'rgba(96,66,180,.34)');
+  glow.addColorStop(.5,'rgba(60,44,130,.12)');
+  glow.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=glow; g.fillRect(0,0,W,H);
+  const glow2=g.createRadialGradient(W*0.12,-H*0.1,0,W*0.12,-H*0.1,H*0.85);
+  glow2.addColorStop(0,'rgba(70,110,200,.24)');
+  glow2.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=glow2; g.fillRect(0,0,W,H);
+  // 은하수 띠
+  g.save();
+  g.translate(W*0.5,H*0.5); g.rotate(-0.62); g.translate(-W*0.5,-H*0.5);
+  const band=g.createLinearGradient(0,H*0.28,0,H*0.72);
+  band.addColorStop(0,'rgba(120,120,215,0)');
+  band.addColorStop(.36,'rgba(150,140,230,.13)');
+  band.addColorStop(.52,'rgba(198,186,255,.19)');
+  band.addColorStop(.68,'rgba(150,140,230,.11)');
+  band.addColorStop(1,'rgba(120,120,215,0)');
+  g.fillStyle=band; g.fillRect(-W,H*0.24,W*3,H*0.52);
+  g.restore();
+  // 성운 얼룩
+  const nr=mulberry32(SESSION_SEED^0x5f3a);
+  for(let i=0;i<7;i++){
+    const x=nr()*W, y=nr()*H, rad=(0.14+nr()*0.24)*Math.max(W,H);
+    const hue=[ '160,130,255', '90,150,240', '210,140,220', '120,180,240' ][i%4];
+    const nb=g.createRadialGradient(x,y,0,x,y,rad);
+    nb.addColorStop(0,'rgba('+hue+',.075)');
+    nb.addColorStop(.55,'rgba('+hue+',.026)');
+    nb.addColorStop(1,'rgba('+hue+',0)');
+    g.fillStyle=nb; g.fillRect(x-rad,y-rad,rad*2,rad*2);
+  }
+  // 은하수 미세 입자
+  g.globalCompositeOperation='lighter';
+  for(const d of S.dust){
+    const x=d.x*W, y=d.y*H;
+    g.fillStyle='rgba(226,228,255,'+d.a.toFixed(3)+')';
+    g.beginPath(); g.arc(x,y,d.r,0,TAU); g.fill();
+  }
+  g.globalCompositeOperation='source-over';
+}
+function seedAmbient(){
+  const r=mulberry32(SESSION_SEED^0x2b17);
+  S.dust.length=0;
+  for(let i=0;i<420;i++){
+    // 은하수 축(-0.62rad) 근처에 몰리게
+    const u=r(), v=(r()+r()+r())/3;                 // 중앙 몰림
+    const bx=u, by=0.5+(v-0.5)*0.42;
+    const ca=Math.cos(-0.62), sa=Math.sin(-0.62);
+    const px=0.5+(bx-0.5)*ca-(by-0.5)*sa;
+    const py=0.5+(bx-0.5)*sa+(by-0.5)*ca;
+    if(px<-0.05||px>1.05||py<-0.05||py>1.05) continue;
+    S.dust.push({x:px,y:py,r:r()*0.9+0.25,a:r()*0.5+0.12});
+  }
+  for(let i=0;i<170;i++) S.dust.push({x:r(),y:r(),r:r()*0.7+0.2,a:r()*0.3+0.06});
+  S.amb.length=0;
+  for(let i=0;i<95;i++){
+    S.amb.push({x:r(),y:r(),r:r()*0.85+0.5,ph:r()*TAU,sp:0.25+r()*0.7,a:0.25+r()*0.45});
+  }
+}
+
+/* ------------------------------------------------------------------
+   7. 별 배치
+   ------------------------------------------------------------------ */
+function starBand(){ return {top:H*PLAY_TOP+16, bot:H-18, left:20, right:W-20}; }
+function newStar(){
+  const b=starBand();
+  const minD=Math.max(30, Math.min(W,H)*0.085);
+  let best=null,bestD=-1;
+  for(let att=0;att<38;att++){
+    const x=b.left+rng()*(b.right-b.left);
+    const y=b.top +rng()*(b.bot-b.top);
+    let d=1e9;
+    for(const s of S.stars){ const dd=Math.hypot(s.x-x,s.y-y); if(dd<d)d=dd; }
+    if(d>bestD){ bestD=d; best={x:x,y:y}; }
+    if(d>minD) break;
+  }
+  const mag=rng();
+  return {
+    x:best.x, y:best.y,
+    r: 1.5 + mag*mag*3.4,
+    base: 0.55 + mag*0.45,
+    ph: rng()*TAU,
+    sp: 0.5 + rng()*1.5,
+    spike: mag>0.62,
+    fade: 0, tint: rng()<0.22 ? (rng()<0.5?'blue':'rose') : 'gold'
+  };
+}
+function seedStars(n){
+  S.stars.length=0;
+  for(let i=0;i<n;i++) S.stars.push(newStar());
+  S.stars.forEach(s=>{ s.fade=1; });
+}
+
+/* ------------------------------------------------------------------
+   8. 모양 분석 → 이름 생성
+   ------------------------------------------------------------------ */
+function analyze(pts, closed){
+  const n=pts.length;
+  let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9,sx=0,sy=0;
+  for(const p of pts){
+    if(p.x<minx)minx=p.x; if(p.x>maxx)maxx=p.x;
+    if(p.y<miny)miny=p.y; if(p.y>maxy)maxy=p.y;
+    sx+=p.x; sy+=p.y;
+  }
+  const w=Math.max(1,maxx-minx), h=Math.max(1,maxy-miny);
+  const cx=sx/n, cy=sy/n, diag=Math.max(1,Math.hypot(w,h));
+  const symOn=(vert)=>{
+    let acc=0;
+    for(const p of pts){
+      const mx=vert? (2*cx-p.x) : p.x;
+      const my=vert? p.y : (2*cy-p.y);
+      let best=1e9;
+      for(const q of pts){ const d=Math.hypot(q.x-mx,q.y-my); if(d<best)best=d; }
+      acc+=best;
+    }
+    return clamp(1-(acc/n)/(diag*0.40),0,1);
+  };
+  const sym=Math.max(symOn(true),symOn(false));
+  let ta=0,tc=0;
+  const cnt = closed? n : Math.max(0,n-2);
+  for(let i=0;i<cnt;i++){
+    const a=pts[i], b=pts[(i+1)%n], c=pts[(i+2)%n];
+    const a1=Math.atan2(b.y-a.y,b.x-a.x), a2=Math.atan2(c.y-b.y,c.x-b.x);
+    let d=Math.abs(a2-a1)%TAU; if(d>Math.PI) d=TAU-d;
+    ta+=d; tc++;
+  }
+  const angul = tc? clamp((ta/tc)/Math.PI,0,1) : 0.32;
+  const ar = w/h;
+  const spread = diag/Math.max(1,Math.min(W,H));
+  let hsh=2166136261;
+  for(const p of pts){ hsh=(hsh^(Math.round(p.x)*73+Math.round(p.y)*151))>>>0; hsh=Math.imul(hsh,16777619)>>>0; }
+  return {n:n, closed:closed, w:w, h:h, ar:ar, sym:sym, angul:angul, spread:spread, hash:hsh};
+}
+function classify(a){
+  /* 임계값은 실제 랜덤 별 배치 분포를 몬테카를로로 재어 맞췄다.
+     6가지 형태 · 5가지 분위기가 한쪽으로 쏠리지 않고 고루 나오게 한 값. */
+  let form;
+  if(a.closed && a.n>=6 && a.sym>0.66) form='crown';
+  else if(a.closed && a.ar>=0.66 && a.ar<=1.52) form=(a.n>=5?'beast':'vessel');
+  else if(a.closed) form=(a.ar>1.52?'bridge':'tower');
+  else if(a.ar>=1.35) form='bridge';
+  else if(a.ar<=0.68) form='tower';
+  else if(a.angul>0.66) form='bolt';
+  else if(a.n>=7) form='crown';
+  else form=(a.sym>0.55?'beast':'vessel');
+
+  let mood;
+  if(a.n<=4 && a.spread<0.90) mood='shy';
+  else if(a.n>=8 || a.spread>1.30) mood='grand';
+  else if(a.sym>0.66) mood='calm';
+  else if(a.angul>0.68) mood='lively';
+  else mood='winged';
+
+  return {form:form, mood:mood};
+}
+function makeMeta(pts, closed){
+  const a=analyze(pts,closed);
+  const c=classify(a);
+  return {form:c.form, mood:c.mood, n:a.n, closed:closed, hash:a.hash, roll:0};
+}
+function nameOf(m, lg){
+  const mods=MODS[lg][m.mood], nouns=NOUNS[lg][m.form];
+  const h=m.hash+m.roll*7919;
+  const mo=mods[h%mods.length];
+  const no=nouns[((h/13)|0)%nouns.length];
+  return lg==='ja' ? (mo+no) : (mo+' '+no);
+}
+function storyOf(m, lg){
+  const arr=STORIES[lg][m.form];
+  return arr[((m.hash/29|0)+m.roll*3)%arr.length];
+}
+
+/* ------------------------------------------------------------------
+   9. 별자리 객체
+   ------------------------------------------------------------------ */
+function makeConstellation(chain, closed){
+  const pts=chain.map(s=>({x:s.x,y:s.y}));
+  const meta=makeMeta(pts,closed);
+  let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+  for(const p of pts){
+    if(p.x<minx)minx=p.x; if(p.x>maxx)maxx=p.x;
+    if(p.y<miny)miny=p.y; if(p.y>maxy)maxy=p.y;
+  }
+  const cx=(minx+maxx)/2, cy=(miny+maxy)/2;
+  const m=Math.max(24, maxx-minx, maxy-miny);
+  return {
+    meta:meta, closed:closed,
+    local: chain.map(s=>({x:(s.x-cx)/m, y:(s.y-cy)/m, r:s.r/m, spike:s.spike, ph:s.ph, sp:s.sp, base:s.base, tint:s.tint})),
+    cur:{cx:cx, cy:cy, s:m},
+    to:{cx:cx, cy:cy, s:m},
+    alpha:1, label:0, chimed:false
+  };
+}
+function slotFor(i){
+  const s=Math.min(W*0.235, 104);
+  return {cx:W*(0.185+i*0.315), cy:H*PLAY_TOP*0.50+8, s:s};
+}
+function galleryFor(i){
+  /* 마무리 시트가 실제로 차지하는 높이를 재서, 그 위 공간에만 배치한다
+     (언어마다 시트 높이가 달라지므로 상수로 두면 이름표가 가려진다) */
+  const sheetH=($('#finish').offsetHeight)||H*0.30;
+  const avail=Math.max(H*0.42, H-sheetH-12);
+  const rowH=avail/MAX_NIGHT;
+  const s=Math.min(W*0.42, rowH*0.62, 200);
+  return {cx:W*0.5, cy:6+rowH*(i+0.42), s:s};
+}
+function relayout(){
+  S.cons.forEach((c,i)=>{
+    const tgt = (S.mode==='gallery') ? galleryFor(i) : slotFor(i);
+    c.to.cx=tgt.cx; c.to.cy=tgt.cy; c.to.s=tgt.s;
+  });
+}
+
+/* ------------------------------------------------------------------
+   10. 파티클
+   ------------------------------------------------------------------ */
+function spark(x,y,count,power,hue){
+  if(RM) count=Math.min(count,3);
+  for(let i=0;i<count;i++){
+    const a=rng()*TAU, sp=(0.3+rng()*1)*power;
+    S.parts.push({
+      x:x, y:y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp-0.15*power,
+      life:1, decay:0.55+rng()*0.8, size:0.6+rng()*1.9, hue:hue||'255,222,150'
+    });
+  }
+}
+function sparkLine(a,b,count){
+  for(let i=0;i<count;i++){
+    const k=rng();
+    spark(lerp(a.x,b.x,k), lerp(a.y,b.y,k), 1, 22, '255,232,175');
+  }
+}
+
+/* ------------------------------------------------------------------
+   11. 그리기
+   ------------------------------------------------------------------ */
+const TINTS={ gold:['255,250,232','255,214,132','255,180,90'],
+              blue:['238,246,255','168,206,255','110,160,255'],
+              rose:['255,244,248','255,190,214','240,140,180'] };
+function drawStar(g,x,y,r,alpha,spike,tint){
+  if(alpha<=0.004) return;
+  const c=TINTS[tint]||TINTS.gold;
+  const R=r*5.2;
+  const gr=g.createRadialGradient(x,y,0,x,y,R);
+  gr.addColorStop(0,'rgba('+c[0]+','+(alpha*0.95).toFixed(3)+')');
+  gr.addColorStop(.16,'rgba('+c[1]+','+(alpha*0.5).toFixed(3)+')');
+  gr.addColorStop(.42,'rgba('+c[2]+','+(alpha*0.13).toFixed(3)+')');
+  gr.addColorStop(1,'rgba('+c[2]+',0)');
+  g.fillStyle=gr;
+  g.beginPath(); g.arc(x,y,R,0,TAU); g.fill();
+  g.fillStyle='rgba(255,253,246,'+(alpha*0.95).toFixed(3)+')';
+  g.beginPath(); g.arc(x,y,r*0.72,0,TAU); g.fill();
+  if(spike){
+    const L=r*6.2, w=Math.max(0.5,r*0.30);
+    g.fillStyle='rgba('+c[1]+','+(alpha*0.42).toFixed(3)+')';
+    g.beginPath(); g.moveTo(x-L,y); g.lineTo(x,y-w); g.lineTo(x+L,y); g.lineTo(x,y+w); g.closePath(); g.fill();
+    const L2=L*0.72;
+    g.beginPath(); g.moveTo(x,y-L2); g.lineTo(x+w,y); g.lineTo(x,y+L2); g.lineTo(x-w,y); g.closePath(); g.fill();
+  }
+}
+function goldLine(g,x1,y1,x2,y2,alpha,width){
+  g.strokeStyle='rgba(255,205,110,'+(alpha*0.16).toFixed(3)+')';
+  g.lineWidth=width*4.5; g.lineCap='round';
+  g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
+  g.strokeStyle='rgba(255,224,152,'+(alpha*0.42).toFixed(3)+')';
+  g.lineWidth=width*2;
+  g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
+  g.strokeStyle='rgba(255,250,228,'+(alpha*0.92).toFixed(3)+')';
+  g.lineWidth=Math.max(0.7,width*0.7);
+  g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
+}
+function drawConstellation(g,c,time){
+  const n=c.local.length;
+  if(!n) return;
+  const P=i=>({x:c.cur.cx+c.local[i].x*c.cur.s, y:c.cur.cy+c.local[i].y*c.cur.s});
+  const a=c.alpha;
+  const lw=clamp(c.cur.s/110,0.55,1.5);
+  g.save();
+  g.globalCompositeOperation='lighter';
+  for(let i=0;i<n-1;i++){ const p=P(i),q=P(i+1); goldLine(g,p.x,p.y,q.x,q.y,a*0.8,lw); }
+  if(c.closed && n>2){ const p=P(n-1),q=P(0); goldLine(g,p.x,p.y,q.x,q.y,a*0.8,lw); }
+  for(let i=0;i<n;i++){
+    const l=c.local[i], p=P(i);
+    const tw=0.72+0.28*Math.sin(time*l.sp+l.ph);
+    const rr=Math.max(0.9, l.r*c.cur.s);
+    drawStar(g,p.x,p.y,rr,a*l.base*tw,l.spike && rr>1.5,l.tint);
+  }
+  g.restore();
+  if(c.label>0.01){
+    const nm=nameOf(c.meta,lang);
+    const fs=clamp(c.cur.s*0.155,11,19);
+    g.save();
+    g.globalAlpha=c.label*a;
+    g.font='600 '+fs.toFixed(1)+'px "Apple SD Gothic Neo","Hiragino Sans","Noto Sans KR",system-ui,sans-serif';
+    g.textAlign='center'; g.textBaseline='middle';
+    g.shadowColor='rgba(255,200,110,.55)'; g.shadowBlur=14;
+    g.fillStyle='rgba(255,232,178,.96)';
+    g.fillText(nm, c.cur.cx, c.cur.cy + c.cur.s*0.62 + fs*0.6);
+    g.restore();
+  }
+}
+function render(){
+  const g=ctx, time=S.time;
+  g.setTransform(1,0,0,1,0,0);
+  g.clearRect(0,0,cv.width,cv.height);
+  g.drawImage(bgc,0,0);
+  g.setTransform(DPR,0,0,DPR,0,0);
+
+  // 배경 잔별
+  g.save();
+  g.globalCompositeOperation='lighter';
+  for(const s of S.amb){
+    const tw=0.55+0.45*Math.sin(time*s.sp+s.ph);
+    const al=s.a*tw*(S.mode==='gallery'?0.55:1);
+    g.fillStyle='rgba(240,242,255,'+al.toFixed(3)+')';
+    g.beginPath(); g.arc(s.x*W,s.y*H,s.r,0,TAU); g.fill();
+  }
+  g.restore();
+
+  // 완성 별자리
+  for(const c of S.cons) drawConstellation(g,c,time);
+
+  // 자유 별 + 실 (갤러리 전환 중에도 그려서 서서히 사라지게 둔다)
+  {
+    g.save();
+    g.globalCompositeOperation='lighter';
+    // 실
+    for(let i=0;i<S.chain.length-1;i++){
+      const a=S.chain[i], b=S.chain[i+1];
+      goldLine(g,a.x,a.y,b.x,b.y,1,1.35);
+    }
+    // 마지막 별 → 커서 유도선
+    if(S.chain.length>0 && S.hoverIdx>=0){
+      const last=S.chain[S.chain.length-1], hv=S.stars[S.hoverIdx];
+      if(hv && hv!==last && S.chain.indexOf(hv)<0){
+        g.setLineDash([3,7]);
+        g.strokeStyle='rgba(255,220,150,.28)';
+        g.lineWidth=1; g.beginPath(); g.moveTo(last.x,last.y); g.lineTo(hv.x,hv.y); g.stroke();
+        g.setLineDash([]);
+      }
+    }
+    // 닫기 예고선
+    if(S.chain.length>=3){
+      const last=S.chain[S.chain.length-1], first=S.chain[0];
+      const pulse=0.10+0.09*Math.sin(time*2.2);
+      g.setLineDash([2,8]);
+      g.strokeStyle='rgba(255,225,160,'+pulse.toFixed(3)+')';
+      g.lineWidth=1; g.beginPath(); g.moveTo(last.x,last.y); g.lineTo(first.x,first.y); g.stroke();
+      g.setLineDash([]);
+    }
+    // 별
+    for(let i=0;i<S.stars.length;i++){
+      const s=S.stars[i];
+      const inChain=S.chain.indexOf(s)>=0;
+      const isFirst=S.chain.length>0 && S.chain[0]===s;
+      const isLast=S.chain.length>0 && S.chain[S.chain.length-1]===s;
+      const tw=0.7+0.3*Math.sin(time*s.sp+s.ph);
+      let al=s.base*tw*s.fade;
+      let rr=s.r;
+      if(inChain){ al=Math.min(1,al*1.5+0.25); rr=s.r*1.16; }
+      if(i===S.hoverIdx && !inChain){ al=Math.min(1,al*1.35); rr=s.r*1.12; }
+      drawStar(g,s.x,s.y,rr,al,s.spike,inChain?'gold':s.tint);
+      // 선택 링
+      if(isFirst||isLast){
+        const ring=(isFirst&&S.chain.length>=3)?1:0.55;
+        const pr=rr*3.4+2.5+Math.sin(time*2.6)*1.4;
+        g.strokeStyle='rgba(255,228,164,'+(0.20*ring+0.16).toFixed(3)+')';
+        g.lineWidth=1.1; g.beginPath(); g.arc(s.x,s.y,pr,0,TAU); g.stroke();
+      }
+    }
+    g.restore();
+  }
+
+  // 파티클
+  if(S.parts.length){
+    g.save(); g.globalCompositeOperation='lighter';
+    for(const p of S.parts){
+      const a=clamp(p.life,0,1);
+      g.fillStyle='rgba('+p.hue+','+(a*0.9).toFixed(3)+')';
+      g.beginPath(); g.arc(p.x,p.y,p.size*(0.4+a*0.8),0,TAU); g.fill();
+    }
+    g.restore();
+  }
+
+  // 선반 구분선 (플레이 중, 완성 별자리가 있을 때)
+  if(S.mode!=='gallery' && S.cons.length>0){
+    const y=H*PLAY_TOP;
+    const lg=g.createLinearGradient(0,y,W,y);
+    lg.addColorStop(0,'rgba(200,190,255,0)');
+    lg.addColorStop(.5,'rgba(210,200,255,.11)');
+    lg.addColorStop(1,'rgba(200,190,255,0)');
+    g.strokeStyle=lg; g.lineWidth=1;
+    g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke();
+  }
+}
+
+/* ------------------------------------------------------------------
+   12. 업데이트 루프
+   ------------------------------------------------------------------ */
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(0.06,(now-last)/1000); last=now;
+  S.time+=dt;
+  // 별 페이드인
+  for(const s of S.stars){ if(s.fade<1) s.fade=Math.min(1,s.fade+dt*1.1); }
+  // 파티클
+  for(let i=S.parts.length-1;i>=0;i--){
+    const p=S.parts[i];
+    p.x+=p.vx*dt; p.y+=p.vy*dt;
+    p.vy+=16*dt; p.vx*=1-1.1*dt; p.vy*=1-1.1*dt;
+    p.life-=p.decay*dt;
+    if(p.life<=0) S.parts.splice(i,1);
+  }
+  // 별자리 이동
+  const k=1-Math.pow(RM?0.0005:0.055, dt);
+  for(const c of S.cons){
+    c.cur.cx=lerp(c.cur.cx,c.to.cx,k);
+    c.cur.cy=lerp(c.cur.cy,c.to.cy,k);
+    c.cur.s =lerp(c.cur.s ,c.to.s ,k);
+    const near=Math.abs(c.cur.s-c.to.s)<c.to.s*0.06 && Math.abs(c.cur.cy-c.to.cy)<8;
+    if(near && !c.chimed){ c.chimed=true; SFX.settle(); spark(c.cur.cx,c.cur.cy,RM?3:14,26,'255,236,190'); }
+    const wantLabel = (S.mode==='gallery')?1:0;
+    c.label=lerp(c.label,wantLabel,1-Math.pow(0.02,dt));
+    if(S.mode==='gallery') c.alpha=lerp(c.alpha,1,1-Math.pow(0.05,dt));
+  }
+  // 갤러리 전환 시 자유 별 페이드아웃
+  if(S.mode==='gallery'){
+    for(const s of S.stars) s.fade=Math.max(0,s.fade-dt*0.8);
+  }
+  render();
+  requestAnimationFrame(frame);
+}
+
+/* ------------------------------------------------------------------
+   13. 입력
+   ------------------------------------------------------------------ */
+function pos(e){
+  const r=cv.getBoundingClientRect();
+  return {x:e.clientX-r.left, y:e.clientY-r.top};
+}
+function nearestStar(p){
+  let bi=-1, bd=1e9;
+  for(let i=0;i<S.stars.length;i++){
+    const s=S.stars[i];
+    if(s.fade<0.35) continue;
+    const d=Math.hypot(s.x-p.x,s.y-p.y);
+    const lim=Math.max(s.r*3.4, 24);
+    if(d<lim && d<bd){ bd=d; bi=i; }
+  }
+  return bi;
+}
+function tryConnect(idx){
+  if(idx<0) return;
+  const s=S.stars[idx];
+  const ci=S.chain.indexOf(s);
+  if(S.chain.length===0){
+    S.chain.push(s); SFX.pick();
+    spark(s.x,s.y,RM?2:8,18);
+    updateHud(); return;
+  }
+  if(ci===0 && S.chain.length>=3){ finishShape(true); return; }
+  if(ci>=0) return;                       // 이미 사용한 별 (되돌리기로만)
+  const prev=S.chain[S.chain.length-1];
+  S.chain.push(s);
+  SFX.thread(S.chain.length-2);
+  if(!RM) sparkLine(prev,s,7);
+  spark(s.x,s.y,RM?2:6,16);
+  updateHud();
+}
+function undo(){
+  if(S.mode!=='play' || !S.chain.length) return;
+  S.chain.pop(); SFX.undo(); updateHud();
+}
+cv.addEventListener('pointerdown', e=>{
+  SFX.ensure();
+  if(S.mode!=='play') return;
+  cv.setPointerCapture && cv.setPointerCapture(e.pointerId);
+  S.pointerDown=true;
+  const p=pos(e);
+  const i=nearestStar(p);
+  S.hoverIdx=i;
+  tryConnect(i);
+});
+cv.addEventListener('pointermove', e=>{
+  if(S.mode!=='play') return;
+  const p=pos(e);
+  const i=nearestStar(p);
+  if(S.pointerDown){
+    if(i>=0 && i!==S.hoverIdx){
+      const s=S.stars[i];
+      if(S.chain.indexOf(s)<0 || (S.chain[0]===s && S.chain.length>=3)) tryConnect(i);
+    }
+  }
+  S.hoverIdx=i;
+});
+function endPointer(){ S.pointerDown=false; }
+cv.addEventListener('pointerup', endPointer);
+cv.addEventListener('pointercancel', endPointer);
+cv.addEventListener('pointerleave', ()=>{ S.pointerDown=false; S.hoverIdx=-1; });
+
+/* ------------------------------------------------------------------
+   14. 완성 → 이름 → 하늘에 올리기
+   ------------------------------------------------------------------ */
+function finishShape(closed){
+  if(S.chain.length<3){ toast(t('tMin')); return; }
+  S.mode='placing';
+  SFX.complete();
+  if(!RM){
+    for(let i=0;i<S.chain.length-1;i++) sparkLine(S.chain[i],S.chain[i+1],9);
+    if(closed) sparkLine(S.chain[S.chain.length-1],S.chain[0],9);
+  }
+  const c=makeConstellation(S.chain,closed);
+  S.pending=c;
+  // 사용한 별 제거 + 새 별 보충
+  const used=S.chain.slice();
+  S.stars=S.stars.filter(s=>used.indexOf(s)<0);
+  for(let i=0;i<used.length;i++){ const ns=newStar(); ns.fade=0; S.stars.push(ns); }
+  S.chain=[];
+  updateHud();
+  setTimeout(showReveal, RM?60:520);
+}
+function showReveal(){
+  if(!S.pending) return;
+  paintReveal();
+  $('#reveal').classList.add('show');
+}
+function paintReveal(){
+  const c=S.pending; if(!c) return;
+  $('#rvEyebrow').textContent=t('eyebrow');
+  $('#rvName').textContent=nameOf(c.meta,lang);
+  $('#rvStory').textContent=storyOf(c.meta,lang);
+  const key=c.closed?'shpClosed':'shpOpen';
+  $('#rvShape').textContent=t(key).replace('{n}',String(c.meta.n));
+  $('#rvOk').textContent=t('ok');
+  $('#rvReroll').textContent=t('reroll');
+}
+$('#rvReroll').addEventListener('click', ()=>{
+  if(!S.pending) return;
+  S.pending.meta.roll=(S.pending.meta.roll+1)%12;
+  SFX.tap(); paintReveal();
+});
+$('#rvOk').addEventListener('click', ()=>{
+  const c=S.pending; if(!c) return;
+  S.pending=null;
+  $('#reveal').classList.remove('show');
+  S.cons.push(c);
+  relayout();
+  SFX.tap();
+  if(S.cons.length>=MAX_NIGHT){
+    S.mode='placing';
+    setTimeout(toGallery, RM?200:1700);
+  }else{
+    S.mode='play';
+  }
+  updateHud();
+});
+function toGallery(){
+  S.mode='gallery';
+  relayout();
+  SFX.gallery();
+  if(!RM) for(let i=0;i<26;i++) setTimeout(()=>spark(rng()*W, H*0.25+rng()*H*0.6, 2, 20, '210,200,255'), i*45);
+  setTimeout(()=>{ $('#finish').classList.add('show'); }, RM?100:900);
+  updateHud();
+}
+
+/* ------------------------------------------------------------------
+   15. HUD
+   ------------------------------------------------------------------ */
+function updateHud(){
+  const dots=document.querySelectorAll('.dot');
+  dots.forEach((d,i)=>d.classList.toggle('on', i<S.cons.length));
+  const done=$('#doneBtn'), und=$('#undoBtn');
+  const playing = S.mode==='play';
+  done.disabled = !playing || S.chain.length<3;
+  und.disabled  = !playing || S.chain.length===0;
+  done.textContent=t('done');
+  und.textContent=t('undo');
+  let msg;
+  if(S.mode==='gallery') msg=t('p_gallery');
+  else if(S.chain.length===0) msg = S.cons.length>0 ? t('p_placed') : t('p_start');
+  else if(S.chain.length===1) msg=t('p_next');
+  else if(S.chain.length===2) msg=t('p_more');
+  else msg=t('p_done');
+  const el=$('#prompt');
+  if(el.textContent!==msg){
+    el.style.opacity='0';
+    setTimeout(()=>{ el.textContent=msg; el.style.opacity='1'; }, RM?0:170);
+  }
+}
+$('#doneBtn').addEventListener('click', ()=>{ if(S.mode==='play') finishShape(false); });
+$('#undoBtn').addEventListener('click', undo);
+
+let toastT=0;
+function toast(msg){
+  const el=$('#toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>el.classList.remove('show'), 2100);
+}
+
+/* ------------------------------------------------------------------
+   16. 언어 / 사운드 버튼
+   ------------------------------------------------------------------ */
+function applyLang(){
+  document.documentElement.lang=lang;
+  document.title=t('docTitle');
+  $('#titleMain').textContent=t('title');
+  $('#titleSub').textContent=LANGS.filter(l=>l!==lang).map(l=>I18N[l].title).join(' · ');
+  $('#homeTxt').textContent=t('home');
+  $('#langBtn').textContent=FLAGS[lang];
+  $('#finTitle').textContent=t('finTitle');
+  $('#finBody').textContent=t('finBody');
+  $('#finSave').textContent=t('save');
+  $('#finAgain').textContent=t('again');
+  $('#finHome').textContent=t('toHome');
+  paintReveal();
+  relayout();   /* 시트 높이가 언어마다 달라지므로 갤러리 배치를 다시 잡는다 */
+  updateHud();
+}
+$('#langBtn').addEventListener('click', ()=>{
+  lang=LANGS[(LANGS.indexOf(lang)+1)%LANGS.length];
+  try{ localStorage.setItem('in9-lang',lang); }catch(e){}
+  SFX.ensure(); SFX.tap();
+  applyLang();
+});
+function paintSnd(){
+  const b=$('#sndBtn');
+  b.textContent=SFX.on?'🔊':'🔇';
+  b.classList.toggle('off',!SFX.on);
+}
+$('#sndBtn').addEventListener('click', ()=>{
+  SFX.ensure();
+  SFX.setOn(!SFX.on);
+  paintSnd();
+  if(SFX.on) SFX.tap();
+});
+
+/* ------------------------------------------------------------------
+   17. 다시 하기
+   ------------------------------------------------------------------ */
+$('#finAgain').addEventListener('click', ()=>{
+  $('#finish').classList.remove('show');
+  SFX.ensure(); SFX.tap();
+  setTimeout(()=>{
+    S.cons.length=0; S.parts.length=0; S.chain.length=0;
+    S.mode='play'; S.pending=null;
+    rng=mulberry32((Math.random()*1e9)|0);
+    seedStars(25);
+    S.stars.forEach(s=>{ s.fade=0; });
+    relayout();
+    updateHud();
+    toast(t('tNewNight'));
+  }, RM?10:420);
+});
+
+/* ------------------------------------------------------------------
+   18. 사진 저장
+   ------------------------------------------------------------------ */
+function stamp(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes());
+}
+function renderExport(){
+  const EW=1080, EH=1440;
+  const ec=document.createElement('canvas');
+  ec.width=EW; ec.height=EH;
+  const g=ec.getContext('2d');
+  // 배경
+  let grd=g.createLinearGradient(0,0,EW*0.3,EH);
+  grd.addColorStop(0,'#0c0d30'); grd.addColorStop(.35,'#0a1039');
+  grd.addColorStop(.7,'#070b26'); grd.addColorStop(1,'#03040e');
+  g.fillStyle=grd; g.fillRect(0,0,EW,EH);
+  const glow=g.createRadialGradient(EW*0.5,EH*1.05,0,EW*0.5,EH*1.05,EH*0.85);
+  glow.addColorStop(0,'rgba(98,68,182,.32)'); glow.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=glow; g.fillRect(0,0,EW,EH);
+  // 은하수 띠
+  g.save();
+  g.translate(EW*0.5,EH*0.5); g.rotate(-0.62); g.translate(-EW*0.5,-EH*0.5);
+  const band=g.createLinearGradient(0,EH*0.3,0,EH*0.7);
+  band.addColorStop(0,'rgba(120,120,215,0)');
+  band.addColorStop(.5,'rgba(198,186,255,.17)');
+  band.addColorStop(1,'rgba(120,120,215,0)');
+  g.fillStyle=band; g.fillRect(-EW,EH*0.26,EW*3,EH*0.48);
+  g.restore();
+  // 입자
+  g.globalCompositeOperation='lighter';
+  for(const d of S.dust){
+    g.fillStyle='rgba(226,228,255,'+(d.a*0.85).toFixed(3)+')';
+    g.beginPath(); g.arc(d.x*EW,d.y*EH,d.r*1.7,0,TAU); g.fill();
+  }
+  for(const s of S.amb){
+    g.fillStyle='rgba(240,242,255,'+(s.a*0.7).toFixed(3)+')';
+    g.beginPath(); g.arc(s.x*EW,s.y*EH,s.r*1.6,0,TAU); g.fill();
+  }
+  g.globalCompositeOperation='source-over';
+  // 제목
+  const F='"Apple SD Gothic Neo","Hiragino Sans","Noto Sans KR",system-ui,sans-serif';
+  g.textAlign='center';
+  g.font='700 54px '+F;
+  g.shadowColor='rgba(255,200,110,.5)'; g.shadowBlur=26;
+  g.fillStyle='#ffe3a8';
+  g.fillText(t('expTitle'), EW/2, 118);
+  g.shadowBlur=0;
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  g.font='400 26px '+F; g.fillStyle='rgba(170,175,215,.85)';
+  g.fillText(d.getFullYear()+'.'+p(d.getMonth()+1)+'.'+p(d.getDate()), EW/2, 170);
+  // 별자리 3개
+  const rowH=380, top=250;
+  S.cons.forEach((c,i)=>{
+    const cx=EW/2, cy=top+rowH*i+rowH*0.42, s=290;
+    const P=j=>({x:cx+c.local[j].x*s, y:cy+c.local[j].y*s});
+    g.save(); g.globalCompositeOperation='lighter';
+    for(let j=0;j<c.local.length-1;j++){ const a=P(j),b=P(j+1); goldLine(g,a.x,a.y,b.x,b.y,1,2.4); }
+    if(c.closed && c.local.length>2){ const a=P(c.local.length-1),b=P(0); goldLine(g,a.x,a.y,b.x,b.y,1,2.4); }
+    for(let j=0;j<c.local.length;j++){
+      const l=c.local[j], q=P(j);
+      drawStar(g,q.x,q.y,Math.max(2.4,l.r*s),l.base,l.spike,l.tint);
+    }
+    g.restore();
+    g.font='600 40px '+F; g.textAlign='center';
+    g.shadowColor='rgba(255,200,110,.5)'; g.shadowBlur=20;
+    g.fillStyle='rgba(255,234,182,.97)';
+    g.fillText(nameOf(c.meta,lang), cx, cy+s*0.60+42);
+    g.shadowBlur=0;
+    g.font='400 25px '+F; g.fillStyle='rgba(163,167,208,.9)';
+    g.fillText(storyOf(c.meta,lang), cx, cy+s*0.60+84);
+  });
+  // 푸터
+  g.font='400 24px '+F; g.fillStyle='rgba(150,152,195,.7)'; g.textAlign='center';
+  g.fillText(t('expFoot'), EW/2, EH-52);
+  return ec;
+}
+$('#finSave').addEventListener('click', ()=>{
+  SFX.ensure(); SFX.tap();
+  try{
+    const ec=renderExport();
+    const a=document.createElement('a');
+    a.href=ec.toDataURL('image/png');
+    a.download='star-threads-'+stamp()+'.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    toast(t('tSaved'));
+  }catch(err){ toast(t('tSaveFail')); }
+});
+
+/* ------------------------------------------------------------------
+   19. 부팅
+   ------------------------------------------------------------------ */
+seedAmbient();
+resize();
+seedStars(25);
+relayout();
+applyLang();
+paintSnd();
+updateHud();
+
+if(window.ResizeObserver){
+  let rt=0;
+  new ResizeObserver(()=>{ clearTimeout(rt); rt=setTimeout(resize,110); }).observe($('#stage'));
+}else{
+  window.addEventListener('resize', ()=>{ clearTimeout(window.__rt); window.__rt=setTimeout(resize,140); });
+}
+window.addEventListener('orientationchange', ()=>setTimeout(resize,320));
+['pointerdown','touchstart','keydown'].forEach(ev=>{
+  window.addEventListener(ev, ()=>SFX.ensure(), {once:true, passive:true});
+});
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
