@@ -276,7 +276,7 @@ const I18N = {
     again:'다시 하기', list:'곡 고르기', home2:'홈으로',
     free:'자유 연주', freeDesc:'마음대로 두드려 보세요',
     freeLocked:'세 곡을 모두 연주하면 열려요',
-    freeTag:'자유 연주', freeExit:'그만하기',
+    freeTag:'자유 연주', freeExit:'그만하기', stop:'그만하기',
     unlocked:'자유 연주가 열렸어요 🌈',
     hintPlay:'빗방울이 닿을 때 함께 두드려 보세요',
     hintFree:'마음 가는 대로 연주해요',
@@ -298,7 +298,7 @@ const I18N = {
     again:'もういちど', list:'きょくを えらぶ', home2:'ホームへ',
     free:'じゆう えんそう', freeDesc:'すきなように たたいてね',
     freeLocked:'3きょく ぜんぶ ひくと ひらきます',
-    freeTag:'じゆう えんそう', freeExit:'おわる',
+    freeTag:'じゆう えんそう', freeExit:'おわる', stop:'やめる',
     unlocked:'じゆう えんそうが ひらきました 🌈',
     hintPlay:'あまつぶが とどいたら いっしょに たたこう',
     hintFree:'こころの ままに えんそうしよう',
@@ -320,7 +320,7 @@ const I18N = {
     again:'Play again', list:'Song list', home2:'Home',
     free:'Free play', freeDesc:'Play whatever you like',
     freeLocked:'Opens after all three songs',
-    freeTag:'Free play', freeExit:'Finish',
+    freeTag:'Free play', freeExit:'Finish', stop:'Stop',
     unlocked:'Free play is open 🌈',
     hintPlay:'Tap along as the drops land',
     hintFree:'Play whatever feels good',
@@ -486,6 +486,9 @@ function resumeAudio(){
 // glassy bell: sine fundamental + soft partials
 function playNote(freq, when, vel){
   if(!ready || !ac) return;
+  // A note whose moment has already passed is dropped, never re-aimed at "now".
+  // Without this, a stalled frame would collapse every overdue note into one instant.
+  if(when < ac.currentTime - 0.15) return;
   const t = Math.max(when, ac.currentTime + 0.001);
   const v = Math.max(0.02, Math.min(1, vel));
   const parts = [[1.0, 1.00, 1.55],[2.005, 0.30, 0.85],[3.01, 0.10, 0.42],[5.4, 0.035, 0.22]];
@@ -537,6 +540,8 @@ const progEl   = document.getElementById('prog');
 const hintEl   = document.getElementById('hint');
 const toastEl  = document.getElementById('toast');
 const freebar  = document.getElementById('freebar');
+const freeTagEl  = document.getElementById('freeTag');
+const freeExitEl = document.getElementById('freeExit');
 const langBtn  = document.getElementById('langBtn');
 const sndBtn   = document.getElementById('sndBtn');
 
@@ -613,6 +618,7 @@ let songEnd = 0;
 let songTime = 0;
 const FALL = 2.2;         // seconds a drop takes to fall
 const LEAD = 2.9;         // silent lead-in
+const JUMP = 0.5;         // clock gap that counts as a stall, not a slow frame
 
 const barGlow = new Float32Array(8);   // 0..1 decaying
 const barPress = new Float32Array(8);  // press depth
@@ -624,6 +630,8 @@ let nextFreeDrop = 0;
 let finaleT = 0;
 let lastFrame = 0;
 let clockFallback = 0;    // used when audio unavailable
+let prevClock = -1;       // last clock reading the loop actually saw
+let hiddenClock = -1;     // clock reading at the moment the page was hidden
 
 /* ==========================================================
    particles
@@ -743,6 +751,18 @@ window.addEventListener('keydown', function(e){
    ========================================================== */
 function showOverlay(el, on){ el.classList.toggle('on', on); }
 
+// the in-stage bar is shared by PLAY and FREE so both modes have a way out
+function applyStageBar(){
+  const t = T();
+  if(mode === MODE.PLAY && curSong){
+    freeTagEl.textContent  = t.songs[curSong.id].n;
+    freeExitEl.textContent = t.stop;
+  }else{
+    freeTagEl.textContent  = t.freeTag;
+    freeExitEl.textContent = t.freeExit;
+  }
+}
+
 function toMenu(){
   mode = MODE.MENU;
   curSong = null; timeline = [];
@@ -763,13 +783,15 @@ function startSong(id){
   songEnd = timeline.length ? (timeline[timeline.length-1].t + timeline[timeline.length-1].dur + 2.4) : 10;
   audioStart = (ac ? ac.currentTime : 0) + LEAD;
   clockFallback = 0;
+  prevClock = -1; hiddenClock = -1;
   songTime = -LEAD;
   ripples = []; splashes = []; sparkles = []; freeDrops = [];
   for(let i=0;i<8;i++){ barGlow[i]=0; barPress[i]=0; lastTap[i]=-99; }
   mode = MODE.PLAY;
   showOverlay(menuEl, false);
   showOverlay(finaleEl, false);
-  freebar.classList.remove('on');
+  applyStageBar();
+  freebar.classList.add('on');
   progEl.classList.add('on'); progEl.style.width = '0%';
   showHint(T().hintPlay, 5200);
 }
@@ -780,10 +802,13 @@ function startFree(){
   mode = MODE.FREE;
   freeDrops = []; ripples = []; splashes = []; sparkles = [];
   for(let i=0;i<8;i++){ barGlow[i]=0; barPress[i]=0; lastTap[i]=-99; }
+  clockFallback = 0;
+  prevClock = -1; hiddenClock = -1;
   nextFreeDrop = (ac ? ac.currentTime : 0) + 1.6;
   showOverlay(menuEl, false);
   showOverlay(finaleEl, false);
   progEl.classList.remove('on');
+  applyStageBar();
   freebar.classList.add('on');
   showHint(T().hintFree, 4600);
 }
@@ -798,6 +823,7 @@ function endSong(){
   finaleT = 0;
   finaleRings = []; bubbles = [];
   progEl.style.width = '100%';
+  freebar.classList.remove('on');
   hintEl.classList.remove('show');
   // gentle arpeggio farewell
   if(ac){
@@ -904,10 +930,14 @@ function update(dt){
     if(s.life > s.max) sparkles.splice(i,1);
   }
 
-  if(mode === MODE.PLAY){
-    updateSong(dt);
-  }else if(mode === MODE.FREE){
-    updateFree(dt);
+  if(mode === MODE.PLAY || mode === MODE.FREE){
+    // one clock reading per frame; a big step means the loop was stalled
+    // (backgrounded tab, locked screen) rather than merely slow
+    const now = nowClock(dt);
+    const jumped = prevClock >= 0 && (now - prevClock) > JUMP;
+    prevClock = now;
+    if(mode === MODE.PLAY) updateSong(now, jumped);
+    else updateFree(now, jumped);
   }else if(mode === MODE.FINALE){
     finaleT += dt;
     for(let i=0;i<finaleRings.length;i++){
@@ -928,9 +958,17 @@ function nowClock(dt){
   return clockFallback;
 }
 
-function updateSong(dt){
-  const now = nowClock(dt);
+function updateSong(now, jumped){
   songTime = now - audioStart;
+
+  // after a stall, retire every overdue note silently instead of firing the
+  // whole missed stretch into a single frame
+  if(jumped){
+    for(let i=0;i<timeline.length;i++){
+      const n = timeline[i];
+      if(n.t <= songTime){ n.sched = true; n.hit = true; }
+    }
+  }
 
   // schedule audio a little ahead, and fire visuals exactly at hit time
   for(let i=0;i<timeline.length;i++){
@@ -959,8 +997,14 @@ function updateSong(dt){
   if(songTime >= songEnd) endSong();
 }
 
-function updateFree(dt){
-  const now = nowClock(dt);
+function updateFree(now, jumped){
+  if(jumped){
+    for(let i=0;i<freeDrops.length;i++){
+      const d = freeDrops[i];
+      if(d.t <= now){ d.sched = true; d.hit = true; }
+    }
+    nextFreeDrop = now + 1.2;
+  }
   // gentle ambient accompaniment — sparse, pentatonic-friendly
   if(now >= nextFreeDrop){
     const pent = [0,1,2,4,5,7];
@@ -1367,6 +1411,39 @@ function drawFinaleFx(){
 }
 
 /* ==========================================================
+   tab visibility — rAF pauses in the background but the audio clock
+   does not, so the song is shifted forward by the gap and picks up
+   exactly where the player left it
+   ========================================================== */
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden){
+    if(ac && ready && (mode === MODE.PLAY || mode === MODE.FREE)) hiddenClock = ac.currentTime;
+    return;
+  }
+  const was = hiddenClock;
+  hiddenClock = -1;
+  lastFrame = 0;      // keep the first frame back from inheriting a huge dt
+  prevClock = -1;
+  if(was < 0 || !ac || !ready) return;
+  const gap = ac.currentTime - was;
+  if(gap <= 0) return;
+  if(mode === MODE.PLAY){
+    audioStart += gap;
+    for(let i=0;i<timeline.length;i++){
+      const n = timeline[i];
+      if(!n.hit) n.sched = false;   // re-schedule on the shifted clock
+    }
+  }else if(mode === MODE.FREE){
+    for(let i=0;i<freeDrops.length;i++){
+      const d = freeDrops[i];
+      d.t += gap;
+      if(!d.hit) d.sched = false;
+    }
+    nextFreeDrop += gap;
+  }
+});
+
+/* ==========================================================
    loop
    ========================================================== */
 function frame(ts){
@@ -1396,8 +1473,7 @@ function applyLang(){
   document.getElementById('fAgain').textContent  = t.again;
   document.getElementById('fList').textContent   = t.list;
   document.getElementById('fHome').textContent   = t.home2;
-  document.getElementById('freeTag').textContent = t.freeTag;
-  document.getElementById('freeExit').textContent= t.freeExit;
+  applyStageBar();
   langBtn.textContent = t.flag;
   document.title = t.title + ' · Rain Xylophone';
   renderList();

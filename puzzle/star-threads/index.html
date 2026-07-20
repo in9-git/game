@@ -30,7 +30,7 @@ body{
   gap:6px;
 }
 /* ---------------- header ---------------- */
-header{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:2px 0}
+header{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:2px 0;flex:0 0 auto}
 .home{
   display:inline-block;color:var(--ink-dim);text-decoration:none;font-size:.8rem;white-space:nowrap;
   padding:7px 12px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-line);
@@ -61,7 +61,9 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
 .chip.off{opacity:.42}
 /* ---------------- stage ---------------- */
 #stage{
-  position:relative;flex:1;min-height:240px;border-radius:24px;overflow:hidden;
+  /* 짧은 뷰포트에서는 stage 가 먼저 양보한다 — HUD(되돌리기·완성)가 화면 밖으로
+     밀려나면 body{overflow:hidden} 탓에 스크롤로 구제할 방법이 없다 */
+  position:relative;flex:1 1 0;min-height:120px;border-radius:24px;overflow:hidden;
   box-shadow:0 24px 60px rgba(0,0,0,.6), inset 0 1px 0 rgba(200,210,255,.14),
              0 0 0 1px rgba(150,160,255,.1);
   background:#04060f;
@@ -72,7 +74,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
   box-shadow:inset 0 0 90px rgba(4,6,20,.85), inset 0 0 26px rgba(60,50,120,.3);
 }
 /* ---------------- hud ---------------- */
-#hud{display:flex;flex-direction:column;gap:7px;align-items:center}
+#hud{display:flex;flex-direction:column;gap:7px;align-items:center;flex:0 0 auto}
 #prompt{
   font-size:.76rem;color:var(--ink-dim);letter-spacing:.02em;text-align:center;
   min-height:1.15em;line-height:1.4;transition:opacity .35s;padding:0 4px;
@@ -170,6 +172,21 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
 @media (max-width:380px){
   .btn{padding:10px 16px;font-size:.8rem}
   #prompt{font-size:.72rem}
+}
+/* 가로모드 소형 폰 — 고정 크롬을 줄여 stage 와 HUD 가 함께 들어가게 한다 */
+@media (max-height:480px){
+  #app{padding:3px 8px calc(4px + env(safe-area-inset-bottom));gap:3px}
+  header{padding:0}
+  .titles h1{font-size:1rem;letter-spacing:.06em}
+  .titles .sub{display:none}
+  .home,.chip{padding:5px 9px;font-size:.72rem}
+  #stage{border-radius:16px;min-height:96px}
+  #stage::after{border-radius:16px}
+  #hud{gap:3px}
+  #prompt{font-size:.68rem;line-height:1.25;min-height:1em}
+  .btn{padding:7px 14px;font-size:.78rem}
+  .dot{width:8px;height:8px}
+  #dots{gap:5px}
 }
 @media (prefers-reduced-motion: reduce){
   *{transition-duration:.01ms !important;animation-duration:.01ms !important}
@@ -1155,6 +1172,22 @@ function updateHud(){
 }
 $('#doneBtn').addEventListener('click', ()=>{ if(S.mode==='play') finishShape(false); });
 $('#undoBtn').addEventListener('click', undo);
+/* 키보드 대체 조작 — 버튼이 화면 밖으로 밀리거나 포인터를 못 쓰는 상황에서도
+   되돌리기와 '열린 모양' 완성이 가능해야 한다 (완성 버튼이 유일한 수단이면 안 됨) */
+window.addEventListener('keydown', e=>{
+  if(S.mode!=='play') return;
+  if(e.altKey||e.metaKey||e.ctrlKey) return;
+  const tag=(e.target&&e.target.tagName)||'';
+  if(tag==='BUTTON'||tag==='A') return;      // 버튼 자체 활성화와 중복 방지
+  const k=e.key;
+  if(k==='Backspace'||k==='Delete'||k==='z'||k==='Z'){
+    if(S.chain.length){ e.preventDefault(); undo(); }
+  }else if(k==='Enter'||k===' '||k==='Spacebar'){
+    e.preventDefault();
+    if(S.chain.length>=3) finishShape(false);
+    else if(S.chain.length) toast(t('tMin'));
+  }
+});
 
 let toastT=0;
 function toast(msg){
@@ -1270,10 +1303,21 @@ function renderExport(){
   const d=new Date(), p=n=>String(n).padStart(2,'0');
   g.font='400 26px '+F; g.fillStyle='rgba(170,175,215,.85)';
   g.fillText(d.getFullYear()+'.'+p(d.getMonth()+1)+'.'+p(d.getDate()), EW/2, 170);
-  // 별자리 3개
-  const rowH=380, top=250;
+  // 별자리 — 캔버스 높이에서 역산해 배치한다.
+  // (고정 rowH/s 로 두면 행 수·글자 높이를 못 따라가 이름·이야기·푸터가 서로 겹친다)
+  const HEAD_BOT = 206;             // 날짜 baseline(170) 아래로 확보한 상단 경계
+  const FOOT_BASE = EH-52;          // 푸터 baseline
+  const FOOT_TOP  = FOOT_BASE-34;   // 푸터가 지키는 상단선 — 이 아래로는 아무것도 안 그린다
+  const NAME_DROP = 40;             // 도형 하단 → 이름 baseline
+  const STORY_DROP= 38;             // 이름 baseline → 이야기 baseline
+  const TEXT_H    = NAME_DROP+STORY_DROP+12;   // 텍스트 블록이 먹는 높이(디센더 포함)
+  const ROW_PAD   = 20;             // 행 사이 숨구멍
+  const rows = Math.max(1, S.cons.length);
+  const rowH = (FOOT_TOP-HEAD_BOT)/rows;
+  const shapeS = Math.max(60, Math.min(300, EW*0.60, rowH-TEXT_H-ROW_PAD));
   S.cons.forEach((c,i)=>{
-    const cx=EW/2, cy=top+rowH*i+rowH*0.42, s=290;
+    const s=shapeS;
+    const cx=EW/2, cy=HEAD_BOT+rowH*i+ROW_PAD*0.5+s/2;
     const P=j=>({x:cx+c.local[j].x*s, y:cy+c.local[j].y*s});
     g.save(); g.globalCompositeOperation='lighter';
     for(let j=0;j<c.local.length-1;j++){ const a=P(j),b=P(j+1); goldLine(g,a.x,a.y,b.x,b.y,1,2.4); }
@@ -1283,17 +1327,18 @@ function renderExport(){
       drawStar(g,q.x,q.y,Math.max(2.4,l.r*s),l.base,l.spike,l.tint);
     }
     g.restore();
+    const nameY=cy+s/2+NAME_DROP;
     g.font='600 40px '+F; g.textAlign='center';
     g.shadowColor='rgba(255,200,110,.5)'; g.shadowBlur=20;
     g.fillStyle='rgba(255,234,182,.97)';
-    g.fillText(nameOf(c.meta,lang), cx, cy+s*0.60+42);
+    g.fillText(nameOf(c.meta,lang), cx, nameY, EW-80);
     g.shadowBlur=0;
     g.font='400 25px '+F; g.fillStyle='rgba(163,167,208,.9)';
-    g.fillText(storyOf(c.meta,lang), cx, cy+s*0.60+84);
+    g.fillText(storyOf(c.meta,lang), cx, nameY+STORY_DROP, EW-80);
   });
   // 푸터
   g.font='400 24px '+F; g.fillStyle='rgba(150,152,195,.7)'; g.textAlign='center';
-  g.fillText(t('expFoot'), EW/2, EH-52);
+  g.fillText(t('expFoot'), EW/2, FOOT_BASE);
   return ec;
 }
 $('#finSave').addEventListener('click', ()=>{
