@@ -238,7 +238,7 @@ canvas{
   <div class="topbar">
     <a class="chip" href="../../index.html" id="homeBtn">← 홈</a>
     <div class="tb-right">
-      <button class="chip" id="tutBtn" title="규칙">❔</button>
+      <button class="chip" id="tutBtn" title="규칙" aria-label="규칙">❔</button>
       <button class="chip" id="soundBtn">🔊</button>
       <button class="chip" id="langBtn">🇰🇷 KO</button>
     </div>
@@ -493,6 +493,7 @@ var LANG = {
     drawBody: '둘 곳이 없어 여기서 마칩니다.',
     again: '재밌었어요! 한 판 더?',
     resNew: '다시 하기', resHome: '홈으로',
+    tutBtn: '규칙',
     tutNext: '다음', tutStart: '시작하기', tutSkip: '건너뛰기',
     tutCap0: '숨구멍 4', tutCap1: '← 마지막 한 곳',
     tut: [
@@ -528,6 +529,7 @@ var LANG = {
     drawBody: '打つ場所がないのでここまで。',
     again: '楽しかった！もう一局どう？',
     resNew: 'もう一度', resHome: 'ホームへ',
+    tutBtn: 'ルール',
     tutNext: '次へ', tutStart: 'はじめる', tutSkip: 'スキップ',
     tutCap0: '息 4つ', tutCap1: '← 最後のひとつ',
     tut: [
@@ -563,6 +565,7 @@ var LANG = {
     drawBody: 'No legal points left — we stop here.',
     again: 'That was fun! One more?',
     resNew: 'Play again', resHome: 'Home',
+    tutBtn: 'Rules',
     tutNext: 'Next', tutStart: 'Start', tutSkip: 'Skip',
     tutCap0: '4 liberties', tutCap1: '← the last one',
     tut: [
@@ -603,7 +606,8 @@ var S = {
   passes: 0,
   undoLeft: 1,
   snap: null,
-  busy: false
+  busy: false,
+  aiTimer: 0
 };
 var anims = [], parts = [];
 var preview = -1, pointerDown = false;
@@ -971,7 +975,12 @@ function restore(sn) {
   S.last = sn.last; S.passes = sn.passes;
 }
 
+function cancelAi() {
+  if (S.aiTimer) { clearTimeout(S.aiTimer); S.aiTimer = 0; }
+}
+
 function newGame() {
+  cancelAi();
   S.board = newBoard();
   S.turn = HUMAN; S.ko = -1;
   S.capHuman = 0; S.capAi = 0;
@@ -1080,10 +1089,13 @@ function humanPlay(i) {
 }
 
 function scheduleAi() {
+  cancelAi();
   S.busy = true;
   var delay = 420 + Math.random() * 340;
-  setTimeout(function () {
-    if (S.over) { S.busy = false; return; }
+  S.aiTimer = setTimeout(function () {
+    S.aiTimer = 0;
+    /* 새 판 등으로 상황이 바뀌었으면 이 콜백은 무효 */
+    if (S.over || S.turn !== AI) { S.busy = false; return; }
     var mv = aiChoose(S.board, AI, S.ko, S.capAi, S.capHuman, 72);
     if (!mv) {
       S.passes++;
@@ -1124,6 +1136,7 @@ function afterAi() {
 }
 
 function finish(kind) {
+  cancelAi();
   S.over = true;
   S.busy = false;
   syncUI();
@@ -1279,6 +1292,9 @@ function applyLang() {
   document.getElementById('tTitle').textContent = L.title;
   document.getElementById('tSub').textContent = L.sub;
   document.getElementById('homeBtn').textContent = L.home;
+  var tb = document.getElementById('tutBtn');
+  tb.title = L.tutBtn;
+  tb.setAttribute('aria-label', L.tutBtn);
   document.getElementById('tYou').textContent = L.you;
   document.getElementById('tAi').textContent = L.ai;
   document.getElementById('tCapLabel1').textContent = L.capLabel;

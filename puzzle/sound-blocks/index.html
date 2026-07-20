@@ -56,6 +56,9 @@ body::after{
 }
 #app{position:relative;max-width:540px;margin:0 auto;padding:12px 14px 36px;z-index:1}
 
+/* [hidden] must beat author display rules (UA sheet loses the cascade) */
+[hidden]{display:none!important}
+
 /* ---------- buttons ---------- */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
@@ -667,6 +670,10 @@ var placement = [];   /* slotIdx -> blockId|null */
 var doneSet = {};
 var timers = [];
 var playing = false;
+/* 승리 연출이 아직 '한 곡 완성' 화면에 도달하지 못한 상태.
+   연출 타이머는 언제든 끊길 수 있으므로, 끊기면 이 예약분을 즉시 실행해
+   보상 화면(그리고 앙코르 경로)이 영구히 사라지지 않게 한다. */
+var pendingClear = null;
 
 (function loadDone(){
   var raw = store.get('sb-done') || '';
@@ -693,6 +700,8 @@ function shuffled(arr){
   return a;
 }
 function loadSong(i, keepSolved){
+  /* 곡을 바꾸기 전에, 예약된 보상 화면이 있으면 먼저 띄운다 (현재 곡 기준) */
+  finishClear(true);
   clearTimers(); playing = false;
   songIdx = i;
   var s = song();
@@ -850,6 +859,8 @@ function onPointerDown(e){
   var el = e.target.closest ? e.target.closest('.blk') : null;
   if (!el) return;
   Snd.ensure();
+  /* 승리 연출 중 블록을 누르면 연출을 건너뛰고 바로 보상 화면으로 (블록은 잠금) */
+  if (pendingClear){ finishClear(true); e.preventDefault(); return; }
   if (playing) stopPlayback();
   var id = parseInt(el.getAttribute('data-id'), 10);
   if (isNaN(id) || !blocks[id]) return;
@@ -971,6 +982,8 @@ function checkSolved(){
 function stopPlayback(){
   clearTimers(); playing = false;
   $$('#staff .blk').forEach(function(b){ b.classList.remove('pop','ring'); });
+  /* 재생을 끊으면 승리 연출 타이머도 함께 날아간다 — 예약분은 즉시 실행 */
+  finishClear(true);
 }
 function playArrangement(onEnd){
   stopPlayback();
@@ -1034,22 +1047,35 @@ function hexA(h, a){
 }
 
 /* ================= celebration ================= */
+function showClearOv(){
+  $('#clearSong').textContent = L('songs')[songIdx];
+  $('#clearEm').textContent = song().em;
+  updateClearBtn();
+  showOv('#ovClear');
+}
+/* 예약된 보상 화면을 소비한다. instant면 남은 연출을 건너뛰고 즉시 표시.
+   pendingClear는 항상 여기서만 비워지므로 화면이 유실될 수 없다. */
+function finishClear(instant){
+  var fn = pendingClear;
+  if (!fn) return;
+  pendingClear = null;
+  fn(instant);
+}
 function celebrate(){
   var s = song();
   doneSet[s.id] = true;
   saveDone();
   renderTabs(); renderProgress(); updateClearBtn();
   setGuide('guideDone');
-  var dur = playArrangement(function(){
+  /* playArrangement 내부의 stopPlayback이 방금 만든 예약을 삼키지 않도록,
+     예약은 재생을 건 뒤에 등록한다 */
+  var dur = playArrangement(function(){ finishClear(false); });
+  pendingClear = function(instant){
     Snd.fanfare();
     burst();
-    later(function(){
-      $('#clearSong').textContent = L('songs')[songIdx];
-      $('#clearEm').textContent = s.em;
-      updateClearBtn();
-      showOv('#ovClear');
-    }, 640);
-  });
+    if (instant) showClearOv();
+    else later(showClearOv, 640);
+  };
   later(function(){ burst(0.55); }, dur * 1000 * 0.5);
 }
 
