@@ -753,6 +753,10 @@
     if(now-lastShotAt<0.24) return;
     lastShotAt=now;
     session.shots++;
+    /* commit viewfinder to its aim target: vf.x/y is a render-smoothed value and
+       may still be easing when the shutter fires (esp. taps, which have no hover
+       tracking). judge + crop from where the player actually aimed. */
+    vf.x=vf.tx; vf.y=vf.ty;
     /* find hit BEFORE flash so snapshot is clean */
     var hit=null,bestD=1e9;
     for(var i=0;i<clouds.length;i++){
@@ -1131,6 +1135,9 @@
     pressed=true;
     var p=ptPos(ev);
     vf.tx=p.x; vf.ty=p.y;
+    /* touch/pen have no hover phase, so a tap is the whole aim gesture — put the
+       viewfinder on the tap point at once instead of easing in from the last tap. */
+    if(ev.pointerType!=='mouse'){ vf.x=p.x; vf.y=p.y; }
     try{cv.setPointerCapture(ev.pointerId);}catch(e){}
   });
   cv.addEventListener('pointermove',function(ev){

@@ -214,7 +214,10 @@
   }
   .pill:active { transform:scale(.94); background:rgba(30,40,80,.7); }
 
-  .title-box { text-align:center; min-width:0; }
+  /* Title is decoration, not a control. It spans the whole centre column, so
+     leaving it interactive would swallow pointerdown/pointermove meant for the
+     stage underneath (flashlight aiming + bug taps near the top of the scene). */
+  .title-box { text-align:center; min-width:0; pointer-events:none; }
   .title-box h1 {
     font-size:clamp(17px, 4.6vw, 22px);
     font-weight:800;
@@ -598,6 +601,7 @@
   /* ================= dom refs ================= */
   var $ = function (id) { return document.getElementById(id); };
   var stage = $('stage'), bugLayer = $('bugLayer'), fxLayer = $('fxLayer');
+  var headerEl = document.querySelector('header');
   var starField = $('starField');
   var pCount = $('pCount'), pSlots = $('pSlots');
   var hintToast = $('hintToast');
@@ -774,10 +778,34 @@
   }
 
   /* ================= geometry ================= */
+  // Roaming bugs must stay clear of the header UI band. The header overlays the
+  // top of the stage, so a bug whose ceiling sits inside that band gets hidden
+  // behind the chrome. A fixed % ceiling cannot express this: the header is a
+  // near-constant pixel height while the stage height swings with orientation
+  // (7% of a 390px-tall landscape viewport is well inside the header). So derive
+  // the ceiling from the measured header height each time the viewport changes.
+  function clampRoamBounds() {
+    var hh = headerEl ? headerEl.offsetHeight : 0;
+    var i, b, minY;
+    for (i = 0; i < BUGS.length; i++) {
+      b = BUGS[i];
+      if (!b.bounds) continue;
+      if (b.bounds.baseY0 == null) b.bounds.baseY0 = b.bounds.y0;
+      // emoji is centred on (px,py), so clear half its height plus a margin
+      minY = SH ? (hh + b.size * 0.5 + 8) / SH * 100 : b.bounds.baseY0;
+      b.bounds.y0 = Math.min(b.bounds.y1 - 4, Math.max(b.bounds.baseY0, minY));
+      if (b.py < b.bounds.y0) {
+        b.py = b.bounds.y0;
+        if (b.el) b.el.style.top = b.py.toFixed(2) + '%';
+      }
+    }
+  }
+
   function measure() {
     SW = stage.clientWidth || window.innerWidth;
     SH = stage.clientHeight || window.innerHeight;
     R = Math.max(105, Math.min(Math.min(SW, SH) * 0.26, 175));
+    clampRoamBounds();
     if (state === 'intro') {
       lx = tx = SW / 2;
       ly = ty = SH * 0.55;
