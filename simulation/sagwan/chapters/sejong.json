@@ -1,0 +1,750 @@
+{
+ "id": "sejong",
+ "title": {
+  "ko": "세종 — 다섯 개의 갈림길",
+  "ja": "世宗 — 五つの分かれ道",
+  "en": "Sejong — Five Crossroads"
+ },
+ "scenes": [
+  {
+   "id": "sejong-1",
+   "year": "1423",
+   "title": {
+    "ko": "관노의 재주",
+    "ja": "官奴の才",
+    "en": "The Servant's Gift"
+   },
+   "briefing": {
+    "ko": "전하, 기록 요괴 사관 도깨비가 아뢰옵니다.\n동래현에서 올라온 사내가 궁의 작업방에 있사옵니다. 이름은 장영실. 관청에 매인 종, 곧 관노의 몸으로 났으나 쇠를 다루고 별의 길을 읽는 재주가 남달라, 선왕 태종께서도 그 솜씨를 아끼시어 곁에 두셨다 하옵니다. 전하께서는 그에게 상의원 별좌라는 벼슬을 내리고자 하셨지요.\n그러나 조정이 조용하지 않사옵니다. 법도를 지키는 신하들은 천한 신분에 난 자에게 벼슬을 주면 나라의 질서가 흐트러진다 하옵니다. 재주는 눈에 뻔히 보이는데, 신분의 벽이 높사옵니다. 전하, 어찌하시겠습니까.",
+    "ja": "殿下、記録の妖怪・史官トッケビが申し上げます。\n東萊県から都に上ってきた男が、宮中の作業場におります。名は蔣英実。役所に属する身分の低い者、いわゆる官奴として生まれましたが、鉄を扱い星の道を読む腕が並はずれており、先王・太宗もその腕を惜しんで側に置かれたといいます。殿下はこの者に、尚衣院別坐という官職を授けたいとお考えでした。\nけれども朝廷は静かではありません。法度を重んじる臣たちは、身分の低い生まれの者に官職を与えれば国の秩序が乱れる、と申します。腕は目に見えて確かなのに、身分の壁は高いのです。殿下、いかがなさいますか。",
+    "en": "Your Majesty, your Scribe Goblin reports.\nA man from Dongnae is working in the palace workshop. His name is Jang Yeong-sil. He was born a servant bound to the county office, yet he works iron and reads the paths of the stars as few men can, and your father, the late King Taejong, kept him close for the skill in his hands.\nYou wish to give him an office: assistant keeper of the Royal Wardrobe. But the court is not quiet. Ministers who guard the old rules say an office given to a man of low birth will unsettle the kingdom. The gift is plain to see. The wall is high. What will you do, Your Majesty?"
+   },
+   "explore": [
+    {
+     "id": "e1",
+     "label": {
+      "ko": "반대하는 신하의 말을 듣는다",
+      "ja": "反対する臣の言葉を聞く",
+      "en": "Hear the minister who objects"
+     },
+     "text": {
+      "ko": "이조판서 허조가 나아와 아뢰옵니다. 천한 신분에서 난 자에게 벼슬을 내리시면 법도가 무너지고, 뒷사람이 이 일을 빌미로 삼을 것이라 하옵니다. 그 말에는 미움보다 두려움이 있사옵니다. 한 번 열린 문은 다시 닫기 어렵다는 두려움이옵니다.",
+      "ja": "吏曹判書の許稠が進み出て申します。身分の低い生まれの者に官職を授ければ法度が崩れ、後の者がこれを口実にするでしょう、と。その言葉にあるのは憎しみよりも恐れです。一度開いた戸は閉じにくい、という恐れなのです。",
+      "en": "Heo Jo, the minister of personnel, steps forward. Give an office to a man of low birth, he says, and the rules will crack; others will point to this day and ask the same. His voice holds fear more than scorn — fear of a door that, once open, cannot be shut."
+     }
+    },
+    {
+     "id": "e2",
+     "label": {
+      "ko": "장영실이 만든 기구를 살펴본다",
+      "ja": "蔣英実の作った器を見てみる",
+      "en": "Look at what Jang has built"
+     },
+     "text": {
+      "ko": "작업방에 들어서니 물이 대롱을 타고 흘러 그릇을 채우고, 그릇이 차면 저울처럼 기울며 작은 종을 건드리옵니다. 아직 손바닥만 한 본보기일 뿐이나, 사람이 두드리지 않아도 시각이 스스로 소리를 내는 셈이옵니다. 장영실은 고개를 숙인 채, 겨울에 물이 얼면 어찌할지를 벌써 걱정하고 있사옵니다.",
+      "ja": "作業場に入りますと、水が細い管を通って器を満たし、器がいっぱいになると天秤のように傾いて小さな鐘に触れます。まだ手のひらほどの試作にすぎませんが、人が叩かなくても時がひとりでに音を立てる仕掛けです。蔣英実は頭を下げたまま、冬に水が凍ったらどうするかを、もう心配しております。",
+      "en": "In the workshop, water runs down a thin pipe into a cup; when the cup fills it tips like a scale and nudges a small bell. It is only a palm-sized model, but the hour sounds without anyone striking a drum. Jang bows his head and says he already worries about the water freezing in winter."
+     }
+    },
+    {
+     "id": "e3",
+     "label": {
+      "ko": "벼슬을 주어도 좋다는 신하를 찾는다",
+      "ja": "官職を許すという臣を探す",
+      "en": "Find the ministers who say yes"
+     },
+     "text": {
+      "ko": "병조판서 조말생은 오히려 이런 재주야말로 그런 자리에 마땅하다 하옵고, 원로대신 유정현도 벼슬을 내려 무방하다 하옵니다. 조정의 뜻이 하나가 아니니, 이 논의는 아직 끝난 것이 아니옵니다. 전하께서 한 번 더 물으실 여지가 남아 있사옵니다.",
+      "ja": "兵曹判書の趙末生は、むしろこうした腕こそその席にふさわしいと申します。元老の柳廷顕も、官職を授けてかまわないと申します。朝廷の意は一つではありません。つまり、この議はまだ終わっていないのです。殿下がもう一度お尋ねになる余地は残っております。",
+      "en": "Jo Mal-saeng, the minister of war, says the opposite: a gift like this belongs in exactly that post. Yu Jeong-hyeon, an elder statesman, sees no harm in it either. The court does not speak with one voice, so the matter is not closed. There is room to ask again, Your Majesty."
+     }
+    }
+   ],
+   "choices": [
+    {
+     "id": "a",
+     "label": {
+      "ko": "관례를 따라 벼슬을 거둔다",
+      "ja": "慣例に従い、官職を諦める",
+      "en": "Follow custom and drop the office"
+     },
+     "isHistory": false,
+     "result": {
+      "ko": "전하께서 붓을 내려놓으시니, 장영실은 동래현으로 돌아가 다시 관청 일을 맡았사옵니다. 조정은 조용해졌고 법도는 흔들리지 않았사옵니다. 다만 궁궐의 어느 방에서도, 물이 스스로 시각을 알리는 소리는 끝내 들리지 않았사옵니다.",
+      "ja": "殿下が筆を置かれると、蔣英実は東萊県に戻り、また役所の雑務に就きました。朝廷は静かになり、法度は揺らぎませんでした。ただ宮中のどの部屋でも、水がひとりでに時を告げる音は、ついに聞こえませんでした。",
+      "en": "You set down the brush. Jang goes back to Dongnae and to the county's errands. The court grows quiet; the old rules stand unshaken. And in no room of the palace does water ever announce the hour by itself."
+     },
+     "ifEnding": {
+      "title": {
+       "ko": "조용한 조정",
+       "ja": "静かな朝廷",
+       "en": "A Quiet Court"
+      },
+      "text": {
+       "ko": "몇 해가 지나도 나라의 시계는 사람의 눈과 손에 매여 있었습니다. 하늘이 흐리면 시각을 잃고, 밤중에 물을 갈아주는 이가 졸면 종은 울리지 않았지요. 동래에서는 한 사내가 남의 집 문고리와 쟁기를 고쳐주며 늙어갔고, 그가 무엇을 만들 수 있었는지는 아무도 적어두지 않았습니다. 사관의 붓은 여기서 멈춥니다 — 실제 전하께서는 이 자리에서 무엇을 택하셨을까요.",
+       "ja": "幾年か過ぎても、国の時計は人の目と手に頼ったままでした。空が曇れば時を失い、夜に水を替える者が居眠りすれば鐘は鳴りません。東萊では一人の男が他家の戸金具や鋤を直しながら年をとり、彼が何を作れたのかを書き残した者はいませんでした。史官の筆はここで止まります——実際の殿下は、この場で何をお選びになったのでしょう。",
+       "en": "Years pass, and the kingdom still tells time with human eyes and hands. On cloudy days the hour is lost; at night, if the man who refills the water dozes, no bell rings. In Dongnae one man grows old mending hinges and plough blades, and nobody writes down what he might have built. Here the Chronicler's brush stops — what did the king truly choose?"
+      }
+     }
+    },
+    {
+     "id": "b",
+     "label": {
+      "ko": "신하들과 다시 의논해 벼슬을 내린다",
+      "ja": "臣たちと再び議して官職を授ける",
+      "en": "Talk it through again, then appoint him"
+     },
+     "isHistory": true,
+     "result": {
+      "ko": "전하께서는 의논을 한 번으로 끝내지 않으셨사옵니다. 반대하는 이의 말을 끝까지 들으신 뒤 다른 대신들에게 다시 물으시니, 벼슬을 주어도 좋다는 답이 돌아왔사옵니다. 장영실은 상의원 별좌가 되어, 궁의 작업방에 제 이름으로 앉았사옵니다.",
+      "ja": "殿下は議論を一度で終わらせませんでした。反対する者の言を最後まで聞かれた後、ほかの大臣たちに改めてお尋ねになると、授けてよいという答えが返りました。蔣英実は尚衣院別坐となり、宮中の作業場に自分の名で座りました。",
+      "en": "You do not let the matter end with one answer. You hear the objection out to its last word, then put the question to other ministers — and they say the office may be given. Jang Yeong-sil becomes assistant keeper of the Royal Wardrobe, seated in the palace workshop under his own name."
+     }
+    },
+    {
+     "id": "c",
+     "label": {
+      "ko": "벼슬은 주지 않고 일만 맡긴다",
+      "ja": "官職は与えず、仕事だけ任せる",
+      "en": "No office — only the work"
+     },
+     "isHistory": false,
+     "result": {
+      "ko": "장영실은 벼슬 없이 궁의 작업방에 머물며 기구를 만들었사옵니다. 솜씨는 그대로였으나, 이름을 올릴 자리가 없으니 재료를 청하는 일도 사람을 부리는 일도 남의 손을 빌려야 했사옵니다. 완성된 물건에는 만든 이의 이름이 남지 않았사옵니다.",
+      "ja": "蔣英実は官職のないまま宮中の作業場に残り、器を作り続けました。腕はそのままでしたが、名を記す場所がないため、材料を頼むにも人を動かすにも、他人の手を借りねばなりませんでした。出来上がった品に、作った者の名は残りませんでした。",
+      "en": "Jang stays in the palace workshop with no office at all. His hands are as good as ever, but with his name on no register he must borrow another man's mouth to ask for brass, for charcoal, for helpers. The finished instruments carry no maker's name."
+     },
+     "ifEnding": {
+      "title": {
+       "ko": "이름 없는 솜씨",
+       "ja": "名のない腕",
+       "en": "The Nameless Hand"
+      },
+      "text": {
+       "ko": "기구는 완성되었지만 기록에는 어느 공인이 만들었다고만 적혔습니다. 세월이 흘러 부품이 닳았을 때, 그것을 고칠 수 있는 이가 누구인지 아는 사람은 남아 있지 않았지요. 재주는 한 사람의 손안에 갇혔다가, 그 손과 함께 사라졌습니다. 벼슬 하나가 있고 없고가 이토록 오래 남는 일인지 — 실제 역사는 다르게 적혀 있사옵니다.",
+       "ja": "器は完成しましたが、記録には、ある工人が作った、とだけ書かれました。年月が経って部品が擦り切れたとき、それを直せる者が誰なのかを知る人は残っていませんでした。才は一人の手の中に閉じられ、その手とともに消えました。官職ひとつの有無がこれほど長く残るものなのか——実際の歴史は、違うふうに書かれています。",
+       "en": "The instruments are finished, but the record says only that a craftsman made them. Years later, when a part wears through, no one is left who knows whose hands to send for. The skill stayed inside one man and left with him. Whether a single title can matter that long — history, as it happens, was written another way."
+      }
+     }
+    }
+   ],
+   "reveal": {
+    "ko": "실제로 전하께서는 이 일을 한 번에 정하지 않으셨사옵니다. 상의원 별좌를 맡기려 이조판서 허조에게 물으시니 안 된다 하고, 병조판서 조말생은 오히려 그런 재주야말로 마땅하다 하여 의논이 갈렸사옵니다. 전하께서는 억지로 밀지 않으시고, 뒤에 유정현 등 대신들에게 다시 물으신 끝에 벼슬을 내리셨사옵니다.\n열 해쯤 지난 1433년 9월, 이 일을 전하께서 신하들 앞에서 손수 되짚으신 말이 세종실록에 남았사옵니다. 실록에는 영실의 아버지가 중국에서 온 사람이고 어머니는 신분이 낮았다고 적혀 있사옵니다. 그해 영실은 호군에 올랐고, 이듬해 1434년에는 그가 만든 자격루가 보루각에서 스스로 시각을 알리기 시작하였사옵니다.",
+    "ja": "実際の殿下は、この一件を一度でお決めになりませんでした。尚衣院別坐に就けようと吏曹判書の許稠に問えば否といい、兵曹判書の趙末生はむしろそうした腕こそふさわしいといって、議は分かれました。殿下は無理に押し通さず、のちに柳廷顕ら大臣たちへ改めてお尋ねになった末に、官職を授けられたのです。\n十年ほど後の1433年9月、この経緯を殿下がご自身の口で臣たちの前で振り返られた言葉が、世宗実録に残っています。実録には、英実の父は中国から来た人で、母は身分が低かったと記されています。その年、英実は護軍に上り、翌1434年には彼の作った自撃漏が報漏閣でひとりでに時を告げはじめました。",
+    "en": "In truth the king did not settle this with one decision. Wanting to make Jang assistant keeper of the Royal Wardrobe, he asked Heo Jo, the minister of personnel, who said no; Jo Mal-saeng, the minister of war, said the post suited such a man exactly. The court was split, so the king did not force it. Later he asked again, and Yu Jeong-hyeon and other senior ministers said the office could be given.\nTen years on, in the ninth month of 1433, the king retold the whole story to his ministers, and the Annals kept his words: Jang's father had come from China, and his mother was of low birth. That year Jang rose to the rank of hogun, and in 1434 the water clock he built, the Jagyeongnu, began striking the hours by itself."
+   },
+   "relic": {
+    "name": {
+     "ko": "세종실록 61권 — 장영실 등용을 되짚은 기사",
+     "ja": "世宗実録 巻61 — 蔣英実の登用を振り返る記事",
+     "en": "Annals of King Sejong, vol. 61 — the king recalls Jang's appointment"
+    },
+    "desc": {
+     "ko": "열 해쯤 뒤인 1433년 9월, 전하께서 장영실에게 호군을 더해 주시며 지난날의 경위를 신하들 앞에서 직접 되짚으신 기록이옵니다.",
+     "ja": "十年ほど後の1433年9月、殿下が蔣英実に護軍を加えられるにあたり、かつての経緯を臣たちの前でご自身の口で振り返られた記録です。",
+     "en": "From the ninth month of 1433, as the king added the rank of hogun for Jang: he retraces before his ministers how the appointment had come about."
+    },
+    "quote": {
+     "ko": "영실의 솜씨가 남보다 뛰어나 선왕께서도 아끼셨고 나 또한 아낀다 하시고, 별좌를 맡기려 할 때 의논이 갈렸던 일을 차례로 말씀하셨다는 내용이옵니다.",
+     "ja": "英実の腕は人より優れ、先王も惜しまれ自分も惜しむと述べられ、別坐に就けようとした際に議が分かれた次第を順に語られた、という内容です。",
+     "en": "The king recalls Jang's rare skill, his late father's regard for it, and how the ministers had disagreed."
+    },
+    "source": {
+     "ko": "세종실록 61권 (1433년 9월 16일)",
+     "ja": "世宗実録 巻61(1433年9月16日)",
+     "en": "Annals of King Sejong, vol. 61 (16th day, ninth month, 1433)"
+    }
+   },
+   "lesson": {
+    "ko": "재주를 알아보는 것과, 그 재주가 일할 자리를 만들어 주는 것은 다른 일이다. 세종은 반대를 누르지 않고 한 번 더 물었다.",
+    "ja": "才を見抜くことと、その才が働ける席をつくることは別の仕事です。世宗は反対を押し潰さず、もう一度問いました。",
+    "en": "Spotting a gift is one thing; making a place where it can work is another. Sejong asked again instead of forcing it."
+   }
+  },
+  {
+   "id": "sejong-2",
+   "year": "1430",
+   "title": {
+    "ko": "백성에게 묻다",
+    "ja": "民に問う",
+    "en": "Ask the People"
+   },
+   "briefing": {
+    "ko": "전하, 기록 요괴 사관 도깨비가 아뢰옵니다.\n올해도 세금 걷는 철이 돌아왔습니다. 지금 법은 답험손실법이라 하여, 관리가 논밭을 직접 돌아보고 그해 수확을 눈대중으로 매깁니다. 그러니 같은 논이라도 관리의 붓끝에 따라 세금이 오르고 내립니다. 눈감아 주는 대가를 받는 자도 있습니다.\n전하께서는 미리 정해둔 기준대로 걷는 새 법, 공법을 마음에 두고 계십니다. 그러나 조정은 둘로 갈렸습니다. 붓을 든 소인은 오늘 전하의 말씀을 그대로 적겠습니다.",
+    "ja": "殿下、記録の妖怪、史官ドッケビが申し上げます。\n今年も税を集める季節が参りました。今の法は踏験損実法と申しまして、役人が田畑を見て回り、その年の実りを目分量で決めます。同じ田でも、役人の筆さきひとつで税が上がったり下がったりするのです。見のがすかわりに、こっそり礼を受け取る者もおります。\n殿下は、あらかじめ決めた基準で集める新しい法、貢法をお考えです。けれども朝廷は二つに割れております。筆を持つわたくしは、今日の殿下のお言葉をそのまま書き記します。",
+    "en": "Your Majesty, the Scribe Goblin, keeper of records, reports.\nThe season for gathering taxes has come again. Under the present law an officer walks out to the fields and judges by eye how much each one yielded. So the same paddy may be taxed heavily one year and lightly the next, depending on whose brush wrote it down. Some officers look away for a price.\nYou have been turning over a new law: a fixed standard, set in advance. The court, however, is split in two. I hold the brush, and I will write down exactly what you say today."
+   },
+   "explore": [
+    {
+     "id": "e1",
+     "label": {
+      "ko": "호조 관리에게 묻는다",
+      "ja": "戸曹の役人に問う",
+      "en": "Ask the tax ministry official"
+     },
+     "text": {
+      "ko": "호조의 젊은 관리가 장부를 펴 보입니다. 전하, 같은 마을 같은 논인데 해마다 세액이 춤을 춥니다. 관리의 눈이 곧 저울이니, 저울이 흔들리는 것입니다. 기준을 미리 못박아 두면 아무도 손댈 수 없고, 백성도 봄에 이미 낼 것을 알게 됩니다.",
+      "ja": "戸曹の若い役人が帳簿を開いて見せます。殿下、同じ村の同じ田なのに、年ごとに税額が踊るのです。役人の目が秤なのですから、秤が揺れているのです。基準をさきに定めておけば誰も手を出せず、民も春のうちに納める量を知ることができます。",
+      "en": "A young official from the tax ministry opens his ledger. Your Majesty, the same paddy in the same village, yet the amount dances from year to year. The officer's eye is the scale, so the scale wobbles. Fix the standard in advance and no hand can touch it. Farmers would know in spring what they owe in autumn."
+     }
+    },
+    {
+     "id": "e2",
+     "label": {
+      "ko": "지방을 아는 신하에게 묻는다",
+      "ja": "地方をよく知る臣下に問う",
+      "en": "Ask the minister who knows the provinces"
+     },
+     "text": {
+      "ko": "오래 고을을 다스린 신하가 고개를 젓습니다. 전하, 땅은 고르지 않습니다. 남쪽 기름진 논과 산골 자갈밭이 같은 기준을 받으면 산골은 굶습니다. 흉년에도 정해진 만큼 걷는다면, 법이 곧기에 오히려 모질어질 것입니다.",
+      "ja": "長く地方を治めた臣下が首を振ります。殿下、土地は同じではありません。南の肥えた田と山あいの石だらけの畑が同じ基準を受ければ、山あいの村は飢えます。凶年でも決まった分を集めるのなら、法はまっすぐであるがゆえに、かえって酷くなるでしょう。",
+      "en": "A minister who governed districts for many years shakes his head. Your Majesty, the land is not level. If a rich southern paddy and a stony mountain plot are held to one standard, the mountain village goes hungry. Collect the fixed amount in a bad year, and the law grows harsh precisely because it is straight."
+     }
+    },
+    {
+     "id": "e3",
+     "label": {
+      "ko": "저잣거리에서 들은 말을 옮긴다",
+      "ja": "市場で聞いた話を伝える",
+      "en": "Repeat what was heard in the market"
+     },
+     "text": {
+      "ko": "소인이 삿갓을 쓰고 저잣거리에 앉아 들은 말입니다. 한 늙은 농부가 이르기를, 법이 바뀐다는 말은 늘 위에서만 오가고 정작 지어먹는 우리에게 묻는 이는 없었다 하였습니다. 그 말이 소인의 붓에 오래 남았습니다.",
+      "ja": "わたくしが笠をかぶり、市場に座って聞いた話です。ひとりの年老いた農夫が申しました。法が変わるという話はいつも上でばかり行き交い、実際に耕しているわたしたちに問う者はいなかった、と。その言葉がわたくしの筆に長く残りました。",
+      "en": "I sat in the market under a straw hat and listened. An old farmer said: talk of changing the law always travels among the high ones, and nobody ever asks us, who actually work the soil. That sentence stayed on my brush a long time."
+     }
+    }
+   ],
+   "choices": [
+    {
+     "id": "a",
+     "label": {
+      "ko": "왕명으로 곧 시행한다",
+      "ja": "王命で今すぐ施行する",
+      "en": "Enact it at once by royal command"
+     },
+     "isHistory": false,
+     "result": {
+      "ko": "전하께서 붓을 드시니 새 법은 그날로 방이 붙었습니다. 조정은 조용해졌고 아전들의 농간도 줄었습니다. 다만 첫 흉년이 오던 해, 산골 고을에서는 정해진 만큼을 채우지 못해 이듬해 씨앗까지 내놓는 집이 생겼습니다. 소인은 그 숫자도 적어 두었습니다.",
+      "ja": "殿下が筆をお取りになると、新しい法はその日のうちに布告されました。朝廷は静まり、下役の細工も減りました。ただ、はじめての凶年が来た年、山あいの村では決まった分を納められず、翌年の種まで差し出す家が出ました。わたくしはその数も書き留めております。",
+      "en": "You took up the brush, and the new law was posted that same day. The court went quiet, and the petty cheating of clerks thinned out. But in the first bad harvest year, mountain villages could not meet the fixed amount, and some families handed over even next spring's seed. I wrote that number down too."
+     },
+     "ifEnding": {
+      "title": {
+       "ko": "위에서 내려온 곧은 법",
+       "ja": "上から下された、まっすぐな法",
+       "en": "The Straight Law from Above"
+      },
+      "text": {
+       "ko": "법은 빠르고 깨끗했습니다. 관리가 눈대중할 여지가 사라졌으니 부정도 줄었지요. 그러나 몇 해 뒤 큰 흉년이 들자, 산골과 섬 고을에서는 정해진 세액이 그대로 무게로 남았고 논을 버리고 떠나는 집이 늘었습니다. 뒷사람들은 이 법을 두고, 곧기는 하나 사람을 재지 못한 법이라 불렀습니다.\n전하께서는 그날 다른 길도 보고 계셨습니다. 실제로는 어느 길을 고르셨을까요.",
+       "ja": "法は速く、清らかでした。役人が目分量で決める隙が消え、不正も減りました。けれども数年後に大きな凶年が来ると、山あいや島の村では決まった税額がそのまま重みとして残り、田を捨てて出ていく家が増えました。のちの人はこの法を、まっすぐではあるが人を測れなかった法と呼びました。\n殿下はあの日、別の道もご覧になっていました。実際にはどの道をお選びになったのでしょう。",
+       "en": "The law was quick and clean. No gap was left for an officer's guesswork, so the cheating fell away. But a few years on, when a hard harvest came, the fixed amount stayed fixed in the mountain and island villages, and families began leaving their fields behind. Later people called it a law that was straight, but could not measure a person.\nThat day you were looking at another road too. Which one did you truly choose?"
+      }
+     }
+    },
+    {
+     "id": "b",
+     "label": {
+      "ko": "전국 백성에게 찬반을 묻는다",
+      "ja": "国中の民に賛否を問う",
+      "en": "Ask the whole country, yes or no"
+     },
+     "isHistory": true,
+     "result": {
+      "ko": "전하께서 이르시되, 법은 백성이 지어먹으며 떠받치는 것이니 백성에게 물으라 하셨습니다. 정부와 육조부터 지방의 감사와 수령, 나아가 여염의 백성에게까지 가부를 물어 아뢰라는 명이었습니다. 조정이 놀랐습니다. 소인의 붓은 다섯 달을 쉬지 못했습니다.",
+      "ja": "殿下は仰せになりました。法は民が耕して支えるもの、ならば民に問え、と。政府と六曹から地方の監司・守令、さらに町や村の民にまで、賛成か反対かをたずねて申し上げよというご命令です。朝廷は驚きました。わたくしの筆は5か月のあいだ休むことができませんでした。",
+      "en": "You said: the law is worked and carried by the people, so ask the people. From the high council and the six ministries down to governors, magistrates, and the farming households of every village, ask each one yes or no and report it. The court was stunned. My brush did not rest for five months."
+     }
+    },
+    {
+     "id": "c",
+     "label": {
+      "ko": "개혁을 접고 옛 법을 둔다",
+      "ja": "改革をやめ、古い法を残す",
+      "en": "Drop the reform, keep the old law"
+     },
+     "isHistory": false,
+     "result": {
+      "ko": "옛 법이 그대로 남았습니다. 조정은 편안했고 그해 가을도 무사히 지났습니다. 다만 이듬해에도, 그 이듬해에도 같은 하소연이 올라왔습니다. 관리의 눈이 저울인 한 저울은 계속 흔들렸습니다.",
+      "ja": "古い法がそのまま残りました。朝廷は穏やかで、その秋も無事に過ぎました。ただ翌年も、その翌年も、同じ訴えが上がってきました。役人の目が秤であるかぎり、秤は揺れつづけたのです。",
+      "en": "The old law stayed as it was. The court was calm, and that autumn passed without trouble. But the next year, and the year after, the same complaints came up. As long as an officer's eye was the scale, the scale kept wobbling."
+     },
+     "ifEnding": {
+      "title": {
+       "ko": "흔들리는 저울을 그대로 두다",
+       "ja": "ゆれる秤をそのままに",
+       "en": "The Wobbling Scale Left Alone"
+      },
+      "text": {
+       "ko": "개혁이 멈추자 다툼도 멈추었습니다. 그러나 답험의 붓은 여전히 사람 손에 있었고, 고을마다 세액이 다르다는 원망이 해마다 쌓였습니다. 세월이 흘러 백성은 세금을 하늘이 정하는 것이 아니라 관리의 기분이 정하는 것으로 여기게 되었고, 조정은 장부보다 소문을 먼저 듣게 되었습니다.\n전하께서 그날 접지 않으셨다면 무엇이 달라졌을까요. 실제 기록은 조금 다릅니다.",
+       "ja": "改革が止まると、争いも止まりました。けれども踏験の筆はあいかわらず人の手にあり、村ごとに税が違うという恨みが年々積み重なりました。やがて民は税を、天が決めるものではなく役人の気分が決めるものと思うようになり、朝廷は帳簿より先に噂を聞くようになりました。\n殿下があの日やめておられなかったら、何が変わったでしょう。実際の記録は、少し違います。",
+       "en": "With the reform set down, the arguing stopped too. But the brush of assessment stayed in human hands, and year by year the resentment piled up: this village taxed one way, that village another. In time people came to think of taxes not as something heaven decided but as something an officer's mood decided, and the court heard rumors before it heard its own ledgers.\nIf you had not set it down that day, what would have changed? The real record reads a little differently."
+      }
+     }
+    }
+   ],
+   "reveal": {
+    "ko": "실제로 세종 12년, 1430년에 전하께서는 참으로 백성에게 물으셨습니다. 다섯 달에 걸쳐 정부와 육조, 전현직 관리, 논밭을 지어먹는 여염 백성까지 17만여 명의 가부를 모았습니다. 찬성이 9만 8천여, 반대가 7만 4천여였습니다.\n찬성이 많았으니 곧 시행할 수도 있었지요. 그러나 전하께서는 반대가 몰린 곳을 살피셨습니다. 북쪽 여러 도와 산이 많은 고을, 땅이 메마르고 흉년이 잦은 곳이었습니다. 의견이 갈렸다 하여 그해에는 시행을 미루시고, 여섯 해 뒤 다시 논의를 열어 몇 도에서만 시험해 보며 고치기를 거듭하셨습니다. 그리하여 1444년, 땅을 여섯 등급, 그해 작황을 아홉 등급으로 나눈 공법이 비로소 확정되었습니다.\n묻는 데 다섯 달, 고치는 데 열네 해였습니다.",
+    "ja": "実際に世宗12年、1430年、殿下はほんとうに民に問われました。5か月をかけて、政府と六曹、現職と前職の役人、さらに田畑を耕す町や村の民まで、17万人あまりの賛否を集めたのです。賛成は9万8千あまり、反対は7万4千あまりでした。\n賛成が多いのですから、すぐ施行してもよかったでしょう。けれども殿下は、反対が集まった土地をお調べになりました。北の道や山の多い村、土がやせて凶年の多い所でした。意見が分かれているからと、その年は施行を見送り、6年のちに議論を開きなおして、幾つかの道だけで試し、直し、また試されました。こうして1444年、田を6等級、その年の作柄を9等級に分ける貢法がようやく定まったのです。\n問うのに5か月、直すのに14年でした。",
+    "en": "In truth, Your Majesty, you did ask them. Over five months in 1430 the answers came in, from ministers and officials down to farming households in every village: more than 170,000 voices. About 98,000 said yes, about 74,000 said no.\nYes had won, and you could have enacted the law the next morning. Instead you looked at where the noes came from: northern provinces and mountain districts, thin soil, harvests that often failed. The country was still divided, so you held the law back, reopened the debate six years later, tested it in a few provinces, changed it, tested again. In 1444 it was settled at last: land in six grades, harvest in nine.\nFive months to ask. Fourteen years to get it right."
+   },
+   "relic": {
+    "name": {
+     "ko": "세종실록의 공법 찬반 조사 명령 기사",
+     "ja": "世宗実録、貢法の賛否を問えという命令の記事",
+     "en": "The Order to Poll the Country, in the Annals of King Sejong"
+    },
+    "desc": {
+     "ko": "1430년 3월, 온 나라에 공법의 가부를 물어 아뢰게 한 명령이 실린 기사.",
+     "ja": "1430年3月、国中に貢法の賛否をたずねて報告せよと命じた記事。",
+     "en": "From the third month of 1430: the command to ask the whole country, yes or no, and report back."
+    },
+    "quote": {
+     "ko": "각도의 감사·수령 및 품관으로부터 여염의 세민에 이르기까지 모두 가부를 물어서 아뢰게 하라.",
+     "ja": "各道の監司・守令および品官から、町や村の民に至るまで、みな賛成か反対かをたずねて報告せよ。",
+     "en": "From provincial governors and magistrates down to the humblest villagers, ask them all, yes or no, and report."
+    },
+    "source": {
+     "ko": "세종실록 세종 12년(1430) 3월 5일, 호조의 공법 건의 기사",
+     "ja": "世宗実録 世宗12年(1430年)3月5日、戸曹が貢法を建議した記事",
+     "en": "Annals of King Sejong, third month, fifth day of the twelfth year (1430)"
+    }
+   },
+   "lesson": {
+    "ko": "좋은 뜻만으로 좋은 법이 되지는 않습니다. 세종은 묻고, 세어 보고, 반대한 쪽의 사정까지 살펴 열네 해를 고쳤습니다.",
+    "ja": "よい志だけではよい法になりません。世宗は問い、数え、反対した側の事情まで調べて、14年かけて直しました。",
+    "en": "Good intentions alone do not make a good law. Sejong asked, counted, and spent fourteen years getting it right."
+   }
+  },
+  {
+   "id": "sejong-3",
+   "year": {
+    "ko": "1441년 무렵",
+    "ja": "1441年ごろ",
+    "en": "c. 1441"
+   },
+   "title": {
+    "ko": "집현전의 밤",
+    "ja": "集賢殿の夜",
+    "en": "The Night at the Hall of Worthies"
+   },
+   "briefing": {
+    "ko": "전하, 붓과 먹에서 태어난 소인, 오늘 밤도 곁에서 붓을 들고 있사옵니다.\n밤이 깊었습니다. 궁궐의 등불은 거의 다 꺼졌는데, 집현전 한쪽 방에만 촛불이 흔들립니다. 문틈으로 들여다보니 젊은 학사 하나가 책상에 엎드려 잠들어 있습니다. 올해 집현전에 들어온 부수찬 신숙주, 스물다섯이옵니다. 펼쳐진 책 위로 촛농이 굳어가고, 붓은 아직 손에 쥐여 있습니다.\n바람이 찬 밤이옵니다. 전하, 어찌하시겠습니까? 소인은 붓을 들고 기다리겠습니다.",
+    "ja": "殿下、筆と墨から生まれたわたくし、今夜もおそばで筆を構えております。\n夜も更けました。宮中の灯はほとんど消えているのに、集賢殿のひと部屋だけ、ろうそくの火が揺れています。戸のすきまからのぞいてみますと、若い学士がひとり、机に伏せて眠っております。今年、集賢殿に入ったばかりの副修撰、申叔舟（シン・スクチュ）、二十五歳でございます。開いた本の上には蝋がかたまり、筆はまだ手に握られたままです。\n風の冷たい夜でございます。殿下、いかがなさいますか。わたくしは筆を構えて待っております。",
+    "en": "Your Majesty, born of brush and ink, I keep my brush ready beside you tonight.\nThe night is deep. Nearly every lamp in the palace is out, yet one room in the Hall of Worthies still holds a trembling candle. Through the door I see a young scholar asleep at his desk: Sin Suk-ju, twenty-five, who joined the Hall only this year. Wax has hardened over his open book, and the brush is still in his hand.\nA cold wind tonight. What will you do? I wait with my brush ready."
+   },
+   "explore": [
+    {
+     "id": "e1",
+     "label": {
+      "ko": "옆에 선 내관에게 묻는다",
+      "ja": "そばの内官に尋ねる",
+      "en": "Ask the attendant beside you"
+     },
+     "text": {
+      "ko": "내관이 목소리를 낮추어 아룁니다. 저 학사는 여러 밤을 저리 남아 있사옵니다. 집현전에서 등불 기름을 자주 청하는 이는 저 사람뿐이옵니다.\n전하께서 지나실 때마다 불이 켜져 있던 방, 바로 이 방이었습니다.",
+      "ja": "内官が声を落として申し上げます。あの学士は、幾晩もああして残っております。集賢殿で灯の油をたびたび願い出るのは、あの者だけでございます。\n殿下が通られるたびに火の点いていた部屋、それがこの部屋でした。",
+      "en": "The attendant lowers his voice. That scholar has stayed like this many nights, Your Majesty. He is the only man in the Hall who keeps asking for more lamp oil.\nSo the room you have passed so often, always lit, was this room."
+     }
+    },
+    {
+     "id": "e2",
+     "label": {
+      "ko": "방 안 서가를 살핀다",
+      "ja": "部屋の書架を調べる",
+      "en": "Look over the shelves in the room"
+     },
+     "text": {
+      "ko": "서가에는 읽던 책이 층층이 꽂혀 있고, 어느 책이든 가느다란 종이쪽지가 끼워져 있습니다. 쪽지에는 여러 나라의 말과 글자, 그리고 스스로에게 던진 물음이 빼곡합니다.\n한 번 읽은 책보다 다시 읽은 책이 더 많아 보입니다.",
+      "ja": "書架には読みかけの本が段々に並び、どの本にも細い紙きれが挟まっています。紙きれには、いろいろな国のことばや文字、そして自分に投げかけた問いがびっしりです。\n一度読んだ本より、読み返した本のほうが多いようです。",
+      "en": "The shelves are stacked with half-read books, and every one has thin paper slips wedged between the pages: words and letters from many countries, and questions the scholar has set himself.\nHe seems to have reread more books than he has read once."
+     }
+    }
+   ],
+   "choices": [
+    {
+     "id": "a",
+     "label": {
+      "ko": "깨워서 근무 태만을 꾸짖는다",
+      "ja": "起こして怠慢を叱る",
+      "en": "Wake him and rebuke his idleness"
+     },
+     "isHistory": false,
+     "result": {
+      "ko": "전하께서 학사를 흔들어 깨우시니, 신숙주는 놀라 무릎을 꿇고 밤늦도록 자리를 지키지 못한 죄를 청합니다. 방 안은 조용해지고, 촛불만 남아 탑니다. 소인은 붓을 들었으나 무엇을 적어야 할지 한참을 망설였습니다.",
+      "ja": "殿下が学士を揺り起こしますと、申叔舟は驚いて膝をつき、夜おそくまで職を守れなかった罪をお詫び申し上げました。部屋は静かになり、ろうそくだけが残って燃えております。わたくしは筆を取りましたが、何を書くべきかしばらく迷いました。",
+      "en": "You shook the young scholar awake. Startled, Sin Suk-ju knelt and begged pardon for failing to keep to his duty. The room went quiet; only the candle kept burning. I raised my brush, Your Majesty, and hesitated a long while over what to write."
+     },
+     "ifEnding": {
+      "title": {
+       "ko": "일찍 꺼진 촛불",
+       "ja": "早く消えたろうそく",
+       "en": "The Candle Put Out Early"
+      },
+      "text": {
+       "ko": "그날 이후 집현전의 밤은 이르게 조용해졌습니다. 학사들은 정해진 시각에 등불을 끄고 물러났고, 규칙을 어기는 이는 없었습니다. 임금께서 무엇을 아끼시는지 아무도 확신하지 못했기에, 아무도 남지 않았지요.\n몇 해 뒤 새로 만든 글자를 풀이한 책을 지을 사람을 고르실 때, 집현전에는 성실한 신하는 많았으나 스스로 묻고 파고들어 본 신하는 적었습니다. 그런데 그 밤, 전하께서 실제로 하신 일은 무엇이었을까요?",
+       "ja": "その夜から、集賢殿の夜は早く静まりました。学士たちは決まった時刻に灯を消して下がり、規則を破る者はおりません。王が何を大切にしているのか誰も確信できなかったので、誰も残らなかったのです。\n幾年ののち、新しい文字を解き明かす本を書く人をお選びになったとき、集賢殿にまじめな臣下は多くいましたが、自分から問い、深く掘り下げてみた臣下はわずかでした。では、あの夜、殿下はほんとうはどうなさったのでしょう。",
+       "en": "After that night the Hall grew quiet early. The scholars put out their lamps at the appointed hour and withdrew, and no one broke the rule. Since no one was sure what the king valued, no one stayed.\nYears later, choosing men to write the book explaining his new letters, the king found the Hall full of dutiful scholars and short of scholars who had ever chased a question of their own. So what did he really do that night?"
+      }
+     }
+    },
+    {
+     "id": "b",
+     "label": {
+      "ko": "겉옷을 벗어 덮어주고 조용히 나온다",
+      "ja": "上着を脱いで掛け、静かに出る",
+      "en": "Lay your own robe over him and go"
+     },
+     "isHistory": true,
+     "result": {
+      "ko": "전하께서 손짓으로 내관을 물리시고, 입고 계신 갖옷을 벗어 잠든 학사의 어깨에 덮으셨습니다. 문은 소리 없이 닫혔습니다. 새벽에 깨어난 신숙주는 자기 어깨에 놓인 임금의 옷을 보고 한참 동안 일어서지 못했다 합니다.",
+      "ja": "殿下は手ぶりで内官を下がらせ、お召しの毛皮の上着を脱いで、眠る学士の肩にそっと掛けられました。戸は音もなく閉じられました。明け方に目を覚ました申叔舟は、自分の肩にある王の上着を見て、しばらく立ち上がることができなかったと伝わります。",
+      "en": "You waved the attendant back, slipped off your fur robe, and laid it over the sleeping scholar's shoulders. The door closed without a sound. When Sin Suk-ju woke near dawn and found the king's own robe on him, they say he could not rise for a long while."
+     }
+    },
+    {
+     "id": "c",
+     "label": {
+      "ko": "모른 척 조용히 지나간다",
+      "ja": "気づかぬふりで通り過ぎる",
+      "en": "Walk past and say nothing"
+     },
+     "isHistory": false,
+     "result": {
+      "ko": "전하께서는 걸음을 멈추지 않으시고 그대로 지나가셨습니다. 촛불은 새벽까지 홀로 타다 꺼졌고, 신숙주는 아침에 굳은 목을 문지르며 깨어났습니다. 아무 일도 일어나지 않은 밤이었습니다. 소인의 기록에도 그날은 한 줄로 남았습니다.",
+      "ja": "殿下は歩みを止めず、そのまま通り過ぎていかれました。ろうそくは明け方までひとりで燃えて消え、申叔舟はこわばった首をさすりながら目を覚ましました。何も起こらなかった夜です。わたくしの記録にも、その日は一行だけ残りました。",
+      "en": "You did not slow your step. The candle burned alone until dawn and went out, and Sin Suk-ju woke rubbing a stiff neck. Nothing at all happened that night. In my records, that day takes up a single line."
+     },
+     "ifEnding": {
+      "title": {
+       "ko": "한 줄로 남은 밤",
+       "ja": "一行だけの夜",
+       "en": "A Night Worth One Line"
+      },
+      "text": {
+       "ko": "신숙주는 그 밤을 특별히 기억하지 않았습니다. 그는 변함없이 열심이었지만, 자기 노력을 누가 보고 있는지는 알지 못했지요. 궁궐의 일은 규칙대로 굴러갔고, 사람의 마음은 규칙 밖에 남았습니다.\n훗날 사람들이 세종은 어떤 임금이었냐고 물었을 때, 전해 줄 이야기가 하나 줄었습니다. 실제로 오래 전해진 그 이야기는 무엇이었을까요?",
+       "ja": "申叔舟はその夜をとくに覚えてはいませんでした。彼は変わらず励みましたが、自分の努力を誰が見ているのかは知りませんでした。宮中の仕事は規則どおりに回り、人の心は規則の外に置かれたままです。\nのちの世の人が、世宗（セジョン）はどんな王だったのかと尋ねたとき、語り継ぐ話がひとつ減りました。実際に長く語り継がれたその話とは、何だったのでしょう。",
+       "en": "Sin Suk-ju never thought that night special. He worked as hard as ever, but never knew whether anyone saw it. Palace business ran by the rules, and the human part stayed outside them.\nLong after, when people asked what kind of king Sejong had been, there was one story fewer to tell them. What was the story that did survive?"
+      }
+     }
+    }
+   ],
+   "reveal": {
+    "ko": "소인이 기록을 펼쳐 보이겠습니다. 밤늦도록 책을 읽다 잠든 신숙주에게 전하께서 입고 계신 옷을 덮어 주셨다는 이야기는 널리 전해집니다. 다만 이는 실록에 적힌 기록이 아니라, 세종 시대를 함께 살았던 서거정이 수십 년 뒤에 엮은 이야기 모음 필원잡기에 실린 것입니다. 필원잡기에는 그저 임금의 옷이라고만 적혔는데, 훨씬 뒤에 나온 연려실기술은 담비 갖옷이었다고 적었지요. 이야기는 전해지며 조금씩 자랍니다.\n실록이 분명히 적어 둔 것은 이쪽입니다. 세종께서는 젊은 학자에게 벼슬일을 쉬고 책만 읽게 하는 휴가, 사가독서를 내리셨습니다. 1442년에는 신숙주를 비롯한 여섯 사람을 진관사로 보내 오직 책만 읽게 하셨습니다.",
+    "ja": "記録を開いてお見せいたします。夜おそくまで本を読んで眠ってしまった申叔舟に、殿下がお召しの上着をそっとお掛けになったという話は、広く語り伝えられております。ただしこれは実録に書かれた記録ではなく、世宗（セジョン）の時代を生きた文臣・徐居正が数十年のちに編んだ逸話集『筆苑雑記』に載る話です。筆苑雑記には、ただ王の衣とだけ記されていますが、ずっと後の『燃藜室記述』では、テンの毛皮の上着だったとされています。話は語り継がれるうちに、少しずつ育つのですね。\n実録がはっきり書き残しているのはこちらです。世宗は若い学者たちに、務めを休んで本だけを読ませる休暇、賜暇読書をお与えになりました。一四四二年には申叔舟をふくむ六人を津寛寺（チングァンサ）へ遣わし、ひたすら本を読ませたのでございます。",
+    "en": "Let me open the records. The tale is famous: the king finds young Sin Suk-ju asleep over his books and lays his own robe across the scholar's shoulders. But it is not in the official Annals. It comes from the Pirwon japgi, jottings gathered decades later by Seo Geo-jeong, who had lived through Sejong's reign. That book says only that the king took off the robe he was wearing; the much later Yeollyeosil gisul made it a robe of marten fur. Stories grow a little as they travel.\nWhat the Annals do record is this: Sejong gave young scholars leave from every duty, with orders to do nothing but read. In 1442 he sent six of them, Sin Suk-ju among them, to the mountain temple of Jingwansa to read and nothing else."
+   },
+   "relic": {
+    "name": {
+     "ko": "필원잡기",
+     "ja": "筆苑雑記（ひつえんざっき）",
+     "en": "Pirwon japgi (Jottings from the Brush Garden)"
+    },
+    "desc": {
+     "ko": "세종 시대를 직접 살았던 문신 서거정이 궁궐과 선비들 사이에 전하던 이야기를 모아 엮은 책입니다.",
+     "ja": "世宗の時代を実際に生きた文臣・徐居正（ソ・ゴジョン）が、宮中や学者たちの間に伝わる話を集めて編んだ本です。",
+     "en": "A collection of court and scholar anecdotes gathered by Seo Geo-jeong, an official who had lived through Sejong's reign."
+    },
+    "quote": {
+     "ko": "임금이 입고 있던 옷을 벗어, 밤새 책을 읽다 잠든 젊은 학사에게 덮어 주었다는 이야기를 전합니다.",
+     "ja": "王が着ていた上着を脱ぎ、夜どおし本を読んで眠ってしまった若い学士に掛けてやった、と伝えています。",
+     "en": "It tells how the king took off his own robe and laid it over a young scholar who had read all night and fallen asleep."
+    },
+    "source": {
+     "ko": "서거정, 필원잡기 (실록이 아니라 후대에 엮은 이야기 모음)",
+     "ja": "徐居正『筆苑雑記』（実録ではなく、後世に編まれた逸話集）",
+     "en": "Seo Geo-jeong, Pirwon japgi (a later book of anecdotes, not the official Annals)"
+    }
+   },
+   "lesson": {
+    "ko": "사람의 노력을 알아볼 때는 큰 상보다 작은 마음이 먼저 닿기도 합니다. 사람을 아끼는 태도는 규칙보다 오래 기억됩니다.",
+    "ja": "人の努力に気づくとき、大きな褒美よりも小さな心づかいが先に届くことがあります。人を大切にする態度は、規則よりも長く記憶に残ります。",
+    "en": "A small kindness can reach further than a large reward. Care for people is remembered longer than rules."
+   }
+  },
+  {
+   "id": "sejong-4",
+   "year": "1443",
+   "title": {
+    "ko": "비밀 프로젝트",
+    "ja": "秘密の仕事",
+    "en": "The Secret Project"
+   },
+   "briefing": {
+    "ko": "전하, 소인은 붓을 든 사관 도깨비이옵니다. 오늘도 전하의 하루를 한 자도 빠뜨리지 않고 적고 있사옵니다.\n올해 나라의 형편은 이러합니다. 백성은 글을 알지 못합니다. 관가에 억울함을 말하러 가도 한자로 적힌 문서를 읽지 못하여, 남이 대신 적어 준 종이에 그저 손도장을 누릅니다.\n전하께서는 요즘 밤마다 등불을 늦게 끄십니다. 말소리를 그대로 담는 글자, 누구나 며칠이면 익힐 새 글자를 종이에 그려 보고 계신 것을 소인은 알고 있사옵니다.\n그러나 한자는 명나라와 함께 쓰는 글이며, 조정의 학자들이 평생을 바쳐 익힌 글입니다. 새 글자를 만든다는 말이 밖으로 나가는 순간 무슨 일이 벌어질지, 전하께서도 아실 것입니다.",
+    "ja": "殿下、わたくしは筆と墨から生まれた史官トッケビでございます。今日も殿下の一日を、一字ももらさず書き記しております。\n今年の国のありさまは、こうでございます。民は文字を知りません。役所へ訴えに行っても、漢字で書かれた書面が読めず、人に代わりに書いてもらった紙に、ただ指で印を押すだけなのです。\n殿下は近ごろ、夜おそくまで灯りをお消しになりません。話し声をそのまま写しとれる文字、だれでも数日で覚えられる新しい文字を、紙の上でこしらえておられる。わたくしは存じております。\nけれど漢字は明の国と共に使う文字であり、朝廷の学者たちが一生をかけて身につけた文字です。新しい文字を作るという話が外に漏れたとき何が起こるか、殿下もお分かりのはずです。",
+    "en": "Your Majesty, I am the Scribe Goblin, born of brush and ink. Today too I am setting down your day without missing a stroke.\nHere is how the kingdom stands this year. The common people cannot read. When one of them brings a wrong to the magistrate, he cannot read the paper with his own complaint on it. Someone else writes it for him, and he only presses a thumbprint.\nLately you blow out your lamp later and later. I know what you are drawing on those sheets: letters that hold the sound of speech, letters anyone could learn in a few days.\nBut Chinese characters are the writing you share with the Ming court, and the writing your scholars gave their lives to master. You know what happens the moment word gets out."
+   },
+   "explore": [
+    {
+     "id": "e1",
+     "label": {
+      "ko": "형조의 보고",
+      "ja": "刑曹の報告",
+      "en": "The Ministry of Justice reports"
+     },
+     "text": {
+      "ko": "형조에서 올린 문서를 펼쳐 보았사옵니다. 지난달 한 늙은 농부가 밭을 빼앗겼다며 관가에 왔으나, 자기 이름이 적힌 문서를 읽지 못하여 도장 찍은 종이가 무슨 뜻인지 끝내 몰랐다 합니다. 억울함을 아는 것과 그것을 적어 내는 것은 다른 일이옵니다.",
+      "ja": "刑曹から上がってきた書面を開いてみました。先月、年老いた農夫が畑を取られたと役所へ来たものの、自分の名が書かれた書面を読めず、自分が印を押した紙に何が書いてあったのか、とうとう分からなかったそうです。悔しいと感じることと、それを書いて訴え出ることは、別のことでございます。",
+      "en": "I opened the papers sent up from the Ministry of Justice. Last month an old farmer came to the magistrate saying his field had been taken. He could not read the document with his own name on it, and never learned what the paper he had sealed actually said. Feeling a wrong and being able to write it down are two different things."
+     }
+    },
+    {
+     "id": "e2",
+     "label": {
+      "ko": "승지의 걱정",
+      "ja": "承旨の心配",
+      "en": "Your secretary's worry"
+     },
+     "text": {
+      "ko": "승지가 조심스레 아뢰었사옵니다. 새 글자를 만든다 하시면, 사대부는 중국과 함께 쓰는 글을 버리는 일이라 할 것이고, 명나라는 조선이 딴 길로 간다 여길지 모른다고요. 그리고 끝에 이리 덧붙였습니다. 옳은 일에도 말을 꺼내는 순서가 있사옵니다.",
+      "ja": "承旨がおそるおそる申し上げました。新しい文字をお作りになると聞けば、士大夫は明と共に使ってきた文字を捨てるおつもりかと騒ぎ立て、明は朝鮮が別の道を歩みはじめたと見るかもしれない、と。そして最後にこう付け加えました。正しいことにも、話を出す順番がございます。",
+      "en": "Your royal secretary spoke carefully. If you announce new letters, the scholar-officials will ask whether you mean to throw away the writing Joseon shares with the Ming court, and the Ming may read it as Joseon walking a road of its own. Then he added one thing more: even a right thing has a right order for saying it."
+     }
+    }
+   ],
+   "choices": [
+    {
+     "id": "a",
+     "label": {
+      "ko": "조정에 공표하고 학자들과 함께 만든다",
+      "ja": "朝廷に公表し、学者たちと共に作る",
+      "en": "Announce it and build it with the scholars"
+     },
+     "isHistory": false,
+     "result": {
+      "ko": "전하께서 조회에서 새 글자 계획을 밝히셨습니다. 그날부터 상소가 쌓였사옵니다. 회의는 글자의 모양이 아니라 글자를 만들어도 되는지를 두고 반년을 돌았고, 붓은 종이가 아니라 서로를 향했습니다. 소인의 기록에는 회의 날짜만 줄줄이 남았사옵니다.",
+      "ja": "殿下は朝議で新しい文字の計画を明かされました。その日から上疏が積み上がりました。会議は文字の形ではなく、文字を作ってよいのかを巡って半年のあいだ回りつづけ、筆は紙ではなく互いに向けられました。わたくしの記録には、会議の日付だけが並んでおります。",
+      "en": "You announced the plan for new letters at the morning council. From that day the petitions piled up. For half a year the meetings circled not the shape of the letters but whether letters should be made at all, and the brushes were aimed at each other instead of at paper. My record holds nothing but a long column of meeting dates."
+     },
+     "ifEnding": {
+      "title": {
+       "ko": "말잔치로 끝난 새 글자",
+       "ja": "話し合いで終わった新しい文字",
+       "en": "The Letters That Stayed in the Meeting Room"
+      },
+      "text": {
+       "ko": "조정은 새 글자를 논의할 기구를 세우고, 그 기구는 다시 작은 위원회를 세웠습니다. 학자마다 다른 안을 냈으나 어느 것도 스물여덟 자처럼 단정하지 못했습니다. 십 년 뒤에도 백성은 남의 붓을 빌려 억울함을 적었고, 새 글자는 서고에 잠든 문서의 제목으로만 남았사옵니다.\n전하, 참으로 전하께서는 이 이야기를 언제 조정에 꺼내셨을까요.",
+       "ja": "朝廷は新しい文字を論じる役所を立て、その役所はさらに小さな委員会を立てました。学者はそれぞれ別の案を出しましたが、どれも二十八字のようにすっきりとはまとまりませんでした。十年のちも、民はやはり他人の筆を借りて訴えを書き、新しい文字は書庫に眠る書類の題名としてだけ残りました。\n殿下、ほんとうの殿下は、この話をいつ朝廷にお出しになったのでしょう。",
+       "en": "The court set up an office to discuss the new letters, and that office set up a smaller committee. Every scholar brought a different plan, and none was as neat as twenty-eight letters. Ten years on, people still borrowed someone else's brush to write their complaints, and the new letters survived only as a title on a document asleep in the archives.\nSo when, Your Majesty, did you truly speak of this at court?"
+      }
+     }
+    },
+    {
+     "id": "b",
+     "label": {
+      "ko": "드러내지 않고 조용히 스스로 연구한다",
+      "ja": "表には出さず、静かに自ら研究する",
+      "en": "Work on it quietly, telling no one"
+     },
+     "isHistory": true,
+     "result": {
+      "ko": "전하께서는 아무 말씀도 없이 등불만 한 시각 더 늦게 끄셨습니다. 소리가 태어나는 자리를 혀와 입 모양에서 찾고, 낱자를 붙였다 떼며 스물여덟 자를 다듬으셨습니다. 조정은 아무것도 몰랐고, 소인은 밤마다 붓을 들고 앉아 이 일을 언제 적어야 할지 몰랐사옵니다.",
+      "ja": "殿下は何もおっしゃらず、灯りをもう一刻おそく消されました。声の生まれる場所を舌と口の形からさぐり、文字のもとになる形をつけたり離したりして、二十八字を整えてゆかれます。朝廷は何も知らず、わたくしは毎夜筆を持って座り、この仕事をいつ書きとめるべきか分からずにおりました。",
+      "en": "You said nothing at all. You only kept the lamp burning an hour longer. You looked for where each sound is born, in the shape of tongue and mouth, joining and parting the letters until twenty-eight of them sat right. The court knew nothing, and I sat with my brush each night, unsure when I was allowed to write this down."
+     }
+    },
+    {
+     "id": "c",
+     "label": {
+      "ko": "새 문자 대신 이두를 정비한다",
+      "ja": "新しい文字ではなく吏読を整える",
+      "en": "Tidy the old idu writing instead"
+     },
+     "isHistory": false,
+     "result": {
+      "ko": "이두를 손보아 표로 만들어 관아에 내리셨습니다. 아전들의 일은 빨라졌습니다. 그러나 이두는 여전히 한자를 알아야 쓰는 글이라, 밭을 빼앗긴 농부는 이번에도 남이 적어 준 종이에 손도장을 눌렀사옵니다.",
+      "ja": "吏読に手を入れて表をつくり、役所へ下されました。下役たちの仕事は速くなりました。けれど吏読はやはり漢字を知らねば使えぬ文字ですから、畑を取られた農夫は今度も、人に書いてもらった紙に指で印を押したのでございます。",
+      "en": "You had the old idu writing tidied into a proper table and sent out to the offices. The clerks' work grew faster. But idu still needs Chinese characters to use at all, so the farmer who lost his field once again pressed his thumbprint on a paper someone else had written."
+     },
+     "ifEnding": {
+      "title": {
+       "ko": "잘 정리된 지름길",
+       "ja": "よく整えられた近道",
+       "en": "A Very Tidy Shortcut"
+      },
+      "text": {
+       "ko": "이두 표는 훌륭했습니다. 관아의 문서 일이 빨라지고 아전을 뽑는 시험에도 들어갔습니다. 다만 그 표를 읽으려면 먼저 한자 수백 자를 알아야 했으니, 문 앞에 문이 하나 더 서 있는 셈이었습니다. 백 년이 지나도 백성의 편지는 대신 써 주는 사람의 붓에서 나왔사옵니다.\n전하께서 이 길을 고르지 않으셨다는 것만은, 소인의 기록이 알고 있사옵니다.",
+       "ja": "吏読の表は見事でした。役所の書き物は速くなり、下役を選ぶ試験にも取り入れられました。ただ、その表を読むにはまず漢字を数百字知らねばならず、門の前にもう一つ門が立っているようなものでした。百年たっても、民の手紙は代わりに書く人の筆から出てくるのです。\n殿下がこの道をお選びにならなかったことだけは、わたくしの記録が知っております。",
+       "en": "The idu table was excellent. Office paperwork moved faster, and it even entered the clerks' examinations. But to read the table you first had to know several hundred Chinese characters, so there was a gate standing in front of the gate. A hundred years later, a farmer's letter still came out of a hired hand's brush.\nOne thing only my record knows for certain: this is not the road you chose."
+      }
+     }
+    }
+   ],
+   "reveal": {
+    "ko": "소인이 기록을 펼쳐 보이겠습니다. 세종 25년, 1443년 12월 30일 실록의 마지막 기사에 문득 이런 말이 나옵니다. 이달에 임금이 친히 언문 스물여덟 자를 지었다.\n이상한 점이 있습니다. 그 앞 어디에도 새 글자를 의논한 기록이 없습니다. 조정 회의도, 맡은 관청도, 비용 기록도 없습니다. 다 만들어진 글자가 먼저 나타난 것입니다. 그래서 학자들은 이 일이 공개된 나라 사업이 아니라 임금이 몸소 조용히 진행한 일이었다고 봅니다.\n숨기신 이유는 다음 장면에 드러납니다. 새 글자가 알려지고 두 달 뒤, 집현전의 학자들이 반대 상소를 올렸사옵니다.",
+    "ja": "記録を開いてお見せいたします。世宗25年、1443年12月30日、実録のその日の最後の記事に、ふいにこの一行が現れます。この月、王がみずから諺文二十八字をおつくりになった。\n不思議なことがあります。それより前のどこにも、新しい文字を議した記録がないのです。朝議も、受け持ちの役所も、かかった費用の記録もありません。できあがった文字だけが、先に現れる。ですから学者たちは、これは公の国家事業ではなく、王がひとりで静かに進めた仕事だったと見ています。\n隠された理由は、次の場面で明かされます。新しい文字が知られて二か月のち、集賢殿の学者たちが反対の上疏をたてまつったのでございます。",
+    "en": "Let me open the records for you. In the last entry for the thirtieth day of the twelfth month of 1443, the Annals remark, quite suddenly, that this month the king himself made twenty-eight letters of a new script.\nSomething is strange about that. Nowhere before it is there any record of new letters being discussed. No council debate, no office in charge, no budget. The finished script simply appears. So scholars believe this was not a public state project but work the king did himself, quietly.\nWhy he kept it hidden comes out in the next scene. Two months after the letters became known, the scholars of the Hall of Worthies sent up a memorial against them."
+   },
+   "relic": {
+    "name": {
+     "ko": "세종실록 훈민정음 창제 기사",
+     "ja": "世宗実録 訓民正音をつくった日の記事",
+     "en": "The Annals entry on the making of Hunminjeongeum"
+    },
+    "desc": {
+     "ko": "1443년 12월, 새 글자가 세상에 처음 적힌 단 몇 줄의 기록",
+     "ja": "1443年12月、新しい文字が初めて世に書きとめられた、わずか数行の記録",
+     "en": "A few lines from the twelfth month of 1443, the first time the new script is written down anywhere"
+    },
+    "quote": {
+     "ko": "이달에 임금이 친히 언문 스물여덟 자를 지었다",
+     "ja": "この月、王がみずから諺文二十八字をおつくりになった",
+     "en": "This month the king himself created twenty-eight letters of the vernacular script"
+    },
+    "source": {
+     "ko": "세종실록 102권, 세종 25년(1443) 12월 30일",
+     "ja": "世宗実録 102巻、世宗25年（1443年）12月30日",
+     "en": "Annals of King Sejong, vol. 102, 30th day of the 12th month, 1443"
+    }
+   },
+   "lesson": {
+    "ko": "좋은 뜻만으로 일이 되지는 않습니다. 언제 말하고 언제 기다릴지 고르는 것도 일의 절반이옵니다.",
+    "ja": "よい志だけでは事は動きません。いつ話し、いつ待つかを選ぶことも、仕事の半分でございます。",
+    "en": "Good intentions alone do not move a thing. Choosing when to speak and when to wait is half the work."
+   }
+  },
+  {
+   "id": "sejong-5",
+   "year": "1444–1446",
+   "title": {
+    "ko": "최만리의 상소",
+    "ja": "崔萬理の上疏",
+    "en": "Choe Malli's Petition"
+   },
+   "briefing": {
+    "ko": "전하, 세종 이십육년 이월입니다. 집현전 부제학 최만리와 여섯 신하가 함께 상소를 올렸습니다. 언문을 세상에 내지 마시라는 글입니다.\n이들은 나라를 흔들려는 무리가 아닙니다. 최만리는 스무 해 넘게 집현전의 책을 지켜온 학자이고, 그 옆에 이름을 적은 이들도 전하께서 손수 고르고 기르신 인재입니다. 믿는 바를 그대로 적었기에 글은 정중하고, 또 그만큼 단단합니다.\n전각 밖 눈이 아직 녹지 않았습니다. 소신은 붓을 들고 기다리겠습니다. 전하, 이 상소를 어찌 하시렵니까.",
+    "ja": "殿下、世宗二十六年の二月でございます。集賢殿副提学の崔萬理と六人の臣が、そろって上疏を奉りました。諺文、あの新しい文字を世に出さないでほしい、という文でございます。\nこの者たちは国を乱そうとする輩ではありません。崔萬理は二十年あまり集賢殿の書物を守ってきた学者であり、名を連ねた者たちも、殿下がみずから選び育てられた人材です。信じるところをそのまま書いたからこそ、文は礼儀正しく、そしてそれだけ手強いのです。\n御殿の外の雪は、まだ解けておりません。記録役のわたくしは、筆を手にお待ちいたします。殿下、この上疏をいかがなさいますか。",
+    "en": "Your Majesty, it is the second month of your twenty-sixth year on the throne. Choe Malli, Deputy Director of the Hall of Worthies, has come with six other officials and laid a petition before you. It asks you not to give the new letters to the kingdom.\nThese are not men who wish the kingdom harm. Choe Malli has guarded the books of the Hall for more than twenty years, and every name written beside his belongs to a scholar you chose and raised yourself. Because they wrote exactly what they believe, the petition is courteous — and hard to answer.\nThe snow outside the hall has not melted. I hold my brush and wait. What will you do with this petition, Your Majesty?"
+   },
+   "explore": [
+    {
+     "id": "e1",
+     "label": {
+      "ko": "상소문을 펴서 읽는다",
+      "ja": "上疏文を広げて読む",
+      "en": "Read the petition yourself"
+     },
+     "text": {
+      "ko": "상소는 여섯 조목을 빼곡히 적었으나, 큰 줄기는 셋입니다. 첫째, 중국과 다른 글자를 쓰면 큰 나라를 섬기는 예에 어긋납니다. 둘째, 선비들이 쉬운 글자에 기대어 한자 공부를 소홀히 할 것입니다. 셋째, 이토록 큰 일을 재상들과 의논도 없이 서둘러 정하셨다는 것입니다. 미움은 한 줄도 없고, 근심만 빽빽합니다.",
+      "ja": "上疏は六つの条を細かく書き連ねていますが、大きな筋は三つです。一つ、中国と違う文字を使えば、大国に仕える礼に背きます。二つ、学者たちが易しい文字に頼って、漢字の学問をおろそかにします。三つ、これほど大きな事を、大臣たちと相談もなくお急ぎで決められた、と。憎しみは一行もなく、心配だけがびっしり並んでいます。",
+      "en": "The petition sets out six objections, but three carry the weight. First: letters unlike China's break the courtesy owed to the great neighbour. Second: scholars will lean on the easy letters and neglect their Chinese characters. Third: so great a matter was settled in haste, without consulting the senior ministers. Not one line of malice — only worry, packed tight."
+     }
+    },
+    {
+     "id": "e2",
+     "label": {
+      "ko": "곁의 신하에게 조정의 기색을 묻는다",
+      "ja": "側の臣に朝廷の空気を尋ねる",
+      "en": "Ask an aide how the court feels"
+     },
+     "text": {
+      "ko": "신하가 목소리를 낮춥니다. 나흘 전 전하께서 최항과 박팽년, 신숙주 같은 젊은 학자들에게 언문으로 운회를 옮기라 명하셨지요. 그들은 요즘 밤을 새운다 합니다. 그러나 나이 든 대신들 가운데는 상소를 읽고 조용히 고개를 끄덕이는 이도 적지 않습니다. 조정은 둘로 갈렸고, 양쪽 모두 나라를 위한다 말합니다.",
+      "ja": "臣が声を低くします。四日前、殿下は崔恒や朴彭年、申叔舟といった若い学者たちに、諺文で韻会という漢字の音の書を訳すよう命じられました。彼らは近ごろ夜を徹しているとのこと。しかし年老いた大臣の中には、上疏を読んで静かにうなずく者も少なくありません。朝廷は二つに割れ、どちらも国のためだと申しております。",
+      "en": "Your aide lowers his voice. Four days ago you set young scholars — Choe Hang, Park Paeng-nyeon, Sin Suk-ju — to write out the sounds of Chinese characters in the new letters, and they have been up night after night since. But among the older ministers, more than a few read the petition and nod quietly. The court is split in two, and both halves say they speak for the kingdom."
+     }
+    }
+   ],
+   "choices": [
+    {
+     "id": "a",
+     "isHistory": false,
+     "label": {
+      "ko": "상소를 받아들여 반포를 멈춘다",
+      "ja": "上疏を受け入れ、頒布をやめる",
+      "en": "Accept the petition and halt the letters"
+     },
+     "result": {
+      "ko": "전하께서 상소를 거두어 품에 넣으셨습니다. 언문 일은 여기서 멈춥니다. 집현전의 등불이 하나씩 꺼지고, 젊은 학자들은 말없이 제자리로 돌아갔습니다. 소신은 그날의 일을 적으며, 붓이 몹시 무거웠다는 것도 함께 적어 둡니다.",
+      "ja": "殿下は上疏を受け取り、懐にお納めになりました。諺文の仕事はここで止まります。集賢殿の灯りが一つずつ消え、若い学者たちは黙って自分の席に戻りました。わたくしはその日のことを書きながら、筆がひどく重かったことも書き添えておきます。",
+      "en": "You took the petition and folded it away. The work on the new letters stops here. One by one the lamps of the Hall of Worthies went out, and the young scholars returned to their desks without a word. I wrote down the day — and I wrote down, too, that my brush was very heavy."
+     },
+     "ifEnding": {
+      "title": {
+       "ko": "멈춘 스물여덟 글자",
+       "ja": "止まった二十八文字",
+       "en": "The Twenty-Eight Letters That Stopped"
+      },
+      "text": {
+       "ko": "글자는 궁 안 서랍에 남았습니다. 궁녀와 아이들 몇이 몰래 익혀 편지를 주고받았으나, 가르칠 스승도 읽을 책도 없었습니다. 세월이 흐르며 소리값을 제대로 아는 이가 줄고, 끝에 남은 것은 옛 임금께서 새 글자를 만드셨다는 이야기뿐이었습니다. 백성은 여전히 관가 앞에서 남의 입을 빌려 제 억울함을 말했습니다.\n그런데 실제 전하께서는, 그 상소를 어찌 하셨을까요.",
+       "ja": "文字は宮中の引き出しに残りました。女官や子どもが幾人か、こっそり覚えて手紙を交わしましたが、教える師も読む本もありませんでした。年月が過ぎるうちに正しい音を知る者は減り、最後に残ったのは、昔の王さまが新しい文字をお作りになった、という話だけでした。民は相変わらず役所の前で、他人の口を借りて自分の無念を訴えました。\nでは、実際の殿下はあの上疏をどうなさったのでしょうか。",
+       "en": "The letters stayed in a drawer inside the palace. A few court women and children learned them in secret and passed notes, but there was no teacher to explain them and no book to study. As the years went by, fewer people knew what sound each letter stood for, and in the end only a story remained: that a king long ago had made new letters. Commoners still stood outside the magistrate's gate and borrowed someone else's mouth to speak their own grievance.\nBut what did the real king do with that petition?"
+      }
+     }
+    },
+    {
+     "id": "b",
+     "isHistory": true,
+     "label": {
+      "ko": "조목조목 반박하고 그대로 나아간다",
+      "ja": "一条ずつ反論し、そのまま進める",
+      "en": "Answer every point, and go forward"
+     },
+     "result": {
+      "ko": "전하께서 최만리와 신하들을 불러들이셨습니다. 상소의 조목마다 하나하나 되물으시니, 학자들은 대답을 고르느라 오래 말이 없었습니다. 그날 전각 안에는 임금의 목소리와, 그것을 좇는 소신의 붓 소리만 있었습니다.",
+      "ja": "殿下は崔萬理と臣たちを召し出されました。上疏の一条ごとに問い返されるので、学者たちは答えを選ぶうちに長く黙っていました。その日、御殿の中にあったのは王のお声と、それを追うわたくしの筆の音だけでした。",
+      "en": "You summoned Choe Malli and the others into the hall. You took their petition point by point and asked each one back to them, and the scholars fell silent, searching for answers. That day the hall held only the king's voice and the sound of my brush chasing it."
+     }
+    },
+    {
+     "id": "c",
+     "isHistory": false,
+     "label": {
+      "ko": "학자들을 오래 옥에 가두고 벼슬을 거둔다",
+      "ja": "学者たちを長く獄に置き、官職を奪う",
+      "en": "Jail the scholars and strip their posts"
+     },
+     "result": {
+      "ko": "의금부 문이 열리고, 상소한 학자들이 그 안으로 들어갔습니다. 여러 달이 지나도 그 문은 다시 열리지 않았습니다. 조정이 조용해졌습니다. 너무 조용해졌습니다. 이제 누구도 언문이 옳다 그르다 말하지 않고, 다만 전하의 얼굴빛만 살핍니다.",
+      "ja": "義禁府の門が開き、上疏した学者たちがその中へ入っていきました。幾月たっても、その門は二度と開きません。朝廷は静かになりました。あまりに静かになりました。もう誰も諺文の是非を口にせず、ただ殿下のお顔色をうかがうばかりです。",
+      "en": "The gate of the State Tribunal opened, and the scholars who signed the petition walked in. Months passed and it did not open again. The court grew quiet. Far too quiet. No one argued about the new letters any more; they only watched the king's face."
+     },
+     "ifEnding": {
+      "title": {
+       "ko": "말이 사라진 조정",
+       "ja": "言葉の消えた朝廷",
+       "en": "A Court Without Voices"
+      },
+      "text": {
+       "ko": "학자들은 오래 갇혔고, 벼슬을 잃은 이도 여럿이었습니다. 글자는 예정대로 세상에 나왔으나, 그 곁에는 거스르면 갇힌다는 이야기가 나란히 붙어 다녔습니다. 뒷날 책을 짓는 학자들은 붓을 들기 전에 임금의 뜻을 먼저 헤아렸고, 반대할 사람이 없어진 자리에서는 틀린 것도 틀린 채 오래 남았습니다.\n실제 전하께서는 이 일을 이보다 훨씬 짧게 매듭지으셨습니다. 어떻게였을까요.",
+       "ja": "学者たちは長く閉じ込められ、官職を失った者も何人かいました。文字は予定どおり世に出ましたが、その隣にはいつも、逆らえば捕らえられるという話が並んでついてきました。のちに書物を編む学者たちは、筆を取る前にまず王のお考えを推し量り、反対する者のいない場では、誤りも誤ったまま長く残りました。\n実際の殿下は、この件をこれよりずっと短く収められました。どのようにでしょうか。",
+       "en": "The scholars were held for a long time, and several lost their posts. The letters still reached the kingdom on schedule, but a second story always travelled beside them: cross the king and you are locked away. Scholars who later compiled books weighed the king's wishes before they lifted a brush, and where no one was left to object, mistakes stayed mistakes for a very long time.\nThe real king settled this matter far more quickly than that. How?"
+      }
+     }
+    }
+   ],
+   "reveal": {
+    "ko": "실제로 세종 이십육년 이월 스무날, 임금은 최만리와 신하들을 불러 몸소 반박하셨습니다. 너희는 설총이 이두를 만든 일은 옳다 하면서 임금이 한 일은 그르다 하니 무슨 까닭이냐고 되물으시고, 그대가 운서를 아느냐, 사성과 칠음을 아느냐 물으셨습니다. 학자들은 제대로 답하지 못했습니다.\n임금은 이들을 의금부에 가두게 하셨으나, 이튿날 곧 풀어주셨습니다. 벼슬을 잃은 이는 정창손 한 사람이었고, 그도 뒤에 다시 등용되어 훗날 영의정에까지 올랐습니다. 반대했던 학자들은 여전히 조정의 신하로 남았습니다.\n그리고 이 년 뒤, 세종 이십팔년에 훈민정음이 반포되고 해례본이 간행되었습니다.",
+    "ja": "実際、世宗二十六年二月二十日、王は崔萬理たちを召し出し、みずから反論なさいました。そなたたちは薛聰が吏読を作ったことは正しいと言いながら、王のしたことは誤りだと言う、それはどういう訳かと問い返され、そなたは韻書を知っているか、四声と七音を知っているかとお尋ねになりました。学者たちはまともに答えられませんでした。\n王は彼らをいったん義禁府に入れさせましたが、翌日にはすぐお放しになりました。官職を失ったのは鄭昌孫ひとりで、その彼も後に再び登用され、のちには領議政にまで昇っています。反対した学者たちは、そのまま朝廷の臣として残りました。\nそして二年後、世宗二十八年に訓民正音が頒布され、解例本が刊行されました。",
+    "en": "In truth, on the twentieth day of the second month of 1444, the king called Choe Malli and the others in and argued with them himself. He asked how they could call it right for Seol Chong to have devised the old borrowed-character writing, yet call the king's work wrong — and then asked whether they knew the rhyme books, the four tones, the seven sounds. The scholars could not answer well.\nHe had them held at the State Tribunal, and released them the very next day. Only Jeong Chang-son lost his post, and even he was appointed again later, rising in time to Chief State Councillor. The men who had opposed the letters remained officials of the court.\nTwo years after that, in 1446, the Hunminjeongeum was promulgated and its explanatory volume printed."
+   },
+   "relic": {
+    "name": {
+     "ko": "훈민정음 해례본 어제 서문",
+     "ja": "訓民正音 解例本 御製序文",
+     "en": "The King's Preface to the Hunminjeongeum Haerye"
+    },
+    "desc": {
+     "ko": "이 장면에서 두 해 뒤, 1446년 해례본 첫머리에 세종이 직접 밝힌 새 글자를 만든 이유.",
+     "ja": "この場面から二年後、一四四六年に刊行された解例本の冒頭に、世宗みずから記された、新しい文字を作った理由です。",
+     "en": "Two years after this scene, in the 1446 edition, Sejong set down in his own words why he made the letters."
+    },
+    "quote": {
+     "ko": "어리석은 백성이 말하고 싶은 바가 있어도, 끝내 제 뜻을 펴지 못하는 이가 많다.",
+     "ja": "愚かな民が言いたいことがあっても、ついに自分の思いを述べられぬ者が多い。",
+     "en": "Many simple folk have something they wish to say, yet in the end cannot express what they mean."
+    },
+    "source": {
+     "ko": "훈민정음 해례본 어제 서문, 1446년 / 반포 기사는 세종실록 113권, 세종 28년 9월 (이 장면의 상소와 논쟁은 세종실록 103권, 세종 26년 2월 20일)",
+     "ja": "訓民正音解例本 御製序文、一四四六年 / 頒布の記事は世宗実録一一三巻、世宗二十八年九月（この場面の上疏と論争は世宗実録一〇三巻、世宗二十六年二月二十日）",
+     "en": "Preface to the Hunminjeongeum Haerye, 1446 / promulgation recorded in the Annals of Sejong, vol. 113, ninth month of his 28th year (this scene's petition and debate: Annals of Sejong, vol. 103, twentieth day of the second month of his 26th year)"
+    }
+   },
+   "lesson": {
+    "ko": "반대하는 사람의 입을 막는 것과, 반대에 답하는 것은 다릅니다. 세종은 뒤의 길을 골랐고, 반대한 학자들은 그대로 신하로 남았습니다.",
+    "ja": "反対する人の口をふさぐことと、反対に答えることは違います。世宗は後の道を選び、反対した学者たちはそのまま臣として残りました。",
+    "en": "Silencing the people who disagree is not the same as answering them. Sejong chose to answer — and his critics stayed on as his officials."
+   }
+  }
+ ]
+}

@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3ead6">
+<title>사관이 보고 있다 · 史官が見ている · The Historian Is Watching</title>
+<meta name="description" content="세종이 되어 역사의 갈림길에서 선택하는 분기 게임 — 사관 도깨비가 지켜보고 기록한다">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📜</text></svg>">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
+<style>
+:root{
+  /* 한지·먹·인주 팔레트 — 인주 빨강은 도장/정사 표기에만 쓴다 */
+  --hanji0:#f9f3e3; --hanji1:#f3ead6; --hanji2:#e9dec2; --hanji3:#dccfae;
+  --paper:#fdfaef;
+  --ink:#2b2620; --ink2:#4b4338; --ink3:#7c7263;
+  --line:rgba(43,38,32,.15); --line2:rgba(43,38,32,.27);
+  --indigo:#35586e; --indigo2:#27444f;
+  --seal:#b23a2a; --seal2:#8e2c1e;
+  --serif:"Nanum Myeongjo","Noto Serif KR","AppleMyungjo","Hiragino Mincho ProN","Songti SC",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Hiragino Sans","Noto Sans KR","Noto Sans JP",system-ui,sans-serif;
+  --hh:52px; /* 헤더 실측 높이 — JS가 갱신 (sticky 오프셋용) */
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:var(--sans);
+  color:var(--ink);
+  background:#ded1b3;
+  overflow:hidden;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+}
+/* [hidden]가 작성자 규칙을 이겨야 한다 (UA 시트는 캐스케이드에서 밀림) */
+[hidden]{display:none!important}
+
+#app{
+  position:relative;
+  height:100dvh;max-width:560px;margin:0 auto;
+  padding:0 0 calc(10px + env(safe-area-inset-bottom));
+  overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  background:
+    radial-gradient(120% 52% at 50% -6%, #fdf8ea 0%, rgba(253,248,234,0) 62%),
+    linear-gradient(177deg, var(--hanji0) 0%, var(--hanji1) 44%, var(--hanji2) 100%);
+}
+/* 한지 결 — 아주 은은한 세로 섬유감 */
+#app::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:repeating-linear-gradient(90deg, rgba(120,100,64,.05) 0 1px, rgba(120,100,64,0) 1px 6px);
+  opacity:.55;
+}
+@media (min-width:620px){
+  #app{box-shadow:0 0 0 1px rgba(43,38,32,.13), 0 24px 62px rgba(38,30,18,.30)}
+}
+
+/* ---------------- 헤더 트리오 ---------------- */
+header{
+  position:sticky;top:0;z-index:30;
+  display:flex;align-items:center;gap:6px;
+  padding:calc(env(safe-area-inset-top,0px) + 9px) 10px 9px;
+  background:linear-gradient(180deg, rgba(250,245,231,.98) 0%, rgba(249,243,227,.95) 66%, rgba(249,243,227,0) 100%);
+  -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
+}
+.titles{flex:1;min-width:0;text-align:center}
+.titles h1{
+  font-family:var(--serif);font-weight:700;
+  /* 영어 제목이 길어 좁은 화면에서 잘리기 쉬우니 최소 크기를 낮게 잡는다 */
+  font-size:clamp(.9rem,3.9vw,1.26rem);letter-spacing:.012em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.titles .sub{
+  /* 일본어일 때 부제가 가장 길다(한글+영문 병기) — 자간을 좁혀 375px에서 잘리지 않게 */
+  font-size:.585rem;color:var(--ink3);letter-spacing:.02em;margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.tops{display:flex;gap:5px}
+.pill{
+  font:inherit;font-size:.76rem;color:var(--ink2);text-decoration:none;
+  padding:6px 10px;border-radius:999px;white-space:nowrap;line-height:1.2;
+  background:rgba(255,255,255,.55);border:1px solid var(--line);
+  cursor:pointer;transition:background .2s,transform .12s;
+}
+.pill:hover{background:rgba(255,255,255,.9)}
+.pill:active{transform:scale(.93)}
+.pill.icon{padding:6px 9px;font-size:.92rem}
+
+/* ---------------- 화면 ---------------- */
+.screen{position:relative;z-index:1;padding:4px 15px 30px}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:calc(100dvh - 190px);text-align:center;gap:12px}
+
+/* 안내 문구 / 섹션 라벨 */
+.secHead{
+  font-family:var(--serif);font-size:.7rem;letter-spacing:.2em;
+  color:var(--indigo2);text-transform:uppercase;
+  display:flex;align-items:center;gap:9px;margin-bottom:9px;
+}
+.secHead::after{content:"";flex:1;height:1px;background:var(--line2)}
+.hint{font-size:.74rem;color:var(--ink3);line-height:1.6}
+
+/* 카드 */
+.card{
+  background:linear-gradient(177deg,var(--paper),#f5eddb);
+  border:1px solid var(--line);border-radius:14px;padding:14px 15px;
+  box-shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 8px 20px rgba(43,38,32,.07);
+}
+.para{font-size:.95rem;line-height:1.78;color:var(--ink2);margin-bottom:.66em}
+.para:last-child{margin-bottom:0}
+.para.pop{animation:up .44s cubic-bezier(.22,.9,.28,1) both}
+@keyframes up{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
+/* ---------------- 안내자(사관 도깨비) ---------------- */
+.guideBox{display:flex;justify-content:center;margin-bottom:-6px}
+canvas.guideCv{width:140px;height:140px;display:block}
+.bubble{
+  position:relative;
+  background:var(--paper);border:1px solid var(--line);border-radius:15px;
+  padding:15px 16px 13px;
+  box-shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 9px 22px rgba(43,38,32,.08);
+}
+.bubble::before{
+  content:"";position:absolute;left:50%;top:-8px;width:15px;height:15px;margin-left:-7px;
+  background:var(--paper);border-left:1px solid var(--line);border-top:1px solid var(--line);
+  transform:rotate(45deg);border-radius:3px 0 0 0;
+}
+.tapZone{cursor:pointer}
+.tapHint{
+  margin-top:10px;text-align:center;font-size:.72rem;color:var(--ink3);
+  letter-spacing:.08em;animation:blink 1.9s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:.35}50%{opacity:.95}}
+
+/* ---------------- 연표 ---------------- */
+.tlHeadRow{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:18px 0 10px}
+.tlHeadRow h2{font-family:var(--serif);font-size:1.02rem;font-weight:700;letter-spacing:.05em}
+.tlHeadRow .prog{font-size:.72rem;color:var(--ink3);font-variant-numeric:tabular-nums}
+.tl{position:relative;padding-left:26px}
+.tl::before{
+  content:"";position:absolute;left:8px;top:8px;bottom:16px;width:2px;border-radius:2px;
+  background:linear-gradient(180deg,var(--line2),rgba(43,38,32,.07));
+}
+.tlItem{position:relative;margin-bottom:12px}
+.tlItem::before{
+  content:"";position:absolute;left:-23px;top:20px;width:11px;height:11px;border-radius:50%;
+  background:var(--hanji0);border:2px solid var(--indigo);box-sizing:border-box;
+}
+.tlItem.done::before{background:var(--seal);border-color:var(--seal)}
+.tlItem.next::before{background:var(--hanji0);border-style:dashed}
+.tlCard{
+  width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;
+  display:flex;align-items:center;gap:12px;
+  background:linear-gradient(177deg,var(--paper),#f4ecd9);
+  border:1px solid var(--line);border-radius:14px;padding:13px 14px;
+  box-shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 6px 16px rgba(43,38,32,.06);
+  transition:transform .14s,box-shadow .2s,background .2s;
+}
+.tlCard:hover{background:linear-gradient(177deg,#fffdf6,#f7f0de)}
+.tlCard:active{transform:scale(.985)}
+.tlCard.nextCard{border-style:dashed;border-color:var(--line2);background:rgba(255,255,255,.34)}
+.tlBody{flex:1;min-width:0}
+.tlYear{font-family:var(--serif);font-size:1.14rem;color:var(--indigo);letter-spacing:.02em}
+.tlTitle{font-family:var(--serif);font-size:.98rem;font-weight:700;margin-top:1px;line-height:1.4}
+.tlChip{
+  display:inline-block;margin-top:6px;font-size:.65rem;letter-spacing:.09em;
+  padding:2px 8px;border-radius:999px;color:var(--seal2);
+  background:rgba(178,58,42,.09);border:1px solid rgba(178,58,42,.24);
+}
+.tlChip.plain{color:var(--ink3);background:rgba(43,38,32,.05);border-color:var(--line)}
+.tlGo{font-size:.76rem;color:var(--indigo);white-space:nowrap}
+
+/* 인주 도장 */
+.seal{
+  flex:0 0 44px;width:44px;height:44px;border-radius:7px;
+  display:grid;place-items:center;
+  font-family:var(--serif);font-size:.78rem;font-weight:700;line-height:1.05;
+  color:#fff6f0;background:var(--seal);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.45), 0 2px 7px rgba(142,44,30,.3);
+  transform:rotate(-7deg);opacity:.95;letter-spacing:.02em;
+}
+
+/* ---------------- 장면 화면 ---------------- */
+.sceneBar{display:flex;align-items:center;gap:9px;margin:2px 0 12px}
+.sceneTag{
+  flex:1;min-width:0;text-align:right;font-family:var(--serif);font-size:.8rem;color:var(--ink3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sceneTag b{color:var(--indigo);font-weight:700}
+.steps{display:flex;gap:6px;justify-content:center;margin:0 0 14px}
+.steps i{width:6px;height:6px;border-radius:50%;background:rgba(43,38,32,.16);transition:background .3s,transform .3s}
+.steps i.on{background:var(--indigo);transform:scale(1.35)}
+
+/* 탐색 */
+.exBtn{
+  display:block;width:100%;text-align:left;font:inherit;font-size:.9rem;
+  padding:12px 14px;margin-bottom:8px;border-radius:12px;cursor:pointer;
+  background:rgba(255,255,255,.5);border:1px solid var(--line);color:var(--ink);
+  transition:transform .13s,background .2s,border-color .2s;
+  position:relative;padding-right:34px;
+}
+.exBtn:hover{background:rgba(255,255,255,.86)}
+.exBtn:active{transform:scale(.98)}
+.exBtn.read{color:var(--ink3);border-style:dashed}
+.exBtn.read::after{content:"·";position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  color:var(--indigo);font-size:1.4rem;line-height:0}
+.exBtn.cur{border-color:var(--indigo);border-style:solid;background:rgba(53,88,110,.09);color:var(--ink)}
+#exText{margin-top:10px}
+#exText:empty{display:none}
+
+/* 선택 */
+.choice{
+  display:block;width:100%;text-align:left;font:inherit;font-size:1rem;line-height:1.55;
+  padding:15px 16px 15px 46px;margin-bottom:10px;border-radius:14px;cursor:pointer;
+  position:relative;color:var(--ink);
+  background:linear-gradient(177deg,#fffdf5,#f3ebd6);
+  border:1px solid var(--line2);
+  box-shadow:0 2px 0 rgba(43,38,32,.06), 0 8px 18px rgba(43,38,32,.07);
+  transition:transform .14s,box-shadow .2s,background .2s;
+}
+.choice::before{
+  content:attr(data-n);position:absolute;left:15px;top:50%;transform:translateY(-50%);
+  font-family:var(--serif);font-size:1rem;color:var(--indigo);opacity:.7;
+}
+.choice:hover{background:linear-gradient(177deg,#fffefa,#f7f0dd)}
+.choice:active{transform:translateY(1px) scale(.994);box-shadow:0 1px 0 rgba(43,38,32,.06)}
+
+/* IF 라벨 — 상단 고정 */
+.ifLabel{
+  position:sticky;top:var(--hh);z-index:12;
+  margin:0 -15px 12px;padding:10px 15px;
+  font-size:.8rem;letter-spacing:.06em;font-weight:700;color:var(--indigo2);
+  background:linear-gradient(180deg,rgba(53,88,110,.16),rgba(53,88,110,.09));
+  border-top:1px solid rgba(53,88,110,.24);border-bottom:1px solid rgba(53,88,110,.24);
+  text-align:center;
+}
+.ifTitle{font-family:var(--serif);font-size:1.1rem;font-weight:700;line-height:1.45;margin-bottom:9px}
+
+/* 두루마리 */
+.scroll{margin-top:4px}
+.rod{
+  height:10px;border-radius:6px;
+  background:linear-gradient(180deg,#9a7c53,#5d4830);
+  box-shadow:0 1px 0 rgba(255,255,255,.25) inset, 0 2px 6px rgba(43,38,32,.18);
+}
+.scrollBody{
+  overflow:hidden;max-height:0;opacity:0;
+  transform:scaleY(.8);transform-origin:top center;
+  background:linear-gradient(177deg,var(--paper),#f3ebd6);
+  border-left:1px solid var(--line);border-right:1px solid var(--line);
+  transition:max-height .9s cubic-bezier(.2,.82,.22,1), opacity .55s ease .1s, transform .9s cubic-bezier(.2,.82,.22,1);
+}
+.scroll.open .scrollBody{max-height:3200px;opacity:1;transform:scaleY(1)}
+.scrollInner{padding:16px 16px 18px}
+
+/* 도장 쾅 */
+.sealWrap{margin-top:16px;text-align:center}
+.bigSeal{
+  display:inline-grid;place-items:center;
+  width:86px;height:86px;border-radius:11px;
+  font-family:var(--serif);font-size:1.55rem;font-weight:700;letter-spacing:.04em;
+  color:#fff4ef;background:var(--seal);
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.42), 0 6px 18px rgba(142,44,30,.34);
+  transform:scale(2.5) rotate(-22deg);opacity:0;
+}
+.bigSeal.on{
+  transform:scale(1) rotate(-8deg);opacity:.96;
+  transition:transform .34s cubic-bezier(.2,1.7,.4,1), opacity .16s linear;
+}
+.shake{animation:shk .34s ease}
+@keyframes shk{
+  0%{transform:translateY(0)}18%{transform:translateY(4px)}
+  40%{transform:translateY(-2px)}70%{transform:translateY(1px)}100%{transform:none}
+}
+.sealSay{margin-top:11px;font-size:.82rem;color:var(--seal2);line-height:1.6}
+.ifSay{
+  margin-top:15px;padding-top:12px;border-top:1px solid var(--line);
+  font-size:.82rem;color:var(--indigo2);line-height:1.6;
+}
+
+/* 사료 · 배움 */
+.relic{
+  border:1px solid var(--line2);border-radius:14px;overflow:hidden;
+  background:linear-gradient(177deg,#fdf8e9,#f1e8d0);
+  box-shadow:0 8px 20px rgba(43,38,32,.08);
+}
+.relic .rh{
+  padding:8px 14px;font-family:var(--serif);font-size:.68rem;letter-spacing:.2em;color:var(--indigo2);
+  background:rgba(53,88,110,.1);border-bottom:1px solid var(--line);
+}
+.relic .rb{padding:13px 15px 15px}
+.relicName{font-family:var(--serif);font-size:1.06rem;font-weight:700;line-height:1.45}
+.relicDesc{font-size:.86rem;color:var(--ink2);line-height:1.7;margin-top:5px}
+.quote{
+  font-family:var(--serif);font-size:.98rem;line-height:1.85;color:var(--ink);
+  border-left:3px solid var(--seal);padding-left:12px;margin:13px 0 7px;
+}
+.src{font-size:.72rem;color:var(--ink3);letter-spacing:.02em}
+.lesson{
+  margin-top:13px;padding:13px 15px;border-radius:13px;
+  background:rgba(53,88,110,.07);border:1px solid rgba(53,88,110,.18);
+}
+.lesson .lh{font-family:var(--serif);font-size:.68rem;letter-spacing:.2em;color:var(--indigo2);margin-bottom:7px}
+
+/* 완결 축하 */
+.finaleCard{
+  margin-bottom:14px;padding:17px 16px;border-radius:16px;text-align:center;
+  background:linear-gradient(177deg,#fdf6e4,#f0e5c8);
+  border:1px solid rgba(178,58,42,.26);
+  box-shadow:0 10px 26px rgba(43,38,32,.1);
+}
+.finaleCard h2{font-family:var(--serif);font-size:1.16rem;font-weight:700;line-height:1.5}
+.finaleCard .para{text-align:center}
+
+/* 버튼 */
+.btn{
+  font:inherit;font-size:.92rem;padding:12px 16px;border-radius:12px;cursor:pointer;
+  border:1px solid var(--line2);background:rgba(255,255,255,.6);color:var(--ink);
+  transition:transform .13s,background .2s,box-shadow .2s;line-height:1.35;
+}
+.btn:hover{background:rgba(255,255,255,.95)}
+.btn:active{transform:scale(.965)}
+.btn.primary{
+  background:linear-gradient(180deg,var(--indigo),var(--indigo2));
+  border-color:var(--indigo2);color:#f8f3e5;
+  box-shadow:0 3px 12px rgba(39,68,79,.28);
+}
+.btn.primary:hover{background:linear-gradient(180deg,#3d6580,var(--indigo2))}
+.btn.wide{width:100%}
+.btnRow{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}
+.btnRow .btn{flex:1 1 46%;min-width:132px}
+.footRow{display:flex;justify-content:center;margin-top:14px}
+
+.errLine{font-size:.9rem;line-height:1.7;color:var(--ink2)}
+.errLine.sub{font-size:.78rem;color:var(--ink3)}
+
+@media (max-width:360px){
+  .screen{padding:4px 12px 26px}
+  .choice{font-size:.94rem;padding:13px 14px 13px 42px}
+  canvas.guideCv{width:118px;height:118px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important}
+  .scrollBody{transition-duration:.14s!important}
+  .bigSeal.on{transition-duration:.12s!important}
+  .tlCard,.btn,.choice,.exBtn{transition-duration:.08s!important}
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <header>
+    <a class="pill" id="homeLink" href="../../index.html">← <span data-i="home">홈</span></a>
+    <div class="titles">
+      <h1 id="titleMain">사관이 보고 있다</h1>
+      <div class="sub" id="titleSub">史官が見ている · The Historian Is Watching</div>
+    </div>
+    <div class="tops">
+      <button class="pill icon" id="soundBtn" type="button" aria-label="sound">🔊</button>
+      <button class="pill icon" id="langBtn" type="button" aria-label="language">🇰🇷</button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- 로딩 -->
+    <section class="screen" id="scrLoading">
+      <div class="center">
+        <div class="guideBox"><canvas class="guideCv" id="gvLoad" width="140" height="140" aria-hidden="true"></canvas></div>
+        <p class="hint" data-i="loading">두루마리를 펼치는 중…</p>
+      </div>
+    </section>
+
+    <!-- 로드 실패 -->
+    <section class="screen" id="scrError" hidden>
+      <div class="center">
+        <div class="guideBox"><canvas class="guideCv" id="gvErr" width="140" height="140" aria-hidden="true"></canvas></div>
+        <div class="card" id="errBox" style="text-align:center"></div>
+        <button class="btn primary" id="retryBtn" type="button"><span data-i="retry">다시 시도</span></button>
+      </div>
+    </section>
+
+    <!-- 연표(홈) -->
+    <section class="screen" id="scrTimeline" hidden>
+      <div class="guideBox"><canvas class="guideCv" id="gvHome" width="140" height="140" aria-hidden="true"></canvas></div>
+      <div class="bubble"><p class="para" id="greet"></p></div>
+      <p class="hint" id="chapNote" style="text-align:center;margin-top:12px"></p>
+
+      <div id="allDoneBox" hidden></div>
+
+      <div class="tlHeadRow">
+        <h2 data-i="tlHead">자라나는 연표</h2>
+        <span class="prog" id="tlProg"></span>
+      </div>
+      <div class="tl" id="tlList"></div>
+    </section>
+
+    <!-- 장면 플레이 -->
+    <section class="screen" id="scrScene" hidden>
+      <div class="sceneBar">
+        <button class="pill" id="exitBtn" type="button">↩ <span data-i="exitScene">연표로</span></button>
+        <div class="sceneTag" id="sceneTag"></div>
+      </div>
+      <div class="steps" id="steps" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+      <!-- (a) 브리핑 -->
+      <div id="stBrief" hidden>
+        <div class="guideBox"><canvas class="guideCv" id="gvBrief" width="140" height="140" aria-hidden="true"></canvas></div>
+        <div class="tapZone" id="briefTap">
+          <div class="bubble"><div id="briefText"></div></div>
+          <div class="tapHint" id="briefHint" data-i="tapMore">화면을 탭하세요</div>
+        </div>
+        <div class="btnRow" id="briefBtns" hidden>
+          <button class="btn primary wide" id="toExploreBtn" type="button"><span data-i="toExplore">둘러보기</span></button>
+        </div>
+      </div>
+
+      <!-- (b) 탐색 -->
+      <div id="stExplore" hidden>
+        <div class="secHead"><span data-i="exploreHead">둘러보기</span></div>
+        <p class="hint" style="margin-bottom:11px" data-i="exploreHint">궁금한 곳을 눌러 보세요 · 건너뛰어도 됩니다</p>
+        <div id="exList"></div>
+        <div class="card" id="exText"></div>
+        <div class="btnRow">
+          <button class="btn" id="exBackBtn" type="button"><span data-i="back">뒤로</span></button>
+          <button class="btn primary" id="toChooseBtn" type="button"><span data-i="toChoose">선택으로 가기</span></button>
+        </div>
+      </div>
+
+      <!-- (c) 선택 -->
+      <div id="stChoose" hidden>
+        <div class="secHead"><span data-i="chooseHeadLabel">갈림길</span></div>
+        <p class="ifTitle" data-i="chooseHead">전하, 어찌하시겠습니까?</p>
+        <p class="hint" style="margin-bottom:14px" data-i="chooseHint">무엇을 고르셔도 사관은 그대로 적습니다.</p>
+        <div id="chList"></div>
+        <!-- 뒤로는 작은 알약으로 — 큰 버튼이면 네 번째 선택지처럼 보인다 -->
+        <div class="footRow">
+          <button class="pill" id="chBackBtn" type="button">↑ <span data-i="back">뒤로</span></button>
+        </div>
+      </div>
+
+      <!-- (d) 결과 -->
+      <div id="stResult" hidden>
+        <div class="secHead"><span data-i="resultHead">그리하여</span></div>
+        <div class="card"><div id="resText"></div></div>
+        <div class="btnRow">
+          <button class="btn primary wide" id="resNextBtn" type="button"><span data-i="next">계속</span></button>
+        </div>
+      </div>
+
+      <!-- (e) IF 엔딩 -->
+      <div id="stIf" hidden>
+        <div class="ifLabel" id="ifLabel" data-i="ifLabel">이것은 상상의 역사입니다</div>
+        <div class="card">
+          <div class="secHead"><span data-i="ifHead">상상의 역사</span></div>
+          <p class="ifTitle" id="ifTitle"></p>
+          <div id="ifText"></div>
+        </div>
+        <div class="btnRow">
+          <button class="btn primary wide" id="ifNextBtn" type="button"><span data-i="next">계속</span></button>
+        </div>
+      </div>
+
+      <!-- (f) 실제 역사 공개 -->
+      <div id="stReveal" hidden>
+        <div class="scroll" id="revScroll">
+          <div class="rod"></div>
+          <div class="scrollBody">
+            <div class="scrollInner">
+              <div class="secHead"><span data-i="revealHead">실제 역사</span></div>
+              <div id="revText"></div>
+              <div class="sealWrap" id="sealWrap" hidden>
+                <div class="bigSeal" id="bigSeal">正史</div>
+                <p class="sealSay" id="sealSay"></p>
+              </div>
+              <p class="ifSay" id="ifSay" hidden></p>
+            </div>
+          </div>
+          <div class="rod"></div>
+        </div>
+        <div class="btnRow">
+          <button class="btn primary wide" id="revNextBtn" type="button"><span data-i="next">계속</span></button>
+        </div>
+      </div>
+
+      <!-- (g) 완결 카드 -->
+      <div id="stFinale" hidden>
+        <div class="guideBox"><canvas class="guideCv" id="gvFin" width="140" height="140" aria-hidden="true"></canvas></div>
+        <div class="relic" id="relicBox">
+          <div class="rh"><span data-i="relicHead">사료</span></div>
+          <div class="rb">
+            <div class="relicName" id="relicName"></div>
+            <div class="relicDesc" id="relicDesc"></div>
+            <div class="quote" id="relicQuote"></div>
+            <div class="src" id="relicSrc"></div>
+          </div>
+        </div>
+        <div class="lesson" id="lessonBox">
+          <div class="lh"><span data-i="lessonHead">배움</span></div>
+          <div id="lessonText"></div>
+        </div>
+        <div class="btnRow">
+          <button class="btn" id="finTlBtn" type="button"><span data-i="toTimeline">연표로</span></button>
+          <button class="btn primary" id="finNextBtn" type="button" hidden><span id="finNextLbl" data-i="nextFork">다음 갈림길</span></button>
+        </div>
+        <div class="footRow">
+          <a class="pill" href="../../index.html">← <span data-i="home">홈</span></a>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= helpers ================= */
+var $  = function(s){ return document.querySelector(s); };
+var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+var store = {
+  get:function(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set:function(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+};
+var reduced = false;
+try{ reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+function isObj(o){ return !!o && typeof o === 'object' && !(o instanceof Array); }
+function isArr(o){ return o instanceof Array; }
+
+var SAVE_KEY  = 'in9-sagwan';
+var SOUND_KEY = 'in9-sagwan-sound';
+var DATA_URL  = 'chapters/sejong.json';
+
+/* ================= i18n ================= */
+var I18N = {
+ko:{
+  home:'홈', langAria:'언어 바꾸기', soundAria:'소리 켜기/끄기',
+  loading:'두루마리를 펼치는 중…',
+  loadFail:'기록을 불러오지 못했습니다.', retry:'다시 시도',
+  greetNew:'전하, 사관 도깨비 문안 여쭙니다.<br>붓을 들고 오래 기다렸습니다.',
+  greetGo:'전하, 붓끝이 아직 마르지 않았습니다.<br>다음 갈림길이 기다립니다.',
+  greetDone:'전하, 이제 붓을 내려놓습니다.<br>이 두루마리는 다 채워졌습니다.',
+  tlHead:'자라나는 연표',
+  progressFmt:'{n} / {m} 장면',
+  nextForkLabel:'다음 갈림길',
+  nextForkHint:'아직 적히지 않은 날입니다.',
+  sealChip:'정사 기록', enter:'들어가기', replay:'다시 보기',
+  exitScene:'연표로',
+  tapMore:'화면을 탭하세요',
+  toExplore:'둘러보기',
+  exploreHead:'둘러보기',
+  exploreHint:'궁금한 곳을 눌러 보세요 · 건너뛰어도 됩니다',
+  toChoose:'선택으로 가기', back:'뒤로',
+  chooseHeadLabel:'갈림길',
+  chooseHead:'전하, 어찌하시겠습니까?',
+  chooseHint:'무엇을 고르셔도 사관은 그대로 적습니다.',
+  resultHead:'그리하여', next:'계속',
+  ifLabel:'이것은 상상의 역사입니다',
+  ifHead:'상상의 역사',
+  ifFallbackTitle:'다른 길',
+  ifFallbackText:'사관의 붓이 잠시 멈췄습니다.\n이 길의 기록은 아직 전하지 않습니다.',
+  revealHead:'실제 역사',
+  sealSay:'정사와 같은 선택이었습니다. 인주를 찍습니다.',
+  ifSay:'정사는 다른 길로 갔습니다. 이 갈림길은 아직 열려 있습니다.',
+  relicHead:'사료', sourceLabel:'출처', lessonHead:'배움',
+  toTimeline:'연표로', nextFork:'다음 갈림길', retryScene:'이 갈림길 다시',
+  allDoneTitle:'두루마리를 다 채웠습니다',
+  allDoneText:'전하께서 지나신 갈림길이 모두 기록되었습니다.\n언제든 다시 펼쳐 보셔도 좋습니다.'
+},
+ja:{
+  home:'ホーム', langAria:'言語を切り替え', soundAria:'サウンド切り替え',
+  loading:'巻物をひらいています…',
+  loadFail:'記録を読み込めませんでした。', retry:'もう一度',
+  greetNew:'殿下、史官トッケビでございます。<br>筆をもって 長らくお待ちしておりました。',
+  greetGo:'殿下、筆先はまだ乾いておりません。<br>次の分かれ道がお待ちです。',
+  greetDone:'殿下、筆を置きます。<br>この巻物は すべて埋まりました。',
+  tlHead:'育つ年表',
+  progressFmt:'{n} / {m} 場面',
+  nextForkLabel:'次の分かれ道',
+  nextForkHint:'まだ記されていない日です。',
+  sealChip:'正史の記録', enter:'はいる', replay:'もう一度みる',
+  exitScene:'年表へ',
+  tapMore:'画面をタップ',
+  toExplore:'見てまわる',
+  exploreHead:'見てまわる',
+  exploreHint:'気になる所を押してみて · とばしても大丈夫',
+  toChoose:'選択へすすむ', back:'もどる',
+  chooseHeadLabel:'分かれ道',
+  chooseHead:'殿下、いかがなさいますか。',
+  chooseHint:'どれを選んでも 史官はそのまま記します。',
+  resultHead:'そして', next:'つづける',
+  ifLabel:'これは想像の歴史です',
+  ifHead:'想像の歴史',
+  ifFallbackTitle:'べつの道',
+  ifFallbackText:'史官の筆が しばし止まりました。\nこの道の記録は まだ伝わっておりません。',
+  revealHead:'実際の歴史',
+  sealSay:'正史と同じ選択でした。印を押します。',
+  ifSay:'正史は べつの道へ進みました。この分かれ道は まだ開いています。',
+  relicHead:'史料', sourceLabel:'出典', lessonHead:'学び',
+  toTimeline:'年表へ', nextFork:'次の分かれ道', retryScene:'この分かれ道をもう一度',
+  allDoneTitle:'巻物を すべて埋めました',
+  allDoneText:'殿下が通られた分かれ道は すべて記されました。\nいつでも また ひらいてご覧ください。'
+},
+en:{
+  home:'Home', langAria:'Change language', soundAria:'Toggle sound',
+  loading:'Unrolling the scroll…',
+  loadFail:'The records could not be loaded.', retry:'Try again',
+  greetNew:'Your Majesty. I am the Scribe Goblin.<br>My brush has been waiting a long while.',
+  greetGo:'Your Majesty, the ink is not yet dry.<br>Another fork in the road awaits.',
+  greetDone:'Your Majesty, I lay down my brush.<br>This scroll is full.',
+  tlHead:'A Growing Timeline',
+  progressFmt:'{n} / {m} scenes',
+  nextForkLabel:'Next fork',
+  nextForkHint:'A day not yet written down.',
+  sealChip:'As recorded', enter:'Enter', replay:'Replay',
+  exitScene:'Timeline',
+  tapMore:'Tap to continue',
+  toExplore:'Look around',
+  exploreHead:'Look around',
+  exploreHint:'Tap whatever draws you · skipping is fine',
+  toChoose:'Go to the choice', back:'Back',
+  chooseHeadLabel:'The fork',
+  chooseHead:'Your Majesty, what will you do?',
+  chooseHint:'Whatever you choose, the historian writes it down.',
+  resultHead:'And so', next:'Continue',
+  ifLabel:'This is imagined history.',
+  ifHead:'Imagined history',
+  ifFallbackTitle:'Another road',
+  ifFallbackText:'The historian\'s brush pauses.\nNo record of this road has reached us.',
+  revealHead:'What actually happened',
+  sealSay:'You chose as history did. The seal comes down.',
+  ifSay:'History took another road. This fork is still open.',
+  relicHead:'Source', sourceLabel:'From', lessonHead:'What we learn',
+  toTimeline:'Timeline', nextFork:'Next fork', retryScene:'Try this fork again',
+  allDoneTitle:'The scroll is complete',
+  allDoneText:'Every fork you passed has been written down.\nUnroll it again whenever you like.'
+}};
+var LANGS = ['ko','ja','en'];
+var LANG_FLAG = { ko:'🇰🇷', ja:'🇯🇵', en:'🇬🇧' };
+var lang = store.get('in9-lang');
+if (LANGS.indexOf(lang) < 0){
+  var nv = (navigator.language || 'ko').toLowerCase();
+  lang = nv.indexOf('ja') === 0 ? 'ja' : (nv.indexOf('en') === 0 ? 'en' : 'ko');
+}
+/* 키 누락 시 ko 폴백 */
+function L(k){ var d = I18N[lang] || I18N.ko; return d[k] !== undefined ? d[k] : I18N.ko[k]; }
+/* 데이터의 {ko,ja,en} 다국어 객체 → 현재 언어 (없으면 ko, 그다음 아무거나) */
+function tr(o){
+  if (o == null) return '';
+  if (typeof o === 'string') return o;
+  if (!isObj(o)) return '';
+  if (typeof o[lang] === 'string' && o[lang]) return o[lang];
+  if (typeof o.ko === 'string' && o.ko) return o.ko;
+  for (var i=0;i<LANGS.length;i++){ if (typeof o[LANGS[i]] === 'string' && o[LANGS[i]]) return o[LANGS[i]]; }
+  return '';
+}
+
+/* ================= 사운드 (첫 제스처에서 lazy init) ================= */
+var SFX = {
+  ac:null, master:null, on:true,
+  boot:function(){
+    if (this.ac){ if (this.ac.state === 'suspended') { try{ this.ac.resume(); }catch(e){} } return; }
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try{
+      this.ac = new AC();
+      this.master = this.ac.createGain();
+      this.master.gain.value = this.on ? 0.8 : 0;
+      this.master.connect(this.ac.destination);
+    }catch(e){ this.ac = null; }
+  },
+  setOn:function(v){
+    this.on = !!v;
+    if (this.master) this.master.gain.value = this.on ? 0.8 : 0;
+    store.set(SOUND_KEY, this.on ? '1' : '0');
+  },
+  /* 노이즈 버스트 — 붓/종이 계열 소리의 재료 */
+  noise:function(o){
+    if (!this.ac || !this.on) return;
+    o = o || {};
+    var T = this.ac.currentTime, dur = o.dur || 0.2;
+    var len = Math.max(1, Math.floor(this.ac.sampleRate * dur));
+    var buf = this.ac.createBuffer(1, len, this.ac.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i=0;i<len;i++){
+      var env = Math.pow(1 - i/len, o.shape || 1.7);
+      if (o.swell) env *= Math.min(1, i/(len*0.22));
+      d[i] = (Math.random()*2-1) * env;
+    }
+    var s = this.ac.createBufferSource(); s.buffer = buf;
+    var f = this.ac.createBiquadFilter();
+    f.type = o.type || 'bandpass';
+    f.frequency.setValueAtTime(o.f0 || 1800, T);
+    f.frequency.exponentialRampToValueAtTime(Math.max(60, o.f1 || 700), T + dur);
+    f.Q.value = o.Q || 0.8;
+    var g = this.ac.createGain(); g.gain.value = o.vol || 0.1;
+    s.connect(f); f.connect(g); g.connect(this.master);
+    s.start(T);
+  },
+  tone:function(f, dur, vol, type, f2, delay){
+    if (!this.ac || !this.on) return;
+    var T = this.ac.currentTime + (delay || 0);
+    var o = this.ac.createOscillator(), g = this.ac.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(f, T);
+    if (f2) o.frequency.exponentialRampToValueAtTime(Math.max(30, f2), T + dur);
+    g.gain.setValueAtTime(0.0001, T);
+    g.gain.exponentialRampToValueAtTime(vol || 0.12, T + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, T + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(T); o.stop(T + dur + 0.05);
+  },
+  brush:function(){ this.noise({dur:0.30, f0:2300, f1:620, Q:0.7, vol:0.075, shape:1.2, swell:true}); },
+  page:function(){  this.noise({dur:0.17, f0:3200, f1:1100, Q:0.5, vol:0.085, shape:2.4}); },
+  stamp:function(){
+    this.noise({dur:0.11, f0:1500, f1:260, Q:0.4, vol:0.16, shape:2.8});
+    this.tone(126, 0.30, 0.20, 'sine', 52);
+    this.tone(78,  0.42, 0.12, 'triangle', 40, 0.01);
+  },
+  ok:function(){
+    this.tone(587.33, 0.20, 0.075, 'sine');
+    this.tone(880.00, 0.26, 0.055, 'sine', null, 0.075);
+  },
+  hush:function(){ if (this.ac && this.ac.state === 'running'){ try{ this.ac.suspend(); }catch(e){} } }
+};
+if (store.get(SOUND_KEY) === '0') SFX.on = false;
+
+/* ================= 안내자 그림 (임시 아트 — 추후 원화로 교체) ================= */
+/* 표정 4종: 'base' 기본 / 'surprise' 놀람 / 'awe' 감탄 / 'smile' 빙긋
+   교체 지점을 이 함수 하나로 격리해 둔다. cv 생략 시 연표 화면 캔버스. */
+function drawGuide(expression, cv){
+  cv = cv || document.getElementById('gvHome');
+  if (!cv || !cv.getContext) return;
+  var expr = expression || 'base';
+  var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  var box = cv.getBoundingClientRect();
+  var w = Math.round(box.width) || cv.clientWidth || 140;
+  var h = Math.round(box.height) || cv.clientHeight || 140;
+  if (cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){
+    cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+  }
+  var g = cv.getContext('2d');
+  g.setTransform(dpr,0,0,dpr,0,0);
+  g.clearRect(0,0,w,h);
+
+  var S = Math.min(w,h) / 140;
+  g.save();
+  g.translate(w/2, h/2);
+  g.scale(S,S);                 // 이하 좌표계는 -70..70 고정
+  g.lineCap = 'round'; g.lineJoin = 'round';
+
+  var INK='#2b2620', PAPER='#fdf9ec', SEAL='#b23a2a', INDIGO='#35586e', WOOD='#8a6f4a';
+
+  function dot(x,y,r,fill){ g.beginPath(); g.arc(x,y,r,0,6.2832); g.fillStyle=fill; g.fill(); }
+  function ring(x,y,r,c,lw){ g.beginPath(); g.arc(x,y,r,0,6.2832); g.strokeStyle=c; g.lineWidth=lw; g.stroke(); }
+  function line(x1,y1,x2,y2,c,lw){ g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.strokeStyle=c; g.lineWidth=lw; g.stroke(); }
+  function arc(x,y,r,a0,a1,c,lw){ g.beginPath(); g.arc(x,y,r,a0,a1); g.strokeStyle=c; g.lineWidth=lw; g.stroke(); }
+  function ell(x,y,rx,ry,fill,stroke,lw){
+    g.save(); g.translate(x,y); g.scale(rx/ry,1);
+    g.beginPath(); g.arc(0,0,ry,0,6.2832); g.restore();
+    if (fill){ g.fillStyle=fill; g.fill(); }
+    if (stroke){ g.strokeStyle=stroke; g.lineWidth=lw||3; g.stroke(); }
+  }
+
+  /* 바닥 먹 그림자 */
+  ell(0, 56, 34, 6, 'rgba(43,38,32,.09)');
+
+  /* 도포(몸) — 쪽빛 기미가 도는 한지색 */
+  g.beginPath();
+  g.moveTo(-17, 16); g.quadraticCurveTo(-31, 34, -33, 52);
+  g.quadraticCurveTo(0, 59, 33, 52);
+  g.quadraticCurveTo(31, 34, 17, 16);
+  g.closePath();
+  g.fillStyle = 'rgba(53,88,110,.16)'; g.fill();
+  g.strokeStyle = INK; g.lineWidth = 3; g.stroke();
+  line(0, 20, 0, 52, 'rgba(43,38,32,.35)', 2);          // 옷깃
+  line(-24, 40, 24, 40, 'rgba(43,38,32,.22)', 2);        // 허리띠
+  arc(-17, 22, 13, 0.15, 1.5, 'rgba(43,38,32,.3)', 2);   // 왼 소매
+  arc(17, 22, 13, 1.65, 2.99, 'rgba(43,38,32,.3)', 2);   // 오른 소매
+
+  /* 왼팔에 낀 두루마리 */
+  g.save(); g.translate(-33, 33); g.rotate(-0.42);
+  g.beginPath(); g.rect(-13, -5, 26, 10); g.fillStyle = PAPER; g.fill();
+  g.strokeStyle = INK; g.lineWidth = 2.4; g.stroke();
+  dot(-13, 0, 3.2, WOOD); dot(13, 0, 3.2, WOOD);
+  g.restore();
+
+  /* 붓 (오른손) — 자루는 대나무색, 끝은 먹 */
+  line(20, 44, 50, -12, WOOD, 5.4);
+  line(48, -9, 53, -18, '#5d4830', 4);                   // 자루 꼭지
+  g.beginPath(); g.moveTo(23, 39); g.lineTo(15, 55); g.lineTo(20, 40);
+  g.closePath(); g.fillStyle = INK; g.fill();             // 붓털
+  dot(15.5, 55, 1.6, SEAL);                              // 먹물 한 방울(인주 톤 포인트)
+  dot(33, 23, 8, PAPER); ring(33, 23, 8, INK, 2.8);       // 붓 잡은 손
+  arc(33, 23, 8, 4.2, 5.6, INK, 2.2);                    // 엄지
+
+  /* 머리 */
+  ell(0, -12, 34, 31, PAPER, INK, 3.2);
+  /* 뿔 하나 — 왼쪽 위. 기록 요괴의 유일한 뿔이라 반대쪽엔 아무것도 두지 않는다 */
+  g.beginPath();
+  g.moveTo(-23, -33); g.quadraticCurveTo(-24, -52, -13, -59);
+  g.quadraticCurveTo(-13, -45, -8, -38);
+  g.closePath();
+  g.fillStyle = '#efe0c0'; g.fill(); g.strokeStyle = INK; g.lineWidth = 2.8; g.stroke();
+  line(-19, -37, -15, -50, 'rgba(43,38,32,.35)', 1.8);   // 뿔 결
+
+  /* 표정 파라미터 */
+  var eyeR = 7.2, pupR = 4.0, browY = -26, browTilt = 0, mouth = 'smile-s', blush = 0;
+  if (expr === 'surprise'){ eyeR = 9.2; pupR = 3.4; browY = -30; browTilt = -0.10; mouth = 'o'; }
+  else if (expr === 'awe'){ eyeR = 8.4; pupR = 4.4; browY = -29; browTilt = -0.16; mouth = 'open'; blush = 0.5; }
+  else if (expr === 'smile'){ eyeR = 0;  browY = -25; browTilt = 0.10;  mouth = 'smile-l'; blush = 0.7; }
+
+  if (blush){
+    g.globalAlpha = 0.18 * blush;
+    dot(-22, -4, 6.5, SEAL); dot(22, -4, 6.5, SEAL);
+    g.globalAlpha = 1;
+  }
+
+  /* 눈썹 — 가늘게. 굵으면 화난 얼굴로 읽힌다 */
+  g.save(); g.translate(-13, browY); g.rotate(browTilt);
+  arc(0, 3, 4.6, 3.6, 5.9, 'rgba(43,38,32,.62)', 2); g.restore();
+  g.save(); g.translate(13, browY); g.rotate(-browTilt);
+  arc(0, 3, 4.6, 3.5, 5.8, 'rgba(43,38,32,.62)', 2); g.restore();
+
+  /* 눈 */
+  if (eyeR > 0){
+    dot(-13, -11, eyeR, '#ffffff'); ring(-13, -11, eyeR, INK, 2.4);
+    dot(13, -11, eyeR, '#ffffff');  ring(13, -11, eyeR, INK, 2.4);
+    var px = expr === 'awe' ? 0 : 0.8, py = expr === 'surprise' ? -0.6 : 1.0;
+    dot(-13+px, -11+py, pupR, INK); dot(13+px, -11+py, pupR, INK);
+    dot(-15.4+px, -13.4+py, 1.5, 'rgba(255,255,255,.9)');
+    dot(10.6+px, -13.4+py, 1.5, 'rgba(255,255,255,.9)');
+  } else {
+    /* 빙긋 — 감은 눈은 위로 휜 먹선 */
+    arc(-13, -8, 7.5, 3.5, 6.0, INK, 2.8);
+    arc(13, -8, 7.5, 3.5, 6.0, INK, 2.8);
+  }
+
+  /* 입 */
+  if (mouth === 'o'){ dot(0, 6, 4.2, INK); dot(0, 5.2, 2.2, '#7a3a30'); }
+  else if (mouth === 'open'){ ell(0, 7, 6.5, 5, '#8f3b30'); ell(0, 7, 6.5, 5, null, INK, 2.4); }
+  else if (mouth === 'smile-l'){ arc(0, 1, 9, 0.35, 2.79, INK, 2.8); }
+  else { arc(0, 2, 6.5, 0.5, 2.64, INK, 2.6); }
+
+  /* 감탄에는 반짝임 두 개 */
+  if (expr === 'awe'){
+    [[-40,-34,4.4],[41,-26,3.4]].forEach(function(s){
+      line(s[0]-s[2], s[1], s[0]+s[2], s[1], INDIGO, 2);
+      line(s[0], s[1]-s[2], s[0], s[1]+s[2], INDIGO, 2);
+    });
+  }
+  g.restore();
+}
+
+/* ================= 데이터 로드 · 정규화 ================= */
+var CH = null;   // 정규화된 장(chapter)
+
+function tObj(o){
+  if (isObj(o)) return o;
+  if (typeof o === 'string') return { ko:o, ja:o, en:o };
+  return {};
+}
+function normalize(j){
+  var out = { id:'sejong', title:{}, scenes:[] };
+  if (!isObj(j)) return out;
+  if (typeof j.id === 'string' && j.id) out.id = j.id;
+  out.title = tObj(j.title);
+  var arr = isArr(j.scenes) ? j.scenes : [];
+  for (var i=0;i<arr.length;i++){
+    var s = arr[i];
+    if (!isObj(s)) continue;
+    var choices = (isArr(s.choices) ? s.choices : []).filter(isObj).slice(0,3).map(function(c,k){
+      return {
+        id: typeof c.id === 'string' ? c.id : ('c'+(k+1)),
+        label: tObj(c.label),
+        isHistory: !!c.isHistory,
+        result: tObj(c.result),
+        ifEnding: isObj(c.ifEnding) ? { title:tObj(c.ifEnding.title), text:tObj(c.ifEnding.text) } : null
+      };
+    });
+    if (!choices.length) continue;   // 선택 없는 장면은 플레이할 수 없으니 건너뛴다
+    out.scenes.push({
+      id: (typeof s.id === 'string' && s.id) ? s.id : (out.id + '-' + (i+1)),
+      /* year는 문자열 또는 {ko,ja,en} 객체 — "1441년 무렵"처럼 언어별 표기가 다를 수 있다 */
+      year: isObj(s.year) ? tObj(s.year) : ((s.year === null || s.year === undefined) ? '' : String(s.year)),
+      title: tObj(s.title),
+      briefing: tObj(s.briefing),
+      explore: (isArr(s.explore) ? s.explore : []).filter(isObj).slice(0,3).map(function(e,k){
+        return { id: typeof e.id === 'string' ? e.id : ('e'+(k+1)), label:tObj(e.label), text:tObj(e.text) };
+      }),
+      choices: choices,
+      reveal: tObj(s.reveal),
+      relic: isObj(s.relic) ? {
+        name:tObj(s.relic.name), desc:tObj(s.relic.desc),
+        quote:tObj(s.relic.quote), source:tObj(s.relic.source)
+      } : null,
+      lesson: tObj(s.lesson)
+    });
+  }
+  return out;
+}
+
+function loadChapter(){
+  showScreen('loading');
+  drawGuide('base', $('#gvLoad'));
+  var p;
+  try{ p = fetch(DATA_URL, { cache:'no-cache' }); }
+  catch(e){ onLoadFail(); return; }
+  if (!p || !p.then){ onLoadFail(); return; }
+  p.then(function(r){
+    if (!r || !r.ok) throw new Error('http');
+    return r.json();
+  }).then(function(j){
+    var ch = normalize(j);
+    if (!ch.scenes.length) throw new Error('empty');
+    CH = ch;
+    goTimeline();
+  }).catch(function(){ onLoadFail(); });
+}
+function onLoadFail(){
+  showScreen('error');
+  drawGuide('surprise', $('#gvErr'));
+  var box = $('#errBox');
+  box.textContent = '';
+  /* 로드 실패는 3개국어로 함께 알린다 — 언어 설정을 못 믿는 상황일 수 있으니 */
+  var order = [lang].concat(LANGS.filter(function(l){ return l !== lang; }));
+  order.forEach(function(l, i){
+    var p = document.createElement('p');
+    p.className = 'errLine' + (i ? ' sub' : '');
+    p.style.marginTop = i ? '6px' : '0';
+    p.textContent = I18N[l].loadFail;
+    box.appendChild(p);
+  });
+}
+
+/* ================= 진행 저장 ================= */
+function loadProg(){
+  var out = { cleared:[] };
+  try{
+    var raw = store.get(SAVE_KEY);
+    if (raw){
+      var o = JSON.parse(raw);
+      if (isObj(o) && isArr(o.cleared)){
+        out.cleared = o.cleared.filter(function(x){
+          return typeof x === 'string' && x.length > 0 && x.length < 80;
+        }).slice(0, 128);
+      }
+    }
+  }catch(e){}
+  return out;
+}
+function saveProg(){ store.set(SAVE_KEY, JSON.stringify({ cleared: prog.cleared })); }
+var prog = loadProg();
+function isCleared(id){ return prog.cleared.indexOf(id) >= 0; }
+function markCleared(id){
+  if (!isCleared(id)){ prog.cleared.push(id); saveProg(); }
+}
+/* 다음 갈림길 = 아직 클리어하지 않은 첫 장면. 그 뒤 장면은 어떤 형태로도 노출하지 않는다. */
+function nextForkIdx(){
+  if (!CH) return -1;
+  for (var i=0;i<CH.scenes.length;i++){ if (!isCleared(CH.scenes[i].id)) return i; }
+  return -1;
+}
+function clearedCount(){
+  if (!CH) return 0;
+  var n = 0;
+  for (var i=0;i<CH.scenes.length;i++){ if (isCleared(CH.scenes[i].id)) n++; }
+  return n;
+}
+
+/* ================= 렌더 유틸 ================= */
+/* \n = 문단 구분. 사용자 데이터는 반드시 textContent로만 넣는다. */
+function paraFill(el, text, animate){
+  el.textContent = '';
+  var parts = String(text == null ? '' : text).split('\n');
+  var n = 0;
+  for (var i=0;i<parts.length;i++){
+    var t = parts[i].trim();
+    if (!t) continue;
+    var p = document.createElement('p');
+    p.className = 'para' + (animate && !reduced ? ' pop' : '');
+    if (animate && !reduced) p.style.animationDelay = (n * 0.08) + 's';
+    p.textContent = t;
+    el.appendChild(p);
+    n++;
+  }
+  return n;
+}
+function fmt(s, map){
+  return String(s).replace(/\{(\w+)\}/g, function(m, k){ return map[k] !== undefined ? map[k] : m; });
+}
+function toTop(){ var a = $('#app'); if (a) a.scrollTop = 0; }
+
+/* ================= 화면 전환 ================= */
+var SCREENS = { loading:'#scrLoading', error:'#scrError', timeline:'#scrTimeline', scene:'#scrScene' };
+var view = { screen:'loading', stage:null };
+function showScreen(name){
+  view.screen = name;
+  for (var k in SCREENS){ if (SCREENS.hasOwnProperty(k)) $(SCREENS[k]).hidden = (k !== name); }
+  toTop();
+}
+
+/* ================= 연표(홈) ================= */
+function goTimeline(){
+  showScreen('timeline');
+  view.stage = null;
+  renderTimeline();
+}
+function renderTimeline(quiet){
+  if (!CH) return;
+  var total = CH.scenes.length;
+  var done  = clearedCount();
+  var nIdx  = nextForkIdx();
+  var all   = (nIdx < 0);
+
+  drawGuide(all ? 'awe' : (done ? 'smile' : 'base'), $('#gvHome'));
+  $('#greet').innerHTML = all ? L('greetDone') : (done ? L('greetGo') : L('greetNew'));
+  $('#tlProg').textContent = fmt(L('progressFmt'), { n:done, m:total });
+
+  var note = $('#chapNote');
+  var chTitle = tr(CH.title);
+  note.textContent = chTitle ? ('— ' + chTitle + ' —') : '';
+
+  /* 시나리오 완결 축하 카드 */
+  var box = $('#allDoneBox');
+  box.textContent = '';
+  box.hidden = !all;
+  if (all){
+    var card = document.createElement('div');
+    card.className = 'finaleCard';
+    var h = document.createElement('h2');
+    h.textContent = L('allDoneTitle');
+    card.appendChild(h);
+    var body = document.createElement('div');
+    body.style.marginTop = '8px';
+    paraFill(body, L('allDoneText'), !quiet);
+    card.appendChild(body);
+    var sealRow = document.createElement('div');
+    sealRow.style.cssText = 'display:flex;justify-content:center;margin-top:12px';
+    var sl = document.createElement('div');
+    sl.className = 'seal'; sl.textContent = '正史';
+    sealRow.appendChild(sl);
+    card.appendChild(sealRow);
+    box.appendChild(card);
+  }
+
+  /* 연표 목록: 클리어한 장면 + '다음 갈림길' 1장. 미래 장면은 빈 슬롯조차 만들지 않는다. */
+  var list = $('#tlList');
+  list.textContent = '';
+  for (var i=0;i<CH.scenes.length;i++){
+    var s = CH.scenes[i];
+    if (!isCleared(s.id)) continue;
+    list.appendChild(tlDoneCard(s, i));
+  }
+  if (nIdx >= 0) list.appendChild(tlNextCard(CH.scenes[nIdx], nIdx));
+}
+function tlDoneCard(s, idx){
+  var wrap = document.createElement('div');
+  wrap.className = 'tlItem done';
+  var btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'tlCard';
+  var body = document.createElement('div');
+  body.className = 'tlBody';
+  var y = document.createElement('div'); y.className = 'tlYear'; y.textContent = tr(s.year);
+  var t = document.createElement('div'); t.className = 'tlTitle'; t.textContent = tr(s.title);
+  var c = document.createElement('span'); c.className = 'tlChip'; c.textContent = L('sealChip');
+  body.appendChild(y); body.appendChild(t); body.appendChild(c);
+  var sl = document.createElement('div'); sl.className = 'seal'; sl.textContent = '正史';
+  btn.appendChild(body); btn.appendChild(sl);
+  btn.setAttribute('aria-label', tr(s.year) + ' ' + tr(s.title) + ' · ' + L('replay'));
+  btn.addEventListener('click', function(){ SFX.page(); startScene(idx); });
+  wrap.appendChild(btn);
+  return wrap;
+}
+function tlNextCard(s, idx){
+  var wrap = document.createElement('div');
+  wrap.className = 'tlItem next';
+  var btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'tlCard nextCard';
+  var body = document.createElement('div');
+  body.className = 'tlBody';
+  var lb = document.createElement('div');
+  lb.className = 'tlChip plain'; lb.style.marginTop = '0';
+  lb.textContent = L('nextForkLabel');
+  var y = document.createElement('div'); y.className = 'tlYear'; y.style.marginTop = '5px'; y.textContent = tr(s.year);
+  var t = document.createElement('div'); t.className = 'tlTitle'; t.textContent = tr(s.title);
+  var hn = document.createElement('div');
+  hn.className = 'hint'; hn.style.marginTop = '5px'; hn.textContent = L('nextForkHint');
+  body.appendChild(lb); body.appendChild(y); body.appendChild(t); body.appendChild(hn);
+  var go = document.createElement('div'); go.className = 'tlGo'; go.textContent = L('enter') + ' →';
+  btn.appendChild(body); btn.appendChild(go);
+  btn.addEventListener('click', function(){ SFX.page(); startScene(idx); });
+  wrap.appendChild(btn);
+  return wrap;
+}
+
+/* ================= 장면 상태 ================= */
+var S = {
+  idx:-1, scene:null,
+  paraCount:0, paraShown:0,
+  order:[],          /* 화면에 뿌릴 선택 순서 (정답 위치 힌트를 없애려 매 판 섞는다) */
+  picked:null,
+  exploreRead:{},
+  fired:false
+};
+
+function startScene(idx){
+  if (!CH || !CH.scenes[idx]) return;
+  S.idx = idx;
+  S.scene = CH.scenes[idx];
+  S.paraShown = 0;
+  S.picked = null;
+  S.exploreRead = {};
+  S.fired = false;
+  S.order = shuffled(S.scene.choices.length);
+  showScreen('scene');
+  renderSceneTag();
+  goBrief();
+}
+function shuffled(n){
+  var a = [], i, j, t;
+  for (i=0;i<n;i++) a.push(i);
+  for (i=a.length-1;i>0;i--){ j = Math.floor(Math.random()*(i+1)); t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+}
+function renderSceneTag(){
+  var s = S.scene; if (!s) return;
+  var tag = $('#sceneTag');
+  tag.textContent = '';
+  var b = document.createElement('b'); b.textContent = tr(s.year);
+  tag.appendChild(b);
+  tag.appendChild(document.createTextNode(tr(s.year) ? ' · ' : ''));
+  tag.appendChild(document.createTextNode(tr(s.title)));
+}
+
+var STAGES = ['brief','explore','choose','result','if','reveal','finale'];
+var STAGE_EL = { brief:'#stBrief', explore:'#stExplore', choose:'#stChoose',
+                 result:'#stResult', if:'#stIf', reveal:'#stReveal', finale:'#stFinale' };
+var STEP_OF  = { brief:0, explore:0, choose:1, result:2, if:2, reveal:3, finale:3 };
+function setStage(name){
+  view.stage = name;
+  for (var i=0;i<STAGES.length;i++){ $(STAGE_EL[STAGES[i]]).hidden = (STAGES[i] !== name); }
+  var dots = $$('#steps i');
+  dots.forEach(function(d, i){ d.classList.toggle('on', i <= (STEP_OF[name] || 0)); });
+  toTop();
+}
+
+/* ---------- (a) 브리핑 ---------- */
+function goBrief(quiet){
+  setStage('brief');
+  drawGuide('base', $('#gvBrief'));
+  var all = String(tr(S.scene.briefing) || '').split('\n')
+    .map(function(t){ return t.trim(); }).filter(function(t){ return !!t; });
+  S.paraCount = all.length;
+  if (!quiet) S.paraShown = Math.min(Math.max(S.paraShown, 1), Math.max(1, all.length));
+  if (S.paraShown < 1) S.paraShown = 1;
+  if (S.paraShown > all.length) S.paraShown = all.length;
+  renderBrief(quiet);
+}
+function renderBrief(quiet){
+  var all = String(tr(S.scene.briefing) || '').split('\n')
+    .map(function(t){ return t.trim(); }).filter(function(t){ return !!t; });
+  S.paraCount = all.length;
+  var host = $('#briefText');
+  host.textContent = '';
+  if (!all.length){
+    var e = document.createElement('p'); e.className = 'para';
+    e.textContent = tr(S.scene.title);
+    host.appendChild(e);
+  }
+  for (var i=0;i<S.paraShown && i<all.length;i++){
+    var p = document.createElement('p');
+    p.className = 'para';
+    /* 마지막에 추가된 문단만 살짝 올라오게 — 매번 전체가 튀지 않도록 */
+    if (!reduced && !quiet && i === S.paraShown - 1 && S.paraShown > 1) p.className += ' pop';
+    p.textContent = all[i];
+    host.appendChild(p);
+  }
+  var more = S.paraShown < all.length;
+  $('#briefHint').hidden = !more;
+  $('#briefBtns').hidden = more;
+}
+function briefAdvance(){
+  if (view.stage !== 'brief') return;
+  if (S.paraShown < S.paraCount){
+    S.paraShown++;
+    SFX.brush();
+    renderBrief();
+  } else {
+    goExplore();
+  }
+}
+
+/* ---------- (b) 탐색 ---------- */
+function goExplore(quiet){
+  setStage('explore');
+  if (!quiet) SFX.page();
+  renderExplore();
+}
+function renderExplore(){
+  var host = $('#exList');
+  host.textContent = '';
+  var ex = S.scene.explore || [];
+  var cur = S.exploreCur;
+  ex.forEach(function(e){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'exBtn' + (S.exploreRead[e.id] ? ' read' : '') + (cur === e.id ? ' cur' : '');
+    b.textContent = tr(e.label);
+    b.addEventListener('click', function(){
+      S.exploreRead[e.id] = true;
+      S.exploreCur = e.id;
+      SFX.brush();
+      renderExplore();
+      showExploreText(e);
+    });
+    host.appendChild(b);
+  });
+  /* 언어 전환 등으로 다시 그릴 때 열려 있던 본문을 유지 */
+  var open = null;
+  for (var i=0;i<ex.length;i++){ if (ex[i].id === cur) open = ex[i]; }
+  if (open) showExploreText(open, true); else $('#exText').textContent = '';
+}
+function showExploreText(e, quiet){
+  var box = $('#exText');
+  paraFill(box, tr(e.text), !quiet);
+}
+
+/* ---------- (c) 선택 ---------- */
+var NUMERAL = ['一','二','三'];
+function goChoose(quiet){
+  setStage('choose');
+  if (!quiet) SFX.page();
+  renderChoose();
+}
+function renderChoose(){
+  var host = $('#chList');
+  host.textContent = '';
+  S.order.forEach(function(ci, n){
+    var c = S.scene.choices[ci];
+    if (!c) return;
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'choice';
+    b.setAttribute('data-n', NUMERAL[n] || String(n+1));
+    b.textContent = tr(c.label);
+    /* 정답 힌트가 새지 않도록 isHistory는 DOM에 절대 쓰지 않는다 */
+    b.addEventListener('click', function(){ pick(c); });
+    host.appendChild(b);
+  });
+}
+function pick(c){
+  S.picked = c;
+  SFX.ok();
+  goResult();
+}
+
+/* ---------- (d) 결과 ---------- */
+function goResult(quiet){
+  setStage('result');
+  renderResult(quiet);
+}
+function renderResult(quiet){
+  paraFill($('#resText'), tr(S.picked ? S.picked.result : ''), !quiet);
+  var lbl = $('#resNextBtn');
+  lbl.hidden = false;
+}
+function afterResult(){
+  if (S.picked && !S.picked.isHistory) goIf();
+  else goReveal();
+}
+
+/* ---------- (e) IF 엔딩 ---------- */
+function goIf(quiet){
+  setStage('if');
+  if (!quiet) SFX.page();
+  renderIf(quiet);
+}
+function renderIf(quiet){
+  var ie = S.picked && S.picked.ifEnding;
+  $('#ifTitle').textContent = (ie && tr(ie.title)) || L('ifFallbackTitle');
+  paraFill($('#ifText'), (ie && tr(ie.text)) || L('ifFallbackText'), !quiet);
+}
+
+/* ---------- (f) 실제 역사 공개 ---------- */
+function goReveal(quiet){
+  setStage('reveal');
+  renderReveal(quiet);
+}
+function renderReveal(quiet){
+  var hist = !!(S.picked && S.picked.isHistory);
+  paraFill($('#revText'), tr(S.scene.reveal), false);
+  $('#sealSay').textContent = L('sealSay');
+  $('#ifSay').textContent = L('ifSay');
+  $('#sealWrap').hidden = !hist;
+  $('#ifSay').hidden = hist;
+
+  var sc = $('#revScroll'), sl = $('#bigSeal');
+  var body = sc.querySelector('.scrollBody');
+  if (quiet){
+    sc.classList.add('open');
+    body.style.maxHeight = 'none';
+    if (hist) sl.classList.add('on');
+    return;
+  }
+  /* 두루마리 펼침 → (정사면) 도장 쾅 */
+  sc.classList.remove('open'); sl.classList.remove('on');
+  body.style.maxHeight = '';
+  SFX.page();
+  setTimeout(function(){
+    if (view.stage !== 'reveal') return;
+    sc.classList.add('open');
+  }, reduced ? 10 : 60);
+  /* 열림이 끝나면 max-height 해제 — 긴 본문이 잘리지 않게 */
+  var release = function(){
+    if (sc.classList.contains('open')) body.style.maxHeight = 'none';
+  };
+  setTimeout(release, reduced ? 220 : 1050);
+  if (hist){
+    setTimeout(function(){
+      if (view.stage !== 'reveal') return;
+      sl.classList.add('on');
+      SFX.stamp();
+      if (!reduced){
+        var w = $('#sealWrap');
+        w.classList.remove('shake');
+        void w.offsetWidth;
+        w.classList.add('shake');
+      }
+    }, reduced ? 200 : 900);
+  }
+}
+
+/* ---------- (g) 완결 카드 ---------- */
+function goFinale(quiet){
+  setStage('finale');
+  var hist = !!(S.picked && S.picked.isHistory);
+  /* 다음 장면 해금은 정사 클리어만 */
+  if (hist) markCleared(S.scene.id);
+  renderFinale(quiet);
+  if (!quiet) SFX.ok();
+  fireComplete();
+}
+function renderFinale(quiet){
+  var hist = !!(S.picked && S.picked.isHistory);
+  drawGuide(hist ? 'awe' : 'smile', $('#gvFin'));
+
+  var r = S.scene.relic;
+  var box = $('#relicBox');
+  box.hidden = !r;
+  if (r){
+    $('#relicName').textContent  = tr(r.name);
+    $('#relicDesc').textContent  = tr(r.desc);
+    var q = tr(r.quote);
+    var qEl = $('#relicQuote');
+    qEl.hidden = !q;
+    qEl.textContent = q ? ('“' + q + '”') : '';
+    var src = tr(r.source);
+    var sEl = $('#relicSrc');
+    sEl.hidden = !src;
+    sEl.textContent = src ? (L('sourceLabel') + ' · ' + src) : '';
+  }
+  var lsn = tr(S.scene.lesson);
+  $('#lessonBox').hidden = !lsn;
+  if (lsn) paraFill($('#lessonText'), lsn, !quiet);
+
+  /* 정사 클리어면 다음 갈림길로, 상상의 역사면 이 갈림길 재도전 */
+  var nb = $('#finNextBtn'), lbl = $('#finNextLbl');
+  if (hist){
+    var nx = S.idx + 1;
+    if (CH.scenes[nx]){
+      nb.hidden = false;
+      lbl.setAttribute('data-i','nextFork');
+      lbl.textContent = L('nextFork');
+      nb.onclick = function(){ SFX.page(); startScene(nx); };
+    } else {
+      nb.hidden = true; nb.onclick = null;
+    }
+  } else {
+    nb.hidden = false;
+    lbl.setAttribute('data-i','retryScene');
+    lbl.textContent = L('retryScene');
+    nb.onclick = (function(i){ return function(){ SFX.page(); startScene(i); }; })(S.idx);
+  }
+}
+function fireComplete(){
+  if (S.fired || !S.scene) return;
+  S.fired = true;
+  try{
+    if (typeof gtag === 'function'){
+      gtag('event','game_complete',{
+        game_id:'sagwan',
+        scene:S.scene.id,
+        result:(S.picked && S.picked.isHistory) ? 'history' : 'if',
+        lang:lang
+      });
+    }
+  }catch(e){}
+}
+
+/* ================= i18n 적용 ================= */
+var NAMES = { ko:'사관이 보고 있다', ja:'史官が見ている', en:'The Historian Is Watching' };
+function applyI18n(){
+  document.documentElement.lang = lang;
+  $('#titleMain').textContent = NAMES[lang];
+  $('#titleSub').textContent = LANGS.filter(function(l){ return l !== lang; })
+    .map(function(l){ return NAMES[l]; }).join(' · ');
+  /* data-i UI 문자열만 innerHTML 허용 (<br> 등 서식 포함) */
+  $$('[data-i]').forEach(function(el){
+    var v = L(el.getAttribute('data-i'));
+    if (typeof v === 'string') el.innerHTML = v;
+  });
+  $('#langBtn').textContent = LANG_FLAG[lang];
+  $('#langBtn').setAttribute('aria-label', L('langAria'));
+  $('#soundBtn').setAttribute('aria-label', L('soundAria'));
+  syncSoundBtn();
+  rerender();
+}
+/* 현재 화면을 유지한 채 텍스트만 다시 그린다 */
+function rerender(){
+  if (view.screen === 'error'){ onLoadFail(); return; }
+  if (view.screen === 'timeline'){ renderTimeline(true); return; }
+  if (view.screen === 'scene' && S.scene){
+    renderSceneTag();
+    switch (view.stage){
+      case 'brief':   renderBrief(true); break;
+      case 'explore': renderExplore(); break;
+      case 'choose':  renderChoose(); break;
+      case 'result':  renderResult(true); break;
+      case 'if':      renderIf(true); break;
+      case 'reveal':  renderReveal(true); break;
+      case 'finale':  renderFinale(true); break;
+    }
+  }
+}
+function syncSoundBtn(){ $('#soundBtn').textContent = SFX.on ? '🔊' : '🔇'; }
+
+/* ================= 이벤트 ================= */
+$('#langBtn').addEventListener('click', function(){
+  var i = LANGS.indexOf(lang);
+  lang = LANGS[(i + 1) % LANGS.length];
+  store.set('in9-lang', lang);
+  SFX.ok();
+  applyI18n();
+});
+$('#soundBtn').addEventListener('click', function(){
+  SFX.boot();
+  SFX.setOn(!SFX.on);
+  syncSoundBtn();
+  if (SFX.on) SFX.ok();
+});
+$('#retryBtn').addEventListener('click', function(){ loadChapter(); });
+$('#exitBtn').addEventListener('click', function(){ SFX.page(); goTimeline(); });
+
+/* 브리핑은 화면 어디를 눌러도 진행한다 (조작 버튼·링크는 제외) */
+$('#app').addEventListener('click', function(ev){
+  if (view.screen !== 'scene' || view.stage !== 'brief') return;
+  var t = ev.target;
+  while (t && t !== this){
+    var tag = t.tagName;
+    if (tag === 'BUTTON' || tag === 'A') return;
+    t = t.parentNode;
+  }
+  briefAdvance();
+});
+$('#toExploreBtn').addEventListener('click', function(){ goExplore(); });
+$('#exBackBtn').addEventListener('click', function(){ S.paraShown = S.paraCount; goBrief(true); });
+$('#toChooseBtn').addEventListener('click', function(){ goChoose(); });
+$('#chBackBtn').addEventListener('click', function(){ goExplore(true); });
+$('#resNextBtn').addEventListener('click', afterResult);
+$('#ifNextBtn').addEventListener('click', function(){ goReveal(); });
+$('#revNextBtn').addEventListener('click', function(){ goFinale(); });
+$('#finTlBtn').addEventListener('click', function(){ SFX.page(); goTimeline(); });
+
+/* 브리핑에서 스페이스/엔터로도 진행 (데스크톱) */
+document.addEventListener('keydown', function(ev){
+  if (ev.key !== ' ' && ev.key !== 'Enter') return;
+  var t = ev.target;
+  if (t && (t.tagName === 'BUTTON' || t.tagName === 'A')) return;
+  if (view.screen === 'scene' && view.stage === 'brief'){ ev.preventDefault(); briefAdvance(); }
+});
+
+/* 오디오는 첫 제스처에서만 깨운다 */
+function firstGesture(){
+  SFX.boot();
+  document.removeEventListener('pointerdown', firstGesture);
+  document.removeEventListener('touchstart', firstGesture);
+  document.removeEventListener('keydown', firstGesture);
+}
+document.addEventListener('pointerdown', firstGesture);
+document.addEventListener('touchstart', firstGesture);
+document.addEventListener('keydown', firstGesture);
+
+document.addEventListener('visibilitychange', function(){
+  if (document.hidden) SFX.hush();
+  else if (SFX.ac && SFX.on){ try{ SFX.ac.resume(); }catch(e){} }
+});
+
+/* 헤더 높이 → sticky IF 라벨 오프셋 */
+function syncHeaderH(){
+  var h = document.querySelector('header');
+  if (h) document.documentElement.style.setProperty('--hh', h.offsetHeight + 'px');
+}
+var reFit = null;
+window.addEventListener('resize', function(){
+  syncHeaderH();
+  if (reFit) clearTimeout(reFit);
+  reFit = setTimeout(function(){
+    /* 캔버스는 CSS 픽셀이 바뀌었을 때만 다시 그린다 */
+    if (view.screen === 'timeline') drawGuide(nextForkIdx() < 0 ? 'awe' : (clearedCount() ? 'smile' : 'base'), $('#gvHome'));
+    else if (view.screen === 'scene' && view.stage === 'brief') drawGuide('base', $('#gvBrief'));
+    else if (view.screen === 'scene' && view.stage === 'finale') drawGuide((S.picked && S.picked.isHistory) ? 'awe' : 'smile', $('#gvFin'));
+    else if (view.screen === 'error') drawGuide('surprise', $('#gvErr'));
+    else drawGuide('base', $('#gvLoad'));
+  }, 160);
+});
+
+/* ================= 시작 ================= */
+syncHeaderH();
+applyI18n();
+loadChapter();
+
+})();
+</script>
+</body>
+</html>
