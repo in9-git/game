@@ -575,6 +575,8 @@ select {
   padding: 10px 18px; border-radius: 10px; font-size: 14px; font-weight: 600;
   z-index: 200; box-shadow: 0 4px 20px rgba(0,0,0,0.5); white-space: nowrap;
 }
+/* 규칙 안내는 문장이라 좁은 화면에서 줄바꿈을 허용한다 */
+.online-toast.rule { white-space: normal; max-width: min(86vw, 320px); text-align: center; line-height: 1.45; }
 .online-lobby .lobby-join { display: flex; gap: 8px; margin-top: 4px; }
 .online-lobby input {
   flex: 1; background: #1e1610; border: 1px solid #46371f; color: #f0e7d6;
@@ -1102,6 +1104,86 @@ function isCheckmate(board, team) {
 }
 
 // ============================================
+// 반복수 금지 (같은 국면 3회)
+// ============================================
+// 같은 국면이 세 번째로 나오게 만드는 수는 아예 둘 수 없다.
+// 상태를 새로 두지 않고 기보(state.moveHistory)를 처음부터 되짚어 국면을 센다.
+// 이렇게 하면 무르기·온라인 재생 등 판이 바뀌는 모든 경로가 기보만 맞으면 자동으로 따라온다.
+const REPEAT_LIMIT = 3;
+
+function positionKey(board, turn) {
+  let s = turn + '|';
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++) {
+      const p = board[r][c];
+      s += p ? p.team + p.type + '/' : '.';
+    }
+  return s;
+}
+
+// 기보를 재생해 지금까지 등장한 국면의 횟수를 센다
+function positionCounts() {
+  const counts = Object.create(null);
+  let board = createInitialBoard();
+  let turn = CHO;
+  const bump = () => { const k = positionKey(board, turn); counts[k] = (counts[k] || 0) + 1; };
+  bump();
+  for (const mv of state.moveHistory) {
+    if (!mv || !mv.from || !mv.to) continue;
+    const [fc, fr] = mv.from, [tc, tr] = mv.to;
+    if (!board[fr] || !board[fr][fc]) break;   // 기보가 판과 어긋나면 거기서 멈춘다
+    board = makeMove(board, fc, fr, tc, tr).board;
+    turn = turn === CHO ? HAN : CHO;
+    bump();
+  }
+  return counts;
+}
+
+let repeatCache = { sig: null, set: null };
+
+// team 이 지금 둘 수 없는 수의 집합 ("fc,fr,tc,tr")
+function bannedMoves(team) {
+  const sig = state.moveHistory.length + '/' + team;
+  if (repeatCache.sig === sig) return repeatCache.set;
+  const all = getAllLegalMoves(state.board, team);
+  const counts = positionCounts();
+  const enemy = team === CHO ? HAN : CHO;
+  const ban = new Set();
+  for (const m of all) {
+    const { board: nb } = makeMove(state.board, m.from[0], m.from[1], m.to[0], m.to[1]);
+    if ((counts[positionKey(nb, enemy)] || 0) >= REPEAT_LIMIT - 1) {
+      ban.add(m.from[0] + ',' + m.from[1] + ',' + m.to[0] + ',' + m.to[1]);
+    }
+  }
+  // 둘 수 있는 수가 전부 막히면 규칙을 접는다.
+  // 반복 금지가 "둘 수가 없어서 짐"을 만들면 안 된다.
+  if (all.length > 0 && ban.size >= all.length) ban.clear();
+  repeatCache = { sig, set: ban };
+  return ban;
+}
+
+function isRepeatBanned(team, fc, fr, tc, tr) {
+  return bannedMoves(team).has(fc + ',' + fr + ',' + tc + ',' + tr);
+}
+
+// 화면에 실제로 보여줄 이동 후보 — 반복 금지수는 빼고 준다
+function playableMoves(board, col, row) {
+  const piece = board[row] && board[row][col];
+  const moves = getLegalMoves(board, col, row);
+  if (!piece) return moves;
+  const ban = bannedMoves(piece.team);
+  if (ban.size === 0) return moves;
+  return moves.filter(([tc, tr]) => !ban.has(col + ',' + row + ',' + tc + ',' + tr));
+}
+
+function allPlayableMoves(board, team) {
+  const ban = bannedMoves(team);
+  const all = getAllLegalMoves(board, team);
+  if (ban.size === 0) return all;
+  return all.filter(m => !ban.has(m.from[0] + ',' + m.from[1] + ',' + m.to[0] + ',' + m.to[1]));
+}
+
+// ============================================
 // AI ENGINE
 // ============================================
 function evaluateBoard(board, forTeam, depth = 0) {
@@ -1249,7 +1331,9 @@ function getAIMoveFallback(board, aiTeam, difficulty) {
 // 반환된 수가 실제 보드에서 aiTeam의 합법수인지 검증하고, 아니면 로컬 합법수로 대체한다.
 // 합법수가 하나도 없으면(외통/막힘) null → 상위에서 패배 처리.
 function ensureLegalAIMove(move, aiTeam) {
-  const legal = getAllLegalMoves(state.board, aiTeam);
+  if (getAllLegalMoves(state.board, aiTeam).length === 0) return null;
+  // AI도 사람과 같은 규칙을 받는다 — 반복 금지수는 후보에서 뺀다
+  const legal = allPlayableMoves(state.board, aiTeam);
   if (legal.length === 0) return null;
   const matches = (m) => move &&
     m.from[0] === move.from[0] && m.from[1] === move.from[1] &&
@@ -1257,16 +1341,24 @@ function ensureLegalAIMove(move, aiTeam) {
   if (legal.some(matches)) return move;
   if (move) {
     const p = state.board[move.from[1]] && state.board[move.from[1]][move.from[0]];
-    console.warn('[ai] 엔진이 비합법/상대편 수 반환 — 로컬 합법수로 대체',
+    console.warn('[ai] 비합법·상대편·반복금지 수 반환 — 로컬 합법수로 대체',
       { move, fromPiece: p ? p.team + ' ' + p.type : 'empty' });
   }
-  return getAIMoveFallback(state.board, aiTeam, state.difficulty) || legal[0];
+  const fb = getAIMoveFallback(state.board, aiTeam, state.difficulty);
+  if (fb && legal.some(m =>
+    m.from[0] === fb.from[0] && m.from[1] === fb.from[1] &&
+    m.to[0] === fb.to[0] && m.to[1] === fb.to[1])) return fb;
+  // 대체수도 막혔으면 남은 수 중 제일 나은 것을 고른다 (legal[0] 은 그냥 첫 칸이라 너무 나쁨)
+  const best = getRecommendedMoves(state.board, aiTeam, 1);
+  return best[0] || legal[Math.floor(Math.random() * legal.length)];
 }
 
 // Get top 2 recommended moves for a team
 function getRecommendedMoves(board, team, count = 2) {
   const enemy = team === CHO ? HAN : CHO;
-  const moves = getAllLegalMoves(board, team);
+  // 반복 금지 판정은 현재 판 기준이라, 현재 판일 때만 후보에서 걸러낸다.
+  // 훈수가 둘 수 없는 수를 가리키면 안 된다.
+  const moves = board === state.board ? allPlayableMoves(board, team) : getAllLegalMoves(board, team);
   if (moves.length === 0) return [];
 
   const scored = moves.map(move => {
@@ -1319,6 +1411,7 @@ const LANG = {
     capEmpty: t => `${t} 포획 없음`,
     gameModes: { practice: '연습 모드', match: '대전 모드', challenge: '도전 모드' },
     comingSoon: '준비 중입니다 🚧',
+    repeatBlocked: '같은 자리를 세 번은 반복할 수 없어요 · 다른 수를 두세요',
     online: {
       title: '온라인 대전', desc: '방 코드로 친구와 1:1 대국',
       create: '방 만들기', join: '코드로 입장', codePh: '방 코드', enter: '입장',
@@ -1350,6 +1443,7 @@ const LANG = {
     capEmpty: t => `${t}の捕獲なし`,
     gameModes: { practice: '練習モード', match: '対戦モード', challenge: '挑戦モード' },
     comingSoon: '準備中です 🚧',
+    repeatBlocked: '同じ局面を3回はくり返せません · 別の手を指してね',
     online: {
       title: 'オンライン対戦', desc: 'ルームコードで友達と1:1対局',
       create: 'ルーム作成', join: 'コードで入室', codePh: 'ルームコード', enter: '入室',
@@ -1381,6 +1475,7 @@ const LANG = {
     capEmpty: t => `${t} no captures`,
     gameModes: { practice: 'Practice', match: 'Match', challenge: 'Challenge' },
     comingSoon: 'Coming soon 🚧',
+    repeatBlocked: 'You can\'t repeat the same position three times · try another move',
     online: {
       title: 'Online Match', desc: 'Play a friend 1:1 with a room code',
       create: 'Create Room', join: 'Join by Code', codePh: 'Room code', enter: 'Join',
@@ -1422,12 +1517,14 @@ let state = {
   // 온라인 대전 (mode==='online')
   mySide: null,        // CHO | HAN — 내가 조작하는 편
   onlinePhase: null,   // null | 'lobby' | 'connecting' | 'waiting' | 'playing' | 'full' | 'lost'
-  onlineMsg: ''        // 일시 상태 메시지(상대 입장/퇴장 등)
+  onlineMsg: '',       // 일시 상태 메시지(상대 입장/퇴장 등)
+  notice: ''           // 규칙 안내 토스트(반복수 금지 등) — 모드 무관
 };
 
 // 온라인 연결(모듈 스코프) — 렌더 churn 회피를 위해 ws/handler 는 state 밖에 둔다
 let onlineConn = null; // { ws, code, playerId, side, opponentConnected }
 let onlineMsgTimer = null;
+let noticeTimer = null;
 
 // WASM Engine
 let wasmEngine = null;
@@ -1558,6 +1655,9 @@ function resetGame() {
   state.lastMove = null;
   state.moveHistory = [];
   state.inCheck = null;
+  state.notice = '';
+  if (noticeTimer) { clearTimeout(noticeTimer); noticeTimer = null; }
+  repeatCache = { sig: null, set: null };
   undoStack = [];
   bgmStarted = false;
   // BGM이 이미 재생 중이면 idle로 (첫 수 두면 battle로 전환됨)
@@ -1597,9 +1697,14 @@ function selectPiece(col, row) {
       state.legalMoves = [];
     } else {
       // 인터럽트로 보드가 바뀌었을 수 있으니 legalMoves 를 항상 현재 보드 기준으로 재계산
-      state.legalMoves = getLegalMoves(state.board, sc, sr);
+      state.legalMoves = playableMoves(state.board, sc, sr);
       if (state.legalMoves.some(([mc, mr]) => mc === col && mr === row)) {
         executeMove(sc, sr, col, row);
+        return;
+      }
+      // 원래는 갈 수 있는 칸인데 반복 금지로 막힌 경우 — 왜 안 되는지 알려준다
+      if (isRepeatBanned(selPiece.team, sc, sr, col, row)) {
+        flashNotice(LANG[state.lang].repeatBlocked);
         return;
       }
     }
@@ -1607,7 +1712,7 @@ function selectPiece(col, row) {
 
   if (piece && piece.team === state.turn) {
     state.selected = [col, row];
-    state.legalMoves = getLegalMoves(state.board, col, row);
+    state.legalMoves = playableMoves(state.board, col, row);
   } else {
     state.selected = null;
     state.legalMoves = [];
@@ -1725,6 +1830,11 @@ function executeMove(fromC, fromR, toC, toR) {
   const piece = state.board[fromR][fromC];
   // 안전장치: 잘못된 호출(턴 불일치/빈 칸/적 말)은 무시
   if (!piece || piece.team !== state.turn) return;
+  // 반복수는 UI에서 이미 빠져 있지만, 다른 경로로 들어와도 판에 올라가지 않게 한 번 더 막는다
+  if (isRepeatBanned(piece.team, fromC, fromR, toC, toR)) {
+    flashNotice(LANG[state.lang].repeatBlocked);
+    return;
+  }
   // 적 왕(장수)을 잡는 수 — 왕을 사라지게 두지 말고 즉시 둔 쪽 승리로 종료(장기: 장수 잡으면 승).
   if (endIfKingCapture(state.board, toC, toR, state.turn)) return;
   const isCapture = state.board[toR][toC] !== null;
@@ -1968,7 +2078,9 @@ function render() {
       + `<span class="ot-side ${sideCls}">${O.side(sideName)}</span>`
       + turnTag + `</div>`;
   }
-  const onlineToast = (isOnline && state.onlineMsg) ? `<div class="online-toast">${state.onlineMsg}</div>` : '';
+  const onlineToast = (isOnline && state.onlineMsg)
+    ? `<div class="online-toast">${state.onlineMsg}</div>`
+    : (state.notice ? `<div class="online-toast rule">${state.notice}</div>` : '');
 
   // 컨트롤 버튼 — 온라인/AI 분기
   let controlsHtml = '';
@@ -2188,6 +2300,15 @@ function getOrCreatePlayerId() {
   }
   return id;
 }
+// 규칙 안내용 짧은 토스트 (온라인 메시지와 별개 — AI/2인 대전에서도 뜬다)
+function flashNotice(text, ms = 2400) {
+  if (!text) return;
+  state.notice = text;
+  render();
+  if (noticeTimer) clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => { state.notice = ''; render(); }, ms);
+}
+
 function flashOnlineMsg(text, ms = 2600) {
   state.onlineMsg = text;
   render();
@@ -2210,6 +2331,8 @@ function clearOnlineBoard() {
   state.recommended = [];
   state.inCheck = null;
   state.lastMoveGhost = null;
+  state.notice = '';
+  repeatCache = { sig: null, set: null };
   wasmMoveHistory = [];
   undoStack = [];
 }

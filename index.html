@@ -173,6 +173,7 @@ body {
   background: linear-gradient(transparent, var(--surface));
 }
 .card-banner.kitchen { background: linear-gradient(135deg, #ffe0f0, #fff4f9, #f0f8ff); }
+.card-banner.sagwan { background: linear-gradient(135deg, #f3ecd9, #e0cba8, #8f3b2d); }
 .card-banner.janggi { background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); }
 .card-banner-piece {
   width: 110px;
@@ -212,6 +213,7 @@ body {
 .tag-hot { background: #ff9f4322; color: var(--orange); border: 1px solid #ff9f4344; }
 .tag-ai { background: #6c5ce722; color: #a29bfe; border: 1px solid #6c5ce744; }
 .tag-cat { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
+.tag-first { background: #d9a76022; color: #d9a760; border: 1px solid #d9a76055; }
 .card-title {
   font-size: 20px;
   font-weight: 700;
@@ -490,20 +492,20 @@ body {
       <span class="play-btn" id="janggi-play">▶ 지금 플레이</span>
     </div>
   </a>
-  <a class="featured-card" href="casual/bousou-kitchen/" data-cat="simulation,casual">
-    <div class="card-banner kitchen">🍳</div>
+  <a class="featured-card" href="simulation/sagwan/" data-cat="simulation,strategy">
+    <div class="card-banner sagwan">📜</div>
     <div class="card-body">
       <div class="card-tags">
-        <span class="tag tag-hot" id="tag-kitchen-hot">HOT</span>
-        <span class="tag tag-cat" id="tag-kitchen-sim">시뮬레이션</span>
-        <span class="tag tag-cat" id="tag-kitchen-casual">캐주얼</span>
+        <span class="tag tag-new" id="tag-sagwan-new">NEW</span>
+        <span class="tag tag-cat" id="tag-sagwan-sim">시뮬레이션</span>
+        <span class="tag tag-cat" id="tag-sagwan-strategy">전략</span>
       </div>
-      <div class="card-title" id="kitchen-title">暴走キッチン</div>
-      <div class="card-subtitle" id="kitchen-sub">폭주키친 / Runaway Kitchen</div>
-      <div class="card-desc" id="kitchen-desc">
-        제한 시간 안에 미친 조합으로 요리를 만들어라! 재료를 합성해 엉뚱한 요리를 완성하는 캐주얼 쿠킹 게임.
+      <div class="card-title" id="sagwan-title">사관이 보고 있다</div>
+      <div class="card-subtitle" id="sagwan-sub">史官が見ている / The Historian Is Watching</div>
+      <div class="card-desc" id="sagwan-desc">
+        세종 앞에 놓인 다섯 갈림길. 어느 쪽이 실제 역사였을까? 고르고 나면 사관이 그날의 기록을 읽어준다.
       </div>
-      <span class="play-btn" id="kitchen-play">▶ 지금 플레이</span>
+      <span class="play-btn" id="sagwan-play">▶ 지금 플레이</span>
     </div>
   </a>
 </section>
@@ -552,6 +554,11 @@ body {
       <div class="cat-name" id="cat-rpg">RPG</div>
       <div class="cat-count">coming soon</div>
     </div>
+    <div class="cat-card" data-filter="archive" onclick="filterGames('archive')">
+      <div class="cat-icon">🗃️</div>
+      <div class="cat-name" id="cat-archive">보관소</div>
+      <div class="cat-count">coming soon</div>
+    </div>
   </div>
 </section>
 
@@ -580,19 +587,21 @@ const I18N = {
     janggiSub: 'ベビー将棋 / Baby Janggi',
     janggiDesc: '장기를 몰라도 바로 시작! AI가 추천하는 훈수를 보며 자연스럽게 배우는 한국 전통 장기.\nAI 5단계 난이도 · 2인 대전 · 훈수 시스템',
     janggiPlay: '▶ 지금 플레이',
-    kitchenTitle: '폭주키친',
-    kitchenSub: '暴走キッチン / Runaway Kitchen',
-    kitchenDesc: '제한 시간 안에 미친 조합으로 요리를 만들어라! 재료를 합성해 엉뚱한 요리를 완성하는 캐주얼 쿠킹 게임.',
-    kitchenPlay: '▶ 지금 플레이',
+    sagwanTitle: '사관이 보고 있다',
+    sagwanSub: '史官が見ている / The Historian Is Watching',
+    sagwanDesc: '세종 앞에 놓인 다섯 갈림길. 어느 쪽이 실제 역사였을까? 고르고 나면 사관이 그날의 기록을 읽어준다.',
+    sagwanPlay: '▶ 지금 플레이',
     catTitle: '카테고리',
     catAll: '전체', catBoard: '보드', catPuzzle: '퍼즐', catSim: '시뮬레이션',
     catStrategy: '전략', catCasual: '캐주얼', catAction: '액션', catRPG: 'RPG',
+    catArchive: '보관소',
     comingSoon: 'Coming Soon',
     allGames: '전체 게임',
     footer: '© 2026 in-9.com — 누구나 바로 시작할 수 있는 게임',
     games: '게임', categories: '카테고리',
-    tagNew: 'NEW', tagHot: 'HOT', tagAI: 'AI 대전',
+    tagNew: 'NEW', tagHot: 'HOT', tagAI: 'AI 대전', tagFirst: '1호작',
     tagBoard: '보드', tagSim: '시뮬레이션', tagCasual: '캐주얼', tagPuzzle: '퍼즐',
+    tagStrategy: '전략',
     inDev: '개발중',
   },
   ja: {
@@ -603,19 +612,21 @@ const I18N = {
     janggiSub: '애기장기 / Baby Janggi',
     janggiDesc: '将棋を知らなくてもすぐ始められる！AIのおすすめ手を見ながら自然に学べる韓国伝統将棋。\nAI 5段階 · 対人戦 · ヒントシステム',
     janggiPlay: '▶ 今すぐプレイ',
-    kitchenTitle: '暴走キッチン',
-    kitchenSub: '폭주키친 / Runaway Kitchen',
-    kitchenDesc: '制限時間内にクレイジーな組み合わせで料理を作れ！素材を合成してとんでもない料理を完成させるカジュアルクッキングゲーム。',
-    kitchenPlay: '▶ 今すぐプレイ',
+    sagwanTitle: '史官が見ている',
+    sagwanSub: '사관이 보고 있다 / The Historian Is Watching',
+    sagwanDesc: '世宗の前に置かれた五つの分かれ道。どちらが実際の歴史だったのか？選ぶと史官がその日の記録を読んでくれる。',
+    sagwanPlay: '▶ 今すぐプレイ',
     catTitle: 'カテゴリー',
     catAll: '全部', catBoard: 'ボード', catPuzzle: 'パズル', catSim: 'シミュレーション',
     catStrategy: '戦略', catCasual: 'カジュアル', catAction: 'アクション', catRPG: 'RPG',
+    catArchive: '保管庫',
     comingSoon: 'Coming Soon',
     allGames: '全ゲーム',
     footer: '© 2026 in-9.com — 誰でもすぐ遊べるゲーム',
     games: 'ゲーム', categories: 'カテゴリー',
-    tagNew: 'NEW', tagHot: 'HOT', tagAI: 'AI対戦',
+    tagNew: 'NEW', tagHot: 'HOT', tagAI: 'AI対戦', tagFirst: '第1作',
     tagBoard: 'ボード', tagSim: 'シミュレーション', tagCasual: 'カジュアル', tagPuzzle: 'パズル',
+    tagStrategy: '戦略',
     inDev: '開発中',
   },
   en: {
@@ -626,19 +637,21 @@ const I18N = {
     janggiSub: '애기장기 / ベビー将棋',
     janggiDesc: 'Start playing even without knowing Janggi! Learn naturally with AI-recommended moves in this Korean traditional chess.\nAI 5 levels · 2P mode · Hint system',
     janggiPlay: '▶ Play Now',
-    kitchenTitle: 'Runaway Kitchen',
-    kitchenSub: '폭주키친 / 暴走キッチン',
-    kitchenDesc: 'Create crazy food combos before time runs out! A casual cooking game where you synthesize ingredients into wild dishes.',
-    kitchenPlay: '▶ Play Now',
+    sagwanTitle: 'The Historian Is Watching',
+    sagwanSub: '사관이 보고 있다 / 史官が見ている',
+    sagwanDesc: 'Five crossroads stand before King Sejong. Which one was the real history? Choose, and the court historian reads out that day\'s record.',
+    sagwanPlay: '▶ Play Now',
     catTitle: 'Categories',
     catAll: 'All', catBoard: 'Board', catPuzzle: 'Puzzle', catSim: 'Simulation',
     catStrategy: 'Strategy', catCasual: 'Casual', catAction: 'Action', catRPG: 'RPG',
+    catArchive: 'Archive',
     comingSoon: 'Coming Soon',
     allGames: 'All Games',
     footer: '© 2026 in-9.com — Games anyone can start right away',
     games: 'Games', categories: 'Categories',
-    tagNew: 'NEW', tagHot: 'HOT', tagAI: 'AI Battle',
+    tagNew: 'NEW', tagHot: 'HOT', tagAI: 'AI Battle', tagFirst: 'First',
     tagBoard: 'Board', tagSim: 'Simulation', tagCasual: 'Casual', tagPuzzle: 'Puzzle',
+    tagStrategy: 'Strategy',
     inDev: 'In Dev',
   }
 };
@@ -671,11 +684,6 @@ const CATALOG = [
     ko:{t:'애기장기', d:'AI 훈수와 함께하는 한국 전통 장기'},
     ja:{t:'ベビー将棋', d:'AIヒント付き韓国伝統将棋'},
     en:{t:'Baby Janggi', d:'Korean chess with AI hints'} },
-  { href:'casual/bousou-kitchen/', cat:'simulation,casual', bg:'linear-gradient(135deg,#ffe0f0,#fff4f9)',
-    emoji:'🍳', tags:['hot'],
-    ko:{t:'폭주키친', d:'폭주 요리 합성 시뮬레이션'},
-    ja:{t:'暴走キッチン', d:'暴走クッキングシミュレーション'},
-    en:{t:'Runaway Kitchen', d:'Chaotic cooking simulation'} },
   { href:'casual/zen-garden/', cat:'casual,simulation', bg:'linear-gradient(135deg,#e8dcc8,#6a5138)',
     emoji:'🪷', tags:['new'],
     ko:{t:'모래정원 빗질', d:'갈퀴로 모래에 물결을 그리는 고요한 정원'},
@@ -771,11 +779,22 @@ const CATALOG = [
     ko:{t:'사관이 보고 있다', d:'세종의 다섯 갈림길 — 역사의 선택을 찾아라'},
     ja:{t:'史官が見ている', d:'世宗の五つの分かれ道 — 歴史の選択を探せ'},
     en:{t:'The Historian Is Watching', d:'Five crossroads of King Sejong — find the true path'} },
+  { href:'puzzle/pattern-line/', cat:'puzzle,casual', bg:'linear-gradient(135deg,#6c5ce7,#1a1240)',
+    emoji:'🕹️', tags:['new','puzzle'],
+    ko:{t:'무늬 나란히', d:'세 칸 조각을 굴려 같은 무늬를 셋 나란히 — 옛 오락실 낙하 퍼즐'},
+    ja:{t:'もようならべ', d:'3マスのピースを回して同じもようを3つ — 昔のゲーセン落ちものパズル'},
+    en:{t:'Line of Three', d:'Roll the three-tile piece, line up three alike'} },
+  // ── 보관소 ── 지금 만드는 게임들과 규칙이 달라도 그대로 둔다. 이 포탈의 1호작.
+  { href:'casual/bousou-kitchen/', cat:'archive', bg:'linear-gradient(135deg,#ffe0f0,#fff4f9)',
+    emoji:'🍳', tags:['first'],
+    ko:{t:'폭주키친', d:'이 포탈의 첫 번째 게임 — 처음 만든 그대로 보관 중'},
+    ja:{t:'暴走キッチン', d:'このポータル最初のゲーム — 作ったままの姿で保管中'},
+    en:{t:'Runaway Kitchen', d:'The very first game here — kept exactly as it was made'} },
 ];
 
-const TAG_CLASS = { new:'tag-new', hot:'tag-hot', ai:'tag-ai', puzzle:'tag-puzzle' };
+const TAG_CLASS = { new:'tag-new', hot:'tag-hot', ai:'tag-ai', puzzle:'tag-puzzle', first:'tag-first' };
 function tagLabel(k, L) {
-  return { new:L.tagNew, hot:L.tagHot, ai:L.tagAI, puzzle:L.tagPuzzle }[k] || k;
+  return { new:L.tagNew, hot:L.tagHot, ai:L.tagAI, puzzle:L.tagPuzzle, first:L.tagFirst }[k] || k;
 }
 
 function renderGrid() {
@@ -828,18 +847,18 @@ function applyI18N() {
     'janggi-sub': L.janggiSub,
     'janggi-desc': L.janggiDesc,
     'janggi-play': L.janggiPlay,
-    'kitchen-title': L.kitchenTitle,
-    'kitchen-sub': L.kitchenSub,
-    'kitchen-desc': L.kitchenDesc,
-    'kitchen-play': L.kitchenPlay,
+    'sagwan-title': L.sagwanTitle,
+    'sagwan-sub': L.sagwanSub,
+    'sagwan-desc': L.sagwanDesc,
+    'sagwan-play': L.sagwanPlay,
     'cat-title': L.catTitle,
     'cat-all': L.catAll, 'cat-board': L.catBoard, 'cat-puzzle': L.catPuzzle,
     'cat-sim': L.catSim, 'cat-strategy': L.catStrategy, 'cat-casual': L.catCasual,
-    'cat-action': L.catAction, 'cat-rpg': L.catRPG,
+    'cat-action': L.catAction, 'cat-rpg': L.catRPG, 'cat-archive': L.catArchive,
     'all-games-title': L.allGames,
     'footer-text': L.footer,
     'tag-janggi-new': L.tagNew, 'tag-janggi-ai': L.tagAI, 'tag-janggi-board': L.tagBoard,
-    'tag-kitchen-hot': L.tagHot, 'tag-kitchen-sim': L.tagSim, 'tag-kitchen-casual': L.tagCasual,
+    'tag-sagwan-new': L.tagNew, 'tag-sagwan-sim': L.tagSim, 'tag-sagwan-strategy': L.tagStrategy,
   };
   for (const [id, text] of Object.entries(m)) {
     const el = document.getElementById(id);
@@ -849,7 +868,9 @@ function applyI18N() {
   const statsGames = document.querySelector('[data-i18n="games"]');
   const statsCats = document.querySelector('[data-i18n="categories"]');
   if (statsGames) statsGames.innerHTML = `${L.games} <span class="stat-num" id="totalGames">${CATALOG.length}</span>`;
-  if (statsCats) statsCats.innerHTML = `${L.categories} <span class="stat-num">8</span>`;
+  // '전체'는 카테고리가 아니라 필터라 세지 않는다. 카드를 추가해도 숫자가 알아서 따라온다.
+  const catN = document.querySelectorAll('.cat-card:not([data-filter="all"])').length;
+  if (statsCats) statsCats.innerHTML = `${L.categories} <span class="stat-num">${catN}</span>`;
   // 그리드·카테고리 수는 카탈로그에서 다시 그린다
   renderGrid();
   renderCatCounts();
