@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a1026">
+<title>새벽 빵집 · よあけのパンや · Dawn Bakery</title>
+<meta name="description" content="새벽에 빵을 구워 진열대에 채우는 낙하 퍼즐 — 한 줄이 차면 손님에게 나간다">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥐</text></svg>">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
+<style>
+:root{
+  --bg0:#1a1026;
+  --sky:#3a2740;                 /* 단계마다 밝아지는 새벽 하늘 — JS가 갈아 끼운다 */
+  --shelf:#191338; --shelf2:#2e2456;
+  --line:rgba(251,231,198,.16); --line2:rgba(251,231,198,.30);
+  --ink:#fbe7c6; --ink2:rgba(251,231,198,.70); --ink3:rgba(251,231,198,.46);
+  --gold:#f2b25c; --cream:#fff6e6;
+  --panel:rgba(20,16,44,.72);
+  --sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Hiragino Sans","Noto Sans KR","Noto Sans JP",system-ui,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* [hidden]가 작성자 규칙을 이겨야 한다 (UA 시트는 캐스케이드에서 밀림) */
+[hidden]{display:none!important}
+html,body{height:100%}
+body{
+  font-family:var(--sans); color:var(--ink);
+  background:radial-gradient(130% 90% at 50% -15%,var(--sky) 0%,#241633 45%,var(--bg0) 100%);
+  overflow:hidden;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+}
+button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer}
+
+#app{
+  position:relative; height:100dvh; max-width:640px; margin:0 auto;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:0 10px calc(6px + env(safe-area-inset-bottom));
+}
+
+/* ── 헤더 ── */
+header{
+  width:100%; flex:0 0 auto; display:flex; align-items:center; gap:8px;
+  padding:calc(env(safe-area-inset-top,0px) + 6px) 2px 2px;
+  pointer-events:none;                 /* 제목은 글자일 뿐 — 입력을 먹지 않는다 */
+}
+header .pill{pointer-events:auto}
+.titles{flex:1 1 auto;min-width:0;text-align:center}
+.titles h1{
+  font-size:clamp(.86rem,3.8vw,1.1rem); font-weight:800; letter-spacing:-.2px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.titles .sub{
+  font-size:.62rem; color:var(--ink3); letter-spacing:.3px; margin-top:1px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.pill{
+  position:relative;
+  flex:0 0 auto; border:1px solid var(--line); background:rgba(242,178,92,.10);
+  color:var(--ink2); border-radius:10px; padding:7px 10px; font-size:.75rem; font-weight:600;
+  text-decoration:none; line-height:1; transition:.15s; touch-action:manipulation;
+}
+/* 보이는 크기는 그대로 두고 손가락이 닿는 넓이만 44px 로 — 헤더 높이는 1px 도 안 늘어난다.
+   좌우로는 딱 이웃과 맞닿는 만큼(gap 6px 의 절반)만 넓힌다. 더 넓히면 두 히트영역이
+   겹쳐, 그 틈을 노린 손가락이 늘 오른쪽 버튼으로 빨려 들어간다 */
+.pill::before{content:'';position:absolute;left:-3px;right:-3px;top:50%;transform:translateY(-50%);height:44px}
+.pill.icon{width:38px;height:34px;display:flex;align-items:center;justify-content:center;font-size:.9rem;padding:0}
+.pill:hover{border-color:var(--line2);color:var(--ink)}
+.pill:active{transform:scale(.94)}
+.pill.off{opacity:.5}
+.tops{display:flex;gap:6px;flex:0 0 auto}
+
+/* ── HUD — 가로 한 줄. 세로폰에서 필드 폭 10칸을 지키려면 옆이 아니라 위여야 한다 ── */
+#hud{width:100%;max-width:470px;flex:0 0 auto;display:flex;gap:6px;align-items:stretch}
+.box{
+  background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:5px 8px;
+}
+.box h4{
+  font-size:.54rem;font-weight:700;color:var(--ink3);letter-spacing:.8px;margin-bottom:2px;
+  display:flex;align-items:baseline;gap:5px;white-space:nowrap;
+}
+.box h4 em{font-style:normal;font-family:var(--mono);color:var(--gold);font-size:.62rem;letter-spacing:0}
+.box .v{font-family:var(--mono);font-size:1rem;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums;line-height:1.1}
+.bScore{flex:0 0 auto;min-width:62px}
+.bGoal{flex:1 1 auto;min-width:0}
+.bNext{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 7px}
+#nextCv{display:block;margin-top:1px}
+#goalBar{height:6px;border-radius:99px;background:rgba(0,0,0,.42);overflow:hidden;margin-top:4px}
+#goalFill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#c9835f,var(--gold));transition:width .25s ease}
+#dots{display:flex;gap:4px;margin-top:4px}
+#dots i{width:6px;height:6px;border-radius:99px;background:rgba(251,231,198,.16);display:block}
+#dots i.on{background:var(--gold);box-shadow:0 0 6px rgba(242,178,92,.7)}
+
+/* ── 진열대 ── */
+#cab{flex:1 1 auto;width:100%;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#screenWrap{
+  position:relative; flex:0 0 auto;
+  border-radius:14px; padding:6px;
+  background:linear-gradient(160deg,#3a2b5e,#221a48 60%,#150f31);
+  box-shadow:0 10px 30px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.10);
+  transition:box-shadow .35s ease;
+}
+/* 오븐이 달아오르면 진열대 테두리가 붉어진다 — 숨은 마법이 아니라 보이는 규칙 */
+#screenWrap.hot{box-shadow:0 10px 30px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.10), 0 0 0 2px rgba(242,178,92,.5), 0 0 18px rgba(242,178,92,.28)}
+#fld{display:block;border-radius:8px;background:var(--shelf);touch-action:none}
+
+/* ── 남은 반죽 트레이 — 다음에 뭐가 남았는지 확률이 아니라 사실로 보여준다 ── */
+#tray{
+  width:100%;max-width:470px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:7px;
+}
+#tray .tlab{font-size:.54rem;font-weight:700;color:var(--ink3);letter-spacing:.8px;white-space:nowrap}
+#trayCv{display:block}
+
+/* ── 조작 패널 — 어떤 버튼도 화면 아래 30% 밖으로 나가지 않는다 ── */
+#pad{
+  flex:0 0 auto; width:100%; max-width:430px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:8px 10px; border-radius:14px;
+  background:linear-gradient(180deg,#2e2456,#1a1440); border:1px solid var(--line);
+  box-shadow:0 6px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
+}
+#pad.lefty{flex-direction:row-reverse}   /* 왼손잡이 — 큰 굽기 버튼이 왼쪽으로 */
+.padgrp{display:flex;gap:8px;align-items:center}
+.pbtn{
+  border-radius:13px; color:#2a1a10; font-weight:800;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+  touch-action:none; transition:transform .06s, filter .12s;
+  box-shadow:0 4px 0 rgba(0,0,0,.42), 0 5px 12px rgba(0,0,0,.35);
+}
+.pbtn.hit{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.42);filter:brightness(1.12)}
+.pbtn small{font-size:.55rem;font-weight:700;opacity:.72;letter-spacing:-.2px}
+.pbtn .g{font-size:1.12rem;line-height:1}
+.pmove{width:54px;height:52px;background:linear-gradient(180deg,#ffeccb,#e8bf86)}
+.pdown{width:54px;height:52px;background:linear-gradient(180deg,#ffe0bd,#dda36a)}
+.pturn{width:60px;height:56px;border-radius:50%;background:linear-gradient(180deg,#fff3d6,#f2b25c)}
+.pbake{width:64px;height:58px;border-radius:50%;background:linear-gradient(180deg,#ffd3a8,#e08a4a)}
+
+/* ── 오버레이 ──
+   display 토글이라 사라지는 즉시 포커스·클릭 대상에서 빠진다.
+   페이드아웃이 없으니 '사라지는 중에 한 번 더 눌리는' 사고가 원천적으로 없다. */
+.ov{
+  position:absolute; inset:0; z-index:40; display:none;
+  align-items:center; justify-content:center; padding:18px;
+  background:rgba(10,7,26,.84); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+}
+.ov.on{display:flex}
+.card{
+  width:100%; max-width:360px; max-height:calc(100dvh - 56px); overflow-y:auto;
+  background:linear-gradient(170deg,#2f2258,#171034);
+  border:1px solid var(--line2); border-radius:18px; padding:20px 18px;
+  box-shadow:0 20px 60px rgba(0,0,0,.6); text-align:center;
+  animation:pop .26s cubic-bezier(.2,.9,.3,1.2);
+}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+.card h2{font-size:1.24rem;font-weight:800;letter-spacing:-.3px;margin-bottom:6px}
+.card .sub{font-size:.75rem;color:var(--ink3);margin-bottom:14px}
+.card p{font-size:.82rem;line-height:1.62;color:var(--ink2)}
+.rules{text-align:left;background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:12px;padding:12px 13px;margin:12px 0}
+.rules p{margin:0 0 7px;font-size:.78rem}
+.rules p:last-child{margin-bottom:0}
+.rules b{color:var(--gold)}
+#howCv{display:block;margin:10px auto 2px;max-width:100%}
+.stats{display:flex;gap:8px;margin:14px 0 4px}
+.stat{flex:1;background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:11px;padding:9px 4px}
+.stat b{display:block;font-family:var(--mono);font-size:1.08rem;font-variant-numeric:tabular-nums}
+.stat span{display:block;font-size:.56rem;color:var(--ink3);margin-top:2px;letter-spacing:.4px}
+.rec{font-size:.68rem!important;color:var(--ink3)!important;margin-top:10px}
+.btns{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.btn{
+  border-radius:12px; padding:13px 16px; font-size:.86rem; font-weight:700;
+  transition:.15s; touch-action:manipulation; text-decoration:none; display:block;
+}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:linear-gradient(135deg,#e08a4a,#f2b25c);color:#2a1a10;box-shadow:0 6px 18px rgba(224,138,74,.42)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:rgba(255,255,255,.07);color:var(--ink2);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--line2);color:var(--ink)}
+.mode{display:flex;gap:8px;margin:12px 0 2px}
+.mode button{
+  flex:1;border-radius:12px;padding:11px 8px;
+  background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink2);transition:.15s;
+}
+.mode button.on{border-color:var(--gold);background:rgba(242,178,92,.20);color:var(--ink)}
+.mode b{display:block;font-size:.82rem;font-weight:700}
+.mode small{display:block;font-size:.6rem;color:var(--ink3);margin-top:2px}
+.opt{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;
+  background:rgba(0,0,0,.24);border:1px solid var(--line);border-radius:12px;padding:8px 10px;
+}
+.opt span{font-size:.7rem;color:var(--ink3)}
+.opt button{
+  border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:.72rem;font-weight:700;
+  color:var(--ink2);background:rgba(255,255,255,.05);transition:.15s;touch-action:manipulation;
+}
+.opt button.on{border-color:var(--gold);background:rgba(242,178,92,.2);color:var(--ink)}
+
+.tost{
+  position:absolute;left:50%;bottom:22%;transform:translateX(-50%);
+  background:rgba(16,10,36,.92);border:1px solid var(--line2);color:var(--ink);
+  padding:9px 15px;border-radius:99px;font-size:.76rem;font-weight:600;white-space:nowrap;
+  z-index:30;opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.tost.on{opacity:1}
+
+@media (max-width:360px){
+  .box h4{font-size:.5rem}
+  .box .v{font-size:.88rem}
+  .bScore{min-width:52px}
+  .pmove,.pdown{width:48px;height:48px}
+  .pturn{width:54px;height:52px}
+  .pbake{width:56px;height:54px}
+}
+/* 가로 폰 — 고정 크롬을 줄여 필드와 조작판이 함께 들어오게 한다 */
+@media (max-height:520px){
+  #app{gap:3px}
+  .titles .sub{display:none}
+  #hud{max-width:400px}
+  .box{padding:3px 7px}
+  #goalBar{margin-top:3px}
+  #dots{margin-top:3px}
+  /* 남은 반죽 트레이는 참고 정보다 — 진열대 16줄이 잘리느니 트레이가 물러선다 */
+  #tray{display:none}
+  #pad{max-width:340px;padding:4px 8px}
+  .pmove,.pdown{width:46px;height:38px}
+  .pturn{width:50px;height:44px}
+  .pbake{width:52px;height:46px}
+  .pbtn small{display:none}
+  .card{padding:14px 14px}
+  .rules{margin:8px 0;padding:9px 11px}
+}
+/* 가로 폰에서 세로로 쌓으면 진열대에 남는 높이가 없어 16줄이 손톱만 해진다.
+   좌우 여백은 남아도니 HUD 와 조작판을 진열대 옆으로 돌린다.
+   가운데 칸 폭은 높이에서 역산한다(10:16 비율 + 여백) — 폭이 좁아 CELL 이 다시
+   깎이지 않게. 옆으로 돌릴 자리조차 없는 기기는 원래대로 세로 스택을 쓴다. */
+@media (max-height:520px) and (orientation:landscape) and (min-width:560px){
+  #app{
+    max-width:none; display:grid; justify-items:center; align-items:center;
+    grid-template-columns:minmax(0,1fr) minmax(0,calc(53vh + 24px)) minmax(0,1fr);
+    grid-template-rows:auto minmax(0,1fr);
+    grid-template-areas:"hd hd hd" "hud cab pad";
+    gap:2px 10px;
+  }
+  header{grid-area:hd; align-self:start}
+  #hud{grid-area:hud; flex-direction:column; width:auto; max-width:220px; gap:5px}
+  #hud .box{flex:0 0 auto; width:100%}
+  #cab{grid-area:cab; width:100%; height:100%}
+  #pad{grid-area:pad; flex-direction:column; width:auto; max-width:none; gap:8px; padding:8px}
+  #pad.lefty{flex-direction:column-reverse}
+  .pmove,.pdown{width:44px;height:40px}
+  .pturn{width:48px;height:44px}
+  .pbake{width:52px;height:46px}
+  .pbtn small{display:block}
+}
+/* 폭이 넉넉해지면 조작판도 원래 크기로 — 세로 화면과 같은 손가락 크기 */
+@media (max-height:520px) and (orientation:landscape) and (min-width:720px){
+  .pmove,.pdown{width:52px;height:46px}
+  .pturn{width:56px;height:50px}
+  .pbake{width:60px;height:52px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <a class="pill" id="homeLink" href="../../index.html">← <span data-i="home">홈</span></a>
+    <div class="titles">
+      <h1 id="titleMain">새벽 빵집</h1>
+      <div class="sub" id="titleSub">よあけのパンや · Dawn Bakery</div>
+    </div>
+    <div class="tops">
+      <button class="pill icon" id="pauseBtn" type="button" aria-label="pause">⏸</button>
+      <button class="pill icon" id="soundBtn" type="button" aria-label="sound">🔊</button>
+      <button class="pill icon" id="langBtn" type="button" aria-label="language">🇰🇷</button>
+    </div>
+  </header>
+
+  <div id="hud">
+    <div class="box bScore"><h4 data-i="score">점수</h4><div class="v" id="vScore">0</div></div>
+    <div class="box bGoal">
+      <h4><span id="goalLabel" data-i="order">오늘의 주문</span><em id="vHour">04:00</em></h4>
+      <div class="v" id="vGoal">0/3</div>
+      <div id="goalBar"><div id="goalFill"></div></div>
+      <div id="dots"></div>
+    </div>
+    <div class="box bNext"><h4 data-i="next">다음</h4><canvas id="nextCv"></canvas></div>
+  </div>
+
+  <div id="cab">
+    <div id="screenWrap"><canvas id="fld"></canvas></div>
+  </div>
+
+  <div id="tray">
+    <span class="tlab" data-i="dough">남은 반죽</span>
+    <canvas id="trayCv"></canvas>
+  </div>
+
+  <!-- 조작판은 터치 전용이다. 키보드는 방향키·스페이스로 같은 일을 다 할 수 있으므로
+       tabindex="-1" 로 탭 순서에서 뺀다 — 안 그러면 '포커스는 가는데 안 눌리는' 죽은 칸이 된다 -->
+  <div id="pad">
+    <div class="padgrp">
+      <button class="pbtn pmove" id="bL" type="button" tabindex="-1" aria-label="왼쪽으로"><span class="g">◀</span><small data-i="move">이동</small></button>
+      <button class="pbtn pdown" id="bD" type="button" tabindex="-1" aria-label="내리기"><span class="g">▼</span><small data-i="down">내리기</small></button>
+      <button class="pbtn pmove" id="bR" type="button" tabindex="-1" aria-label="오른쪽으로"><span class="g">▶</span><small>&nbsp;</small></button>
+    </div>
+    <div class="padgrp">
+      <button class="pbtn pturn" id="bC" type="button" tabindex="-1" aria-label="돌리기"><span class="g">↻</span><small data-i="turn">돌리기</small></button>
+      <button class="pbtn pbake" id="bH" type="button" tabindex="-1" aria-label="굽기"><span class="g">⤓</span><small data-i="bake">굽기</small></button>
+    </div>
+  </div>
+
+  <div class="tost" id="tost"></div>
+
+  <div class="ov on" id="ovStart"><div class="card">
+    <h2 id="startTitle">새벽 빵집</h2>
+    <div class="sub" data-i="tagline">새벽에 빵을 구워 진열대를 채웁니다</div>
+    <canvas id="howCv"></canvas>
+    <div class="rules">
+      <p data-i="r1">네 칸짜리 빵 조각이 위에서 내려옵니다.</p>
+      <p data-i="r2">돌리고 밀어서 진열대 <b>한 줄</b>을 빈틈없이 채우세요.</p>
+      <p data-i="r3">줄이 차면 그 줄은 <b>손님에게 나갑니다</b>.</p>
+      <p data-i="r4">여섯 시간대의 <b>오늘의 주문</b>을 다 채우면 문을 엽니다.</p>
+    </div>
+    <div class="mode">
+      <button id="mJ" class="on" type="button"><b data-i="mJt">새벽 영업</b><small data-i="mJs">6단계 · 주문 27줄</small></button>
+      <button id="mF" type="button"><b data-i="mFt">자유 굽기</b><small data-i="mFs">끝없이 · 목표 없음</small></button>
+    </div>
+    <div class="opt">
+      <span data-i="handLab">조작판 손잡이</span>
+      <button id="handBtn" type="button" aria-label="hand">오른손</button>
+    </div>
+    <div class="btns"><button class="btn primary" id="startBtn" type="button" data-i="play">▶ 시작</button></div>
+  </div></div>
+
+  <div class="ov" id="ovPause"><div class="card">
+    <h2 data-i="pTitle">잠깐 멈춤</h2>
+    <p data-i="pDesc">천천히 해도 됩니다. 빵은 식지 않아요.</p>
+    <div class="opt">
+      <span data-i="handLab">조작판 손잡이</span>
+      <button id="pHandBtn" type="button" aria-label="hand">오른손</button>
+    </div>
+    <div class="btns">
+      <button class="btn primary" id="pResume" type="button" data-i="pResume">이어서 굽기</button>
+      <button class="btn ghost" id="pRestart" type="button" data-i="pRestart">이 시간대 다시</button>
+      <a class="btn ghost" href="../../index.html"><span data-i="goHome">홈으로</span></a>
+    </div>
+  </div></div>
+
+  <div class="ov" id="ovStage"><div class="card">
+    <h2 data-i="scTitle">주문 완료!</h2>
+    <div class="sub" id="scSub"></div>
+    <div class="stats">
+      <div class="stat"><b id="scScore">0</b><span data-i="statScore">점수</span></div>
+      <div class="stat"><b id="scLines">0</b><span data-i="bestLines">가장 큰 판</span></div>
+      <div class="stat"><b id="scTidy">0</b><span data-i="tidy">정리 보너스</span></div>
+    </div>
+    <div class="btns"><button class="btn primary" id="scNext" type="button" data-i="scNext">다음 시간대 ▶</button></div>
+  </div></div>
+
+  <div class="ov" id="ovDone"><div class="card">
+    <h2 data-i="dTitle">문 엽니다 ☀</h2>
+    <div class="sub" data-i="dSub">오늘 빵은 다 나갔습니다</div>
+    <p data-i="dMsg">아침 손님이 문 앞에 와 있어요. 오늘은 여기까지도 충분합니다.</p>
+    <div class="stats">
+      <div class="stat"><b id="dScore">0</b><span data-i="statScore">점수</span></div>
+      <div class="stat"><b id="dLines">0</b><span data-i="bestLines">가장 큰 판</span></div>
+      <div class="stat"><b id="dTime">0:00</b><span data-i="time">걸린 시간</span></div>
+    </div>
+    <p class="rec" id="dRec"></p>
+    <div class="btns">
+      <button class="btn primary" id="dAgain" type="button" data-i="dAgain">다시 굽기</button>
+      <button class="btn ghost" id="dFree" type="button" data-i="dFree">자유 굽기로</button>
+      <a class="btn ghost" href="../../index.html"><span data-i="goHome">홈으로</span></a>
+    </div>
+  </div></div>
+
+  <div class="ov" id="ovOver"><div class="card">
+    <h2 data-i="oTitle">진열대가 넘쳤어요</h2>
+    <div class="sub" id="oSub"></div>
+    <div class="stats">
+      <div class="stat"><b id="oScore">0</b><span data-i="statScore">점수</span></div>
+      <div class="stat"><b id="oLines">0</b><span data-i="bestLines">가장 큰 판</span></div>
+      <div class="stat"><b id="oBest">0</b><span data-i="best">최고 기록</span></div>
+    </div>
+    <div class="opt" id="slowRow" hidden>
+      <span data-i="slowLab">천천히 굽기</span>
+      <button id="slowBtn" type="button" aria-label="slow">끄기</button>
+    </div>
+    <div class="btns">
+      <button class="btn primary" id="oRetry" type="button" data-i="oRetry">이 시간대 다시</button>
+      <button class="btn ghost" id="oStart" type="button" data-i="oStart">처음 화면</button>
+      <a class="btn ghost" href="../../index.html"><span data-i="goHome">홈으로</span></a>
+    </div>
+  </div></div>
+
+</div>
+
+<script>
+'use strict';
+/* ══════════════════════════════════════════════════════════════
+   새벽 빵집 — 네 칸짜리 빵 조각이 진열대에 쌓이고,
+   가로 한 줄이 꽉 차면 그 줄이 손님에게 나간다.
+   ══════════════════════════════════════════════════════════════ */
+
+var SLUG = 'dawn-bakery';
+var SAVE_KEY = 'in9-' + SLUG;
+var SOUND_KEY = 'in9-' + SLUG + '-sound';
+var HAND_KEY = 'in9-' + SLUG + '-hand';
+var NAMES = { ko:'새벽 빵집', ja:'よあけのパンや', en:'Dawn Bakery' };
+
+var $ = function(s){ return document.querySelector(s); };
+var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+var store = {
+  get:function(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set:function(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+};
+var reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+/* roundRect 폴리필 — 구형 iOS 사파리 */
+if (!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
+    if (typeof r === 'number') r = [r,r,r,r];
+    else if (!r || !r.length) r = [0,0,0,0];
+    var tl=r[0], tr=r.length>1?r[1]:tl, br=r.length>2?r[2]:tl, bl=r.length>3?r[3]:tr;
+    var m = Math.min(w,h)/2;
+    tl=Math.min(tl,m); tr=Math.min(tr,m); br=Math.min(br,m); bl=Math.min(bl,m);
+    this.moveTo(x+tl,y);
+    this.lineTo(x+w-tr,y); this.arcTo(x+w,y,x+w,y+tr,tr);
+    this.lineTo(x+w,y+h-br); this.arcTo(x+w,y+h,x+w-br,y+h,br);
+    this.lineTo(x+bl,y+h); this.arcTo(x,y+h,x,y+h-bl,bl);
+    this.lineTo(x,y+tl); this.arcTo(x,y,x+tl,y,tl);
+    return this;
+  };
+}
+
+/* ═══════════ i18n ═══════════ */
+var LANGS = ['ko','ja','en'];
+var LANG_FLAG = { ko:'🇰🇷', ja:'🇯🇵', en:'🇬🇧' };
+var I18N = {
+ko:{
+  home:'홈', goHome:'홈으로', tagline:'새벽에 빵을 구워 진열대를 채웁니다',
+  next:'다음', score:'점수', order:'오늘의 주문', level:'속도', dough:'남은 반죽',
+  statScore:'점수',                                  /* 결과 카드용 — 머리띠의 큰 라벨과 대소문자 규칙이 다르다 */
+  best:'최고 기록', bestLines:'가장 큰 판', tidy:'정리 보너스', time:'걸린 시간',
+  move:'이동', down:'내리기', turn:'돌리기', bake:'굽기',
+  moveL:'왼쪽으로', moveR:'오른쪽으로',
+  r1:'네 칸짜리 빵 조각이 위에서 내려옵니다.',
+  r2:'돌리고 밀어서 진열대 <b>한 줄</b>을 빈틈없이 채우세요.',
+  r3:'줄이 차면 그 줄은 <b>손님에게 나갑니다</b>.',
+  r4:'여섯 시간대의 <b>오늘의 주문</b>을 다 채우면 문을 엽니다.',
+  mJt:'새벽 영업', mJs:'6단계 · 주문 27줄', mFt:'자유 굽기', mFs:'끝없이 · 목표 없음',
+  play:'▶ 시작', handLab:'조작판 손잡이', handR:'오른손', handL:'왼손', handAria:'조작판 손잡이 바꾸기',
+  pTitle:'잠깐 멈춤', pDesc:'천천히 해도 됩니다. 빵은 식지 않아요.',
+  pResume:'이어서 굽기', pRestart:'이 시간대 다시',
+  scTitle:'주문 완료!', scNext:'다음 시간대 ▶',
+  dTitle:'문 엽니다 ☀', dSub:'오늘 빵은 다 나갔습니다',
+  dMsg:'아침 손님이 문 앞에 와 있어요. 오늘은 여기까지도 충분합니다.',
+  dAgain:'다시 굽기', dFree:'자유 굽기로',
+  oTitle:'진열대가 넘쳤어요', oRetry:'이 시간대 다시', oStart:'처음 화면',
+  /* 상태 표시다 — 누르라는 말이 아니다. '끄기'라고 쓰면 꺼져 있는 버튼이
+     끄는 버튼처럼 읽혀서 켜려던 사람이 손을 뗀다 */
+  slowLab:'천천히 굽기', slowOn:'켜짐', slowOff:'꺼짐',
+  soundOn:'소리 켜기', soundOff:'소리 끄기', langAria:'언어 바꾸기', pauseAria:'일시정지',
+  oven:'오븐이 달아올랐습니다 🔥', emptyShelf:'진열대가 텅 비었어요',
+  overF:'자유 굽기를 마쳤습니다.',
+  fnStageSub:function(h){ return h + ' · 남은 빵은 다 팔렸습니다'; },
+  fnOverJ:function(n){ return n + '번째 시간대에서 멈췄습니다. 몇 번이든 다시 구울 수 있어요.'; },
+  fnServe:function(n){ return n + '줄 나갔어요'; },
+  fnBest:function(n){ return '최고 기록 ' + n; },
+  fnLevel:function(n){ return '속도 ▲ ' + n; }
+},
+ja:{
+  home:'ホーム', goHome:'ホームへ', tagline:'よあけに パンを やいて たなを うめます',
+  next:'つぎ', score:'スコア', order:'きょうの ちゅうもん', level:'はやさ', dough:'のこりの きじ',
+  statScore:'スコア',
+  best:'ベスト', bestLines:'いちばん おおきい ばん', tidy:'かたづけ ボーナス', time:'かかった じかん',
+  move:'いどう', down:'おろす', turn:'まわす', bake:'やく',
+  moveL:'ひだりへ', moveR:'みぎへ',
+  r1:'4マスの パンが うえから おちてきます。',
+  r2:'まわして よこに おして、たなの <b>1れつ</b>を すきまなく うめましょう。',
+  r3:'れつが そろうと、その れつは <b>おきゃくさんへ</b> でていきます。',
+  r4:'6つの じかんたいの <b>きょうの ちゅうもん</b>を こなすと おみせを ひらけます。',
+  mJt:'よあけの えいぎょう', mJs:'6ステージ · 27れつ', mFt:'じゆうに やく', mFs:'エンドレス · もくひょう なし',
+  play:'▶ スタート', handLab:'ボタンの むき', handR:'みぎきき', handL:'ひだりきき', handAria:'ボタンの むきを かえる',
+  pTitle:'いちじ ていし', pDesc:'ゆっくりで だいじょうぶ。パンは さめません。',
+  pResume:'つづきから', pRestart:'この じかんたいを やりなおす',
+  scTitle:'ちゅうもん かんりょう！', scNext:'つぎの じかんたい ▶',
+  dTitle:'かいてん ☀', dSub:'きょうの パンは ぜんぶ でました',
+  dMsg:'あさの おきゃくさんが まっています。きょうは ここまでで じゅうぶんです。',
+  dAgain:'もう いちど やく', dFree:'じゆうに やく',
+  oTitle:'たなが いっぱいです', oRetry:'この じかんたいを やりなおす', oStart:'さいしょの がめん',
+  slowLab:'ゆっくり やく', slowOn:'オン', slowOff:'オフ',
+  soundOn:'おとを つける', soundOff:'おとを けす', langAria:'ことばを かえる', pauseAria:'いちじ ていし',
+  oven:'オーブンが あつく なりました 🔥', emptyShelf:'たなが からっぽ！',
+  overF:'じゆうに やくのを おえました。',
+  fnStageSub:function(h){ return h + ' · のこった パンは ぜんぶ うれました'; },
+  fnOverJ:function(n){ return n + 'ばんめの じかんたいで とまりました。なんどでも やりなおせます。'; },
+  fnServe:function(n){ return n + 'れつ でました'; },
+  fnBest:function(n){ return 'ベスト ' + n; },
+  fnLevel:function(n){ return 'はやさ ▲ ' + n; }
+},
+en:{
+  home:'Home', goHome:'Back to games', tagline:'Bake before dawn and fill the shelf',
+  next:'NEXT', score:'SCORE', order:'ORDERS', level:'SPEED', dough:'dough left',
+  statScore:'score',
+  best:'best', bestLines:'best serve', tidy:'tidy bonus', time:'time',
+  move:'move', down:'down', turn:'turn', bake:'bake',
+  moveL:'move left', moveR:'move right',
+  r1:'Four-cell breads come down from the top.',
+  r2:'Turn and slide them to fill <b>one whole shelf row</b>.',
+  r3:'A full row <b>goes out to a customer</b>.',
+  r4:'Fill the <b>orders</b> for all six hours and the shop opens.',
+  mJt:'Opening run', mJs:'6 stages · 27 rows', mFt:'Free bake', mFs:'Endless, no goal',
+  play:'▶ Start', handLab:'Pad layout', handR:'Right hand', handL:'Left hand', handAria:'switch pad layout',
+  pTitle:'Paused', pDesc:'Take your time. The bread will keep.',
+  pResume:'Resume', pRestart:'Restart this hour',
+  scTitle:'Order filled!', scNext:'Next hour ▶',
+  dTitle:'Doors open ☀', dSub:'Every loaf went out today',
+  dMsg:'The morning customers are at the door. This much is plenty for today.',
+  dAgain:'Bake again', dFree:'Try free bake',
+  oTitle:'The shelf overflowed', oRetry:'Restart this hour', oStart:'Title screen',
+  slowLab:'Bake slower', slowOn:'on', slowOff:'off',
+  soundOn:'sound on', soundOff:'sound off', langAria:'change language', pauseAria:'pause',
+  oven:'the oven is hot 🔥', emptyShelf:'the shelf is empty!',
+  overF:'Free bake over.',
+  fnStageSub:function(h){ return h + ' — the rest of the batch sold out'; },
+  fnOverJ:function(n){ return 'Stopped on hour ' + n + '. Retry as often as you like.'; },
+  fnServe:function(n){ return n + ' rows out'; },
+  fnBest:function(n){ return 'best ' + n; },
+  fnLevel:function(n){ return 'speed ▲ ' + n; }
+}};
+
+var lang = 'ko';
+function detectLang(){
+  var s = store.get('in9-lang');                 // 포탈과 공유하는 단 하나의 언어 키
+  if (s && LANGS.indexOf(s) >= 0) return s;
+  var n = (navigator.language || 'ko').toLowerCase();
+  if (n.indexOf('ja') === 0) return 'ja';
+  if (n.indexOf('en') === 0) return 'en';
+  return 'ko';
+}
+function L(k){ var d = I18N[lang] || I18N.ko; return d[k] !== undefined ? d[k] : I18N.ko[k]; }
+
+/* ═══════════ 빵 그리기 ═══════════
+   일곱 종류를 색이 아니라 '무늬 실루엣 + 명도'로 가른다.
+   직선 가로결 / 볼록 아치 / 사선↘+흰 점 / 선 없는 알갱이밭 / 사선↗ 칼집 /
+   매끈+큰 흰 타원 / 나선 — 회색조로 바꿔도 일곱이 다 읽힌다. */
+var NOEDGE = { top:false, right:false, bottom:false, left:false };
+
+/* 이웃이 있는 방향은 여백도 둥근 모서리도 주지 않는다 — 두 칸이 이음매 없이 맞닿게 */
+function shell(x, y, s, e, rk){
+  var p = s*0.055;
+  var Lx = x + (e.left?0:p),      Ty = y + (e.top?0:p);
+  var Rx = x + s - (e.right?0:p), By = y + s - (e.bottom?0:p);
+  var r = Math.min(s*rk, (Rx-Lx)/2, (By-Ty)/2);
+  return {
+    L:Lx, T:Ty, R:Rx, B:By,
+    tl:(e.top||e.left)?0:r,    tr:(e.top||e.right)?0:r,
+    br:(e.bottom||e.right)?0:r, bl:(e.bottom||e.left)?0:r
+  };
+}
+function shellPath(ctx, h){
+  ctx.beginPath();
+  ctx.moveTo(h.L+h.tl, h.T);
+  ctx.lineTo(h.R-h.tr, h.T); if (h.tr) ctx.quadraticCurveTo(h.R, h.T, h.R, h.T+h.tr);
+  ctx.lineTo(h.R, h.B-h.br); if (h.br) ctx.quadraticCurveTo(h.R, h.B, h.R-h.br, h.B);
+  ctx.lineTo(h.L+h.bl, h.B); if (h.bl) ctx.quadraticCurveTo(h.L, h.B, h.L, h.B-h.bl);
+  ctx.lineTo(h.L, h.T+h.tl); if (h.tl) ctx.quadraticCurveTo(h.L, h.T, h.L+h.tl, h.T);
+  ctx.closePath();
+}
+/* 껍질선은 이웃이 없는 변만 — path 전체를 stroke 하면 내부 이음매에도 선이 그어진다 */
+function shellCrust(ctx, h, e, col, lw){
+  ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (!e.top){
+    ctx.beginPath(); ctx.moveTo(h.L+h.tl,h.T); ctx.lineTo(h.R-h.tr,h.T);
+    if (h.tr) ctx.quadraticCurveTo(h.R,h.T,h.R,h.T+h.tr);
+    if (h.tl){ ctx.moveTo(h.L,h.T+h.tl); ctx.quadraticCurveTo(h.L,h.T,h.L+h.tl,h.T); }
+    ctx.stroke();
+  }
+  if (!e.right){
+    ctx.beginPath(); ctx.moveTo(h.R,h.T+h.tr); ctx.lineTo(h.R,h.B-h.br);
+    if (h.br) ctx.quadraticCurveTo(h.R,h.B,h.R-h.br,h.B);
+    ctx.stroke();
+  }
+  if (!e.bottom){
+    ctx.beginPath(); ctx.moveTo(h.R-h.br,h.B); ctx.lineTo(h.L+h.bl,h.B);
+    if (h.bl) ctx.quadraticCurveTo(h.L,h.B,h.L,h.B-h.bl);
+    ctx.stroke();
+  }
+  if (!e.left){
+    ctx.beginPath(); ctx.moveTo(h.L,h.B-h.bl); ctx.lineTo(h.L,h.T+h.tl);
+    if (h.tl) ctx.quadraticCurveTo(h.L,h.T,h.L+h.tl,h.T);
+    ctx.stroke();
+  }
+}
+/* 무늬 난수는 셀 좌표를 시드로 — Math.random() 이면 매 프레임 알갱이가 떤다 */
+function cellRnd(ci, cj, i){
+  var t = Math.sin(ci*12.9898 + cj*78.233 + i*37.719) * 43758.5453;
+  return t - Math.floor(t);
+}
+
+var BREADS = [
+  /* 0. 식빵 — 2×2. 가장 밝고, 일곱 중 유일한 곧은 가로 결 */
+  { key:'loaf', box:2, m:['XX','XX'], rk:0.22,
+    inner:'rgba(180,132,72,0.28)', innerW:0.24, edge:'#C99B54', edgeW:0.085,
+    paint:function(ctx,x,y,s,e){
+      var g = ctx.createLinearGradient(x,y,x,y+s);
+      g.addColorStop(0,'#FFFCF3'); g.addColorStop(1,'#F7E6C4');
+      ctx.fillStyle = g; ctx.fillRect(x-1,y-1,s+2,s+2);
+      if (!e.top){                                  /* 윗면 크러스트 띠는 맨 윗칸에만 */
+        var cg = ctx.createLinearGradient(x,y,x,y+s*0.34);
+        cg.addColorStop(0,'#EFCB92'); cg.addColorStop(1,'rgba(239,203,146,0)');
+        ctx.fillStyle = cg; ctx.fillRect(x-1,y-1,s+2,s*0.36);
+      }
+      /* 결은 전폭으로 — 좌우로 붙은 칸끼리 선이 정확히 이어진다 */
+      ctx.lineCap = 'butt';
+      var rows = [0.46,0.72], i, yy;
+      for (i=0;i<2;i++){
+        yy = y + s*rows[i];
+        ctx.strokeStyle = 'rgba(196,152,96,0.50)'; ctx.lineWidth = s*0.045;
+        ctx.beginPath(); ctx.moveTo(x-1,yy); ctx.lineTo(x+s+1,yy); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,252,240,0.85)'; ctx.lineWidth = s*0.030;
+        ctx.beginPath(); ctx.moveTo(x-1,yy-s*0.045); ctx.lineTo(x+s+1,yy-s*0.045); ctx.stroke();
+      }
+    } },
+  /* 1. 크루아상 — S자. 곧은 선이 하나도 없는 유일한 빵(위로 볼록한 아치 4겹) */
+  { key:'croissant', box:3, m:['.XX','XX.','...'], rk:0.32,
+    inner:'rgba(150,98,34,0.26)', innerW:0.24, edge:'#A8702B', edgeW:0.085,
+    paint:function(ctx,x,y,s){
+      ctx.fillStyle = '#F7E3BA'; ctx.fillRect(x-1,y-1,s+2,s+2);
+      ctx.lineCap = 'butt';
+      var k, yy;
+      for (k=0;k<4;k++){
+        yy = y + s*(0.11 + k*0.30);
+        ctx.strokeStyle = 'rgba(158,104,36,0.55)'; ctx.lineWidth = s*0.095;
+        ctx.beginPath(); ctx.moveTo(x-2,yy+s*0.14); ctx.quadraticCurveTo(x+s*0.5,yy-s*0.24,x+s+2,yy+s*0.14); ctx.stroke();
+        ctx.strokeStyle = '#FEF6E2'; ctx.lineWidth = s*0.085;
+        ctx.beginPath(); ctx.moveTo(x-2,yy+s*0.055); ctx.quadraticCurveTo(x+s*0.5,yy-s*0.325,x+s+2,yy+s*0.055); ctx.stroke();
+        ctx.strokeStyle = 'rgba(222,172,104,0.45)'; ctx.lineWidth = s*0.028;
+        ctx.beginPath(); ctx.moveTo(x-2,yy-s*0.005); ctx.quadraticCurveTo(x+s*0.5,yy-s*0.385,x+s+2,yy-s*0.005); ctx.stroke();
+      }
+    } },
+  /* 2. 꽈배기 — Z자. 사선 홈은 ↘, 바게트 칼집(↗)과 정확히 반대 방향 */
+  { key:'twist', box:3, m:['XX.','.XX','...'], rk:0.34,
+    inner:'rgba(140,88,32,0.30)', innerW:0.24, edge:'#9C6A2E', edgeW:0.085,
+    paint:function(ctx,x,y,s){
+      var ci = Math.round(x/s), cj = Math.round(y/s), i, j, o, sx, sy, sr;
+      ctx.fillStyle = '#E2B57F'; ctx.fillRect(x-1,y-1,s+2,s+2);
+      ctx.lineCap = 'butt';
+      for (i=-1;i<3;i++){
+        o = s*(i*0.50 + 0.04);
+        ctx.strokeStyle = 'rgba(136,84,30,0.72)'; ctx.lineWidth = s*0.145;
+        ctx.beginPath(); ctx.moveTo(x+o-s*0.6,y-s*0.6); ctx.lineTo(x+o+s*0.9,y+s*0.9); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,240,208,0.88)'; ctx.lineWidth = s*0.075;
+        ctx.beginPath(); ctx.moveTo(x+o-s*0.6+s*0.115,y-s*0.6); ctx.lineTo(x+o+s*0.9+s*0.115,y+s*0.9); ctx.stroke();
+      }
+      for (j=0;j<11;j++){                       /* 설탕 알갱이 — 순백 점이 셀 안 최대 명도를 찍는다 */
+        sx = x + s*(0.10 + cellRnd(ci,cj,j*2+11)*0.80);
+        sy = y + s*(0.10 + cellRnd(ci,cj,j*2+12)*0.80);
+        sr = s*(0.032 + cellRnd(ci,cj,j*2+13)*0.034);
+        ctx.fillStyle = 'rgba(120,74,30,0.35)';
+        ctx.beginPath(); ctx.arc(sx+sr*0.5,sy+sr*0.6,sr,0,6.2832); ctx.fill();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath(); ctx.arc(sx,sy,sr,0,6.2832); ctx.fill();
+      }
+    } },
+  /* 3. 소보로빵 — T자. 선이 하나도 없고 덩어리만 있는 유일한 빵 */
+  { key:'streusel', box:3, m:['.X.','XXX','...'], rk:0.34,
+    inner:'rgba(74,42,12,0.34)', innerW:0.24, edge:'#7C4C1E', edgeW:0.085,
+    paint:function(ctx,x,y,s){
+      var ci = Math.round(x/s), cj = Math.round(y/s), i, gx, gy, rad;
+      var tone = ['#F6D69C','#E8BE7C','#D2A05C','#B67F3E','#94622A'];
+      ctx.fillStyle = '#C89544'; ctx.fillRect(x-1,y-1,s+2,s+2);
+      for (i=0;i<22;i++){
+        gx = x + cellRnd(ci,cj,i*3+1)*s;
+        gy = y + cellRnd(ci,cj,i*3+2)*s;
+        rad = s*(0.095 + cellRnd(ci,cj,i*3+3)*0.095);
+        ctx.fillStyle = 'rgba(104,64,22,0.45)';
+        ctx.beginPath(); ctx.arc(gx+rad*0.28,gy+rad*0.34,rad,0,6.2832); ctx.fill();
+        ctx.fillStyle = tone[Math.floor(cellRnd(ci,cj,i*3+4)*5)%5];
+        ctx.beginPath(); ctx.arc(gx,gy,rad,0,6.2832); ctx.fill();
+        ctx.fillStyle = 'rgba(255,246,224,0.48)';
+        ctx.beginPath(); ctx.arc(gx-rad*0.28,gy-rad*0.30,rad*0.36,0,6.2832); ctx.fill();
+      }
+    } },
+  /* 4. 바게트 — 4칸 일자. 어두운 바탕 위 밝고 굵은 사선 칼집 2줄(↗) */
+  { key:'baguette', box:4, m:['....','XXXX','....','....'], rk:0.30,
+    inner:'rgba(70,38,10,0.34)', innerW:0.26, edge:'#6E4318', edgeW:0.085,
+    paint:function(ctx,x,y,s){
+      var g = ctx.createLinearGradient(x,y,x+s,y+s);
+      g.addColorStop(0,'#C68E4C'); g.addColorStop(0.55,'#AE7433'); g.addColorStop(1,'#8E5A1B');
+      ctx.fillStyle = g; ctx.fillRect(x-1,y-1,s+2,s+2);
+      /* 칼집 둘을 같은 직선 위에 두면 긴 선 하나로 보인다 — 수직으로 벌려 나란한 2줄로 */
+      var ux = 0.814, uy = -0.581, px = 0.581, py = 0.814, i, off, cx, cy, hx, hy;
+      ctx.lineCap = 'round';
+      for (i=0;i<2;i++){
+        off = (i?1:-1)*s*0.235;
+        cx = x + s*0.5 + px*off; cy = y + s*0.5 + py*off;
+        hx = ux*s*0.255; hy = uy*s*0.255;
+        ctx.strokeStyle = 'rgba(80,44,10,0.80)'; ctx.lineWidth = s*0.165;
+        ctx.beginPath(); ctx.moveTo(cx-hx,cy-hy); ctx.lineTo(cx+hx,cy+hy); ctx.stroke();
+        ctx.strokeStyle = '#F2D3A0'; ctx.lineWidth = s*0.095;
+        ctx.beginPath(); ctx.moveTo(cx-hx,cy-hy); ctx.lineTo(cx+hx,cy+hy); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,250,236,0.95)'; ctx.lineWidth = s*0.034;
+        ctx.beginPath();
+        ctx.moveTo(cx-hx*0.85-px*s*0.028, cy-hy*0.85-py*s*0.028);
+        ctx.lineTo(cx+hx*0.85-px*s*0.028, cy+hy*0.85-py*s*0.028);
+        ctx.stroke();
+      }
+    } },
+  /* 5. 단팥빵 — J자. 매끈한 저주파 면 + 크고 성긴 흰 깨 타원 4알 */
+  { key:'redbean', box:3, m:['X..','XXX','...'], rk:0.40,
+    inner:'rgba(40,20,4,0.40)', innerW:0.26, edge:'#5E3512', edgeW:0.085,
+    paint:function(ctx,x,y,s){
+      var ci = Math.round(x/s), cj = Math.round(y/s), i, sx, sy, a;
+      var g = ctx.createRadialGradient(x+s*0.36,y+s*0.30,s*0.05,x+s*0.5,y+s*0.5,s*0.85);
+      g.addColorStop(0,'#A9682F'); g.addColorStop(0.55,'#8A5124'); g.addColorStop(1,'#613312');
+      ctx.fillStyle = g; ctx.fillRect(x-1,y-1,s+2,s+2);
+      ctx.fillStyle = 'rgba(255,214,158,0.28)';
+      ctx.beginPath(); ctx.ellipse(x+s*0.34,y+s*0.28,s*0.24,s*0.13,-0.55,0,6.2832); ctx.fill();
+      /* 꽈배기의 설탕(작고 둥근 11알)과 개수·크기·모양으로 갈린다 */
+      for (i=0;i<4;i++){
+        sx = x + s*(0.20 + cellRnd(ci,cj,i*4+5)*0.60);
+        sy = y + s*(0.20 + cellRnd(ci,cj,i*4+6)*0.60);
+        a = cellRnd(ci,cj,i*4+7)*3.14;
+        ctx.fillStyle = 'rgba(50,26,6,0.55)';
+        ctx.beginPath(); ctx.ellipse(sx+s*0.02,sy+s*0.025,s*0.098,s*0.058,a,0,6.2832); ctx.fill();
+        ctx.fillStyle = '#FFF4DE';
+        ctx.beginPath(); ctx.ellipse(sx,sy,s*0.092,s*0.052,a,0,6.2832); ctx.fill();
+        ctx.fillStyle = 'rgba(196,150,96,0.55)';
+        ctx.beginPath(); ctx.ellipse(sx+s*0.018,sy+s*0.014,s*0.046,s*0.024,a,0,6.2832); ctx.fill();
+      }
+    } },
+  /* 6. 초코롤 — L자. 가장 어둡고 셀 안 명도폭이 가장 크다(코코아 ↔ 크림 나선) */
+  { key:'chocoroll', box:3, m:['..X','XXX','...'], rk:0.30,
+    inner:'rgba(10,4,0,0.42)', innerW:0.26, edge:'#2A160B', edgeW:0.09,
+    paint:function(ctx,x,y,s){
+      var ci = Math.round(x/s), cj = Math.round(y/s);
+      var g = ctx.createRadialGradient(x+s*0.5,y+s*0.5,s*0.05,x+s*0.5,y+s*0.5,s*0.8);
+      g.addColorStop(0,'#5A3720'); g.addColorStop(1,'#331D10');
+      ctx.fillStyle = g; ctx.fillRect(x-1,y-1,s+2,s+2);
+      /* 셀마다 시작각을 조금 돌려서, 여러 칸이 붙으면 롤을 여러 조각 썬 모양이 된다 */
+      var ang = ((ci*3 + cj*5)%4)*0.9, cx = x+s*0.5, cy = y+s*0.5;
+      function spiral(w, col, off){
+        ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath();
+        for (var t=0;t<=11.4;t+=0.14){
+          var rad = s*0.045 + t*s*0.0525 + off;
+          var pxx = cx + Math.cos(t+ang)*rad, pyy = cy + Math.sin(t+ang)*rad;
+          if (t === 0) ctx.moveTo(pxx,pyy); else ctx.lineTo(pxx,pyy);
+        }
+        ctx.stroke();
+      }
+      spiral(s*0.155,'rgba(20,10,4,0.55)', s*0.022);
+      spiral(s*0.105,'#EFDCBB', 0);
+      spiral(s*0.038,'rgba(255,250,238,0.9)', -s*0.024);
+    } }
+];
+
+function drawBread(ctx, kind, x, y, s, e){
+  var B = BREADS[kind];
+  var h = shell(x, y, s, e, B.rk);
+  ctx.save();
+  shellPath(ctx, h); ctx.clip();
+  B.paint(ctx, x, y, s, e);
+  shellCrust(ctx, h, e, B.inner, s*B.innerW);   /* clip 안 — 굵고 반투명한 안쪽 그늘 */
+  ctx.restore();
+  shellCrust(ctx, h, e, B.edge, s*B.edgeW);     /* clip 밖 — 가늘고 진한 껍질선 */
+}
+
+/* ═══════════ 조각 형태 ═══════════ */
+function rotCW(m){
+  var n = m.length, out = [], r, c, row;
+  for (r=0;r<n;r++){ row = ''; for (c=0;c<n;c++) row += m[n-1-c].charAt(r); out.push(row); }
+  return out;
+}
+function cellsOf(m){
+  var out = [], r, c;
+  for (r=0;r<m.length;r++) for (c=0;c<m.length;c++) if (m[r].charAt(c) === 'X') out.push([c,r]);
+  return out;
+}
+/* 네 회전 상태를 부팅 때 한 번만 계산한다 — 매 회전마다 행렬을 돌릴 이유가 없다 */
+(function(){
+  for (var k=0;k<BREADS.length;k++){
+    var m = BREADS[k].m, st = [];
+    for (var i=0;i<4;i++){ st.push(cellsOf(m)); m = rotCW(m); }
+    BREADS[k].st = st;
+  }
+})();
+
+/* 조각 하나 안에서 이웃한 칸을 찾아준다 — 미리보기·고스트·낙하 조각이 같은 셈을 쓴다 */
+function edgeFn(cells){
+  var has = {}, i;
+  for (i=0;i<cells.length;i++) has[cells[i][0] + ',' + cells[i][1]] = 1;
+  return function(j){
+    var c = cells[j];
+    return {
+      top:    !!has[c[0] + ',' + (c[1]-1)],
+      bottom: !!has[c[0] + ',' + (c[1]+1)],
+      left:   !!has[(c[0]-1) + ',' + c[1]],
+      right:  !!has[(c[0]+1) + ',' + c[1]]
+    };
+  };
+}
+
+/* 반죽 밀기 표 — 회전이 막히면 이 순서대로 밀어 본다. y 는 아래가 + 라 dy:-1 은 들어올린다 */
+var NUDGE = {
+  small: {
+    cw:  [[0,0],[-1,0],[1,0],[0,-1],[-1,-1],[1,-1],[0,-2]],
+    ccw: [[0,0],[1,0],[-1,0],[0,-1],[1,-1],[-1,-1],[0,-2]]
+  },
+  /* 맨 끝 [0,1] 은 아래로 한 칸 — 갓 태어난 바게트를 천장 밑에서 세울 때만 걸린다.
+     들어올리기를 다 시도한 뒤에 오므로, 아래가 널널하다고 먼저 파고들지는 않는다. */
+  long: {
+    cw:  [[0,0],[-1,0],[1,0],[-2,0],[2,0],[0,-1],[-1,-1],[1,-1],[-2,-1],[2,-1],[0,-2],[0,1]],
+    ccw: [[0,0],[1,0],[-1,0],[2,0],[-2,0],[0,-1],[1,-1],[-1,-1],[2,-1],[-2,-1],[0,-2],[0,1]]
+  },
+  square: [[0,0]]                                 /* 2×2 식빵은 밀 이유가 없다 */
+};
+function nudgeList(kind, from, to){
+  var box = BREADS[kind].box;
+  if (box === 2) return NUDGE.square;
+  var dir = (((to - from + 4) % 4) === 1) ? 'cw' : 'ccw';
+  return (box === 4 ? NUDGE.long : NUDGE.small)[dir];
+}
+
+/* ═══════════ 코어 규칙 ═══════════ */
+/* 화면 밖 버퍼는 두지 않는다. 진열대 위쪽 두 줄을 숨겨두면 조각이 안 보이는 데서
+   움직이거나, 안 보이는 자리에 잠겨 진 게 된다 — 손님한테 안 보이는 빵은 빵이 아니다.
+   대신 밀기 표에 아래로 한 칸(0,1)을 넣어, 천장에 붙어서도 회전은 성사되게 했다. */
+var COLS = 10, ROWS = 16;
+var SOFT_MS = 45, LOCK_DELAY = 500, LOCK_RESETS = 10, LOCK_CAP_MS = 2400;
+var CLEAR_MS = 260, COLLAPSE_MS = 150;
+var DAS_MS = 170, ARR_MS = 45;
+
+function makeGrid(){
+  var g = [], r, c, row;
+  for (r=0;r<ROWS;r++){ row = []; for (c=0;c<COLS;c++) row.push(null); g.push(row); }
+  return g;
+}
+function fits(cells, x, y){
+  for (var i=0;i<cells.length;i++){
+    var gx = x + cells[i][0], gy = y + cells[i][1];
+    if (gx < 0 || gx >= COLS) return false;
+    if (gy < 0 || gy >= ROWS) return false;        // 진열대 밖은 위아래 똑같이 밖이다
+    if (S.grid[gy][gx]) return false;
+  }
+  return true;
+}
+function fullRows(g){
+  var out = [], r, c, ok;
+  for (r=0;r<ROWS;r++){
+    ok = true;
+    for (c=0;c<COLS;c++) if (!g[r][c]){ ok = false; break; }
+    if (ok) out.push(r);
+  }
+  return out;
+}
+/* 지워진 줄을 걷어내고 위 칸을 내려앉힌다. rise[r] = 그 줄이 몇 칸 떨어졌는지(연출용) */
+function collapseRows(g, rows){
+  var keep = [], r, i;
+  for (r=0;r<ROWS;r++) if (rows.indexOf(r) < 0) keep.push(r);
+  var ng = [], rise = [], pad = ROWS - keep.length;
+  for (i=0;i<pad;i++){
+    var row = []; for (var c=0;c<COLS;c++) row.push(null);
+    ng.push(row); rise.push(0);
+  }
+  for (i=0;i<keep.length;i++){ ng.push(g[keep[i]]); rise.push((pad+i) - keep[i]); }
+  return { grid:ng, rise:rise };
+}
+function stackHeight(g){
+  for (var r=0;r<ROWS;r++) for (var c=0;c<COLS;c++) if (g[r][c]) return ROWS - r;
+  return 0;
+}
+function isBoardEmpty(g){
+  for (var r=0;r<ROWS;r++) for (var c=0;c<COLS;c++) if (g[r][c]) return false;
+  return true;
+}
+
+/* 오늘 아침 반죽 일곱 덩이 — 일곱 종이 정확히 한 번씩 나오고 비면 새로 채운다 */
+function refillBag(){
+  var b = [0,1,2,3,4,5,6], i, j, t;
+  for (i=b.length-1;i>0;i--){                      // Fisher-Yates
+    j = Math.floor(Math.random()*(i+1));
+    t = b[i]; b[i] = b[j]; b[j] = t;
+  }
+  return b;
+}
+
+/* 손님에게 나간 판 — 동시에 나간 줄 수별 기본 점수 */
+var TRAY = [0,100,260,480,800];
+function streakMul(n){ return 1 + 0.1*Math.min(n,5); }   // 상한 1.5배, 5연속에서 평평
+
+/* ═══════════ 단계 ═══════════ */
+var STAGES = [
+  { hour:'04:00', goal:3, fall:700, ovenAt:12 },
+  { hour:'04:40', goal:4, fall:580, ovenAt:12 },
+  { hour:'05:20', goal:4, fall:470, ovenAt:12 },
+  { hour:'06:00', goal:5, fall:380, ovenAt:12 },
+  { hour:'06:30', goal:5, fall:300, ovenAt:12 },
+  { hour:'06:50', goal:6, fall:235, ovenAt:12 }
+];
+/* 새벽에서 아침으로 — 단계마다 하늘이 밝아진다. 조작 압박이 아니라 색으로 주는 진행감 */
+var SKY = ['#12102a','#1e1940','#3b2a57','#7c5271','#c9835f','#f2b25c'];
+
+var S = {
+  mode:'journey', stage:0, level:1,
+  grid:makeGrid(), kind:-1, nextKind:-1, cells:null, rot:0, x:3, y:-1, pid:0,
+  bag:[],
+  phase:'idle',                       // idle | play | clear | collapse
+  fallT:0, lockT:0, lockResets:0, groundedMs:0, lowestSeen:-99, softDrop:false,
+  score:0, stageStartScore:0, lines:0, linesTotal:0, freeLines:0,
+  streak:0, bestLines:0,
+  piecesInStage:0, ovenStep:0, slow:false, stageFails:0,
+  running:false, paused:false,
+  startedAt:0, pauseAt:0, pausedMs:0, elapsed:0, fired:false
+};
+var anim = { clearRows:null, clearT:0, rise:null, collapseT:0, particles:[], banners:[], shake:0 };
+
+/* 최고 점수는 모드별로 나눈다 — 목표가 없는 자유 굽기 점수가 27줄로 끝나는
+   새벽 영업의 기록칸을 덮으면, 완주 화면이 구조적으로 닿을 수 없는 숫자를 띄운다 */
+var save = { best:0, freeBest:0, bestLines:0, cleared:false };
+(function(){
+  var raw = store.get(SAVE_KEY);
+  if (!raw) return;
+  try{
+    var o = JSON.parse(raw);
+    if (o && typeof o === 'object'){
+      save.best = o.best|0; save.freeBest = o.freeBest|0;
+      save.bestLines = o.bestLines|0; save.cleared = !!o.cleared;
+    }
+  }catch(e){}
+})();
+function bestKey(){ return (S.mode === 'free') ? 'freeBest' : 'best'; }
+function persist(){ store.set(SAVE_KEY, JSON.stringify(save)); }
+/* 날짜·연속일수는 저장하지 않는다 — 스트릭 UI 가 생길 여지 자체를 없앤다 */
+
+/* ═══════════ 소리 ═══════════ */
+var SFX = {
+  ac:null, master:null, on:true,
+  boot:function(){
+    if (this.ac){ if (this.ac.state === 'suspended'){ try{ this.ac.resume(); }catch(e){} } return; }
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try{
+      this.ac = new AC();
+      this.master = this.ac.createGain();
+      this.master.gain.value = this.on ? 0.8 : 0;
+      this.master.connect(this.ac.destination);
+    }catch(e){ this.ac = null; }
+  },
+  setOn:function(v){
+    this.on = !!v;
+    if (this.master) this.master.gain.value = this.on ? 0.8 : 0;
+    store.set(SOUND_KEY, this.on ? '1' : '0');
+  },
+  tone:function(freq, dur, vol, type, glideTo, at){
+    if (!this.ac || !this.on) return;
+    var t = this.ac.currentTime + (at || 0);
+    var o = this.ac.createOscillator(), g = this.ac.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t);
+    if (glideTo) o.frequency.exponentialRampToValueAtTime(Math.max(30, glideTo), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + dur + 0.03);
+  },
+  move:function(){ this.tone(210, .045, .045, 'square'); },
+  turn:function(){ this.tone(410, .07, .065, 'triangle'); },
+  land:function(){ this.tone(128, .1, .10, 'sine', 76); },
+  drop:function(){ this.tone(190, .13, .07, 'sawtooth', 62); },
+  serve:function(n){                                  // 줄이 나갈수록 위로 뻗는 종소리
+    var base = 523.25;
+    for (var i=0;i<n;i++) this.tone(base*Math.pow(1.26,i), .26, .10, 'triangle', 0, i*0.07);
+  },
+  oven:function(){ this.tone(150, .3, .08, 'sawtooth', 320); },
+  level:function(){ this.tone(660, .12, .08, 'triangle'); this.tone(880, .12, .07, 'triangle', 0, .1); },
+  stage:function(){ var s=[523.25,659.25,783.99,1046.5]; for (var i=0;i<s.length;i++) this.tone(s[i], .22, .10, 'triangle', 0, i*0.095); },
+  done:function(){ var s=[523.25,659.25,783.99,1046.5,1318.5]; for (var i=0;i<s.length;i++) this.tone(s[i], .36, .11, 'triangle', 0, i*0.13); },
+  over:function(){ var s=[392,330,262]; for (var i=0;i<s.length;i++) this.tone(s[i], .3, .09, 'sine', 0, i*0.15); },
+  hush:function(){ if (this.ac && this.ac.state === 'running'){ try{ this.ac.suspend(); }catch(e){} } }
+};
+if (store.get(SOUND_KEY) === '0') SFX.on = false;
+
+/* ═══════════ 캔버스 ═══════════ */
+var fld = $('#fld'), fx = fld.getContext('2d');
+var nextCv = $('#nextCv'), nx = nextCv.getContext('2d');
+var trayCv = $('#trayCv'), tx = trayCv.getContext('2d');
+var howCv = $('#howCv'), hx = howCv.getContext('2d');
+/* 확정된 진열대는 오프스크린에 한 번만 그려 둔다 — 소보로 한 칸이 원 22개라
+   160칸을 매 프레임 다시 그리면 폰에서 프레임이 무너진다 */
+var boardCv = document.createElement('canvas'), bx = boardCv.getContext('2d');
+var boardDirty = true;
+var DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+var CELL = 26, NEXT_S = 12, TRAY_S = 18;
+
+function layout(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+  var cab = $('#cab');
+  var availH = Math.max(120, cab.clientHeight - 16);
+  var availW = Math.max(100, Math.min(cab.clientWidth, 620) - 22);
+  /* 셀 크기는 CSS 가 아니라 여기서 역산한다 — 어떤 폰에서도 16줄이 잘리지 않아야 한다.
+     하한을 높게 잡으면 가로 폰에서 하한이 높이를 이겨 #cab 이 위아래를 잘라 먹는다
+     (태어나는 0행과 줄을 채우는 15행이 통째로 사라진다). 작게 나오더라도 다 보이는 쪽이 옳다. */
+  CELL = Math.max(8, Math.min(Math.floor(Math.min(availW/COLS, availH/ROWS)), 44));
+  var w = CELL*COLS, h = CELL*ROWS;
+  fld.width = Math.round(w*DPR); fld.height = Math.round(h*DPR);
+  fld.style.width = w+'px'; fld.style.height = h+'px';
+  fx.setTransform(DPR,0,0,DPR,0,0);
+
+  NEXT_S = Math.max(9, Math.min(Math.round(CELL*0.46), 18));
+  nextCv.width = Math.round(NEXT_S*4*DPR); nextCv.height = Math.round(NEXT_S*2*DPR);
+  nextCv.style.width = (NEXT_S*4)+'px'; nextCv.style.height = (NEXT_S*2)+'px';
+  nx.setTransform(DPR,0,0,DPR,0,0);
+
+  TRAY_S = Math.max(13, Math.min(Math.round(CELL*0.7), 22));
+
+  boardDirty = true;
+  drawNext(); drawTray(); draw();
+}
+
+/* 진열대 바닥 — 캐시가 아니라 매 프레임 그린다(줄이 내려앉을 때 배경까지 밀리면 안 되므로) */
+function shelfBg(w, h){
+  var g = fx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,'#191338'); g.addColorStop(1,'#2e2456');
+  fx.fillStyle = g; fx.fillRect(0,0,w,h);
+  fx.strokeStyle = 'rgba(251,231,198,.07)'; fx.lineWidth = 1;
+  var i;
+  for (i=1;i<COLS;i++){ fx.beginPath(); fx.moveTo(i*CELL+.5,0); fx.lineTo(i*CELL+.5,h); fx.stroke(); }
+  for (i=1;i<ROWS;i++){ fx.beginPath(); fx.moveTo(0,i*CELL+.5); fx.lineTo(w,i*CELL+.5); fx.stroke(); }
+  fx.strokeStyle = 'rgba(251,231,198,.16)';
+  fx.strokeRect(.5,.5,w-1,h-1);
+}
+
+/* 셀의 이웃 판정은 빵 '종류'가 아니라 '조각 인스턴스(pid)' 로 한다 —
+   kind 만 보면 다른 때 떨어진 같은 빵끼리 세로로 달라붙어 기괴한 기둥이 된다 */
+function edgesAt(r, c){
+  var cell = S.grid[r][c];
+  return {
+    top:    !!(r > 0 && S.grid[r-1][c] && S.grid[r-1][c].pid === cell.pid),
+    bottom: !!(r < ROWS-1 && S.grid[r+1][c] && S.grid[r+1][c].pid === cell.pid),
+    left:   !!(c > 0 && S.grid[r][c-1] && S.grid[r][c-1].pid === cell.pid),
+    right:  !!(c < COLS-1 && S.grid[r][c+1] && S.grid[r][c+1].pid === cell.pid)
+  };
+}
+function renderBoard(){
+  var w = CELL*COLS, h = CELL*ROWS, r, c;
+  boardCv.width = Math.round(w*DPR); boardCv.height = Math.round(h*DPR);
+  bx.setTransform(DPR,0,0,DPR,0,0);
+  bx.clearRect(0,0,w,h);                            // 배경 없이 빵만 — 행 단위로 밀 수 있게
+  for (r=0;r<ROWS;r++){
+    for (c=0;c<COLS;c++){
+      if (!S.grid[r][c]) continue;
+      drawBread(bx, S.grid[r][c].kind, c*CELL, r*CELL, CELL, edgesAt(r,c));
+    }
+  }
+  boardDirty = false;
+}
+
+function draw(){
+  var w = CELL*COLS, h = CELL*ROWS, i, r;
+  if (boardDirty) renderBoard();
+  fx.save();
+  if (anim.shake > 0) fx.translate((Math.random()-.5)*anim.shake, (Math.random()-.5)*anim.shake);
+  fx.clearRect(-12,-12,w+24,h+24);
+  shelfBg(w,h);
+
+  if (S.phase === 'collapse' && anim.rise){
+    var p = Math.min(1, anim.collapseT/COLLAPSE_MS), ez = 1-(1-p)*(1-p);
+    for (r=0;r<ROWS;r++){
+      var dy = -anim.rise[r]*CELL*(1-ez);
+      fx.drawImage(boardCv, 0, r*CELL*DPR, w*DPR, CELL*DPR, 0, r*CELL+dy, w, CELL);
+    }
+  } else {
+    fx.drawImage(boardCv, 0, 0, w, h);
+  }
+
+  /* 나가는 줄 — 하얗게 번쩍이고 금빛 잔광이 오른쪽으로 흐른다 */
+  if (S.phase === 'clear' && anim.clearRows){
+    var q = Math.min(1, anim.clearT/CLEAR_MS);
+    for (i=0;i<anim.clearRows.length;i++){
+      var ry = anim.clearRows[i]*CELL;
+      fx.save();
+      fx.globalCompositeOperation = 'lighter';
+      fx.globalAlpha = 0.8*Math.sin(q*Math.PI);
+      fx.fillStyle = '#fff6e6'; fx.fillRect(0, ry, w, CELL);
+      fx.restore();
+      fx.save();
+      fx.globalAlpha = 0.9*(1-q); fx.fillStyle = '#f2b25c';
+      fx.fillRect(w*q, ry, w*0.5, CELL);
+      fx.restore();
+    }
+  }
+
+  if (S.phase === 'play' && S.cells){
+    var eg = edgeFn(S.cells), gy = S.y;
+    while (fits(S.cells, S.x, gy+1)) gy++;
+    /* 고스트도 같은 무늬로 — 색이 아니라 형태로 어떤 빵인지 읽히게 */
+    if (gy > S.y){
+      fx.save(); fx.globalAlpha = 0.25;
+      for (i=0;i<S.cells.length;i++){
+        var grr = gy + S.cells[i][1];
+        if (grr < 0) continue;
+        drawBread(fx, S.kind, (S.x+S.cells[i][0])*CELL, grr*CELL, CELL, eg(i));
+      }
+      fx.restore();
+      fx.save(); fx.globalAlpha = .3; fx.strokeStyle = '#fbe7c6'; fx.lineWidth = 1.5;
+      fx.setLineDash([4,4]);
+      for (i=0;i<S.cells.length;i++){
+        var gr2 = gy + S.cells[i][1];
+        if (gr2 < 0) continue;
+        fx.strokeRect((S.x+S.cells[i][0])*CELL+2, gr2*CELL+2, CELL-4, CELL-4);
+      }
+      fx.setLineDash([]); fx.restore();
+    }
+    for (i=0;i<S.cells.length;i++){
+      var pr = S.y + S.cells[i][1];
+      if (pr < 0) continue;                        // 버퍼에 있는 칸은 화면 밖
+      drawBread(fx, S.kind, (S.x+S.cells[i][0])*CELL, pr*CELL, CELL, eg(i));
+    }
+  }
+
+  for (i=0;i<anim.particles.length;i++){
+    var t2 = anim.particles[i];
+    fx.save(); fx.globalAlpha = Math.max(0, t2.life/t2.max); fx.fillStyle = t2.col;
+    fx.beginPath(); fx.arc(t2.x, t2.y, t2.r, 0, Math.PI*2); fx.fill(); fx.restore();
+  }
+  for (i=0;i<anim.banners.length;i++){
+    var bn = anim.banners[i], prog = 1 - bn.life/bn.max;
+    fx.save();
+    fx.globalAlpha = Math.min(1, bn.life/220);
+    fx.translate(w/2, h*0.4 - prog*30);
+    fx.font = '800 ' + Math.round(CELL*0.72) + 'px ' + getComputedStyle(document.body).fontFamily;
+    fx.textAlign = 'center'; fx.textBaseline = 'middle';
+    fx.lineWidth = 5; fx.strokeStyle = 'rgba(10,6,24,.85)';
+    fx.strokeText(bn.txt, 0, 0, w-8);
+    fx.fillStyle = bn.col; fx.fillText(bn.txt, 0, 0, w-8);
+    fx.restore();
+  }
+  fx.restore();
+}
+
+function drawNext(){
+  var w = NEXT_S*4, h = NEXT_S*2;
+  nx.clearRect(0,0,w,h);
+  if (S.nextKind < 0) return;
+  var cells = BREADS[S.nextKind].st[0], i;
+  var minx = 99, maxx = -99, miny = 99, maxy = -99;
+  for (i=0;i<cells.length;i++){
+    if (cells[i][0] < minx) minx = cells[i][0];
+    if (cells[i][0] > maxx) maxx = cells[i][0];
+    if (cells[i][1] < miny) miny = cells[i][1];
+    if (cells[i][1] > maxy) maxy = cells[i][1];
+  }
+  var ox = (4 - (maxx-minx+1))/2*NEXT_S - minx*NEXT_S;
+  var oy = (2 - (maxy-miny+1))/2*NEXT_S - miny*NEXT_S;
+  var eg = edgeFn(cells);
+  for (i=0;i<cells.length;i++){
+    drawBread(nx, S.nextKind, ox + cells[i][0]*NEXT_S, oy + cells[i][1]*NEXT_S, NEXT_S, eg(i));
+  }
+}
+
+/* 남은 반죽 — 아직 안 나온 빵은 밝게, 이미 쓴 빵은 흐리게.
+   무엇이 남았는지 눈으로 세어지는 순간 그건 가챠가 아니라 재료함이다 */
+function drawTray(){
+  var g = Math.max(3, Math.round(TRAY_S*0.2));
+  var w = 7*TRAY_S + 6*g, h = TRAY_S;
+  trayCv.width = Math.round(w*DPR); trayCv.height = Math.round(h*DPR);
+  trayCv.style.width = w+'px'; trayCv.style.height = h+'px';
+  tx.setTransform(DPR,0,0,DPR,0,0);
+  tx.clearRect(0,0,w,h);
+  for (var k=0;k<7;k++){
+    tx.save();
+    tx.globalAlpha = (S.bag.indexOf(k) >= 0) ? 1 : 0.2;
+    drawBread(tx, k, k*(TRAY_S+g), 0, TRAY_S, NOEDGE);
+    tx.restore();
+  }
+}
+
+/* 규칙 그림 — 아래 한 줄이 꽉 찬 미니 진열대. 글자는 넣지 않는다(언어 전환에 안 흔들리게) */
+function drawHow(){
+  var s = 22, cols = 6, rows = 3, w = cols*s + 4, h = rows*s + 4;
+  howCv.width = Math.round(w*DPR); howCv.height = Math.round(h*DPR);
+  howCv.style.width = w+'px'; howCv.style.height = h+'px';
+  hx.setTransform(DPR,0,0,DPR,0,0);
+  hx.clearRect(0,0,w,h);
+  hx.fillStyle = 'rgba(0,0,0,.3)';
+  hx.beginPath(); hx.roundRect(2,2,cols*s,rows*s,8); hx.fill();
+  var top = [[1,0,3],[2,0,3],[4,1,6],[5,1,6]], i;
+  for (i=0;i<top.length;i++) drawBread(hx, top[i][2], 2+top[i][0]*s, 2+top[i][1]*s, s, NOEDGE);
+  for (i=0;i<cols;i++) drawBread(hx, [0,4,2,5,1,3][i], 2+i*s, 2+2*s, s, NOEDGE);
+  hx.save();
+  hx.globalCompositeOperation = 'lighter'; hx.globalAlpha = .34;
+  hx.fillStyle = '#fff6e6'; hx.fillRect(2, 2+2*s, cols*s, s);
+  hx.restore();
+  hx.strokeStyle = 'rgba(242,178,92,.85)'; hx.lineWidth = 2;
+  hx.strokeRect(3, 3+2*s, cols*s-2, s-2);
+}
+
+/* ═══════════ 조각 흐름 ═══════════ */
+function fallInterval(){
+  var iv;
+  if (S.mode === 'free') iv = Math.max(140, 760 - (S.level-1)*48);
+  else {
+    var base = STAGES[S.stage].fall;
+    var step = Math.floor(S.piecesInStage / STAGES[S.stage].ovenAt);
+    iv = Math.max(120, Math.round(base * Math.pow(0.88, step)));
+  }
+  if (S.slow) iv = Math.round(iv * 1.25);          // 접근성 옵션 — 구매도 광고도 아니다
+  return iv;
+}
+function drawFromBag(){
+  if (!S.bag.length){ S.bag = refillBag(); }
+  return S.bag.pop();
+}
+function firstDraw(){
+  var k = drawFromBag();
+  /* 첫 조각 배려 — 다루기 까다로운 크루아상·꽈배기면 한 번만 다시 섞는다 */
+  if (k === 1 || k === 2){ S.bag = refillBag(); k = drawFromBag(); }
+  return k;
+}
+function lowestRow(){
+  var m = -99;
+  for (var i=0;i<S.cells.length;i++){ var v = S.y + S.cells[i][1]; if (v > m) m = v; }
+  return m;
+}
+function spawn(){
+  S.kind = S.nextKind;
+  S.nextKind = drawFromBag();
+  S.rot = 0;
+  S.cells = BREADS[S.kind].st[0];
+  S.x = Math.floor((COLS - BREADS[S.kind].box)/2);
+  var minDy = 99, i;
+  for (i=0;i<S.cells.length;i++) if (S.cells[i][1] < minDy) minDy = S.cells[i][1];
+  /* 맨 윗칸이 0행에 오도록 태어난다 — 태어나는 순간부터 조각 전체가 보인다.
+     버퍼 두 줄은 회전 킥 전용이라 여기서 물러서지 않는다. 안 보이는 조각을
+     버퍼에서 몇백 밀리초 조작하게 두느니, 자리가 없으면 그 자리에서 넘침이다. */
+  S.y = -minDy;
+  var ok = fits(S.cells, S.x, S.y);
+  S.pid++;
+  /* '내리기'를 누르고 있으면 새 조각도 눌린 상태로 태어난다 —
+     안 그러면 조각 하나마다 손을 뗐다 다시 눌러야 해서 조작이 먹통처럼 느껴진다 */
+  S.fallT = 0; S.lockT = 0; S.lockResets = 0; S.groundedMs = 0; S.softDrop = !!softHold;
+  S.lowestSeen = lowestRow();
+  S.piecesInStage++;
+  checkOven();
+  drawNext(); drawTray();
+  if (!ok){ S.cells = null; gameOver(); return false; }
+  S.phase = 'play';
+  return true;
+}
+function checkOven(){
+  if (S.mode !== 'journey') return;
+  var step = Math.floor(S.piecesInStage / STAGES[S.stage].ovenAt);
+  if (step > S.ovenStep){
+    S.ovenStep = step;
+    SFX.oven(); toast(L('oven'));
+    $('#screenWrap').classList.add('hot');
+  }
+}
+
+function tryMove(d){
+  if (S.phase !== 'play' || !S.cells) return;
+  if (!fits(S.cells, S.x+d, S.y)) return;
+  S.x += d; SFX.move();
+  tryReset(false);
+}
+function rotate(dirSign){
+  if (S.phase !== 'play' || !S.cells) return;
+  var from = S.rot, to = (from + dirSign + 4) % 4;
+  var shape = BREADS[S.kind].st[to];
+  var list = nudgeList(S.kind, from, to), i, dx, dy;
+  for (i=0;i<list.length;i++){
+    dx = list[i][0]; dy = list[i][1];
+    if (!fits(shape, S.x + dx, S.y + dy)) continue;
+    S.x += dx; S.y += dy; S.rot = to; S.cells = shape;
+    tryReset(dy <= -1);                            // 들어올린 회전은 유예를 되살리지 않는다
+    SFX.turn();
+    return;
+  }
+  /* 다 막히면 조용히 무시 — 페널티 없음 */
+}
+/* 유예 리셋 3중 잠금: 횟수 상한 · 누적 시간 상한 · 실제로 한 칸 더 내려갔을 때만 초기화 */
+function tryReset(lifted){
+  if (lifted) return;
+  if (fits(S.cells, S.x, S.y+1)) return;           // 공중이면 유예를 쓸 일이 없다
+  if (S.lockResets >= LOCK_RESETS) return;
+  S.lockT = 0; S.lockResets++;
+}
+function onDescend(){
+  var low = lowestRow();
+  if (low > S.lowestSeen){                         // 계단을 타고 내려가는 정당한 플레이는 벌하지 않는다
+    S.lowestSeen = low;
+    S.lockResets = 0; S.groundedMs = 0; S.lockT = 0;
+  }
+}
+function groundTick(dt){
+  S.groundedMs += dt;
+  S.lockT += dt;
+  if (S.lockT >= LOCK_DELAY || S.groundedMs >= LOCK_CAP_MS) lock();
+}
+function hardDrop(){
+  if (S.phase !== 'play' || !S.cells) return;
+  var n = 0;
+  while (fits(S.cells, S.x, S.y+1)){ S.y++; n++; }
+  S.score += n;
+  SFX.drop();
+  if (!reduced) anim.shake = Math.min(7, 2 + n*0.28);
+  lock();                                          // 접지 유예를 건너뛰고 바로 잠근다
+}
+/* 조각은 언제나 진열대 안에서만 살기 때문에(fits 가 위쪽도 막는다) 여기서 넘침을 볼 일은 없다.
+   넘침은 오직 한 곳 — 새 빵이 놓일 자리가 없는 spawn — 에서만 난다. */
+function lock(){
+  var i, gx, gy;
+  for (i=0;i<S.cells.length;i++){
+    gx = S.x + S.cells[i][0]; gy = S.y + S.cells[i][1];
+    S.grid[gy][gx] = { kind:S.kind, pid:S.pid };
+  }
+  S.cells = null; S.softDrop = false; S.phase = 'idle';
+  boardDirty = true;
+  SFX.land();
+  try{ if (navigator.vibrate) navigator.vibrate(8); }catch(e){}
+  resolveLines();
+}
+
+/* ═══════════ 줄 내보내기 ═══════════ */
+function resolveLines(){
+  var full = fullRows(S.grid);
+  if (!full.length){ S.streak = 0; afterLock(); return; }   // 줄을 못 낸 조각 하나면 연속이 끊긴다
+  S.streak++;
+  var n = full.length;
+  var pts = Math.round(TRAY[n] * streakMul(S.streak - 1));
+  S.score += pts;
+  S.lines += n; S.linesTotal += n;
+  if (n > S.bestLines) S.bestLines = n;
+  if (S.mode === 'free'){
+    S.freeLines += n;
+    var lv = 1 + Math.floor(S.freeLines/8);
+    if (lv > S.level){ S.level = lv; SFX.level(); toast(L('fnLevel')(lv)); }
+  }
+  /* 축포는 2줄 이상·3연속 이상에서만 — 매 줄마다 터지면 그건 중독 루프다 */
+  if (n >= 2) anim.banners.push({ txt:L('fnServe')(n), life:850, max:850, col:(n>=4?'#fff6e6':'#f2b25c') });
+  else if (S.streak >= 3) anim.banners.push({ txt:'×'+S.streak, life:700, max:700, col:'#f2b25c' });
+  if (!reduced) anim.shake = Math.min(8, 2 + n*1.4);
+  for (var i=0;i<n;i++) burstRow(full[i]);
+  SFX.serve(n);
+  anim.clearRows = full; anim.clearT = 0;
+  S.phase = 'clear';
+  updateHUD();
+}
+function endClear(){
+  var res = collapseRows(S.grid, anim.clearRows);
+  S.grid = res.grid; anim.rise = res.rise;
+  anim.clearRows = null;
+  boardDirty = true;
+  if (isBoardEmpty(S.grid)){ S.score += 300; toast(L('emptyShelf')); }
+  anim.collapseT = 0;
+  S.phase = 'collapse';
+  updateHUD();
+}
+function endCollapse(){
+  anim.rise = null;
+  afterLock();
+}
+function afterLock(){
+  if (S.mode === 'journey' && S.lines >= STAGES[S.stage].goal){ stageClear(); return; }
+  spawn();
+}
+function burstRow(r){
+  if (reduced || anim.particles.length > 180) return;
+  for (var c=0;c<COLS;c++){
+    for (var i=0;i<2;i++){
+      anim.particles.push({
+        x:c*CELL + CELL/2 + (Math.random()-.5)*CELL*0.7,
+        y:r*CELL + CELL/2 + (Math.random()-.5)*CELL*0.7,
+        vx:(0.04 + Math.random()*0.16)*CELL, vy:-(0.03+Math.random()*0.11)*CELL,
+        r:CELL*(0.05+Math.random()*0.07), col:(Math.random()<.5?'#fff6e6':'#f2b25c'),
+        life:520, max:520
+      });
+    }
+  }
+}
+
+/* ═══════════ 단계 진행 ═══════════ */
+function stageClear(){
+  S.phase = 'idle';
+  /* 결과 화면 동안은 '실행 중'이 아니다 — finish()·gameOver() 와 같은 규칙.
+     여기서 running 을 켜 둔 채 탭을 전환하면 away() 가 멈춤 카드를 겹쳐 띄운다 */
+  S.running = false;
+  /* "남은 빵이 많을수록"이 아니라 "진열대가 정리돼 있을수록" 보너스 — 좋은 플레이와 같은 방향 */
+  var tidy = (ROWS - stackHeight(S.grid)) * 15;
+  S.score += tidy;
+  S.grid = makeGrid(); boardDirty = true;
+  SFX.stage();
+  updateHUD();
+  if (S.stage + 1 >= STAGES.length){ finish(); return; }
+  $('#scSub').textContent = L('fnStageSub')(STAGES[S.stage+1].hour);
+  $('#scScore').textContent = S.score;
+  $('#scLines').textContent = S.bestLines;
+  $('#scTidy').textContent = '+' + tidy;
+  show('#ovStage');
+}
+function nextStage(){
+  hideAll();                                       // 겹쳐 떠 있는 게 있어도 여기서 전부 내린다
+  S.stage++;
+  /* S.slow 는 런 단위 설정이다 — 시간대가 바뀐다고 말없이 꺼지면
+     속도가 버거워 켠 사람이 아무 안내 없이 원래 속도를 다시 만난다 */
+  S.stageStartScore = S.score; S.stageFails = 0;
+  resetStage();
+  applySky();
+  updateHUD();
+  S.running = true; last = 0;
+  spawn();
+}
+function finish(){
+  S.running = false;
+  /* 멈춰 있던 시간은 구운 시간이 아니다 — 쉬는 시간에 앱을 잠깐 전환했다고
+     '3~10분 완결'을 내세운 화면이 11분을 띄우면 안 된다 */
+  if (S.paused && S.pauseAt){ S.pausedMs += Date.now() - S.pauseAt; S.pauseAt = 0; }
+  S.elapsed = Math.max(0, Date.now() - S.startedAt - S.pausedMs);
+  if (S.score > save.best) save.best = S.score;
+  if (S.bestLines > save.bestLines) save.bestLines = S.bestLines;
+  save.cleared = true; persist();
+  SFX.done();
+  $('#dScore').textContent = S.score;
+  $('#dLines').textContent = S.bestLines;
+  $('#dTime').textContent = fmtTime(S.elapsed);
+  $('#dRec').textContent = L('fnBest')(save.best);
+  show('#ovDone');
+  fireComplete();
+}
+function fireComplete(){
+  if (S.fired) return;                             // 한 런에 한 번만 — 재시작할 때 되돌린다
+  S.fired = true;
+  try{
+    if (typeof gtag === 'function'){               // 차단돼도 게임은 계속 돈다
+      gtag('event','game_complete',{
+        game_id:SLUG, scene:'journey', result:'clear', lang:lang,
+        score:S.score, best_lines:S.bestLines
+      });
+    }
+  }catch(e){}
+}
+function gameOver(){
+  S.phase = 'idle'; S.running = false;
+  SFX.over();
+  if (S.mode === 'journey') S.stageFails++;
+  var bk = bestKey();
+  if (S.score > save[bk]) save[bk] = S.score;
+  if (S.bestLines > save.bestLines) save.bestLines = S.bestLines;
+  persist();
+  $('#oSub').textContent = (S.mode === 'free') ? L('overF') : L('fnOverJ')(S.stage+1);
+  $('#oScore').textContent = S.score;
+  $('#oLines').textContent = S.bestLines;
+  $('#oBest').textContent = save[bk];
+  /* 같은 시간대에서 두 번 넘치면 세 번째부터 조용히 뜬다.
+     한 번 켠 뒤에는 끌 수도 있어야 하니 켜져 있는 동안은 계속 보인다 */
+  $('#slowRow').hidden = !(S.mode === 'journey' && (S.slow || S.stageFails >= 2));
+  syncSlowBtn();
+  show('#ovOver');
+}
+function fmtTime(ms){
+  var s = Math.round(ms/1000);
+  return Math.floor(s/60) + ':' + ('0'+(s%60)).slice(-2);
+}
+function applySky(){
+  var i = (S.mode === 'journey') ? Math.min(S.stage, SKY.length-1) : 2;
+  document.documentElement.style.setProperty('--sky', SKY[i]);
+}
+
+function updateHUD(){
+  $('#vScore').textContent = S.score;
+  var vg = $('#vGoal'), gf = $('#goalFill'), dots = $('#dots'), lbl = $('#goalLabel'), hr = $('#vHour');
+  if (S.mode === 'free'){
+    lbl.textContent = L('level');
+    hr.textContent = '';
+    vg.textContent = 'Lv ' + S.level;
+    gf.style.width = ((S.freeLines % 8) / 8 * 100) + '%';
+    dots.style.display = 'none';
+  } else {
+    lbl.textContent = L('order');
+    hr.textContent = STAGES[S.stage].hour;
+    dots.style.display = 'flex';
+    vg.textContent = Math.min(S.lines, STAGES[S.stage].goal) + '/' + STAGES[S.stage].goal;
+    gf.style.width = Math.min(100, S.lines / STAGES[S.stage].goal * 100) + '%';
+    if (dots.children.length !== STAGES.length){
+      dots.innerHTML = '';
+      for (var i=0;i<STAGES.length;i++) dots.appendChild(document.createElement('i'));
+    }
+    for (var j=0;j<STAGES.length;j++) dots.children[j].className = (j < S.stage) ? 'on' : '';
+  }
+}
+
+var tostT = 0;
+function toast(msg){
+  var el = $('#tost');
+  el.textContent = msg; el.classList.add('on');
+  clearTimeout(tostT);
+  tostT = setTimeout(function(){ el.classList.remove('on'); }, 1400);
+}
+
+/* ═══════════ 루프 ═══════════ */
+var last = 0;
+function frame(ts){
+  requestAnimationFrame(frame);
+  if (!last) last = ts;
+  var dt = ts - last;
+  last = ts;
+  if (dt > 100) dt = 100;            // 백그라운드에 있던 탭이 한 프레임에 몰아치지 않게
+
+  if (S.running && !S.paused){
+    var i;
+    for (i=anim.particles.length-1;i>=0;i--){
+      var p = anim.particles[i];
+      p.life -= dt;
+      if (p.life <= 0){ anim.particles.splice(i,1); continue; }
+      p.x += p.vx*dt/16; p.y += p.vy*dt/16; p.vy += 0.0035*CELL*dt/16;
+    }
+    for (i=anim.banners.length-1;i>=0;i--){
+      anim.banners[i].life -= dt;
+      if (anim.banners[i].life <= 0) anim.banners.splice(i,1);
+    }
+    if (anim.shake > 0) anim.shake = Math.max(0, anim.shake - dt*0.03);
+
+    if (S.phase === 'play' && S.cells){
+      /* 키보드 DAS — 첫 반복까지 170ms, 이후 45ms */
+      if (keyDir){
+        dasT += dt;
+        if (!dasFired){ if (dasT >= DAS_MS){ dasFired = true; dasT = 0; tryMove(keyDir); } }
+        else while (dasT >= ARR_MS){ dasT -= ARR_MS; tryMove(keyDir); }
+      }
+      var iv = S.softDrop ? SOFT_MS : fallInterval();
+      S.fallT += dt;
+      while (S.fallT >= iv){
+        S.fallT -= iv;
+        if (!fits(S.cells, S.x, S.y+1)) break;
+        S.y++;
+        if (S.softDrop) S.score += 1;
+        onDescend();
+      }
+      if (S.cells && !fits(S.cells, S.x, S.y+1)) groundTick(dt);
+      else S.lockT = 0;
+    } else if (S.phase === 'clear'){
+      anim.clearT += dt;
+      if (anim.clearT >= CLEAR_MS) endClear();
+    } else if (S.phase === 'collapse'){
+      anim.collapseT += dt;
+      if (anim.collapseT >= COLLAPSE_MS) endCollapse();
+    }
+  }
+  draw();
+}
+
+/* ═══════════ 시작 / 오버레이 ═══════════ */
+function resetStage(){
+  S.grid = makeGrid(); boardDirty = true;
+  S.cells = null; S.kind = -1;
+  S.lines = 0; S.piecesInStage = 0; S.ovenStep = 0; S.streak = 0;
+  S.softDrop = false;
+  /* 멈춘 채로 '다시'를 눌렀다면 멈춰 있던 만큼은 여기서 걷어 두고 푼다 */
+  if (S.paused && S.pauseAt) S.pausedMs += Date.now() - S.pauseAt;
+  S.pauseAt = 0; S.paused = false;
+  anim.clearRows = null; anim.rise = null; anim.particles = []; anim.banners = []; anim.shake = 0;
+  $('#screenWrap').classList.remove('hot');
+  releaseHold();
+}
+function startGame(mode){
+  S.mode = mode; S.stage = 0; S.level = 1;
+  S.score = 0; S.stageStartScore = 0;
+  S.bestLines = 0; S.linesTotal = 0; S.freeLines = 0;
+  S.stageFails = 0; S.slow = false;
+  S.fired = false; S.startedAt = Date.now(); S.pausedMs = 0; S.pauseAt = 0;
+  S.bag = []; S.nextKind = firstDraw();
+  resetStage();
+  hideAll();
+  applySky();
+  updateHUD();
+  S.running = true; last = 0;
+  spawn();
+}
+function retryStage(){
+  S.score = S.stageStartScore;                     // 벌이 아니라 되감기 — 0부터 다시가 아니다
+  S.bag = []; S.nextKind = firstDraw();
+  resetStage();
+  hideAll();
+  updateHUD();
+  S.running = true; last = 0;
+  spawn();
+}
+function pause(on){
+  if (!S.running) return;
+  if (on){
+    if (!S.paused){ S.paused = true; S.pauseAt = Date.now(); }   // 멈춘 시각은 처음 한 번만
+    releaseHold(); show('#ovPause');
+  } else {
+    if (S.paused){
+      S.paused = false;
+      if (S.pauseAt) S.pausedMs += Date.now() - S.pauseAt;
+      S.pauseAt = 0;
+    }
+    last = 0; hide('#ovPause');
+  }
+}
+var OVS = ['#ovStart','#ovPause','#ovStage','#ovDone','#ovOver'];
+/* 오버레이가 덮고 있는 동안 뒤쪽 UI 는 탭 순서에서도 빠진다 —
+   안 그러면 카드 뒤 안 보이는 버튼으로 포커스가 넘어가 어디 있는지 알 수 없다 */
+var BEHIND = ['header','#hud','#tray','#pad'];
+function syncInert(){
+  var v = overlayOpen();
+  BEHIND.forEach(function(s){ var el = $(s); if (el) el.toggleAttribute('inert', v); });
+}
+function show(sel){ releaseHold(); $(sel).classList.add('on'); syncInert(); }
+function hide(sel){ $(sel).classList.remove('on'); syncInert(); }
+function hideAll(){ OVS.forEach(function(s){ $(s).classList.remove('on'); }); syncInert(); }
+function overlayOpen(){ return OVS.some(function(s){ return $(s).classList.contains('on'); }); }
+/* 오버레이 버튼은 '열려 있는 동안 딱 한 번'만 동작한다 — 연타·엔터 중복 진행 차단 */
+function ovOnce(sel, fn){
+  return function(){
+    var ov = $(sel);
+    if (!ov.classList.contains('on')) return;
+    ov.classList.remove('on');
+    syncInert();
+    fn();
+  };
+}
+
+/* ═══════════ 입력 ═══════════ */
+var holdT = 0, holdI = 0, keyDir = 0, dasT = 0, dasFired = false;
+/* softHold 는 '손가락/키가 눌려 있는가'이고 S.softDrop 은 '지금 조각이 빨리 내려가는가'다.
+   조각이 잠길 때 후자만 꺼지고 전자는 남아야 누른 채로 다음 조각이 이어진다 */
+var softHold = false;
+function setSoft(v){ softHold = !!v; S.softDrop = !!v; }
+function releaseHold(){
+  clearTimeout(holdT); clearInterval(holdI); holdT = holdI = 0;
+  setSoft(false); keyDir = 0; dasT = 0; dasFired = false;
+  $$('.pbtn').forEach(function(b){ b.classList.remove('hit'); });
+}
+function bindBtn(sel, fn, opts){
+  var el = $(sel);
+  opts = opts || {};
+  el.addEventListener('pointerdown', function(e){
+    e.preventDefault();
+    SFX.boot();                          // 첫 제스처에서 오디오 컨텍스트 기동
+    if (overlayOpen()) return;
+    try{ el.setPointerCapture(e.pointerId); }catch(err){}
+    el.classList.add('hit');
+    if (opts.hold){
+      fn(true);
+      clearTimeout(holdT); clearInterval(holdI);
+      if (!opts.sustain){
+        holdT = setTimeout(function(){ holdI = setInterval(function(){ fn(true); }, ARR_MS); }, DAS_MS);
+      }
+    } else {
+      fn(true);
+    }
+  });
+  function up(e){
+    if (e && e.cancelable) e.preventDefault();
+    el.classList.remove('hit');
+    clearTimeout(holdT); clearInterval(holdI); holdT = holdI = 0;
+    if (opts.sustain) fn(false);
+  }
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+  el.addEventListener('pointerleave', up);
+  el.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+}
+bindBtn('#bL', function(){ tryMove(-1); }, {hold:true});
+bindBtn('#bR', function(){ tryMove(1); }, {hold:true});
+bindBtn('#bD', function(down){ setSoft(down); }, {hold:true, sustain:true});
+bindBtn('#bC', function(){ rotate(1); });
+bindBtn('#bH', hardDrop);
+
+/* 필드 제스처 — 끌면 이동, 툭 치면 시계 회전, 두 손가락은 반시계, 아래로 쓸면 바로 굽기 */
+(function(){
+  var sx=0, sy=0, st=0, moved=0, active=false, pid=null, touches=0, two=false;
+  fld.addEventListener('pointerdown', function(e){
+    SFX.boot();
+    if (overlayOpen() || S.phase !== 'play') return;
+    e.preventDefault();
+    touches++;
+    if (touches >= 2){ two = true; rotate(-1); return; }
+    pid = e.pointerId; active = true; moved = 0; two = false;
+    sx = e.clientX; sy = e.clientY; st = Date.now();
+    try{ fld.setPointerCapture(pid); }catch(err){}
+  });
+  fld.addEventListener('pointermove', function(e){
+    if (!active || e.pointerId !== pid) return;
+    e.preventDefault();
+    /* 누적 좌표로 밀어내야 손가락이 떨려도 칸이 튀지 않는다 */
+    var step = Math.max(24, CELL*0.8);
+    var dx = e.clientX - sx;
+    while (Math.abs(dx) >= step){
+      var d = dx > 0 ? 1 : -1;
+      tryMove(d); moved++;
+      sx += d*step; dx -= d*step;
+    }
+    setSoft((e.clientY - sy) > step);
+  });
+  function end(e){
+    touches = Math.max(0, touches - 1);
+    if (!active || (e && e.pointerId !== pid)) return;
+    active = false; pid = null; setSoft(false);
+    if (!e){ two = false; return; }
+    e.preventDefault();
+    var dy = e.clientY - sy, dt = Date.now() - st;
+    if (two){ two = false; return; }               // 두 손가락 탭은 이미 반시계로 처리했다
+    if (!moved && Math.abs(dy) < 16 && dt < 260) rotate(1);
+    else if (dy > CELL*2.2 && dt < 360) hardDrop();
+  }
+  fld.addEventListener('pointerup', end);
+  /* 취소된 포인터가 끌고 있던 손가락인지 확인한다 — 두 번째 손가락(반시계 회전)이
+     시스템 제스처로 취소됐다고 아직 화면에 붙어 있는 첫 손가락까지 죽이면 안 된다 */
+  fld.addEventListener('pointercancel', function(e){
+    touches = Math.max(0, touches - 1);
+    if (!active || (e && e.pointerId !== pid)) return;
+    active = false; pid = null; two = false; setSoft(false);
+  });
+  fld.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+})();
+
+/* 게임이 가져가는 키 — 이 목록에 없는 키는 브라우저에 그대로 넘긴다 */
+var GKEYS = {
+  'ArrowLeft':1, 'ArrowRight':1, 'ArrowUp':1, 'ArrowDown':1,
+  ' ':1, 'Spacebar':1, 'x':1, 'X':1, 'z':1, 'Z':1
+};
+window.addEventListener('keydown', function(e){
+  if (e.altKey || e.metaKey || e.ctrlKey) return;
+  if (e.key === 'Escape'){
+    if (S.running && !overlayOpen()) pause(true);
+    else if ($('#ovPause').classList.contains('on')) pause(false);
+    return;
+  }
+  if (overlayOpen()) return;
+  /* 헤더 필에 포커스가 있어도 조각은 움직여야 한다. 버튼을 실제로 두 번 누르게 되는
+     스페이스·엔터만 양보하고 나머지 키는 게임이 가져간다 — 소리를 한 번 껐다고
+     그 판 내내 방향키가 죽는 일이 없어야 한다 */
+  var tag = (e.target && e.target.tagName) || '';
+  if ((tag === 'BUTTON' || tag === 'A') && (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter')) return;
+  /* 반복은 브라우저가 아니라 DAS 가 맡는다. 다만 우리가 쓰는 키만 삼킨다 —
+     Tab 을 꾹 눌러 헤더를 훑는 키보드 사용자까지 막을 이유는 없다 */
+  if (e.repeat){ if (GKEYS[e.key]) e.preventDefault(); return; }
+  switch (e.key){
+    case 'ArrowLeft':  keyDir = -1; dasT = 0; dasFired = false; tryMove(-1); e.preventDefault(); break;
+    case 'ArrowRight': keyDir = 1;  dasT = 0; dasFired = false; tryMove(1);  e.preventDefault(); break;
+    case 'ArrowUp': case 'x': case 'X': rotate(1); e.preventDefault(); break;
+    case 'z': case 'Z': rotate(-1); e.preventDefault(); break;
+    case 'ArrowDown': setSoft(true); e.preventDefault(); break;
+    case ' ': hardDrop(); e.preventDefault(); break;
+    case 'p': case 'P': pause(true); break;
+  }
+});
+window.addEventListener('keyup', function(e){
+  if (e.key === 'ArrowDown') setSoft(false);
+  if (e.key === 'ArrowLeft' && keyDir === -1) keyDir = 0;
+  if (e.key === 'ArrowRight' && keyDir === 1) keyDir = 0;
+});
+
+function away(){
+  releaseHold();
+  /* 이미 오버레이가 떠 있으면 그 위에 '잠깐 멈춤'을 겹치지 않는다 —
+     겹치면 앞의 오버레이만 닫혔을 때 멈춤 카드가 유령처럼 남아 입력을 다 막는다 */
+  if (S.running && !S.paused && !overlayOpen()) pause(true);
+  SFX.hush();
+}
+window.addEventListener('blur', away);
+document.addEventListener('visibilitychange', function(){
+  if (document.hidden) away();
+  else if (SFX.ac && SFX.on){ try{ SFX.ac.resume(); }catch(e){} }
+});
+
+/* ═══════════ UI 배선 ═══════════ */
+/* 마우스로 누른 헤더 필에 포커스가 눌러앉지 않게 한다. mousedown 만 막으므로
+   click 은 그대로 나고, 탭으로 옮겨온 키보드 포커스는 건드리지 않는다 */
+['#pauseBtn','#soundBtn','#langBtn'].forEach(function(s){
+  $(s).addEventListener('mousedown', function(e){ e.preventDefault(); });
+});
+
+var pickedMode = 'journey';
+$('#mJ').addEventListener('click', function(){
+  pickedMode = 'journey'; this.classList.add('on'); $('#mF').classList.remove('on'); SFX.boot(); SFX.turn();
+});
+$('#mF').addEventListener('click', function(){
+  pickedMode = 'free'; this.classList.add('on'); $('#mJ').classList.remove('on'); SFX.boot(); SFX.turn();
+});
+$('#startBtn').addEventListener('click', ovOnce('#ovStart', function(){ SFX.boot(); startGame(pickedMode); }));
+$('#scNext').addEventListener('click', ovOnce('#ovStage', nextStage));
+$('#dAgain').addEventListener('click', ovOnce('#ovDone', function(){ startGame('journey'); }));
+$('#dFree').addEventListener('click', ovOnce('#ovDone', function(){ startGame('free'); }));
+$('#oRetry').addEventListener('click', ovOnce('#ovOver', function(){
+  if (S.mode === 'free') startGame('free'); else retryStage();
+}));
+$('#oStart').addEventListener('click', ovOnce('#ovOver', function(){ show('#ovStart'); }));
+$('#pResume').addEventListener('click', function(){ pause(false); });   // 재개만 ovOnce 없이
+$('#pRestart').addEventListener('click', ovOnce('#ovPause', retryStage));
+$('#pauseBtn').addEventListener('click', function(){
+  SFX.boot();
+  if (!S.running) return;
+  pause(!S.paused);
+});
+$('#soundBtn').addEventListener('click', function(){
+  SFX.boot();
+  SFX.setOn(!SFX.on);
+  syncSoundBtn();
+  if (SFX.on) SFX.turn();
+});
+function syncSoundBtn(){
+  var b = $('#soundBtn');
+  b.textContent = SFX.on ? '🔊' : '🔇';
+  b.classList.toggle('off', !SFX.on);
+  b.setAttribute('aria-label', SFX.on ? L('soundOff') : L('soundOn'));
+}
+$('#langBtn').addEventListener('click', function(){
+  SFX.boot(); SFX.turn();
+  lang = LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length];
+  store.set('in9-lang', lang);
+  applyI18n();
+});
+
+/* 손잡이 토글 — 큰 굽기 버튼이 쓰는 손 엄지 쪽으로 온다 */
+var lefty = (store.get(HAND_KEY) === 'L');
+function syncHand(){
+  $('#pad').classList.toggle('lefty', lefty);
+  var t = lefty ? L('handL') : L('handR');
+  ['#handBtn','#pHandBtn'].forEach(function(s){
+    var b = $(s);
+    b.textContent = t;
+    b.classList.toggle('on', lefty);
+    b.setAttribute('aria-label', L('handAria'));
+  });
+}
+function toggleHand(){
+  SFX.boot(); SFX.turn();
+  lefty = !lefty;
+  store.set(HAND_KEY, lefty ? 'L' : 'R');
+  syncHand();
+}
+$('#handBtn').addEventListener('click', toggleHand);
+$('#pHandBtn').addEventListener('click', toggleHand);
+
+function syncSlowBtn(){
+  var b = $('#slowBtn');
+  b.textContent = S.slow ? L('slowOn') : L('slowOff');
+  b.classList.toggle('on', S.slow);
+  b.setAttribute('aria-label', L('slowLab'));
+}
+$('#slowBtn').addEventListener('click', function(){
+  SFX.boot(); SFX.turn();
+  S.slow = !S.slow;
+  syncSlowBtn();
+});
+
+/* ═══════════ i18n 적용 ═══════════ */
+function applyI18n(){
+  document.documentElement.lang = lang;
+  $('#titleMain').textContent = NAMES[lang];
+  $('#startTitle').textContent = NAMES[lang];
+  $('#titleSub').textContent = LANGS.filter(function(l){ return l !== lang; })
+                                    .map(function(l){ return NAMES[l]; }).join(' · ');
+  $$('[data-i]').forEach(function(el){
+    var v = L(el.getAttribute('data-i'));
+    if (typeof v === 'string') el.innerHTML = v;      // data-i 는 내가 쓴 UI 문구만 — 데이터는 절대 안 넣는다
+  });
+  $('#langBtn').textContent = LANG_FLAG[lang];
+  $('#langBtn').setAttribute('aria-label', L('langAria'));
+  $('#pauseBtn').setAttribute('aria-label', L('pauseAria'));
+  /* aria-label 은 안쪽 글자를 덮으므로 여기서 같이 갈지 않으면 읽히는 이름만 영어로 남는다 */
+  [['#bL','moveL'],['#bR','moveR'],['#bD','down'],['#bC','turn'],['#bH','bake']]
+    .forEach(function(p){ $(p[0]).setAttribute('aria-label', L(p[1])); });
+  syncSoundBtn(); syncHand(); syncSlowBtn();
+  /* 열려 있는 오버레이의 '동적' 문장은 여기서 다시 써 준다 */
+  if ($('#ovStage').classList.contains('on') && S.stage + 1 < STAGES.length){
+    $('#scSub').textContent = L('fnStageSub')(STAGES[S.stage+1].hour);
+  }
+  if ($('#ovOver').classList.contains('on')){
+    $('#oSub').textContent = (S.mode === 'free') ? L('overF') : L('fnOverJ')(S.stage+1);
+  }
+  if ($('#ovDone').classList.contains('on')) $('#dRec').textContent = L('fnBest')(save[bestKey()]);
+  updateHUD();
+  drawHow();                                          // 캔버스 그림은 data-i 스윕이 못 닿는다
+}
+
+/* ═══════════ 부팅 ═══════════ */
+lang = detectLang();
+S.bag = refillBag();
+S.nextKind = firstDraw();
+applySky();
+layout();
+applyI18n();
+updateHUD();
+syncInert();                                       // 부팅 시점엔 시작 카드가 이미 떠 있다
+
+var rzT = 0;
+function relayout(){ clearTimeout(rzT); rzT = setTimeout(layout, 110); }
+if (window.ResizeObserver) new ResizeObserver(relayout).observe($('#cab'));
+window.addEventListener('resize', relayout);
+window.addEventListener('orientationchange', function(){ setTimeout(layout, 320); });
+setTimeout(layout, 80);
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
