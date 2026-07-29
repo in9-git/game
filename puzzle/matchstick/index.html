@@ -3,13 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="성냥 1개를 옮겨 식을 완성하는 매일 3문제 퍼즐">
+<meta name="description" content="성냥을 옮겨 식을 완성하는 6단계 퍼즐">
 <title>성냥개비 수수께끼</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --paper:#f5ecd9; --card1:#fbf5e6; --card2:#f5ebd3;
-  --ink:#4a3527; --ink-soft:#7d6448; --ink-faint:rgba(125,100,72,.72);
+  /* --ink-faint 는 .sub/.note/.movecount/.st-txt i 가 쓴다. 반투명일 때 대비가
+     2.9:1 밖에 안 나와 작은 글씨가 AA(4.5:1) 에 걸렸다 → 불투명 값으로 고정 */
+  --ink:#4a3527; --ink-soft:#7d6448; --ink-faint:#6f5940;
   --line:rgba(146,108,63,.30);
   --wood1:#ecc98f; --wood2:#d3a05e; --wood3:#b47c41;
   --head1:#f08054; --head2:#c33f22; --head3:#8d2717;
@@ -34,21 +39,30 @@ header{display:flex;align-items:center;gap:8px;margin-bottom:4px}
 .titles{flex:1;text-align:center;min-width:0;padding:2px 0}
 h1{font-size:clamp(1.32rem,5.4vw,1.78rem);font-weight:800;letter-spacing:-.02em;line-height:1.15;
    background:linear-gradient(180deg,#5b402a,#3e2c1c);-webkit-background-clip:text;background-clip:text;color:transparent}
-.sub{font-size:.7rem;color:var(--ink-faint);letter-spacing:.05em;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub{font-size:.7rem;color:var(--ink-faint);letter-spacing:.05em;margin-top:3px}
+/* 좁은 화면에서는 3개국어 병기 부제가 항상 잘렸다 — 줄바꿈을 허용한다 */
+@media (max-width:430px){.sub{line-height:1.35}}
+@media (min-width:431px){.sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
 button{font:inherit;border:none;background:none;cursor:pointer;color:inherit;-webkit-tap-highlight-color:transparent}
-.chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:rgba(255,252,242,.78);
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+  clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+:focus-visible{outline:3px solid #8a4a12;outline-offset:2px}
+.chip{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:44px;
+  border:1px solid var(--line);background:rgba(255,252,242,.78);
   border-radius:999px;padding:7px 11px;font-size:.76rem;font-weight:700;color:var(--ink-soft);
   box-shadow:0 1px 3px rgba(120,84,40,.14), inset 0 1px 0 rgba(255,255,255,.7);
   transition:transform .15s ease;text-decoration:none;white-space:nowrap}
 .chip:active{transform:scale(.93)}
 .top-btns{display:flex;gap:6px}
 /* ---------- progress ---------- */
-.progress{display:flex;align-items:center;justify-content:center;gap:16px;margin:12px 0 12px}
-.dots{display:flex;gap:12px;align-items:flex-end}
+.progress{display:flex;align-items:center;justify-content:center;gap:14px;margin:10px 0 12px}
+.dots{display:flex;gap:10px;align-items:flex-end}
 .pm{position:relative;width:10px;height:40px;opacity:.42;transition:opacity .4s ease,transform .4s ease}
 .pm:nth-child(1){transform:rotate(-7deg)}
 .pm:nth-child(2){transform:rotate(2deg)}
 .pm:nth-child(3){transform:rotate(8deg)}
+.pm:nth-child(4){transform:rotate(-4deg)}
+.pm:nth-child(5){transform:rotate(6deg)}
 .pm-stick{position:absolute;left:2.6px;top:9px;width:4.8px;height:30px;border-radius:2.4px;
   background:linear-gradient(90deg,var(--wood1),var(--wood2) 60%,var(--wood3))}
 .pm-head{position:absolute;left:.7px;top:0;width:8.4px;height:10.5px;border-radius:50% 50% 46% 46%;
@@ -57,17 +71,49 @@ button{font:inherit;border:none;background:none;cursor:pointer;color:inherit;-we
   border-radius:50% 50% 50% 50%/62% 62% 38% 38%;
   background:radial-gradient(circle at 50% 68%,#fff6cf,#ffcf5e 45%,#ff9430 76%,rgba(255,110,30,0));
   opacity:0;transform:scale(.3);transform-origin:50% 90%;transition:opacity .35s,transform .35s}
+/* 상태를 투명도로만 주면 회색조에서 cur 와 lit 이 구별되지 않는다 —
+   cur 에는 밑줄, lit 에는 굵은 몸통이라는 형태 단서를 함께 준다 */
 .pm.cur{opacity:.85}
+.pm.cur::after{content:'';position:absolute;left:-2px;right:-2px;bottom:-5px;height:2.5px;
+  border-radius:2px;background:var(--ink-soft)}
 .pm.lit{opacity:1}
+.pm.lit .pm-stick{left:1.4px;width:7.2px}
+.pm.off{display:none}
 .pm.lit .pm-flame{opacity:1;transform:scale(1);animation:pmflick .24s infinite alternate ease-in-out}
 @keyframes pmflick{to{transform:scale(.88) translateY(.6px)}}
 #probLabel{font-size:.86rem;font-weight:700;color:var(--ink-soft);letter-spacing:.02em}
+/* ---------- stage bar / stage select ---------- */
+.stagebar{display:flex;align-items:center;gap:8px;margin:10px 0 0}
+.stagebar .chip{padding:6px 10px;font-size:.72rem}
+.sb-gap{flex:none;width:58px}
+.stagename{flex:1;min-width:0;text-align:center;font-size:.84rem;font-weight:800;
+  color:var(--ink-soft);letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stages{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+.stage-btn{display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+  border:1.5px solid var(--line);border-radius:18px;padding:12px 14px;
+  background:rgba(255,252,242,.82);box-shadow:0 2px 7px rgba(120,84,40,.1);
+  transition:transform .15s ease,box-shadow .2s ease}
+.stage-btn:active{transform:scale(.98)}
+.st-no{flex:none;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:.85rem;color:#fff9ec;
+  background:linear-gradient(180deg,var(--amber1),var(--amber2));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+.st-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.st-txt b{font-size:.95rem;font-weight:800}
+.st-txt i{font-style:normal;font-size:.75rem;color:var(--ink-faint);line-height:1.35}
+.st-mark{flex:none;font-size:1rem}
+.stage-btn.locked{opacity:.55;cursor:default;box-shadow:none;background:rgba(238,229,209,.6)}
+.stage-btn.locked .st-no{background:#cbb99b;color:#f4ede1;box-shadow:none}
+.stage-btn.done .st-no{background:linear-gradient(180deg,#f5aa4d,#c8541f)}
 /* ---------- card ---------- */
 .card{position:relative;background:linear-gradient(180deg,var(--card1),var(--card2));
   border:1px solid var(--line);border-radius:24px;padding:18px 12px 18px;
   box-shadow:0 18px 44px rgba(120,84,40,.17), inset 0 2px 0 rgba(255,255,255,.65)}
 .inst{text-align:center;font-size:.92rem;color:var(--ink-soft);margin-bottom:2px}
 .inst b{color:var(--accent)}
+.note{text-align:center;font-size:.76rem;color:var(--ink-faint);margin-bottom:2px}
+.movecount{text-align:center;font-size:.78rem;font-weight:700;color:var(--ink-faint);
+  margin-top:6px;letter-spacing:.02em}
 .board-wrap{position:relative;max-width:474px;margin:0 auto}
 #board{width:100%;height:auto;display:block;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 .stick-layer{filter:drop-shadow(0 2.5px 1.8px rgba(96,60,22,.28))}
@@ -77,10 +123,25 @@ button{font:inherit;border:none;background:none;cursor:pointer;color:inherit;-we
 .stick.static{cursor:default}
 .stick.hintblink{animation:hintb .55s ease-in-out 4}
 @keyframes hintb{50%{filter:drop-shadow(0 0 3px rgba(255,220,120,1)) drop-shadow(0 0 9px rgba(255,150,40,.95))}}
+/* .ring — 색·빛이 아닌 '테두리 모양'으로 상태를 알린다.
+   회색조에서도, 모션을 끈 환경에서도 남는 유일한 단서라 애니메이션 밖에 둔다.
+   힌트 > 집음 > 옮김 순으로 뒤 규칙이 이긴다. */
+.ring{opacity:0;transition:opacity .18s ease}
+.stick.moved .ring{opacity:1;stroke-dasharray:3.5 3}
+.stick.lifted .ring{opacity:1;stroke-dasharray:none;stroke-width:2.6}
+.stick.hintblink .ring{opacity:1;stroke-dasharray:none;stroke-width:3;stroke:#7a3208}
+.stick:focus-visible{outline:none}
+.stick:focus-visible .ring{opacity:1;stroke-dasharray:none;stroke-width:3.4;stroke:#2f1f12}
 .slot{transform-box:view-box;transform-origin:0 0;opacity:0;pointer-events:none;transition:opacity .22s ease}
+/* 옮긴 성냥이 떠나온 자리는 흐리게 남겨 둔다 — 무엇을 건드렸는지 되짚을 수 있게 */
+.slot.ghost{opacity:.45}
 .slot.show{opacity:1;pointer-events:auto;cursor:pointer}
 .slot.show .slot-dash{animation:slotpulse 1.15s ease-in-out infinite}
-@keyframes slotpulse{50%{stroke-opacity:.32;fill-opacity:.04}}
+/* 점선 테두리는 흐려지지 않게 둔다 — 굽이의 바닥값이 비텍스트 3:1 에 아슬아슬했다.
+   숨쉬는 느낌은 안쪽 채움만으로 낸다 */
+@keyframes slotpulse{50%{fill-opacity:.045}}
+.slot:focus-visible{outline:none}
+.slot:focus-visible .slot-dash{stroke:#2f1f12;stroke-width:3.2;stroke-dasharray:none}
 .flamedot{pointer-events:none;transform-box:fill-box;transform-origin:center;animation:fdflick .13s infinite alternate ease-in-out}
 @keyframes fdflick{to{opacity:.55;transform:scale(.82)}}
 #eqG.eqshake{animation:eqsh .4s ease}
@@ -101,9 +162,13 @@ button{font:inherit;border:none;background:none;cursor:pointer;color:inherit;-we
   opacity:0;transition:opacity .25s;margin-top:8px}
 .msg.show{opacity:1}
 .controls{display:flex;gap:10px;justify-content:center;align-items:center;margin-top:12px;flex-wrap:wrap}
-.btn{border-radius:999px;padding:12px 22px;font-weight:800;font-size:.98rem;
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;
+  border-radius:999px;padding:12px 22px;font-weight:800;font-size:.98rem;
   transition:transform .15s ease,box-shadow .2s ease}
 .btn:active{transform:scale(.94)}
+/* 힌트는 오답 3회째에 나타난다. display:none 으로 숨기면 그때 검사 버튼이
+   옆으로 밀려 방금 누른 자리가 힌트 버튼이 된다 → 자리를 미리 잡아 둔다 */
+.btn.invis{visibility:hidden;pointer-events:none}
 .btn-primary{background:linear-gradient(180deg,var(--amber1),var(--amber2));color:#fff9ec;padding:12px 32px;
   box-shadow:0 7px 16px rgba(204,130,30,.38), inset 0 1.5px 0 rgba(255,255,255,.55);
   text-shadow:0 1px 1px rgba(140,80,10,.35)}
@@ -114,12 +179,15 @@ button{font:inherit;border:none;background:none;cursor:pointer;color:inherit;-we
 @keyframes popin{from{opacity:0;transform:scale(.6)}}
 .foot{text-align:center;font-size:.74rem;color:var(--ink-faint);margin-top:15px;letter-spacing:.02em}
 /* ---------- done overlay ---------- */
+/* align-items:center + overflow 없음 이면 가로 화면에서 카드 위아래가 잘리고
+   스크롤도 안 됐다. flex-start + margin:auto 면 들어갈 땐 가운데, 넘칠 땐 스크롤 */
 .overlay{position:fixed;inset:0;z-index:20;background:rgba(56,38,20,.46);
   -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
-  display:flex;align-items:center;justify-content:center;padding:22px;
+  display:flex;align-items:flex-start;justify-content:center;padding:22px;
+  overflow-y:auto;overscroll-behavior:contain;
   opacity:0;pointer-events:none;transition:opacity .45s ease}
 .overlay.show{opacity:1;pointer-events:auto}
-.done-card{background:linear-gradient(180deg,#fcf6e8,#f4e9d1);border:1px solid var(--line);
+.done-card{margin:auto 0;background:linear-gradient(180deg,#fcf6e8,#f4e9d1);border:1px solid var(--line);
   border-radius:28px;padding:26px 24px 26px;max-width:350px;width:100%;text-align:center;
   box-shadow:0 26px 64px rgba(40,24,8,.42), inset 0 2px 0 rgba(255,255,255,.7);
   transform:translateY(16px) scale(.95);transition:transform .45s cubic-bezier(.3,1.4,.6,1)}
@@ -159,8 +227,10 @@ button{font:inherit;border:none;background:none;cursor:pointer;color:inherit;-we
 .done-t{font-size:1.32rem;font-weight:800;margin-bottom:7px;opacity:0;transform:translateY(9px);transition:opacity .5s,transform .5s}
 .done-s{font-size:.88rem;color:var(--ink-soft);line-height:1.5;margin-bottom:19px;opacity:0;transform:translateY(9px);
   transition:opacity .5s .08s,transform .5s .08s}
-.done-btns{display:flex;gap:10px;justify-content:center;opacity:0;transform:translateY(9px);
+.done-btns{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;opacity:0;transform:translateY(9px);
   transition:opacity .5s .16s,transform .5s .16s}
+.done-btns .btn{padding:11px 18px;font-size:.92rem}
+.done-btns .btn-primary{padding:11px 24px}
 .done-card.reveal .done-t,.done-card.reveal .done-s,.done-card.reveal .done-btns{opacity:1;transform:none}
 a.btn{text-decoration:none;display:inline-flex;align-items:center}
 @media (min-width:700px){
@@ -168,8 +238,33 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
   .card{padding:24px 22px 22px}
   .inst{font-size:1rem;margin-bottom:8px}
 }
+/* 가로로 눕히면 판과 검사 버튼이 한 화면에 안 들어왔다(버튼이 뷰포트 밖 523px).
+   남는 가로 폭을 써서 판 | 글·버튼 2열로 접는다 */
+@media (orientation:landscape) and (max-height:460px){
+  .wrap{max-width:940px;padding:6px 16px calc(8px + env(safe-area-inset-bottom))}
+  h1{font-size:1.06rem}
+  .sub{display:none}
+  header{margin-bottom:0}
+  .stagebar{margin:4px 0 0}
+  .progress{margin:3px 0 4px;gap:10px}
+  .pm{height:28px}
+  .pm-stick{top:7px;height:20px}
+  .card{display:grid;align-content:center;column-gap:16px;padding:10px 14px;
+    grid-template-columns:minmax(0,1fr) minmax(0,290px);
+    grid-template-areas:"board inst" "board note" "board count" "board msg" "board ctrl"}
+  .board-wrap{grid-area:board;align-self:center;max-width:430px}
+  .inst{grid-area:inst}.note{grid-area:note}.movecount{grid-area:count}
+  .msg{grid-area:msg}.controls{grid-area:ctrl;margin-top:8px}
+  .foot{margin-top:7px}
+  .stages{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .stage-btn{padding:9px 12px}
+  .scene{height:104px}.big-match{height:80px}.bm-stick{height:62px}
+}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  /* 힌트 반짝임은 keyframes 안에만 있어 위 규칙에 통째로 죽는다.
+     .ring 은 애니메이션과 무관한 정적 표시라 여기서도 그대로 남는다 */
+  .stick.hintblink .ring{opacity:1}
 }
 </style>
 </head>
@@ -185,40 +280,58 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
     <a class="chip" id="homeBtn" href="../../index.html">← 홈</a>
     <div class="titles"><h1 id="titleH">성냥개비 수수께끼</h1><p class="sub" id="subH">マッチ棒なぞなぞ · Matchstick Riddles</p></div>
     <div class="top-btns">
-      <button class="chip" id="langBtn" aria-label="language">🇰🇷 KO</button>
-      <button class="chip" id="sndBtn" aria-label="sound">🔊</button>
+      <button class="chip" id="langBtn">🇰🇷 KO</button>
+      <button class="chip" id="sndBtn" aria-pressed="true">🔊</button>
     </div>
   </header>
 
-  <div class="progress">
-    <div class="dots" id="dots">
-      <div class="pm"><div class="pm-flame"></div><div class="pm-stick"></div><div class="pm-head"></div></div>
-      <div class="pm"><div class="pm-flame"></div><div class="pm-stick"></div><div class="pm-head"></div></div>
-      <div class="pm"><div class="pm-flame"></div><div class="pm-stick"></div><div class="pm-head"></div></div>
+  <div id="gameView">
+    <div class="stagebar">
+      <button class="chip" id="backSel">← 단계</button>
+      <div class="stagename" id="stageName">1단계 · 첫 걸음</div>
+      <span class="sb-gap" aria-hidden="true"></span>
     </div>
-    <div id="probLabel">문제 1 / 3</div>
+
+    <div class="progress">
+      <div class="dots" id="dots" aria-hidden="true">
+        <div class="pm"><div class="pm-flame"></div><div class="pm-stick"></div><div class="pm-head"></div></div>
+        <div class="pm"><div class="pm-flame"></div><div class="pm-stick"></div><div class="pm-head"></div></div>
+        <div class="pm"><div class="pm-flame"></div><div class="pm-stick"></div><div class="pm-head"></div></div>
+        <div class="pm"><div class="pm-flame"></div><div class="pm-stick"></div><div class="pm-head"></div></div>
+        <div class="pm"><div class="pm-flame"></div><div class="pm-stick"></div><div class="pm-head"></div></div>
+      </div>
+      <div id="probLabel">문제 1 / 5</div>
+    </div>
+
+    <main class="card">
+      <p class="inst" id="inst" tabindex="-1">성냥 <b>1개</b>를 옮겨 올바른 식을 만드세요</p>
+      <p class="note hidden" id="note"></p>
+      <div class="board-wrap" id="boardWrap">
+        <svg id="board" viewBox="0 0 392 176" role="group"></svg>
+        <div class="bang" id="bang" aria-hidden="true"><span id="bangText">정답!</span></div>
+      </div>
+      <p class="sr" id="eqLive" role="status" aria-live="polite"></p>
+      <div class="movecount" id="moveCount" aria-live="polite">옮긴 성냥 0 / 1</div>
+      <div class="msg" id="msg" role="status" aria-live="polite"></div>
+      <div class="controls">
+        <button class="btn btn-ghost" id="resetBtn">되돌리기</button>
+        <button class="btn btn-ghost invis" id="hintBtn">힌트</button>
+        <button class="btn btn-primary" id="checkBtn">검사</button>
+      </div>
+    </main>
+
+    <p class="foot" id="foot">『=』는 고정 · 언제든 다시 도전할 수 있어요</p>
   </div>
 
-  <main class="card">
-    <p class="inst" id="inst">성냥 <b>1개</b>를 옮겨 올바른 식을 만드세요</p>
-    <div class="board-wrap" id="boardWrap">
-      <svg id="board" viewBox="0 0 392 176" role="img"></svg>
-      <div class="bang" id="bang"><span id="bangText">정답!</span></div>
-    </div>
-    <div class="msg" id="msg"></div>
-    <div class="controls">
-      <button class="btn btn-ghost" id="resetBtn">되돌리기</button>
-      <button class="btn btn-ghost hidden" id="hintBtn">힌트</button>
-      <button class="btn btn-primary" id="checkBtn">검사</button>
-    </div>
-  </main>
-
-  <p class="foot" id="foot">『=』는 고정 · 매일 새로운 3문제</p>
+  <section class="card hidden" id="stageView">
+    <h2 class="inst" id="selT" tabindex="-1">단계를 골라 보세요</h2>
+    <div class="stages" id="stages"></div>
+  </section>
 </div>
 
-<div class="overlay" id="doneOverlay">
+<div class="overlay" id="doneOverlay" role="dialog" aria-modal="true" aria-labelledby="doneT" aria-hidden="true">
   <div class="done-card" id="doneCard">
-    <div class="scene" id="scene">
+    <div class="scene" id="scene" aria-hidden="true">
       <div class="big-match">
         <div class="bm-flame"></div>
         <div class="smoke s1"></div><div class="smoke s2"></div><div class="smoke s3"></div>
@@ -226,10 +339,12 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
         <div class="bm-head"></div><div class="bm-stick"></div>
       </div>
     </div>
-    <h2 class="done-t" id="doneT">오늘의 머리 풀기 끝!</h2>
-    <p class="done-s" id="doneS">3문제 모두 해결! 내일 새 문제가 도착해요.</p>
+    <h2 class="done-t" id="doneT">1단계 클리어!</h2>
+    <p class="done-s" id="doneS">다음 단계로 이어서 해볼까요?</p>
     <div class="done-btns">
-      <button class="btn btn-primary" id="againBtn">다시 하기</button>
+      <button class="btn btn-primary" id="nextBtn">다음 단계</button>
+      <button class="btn btn-ghost" id="againBtn">다시 하기</button>
+      <button class="btn btn-ghost" id="selBtn">단계 고르기</button>
       <a class="btn btn-ghost" id="doneHomeBtn" href="../../index.html">홈으로</a>
     </div>
   </div>
@@ -240,31 +355,83 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 'use strict';
 /* ============================== i18n ============================== */
 var STR={
-  ko:{title:'성냥개비 수수께끼',sub:'マッチ棒なぞなぞ · Matchstick Riddles',home:'← 홈',
-    inst:'성냥 <b>1개</b>를 옮겨 올바른 식을 만드세요',prob:'문제 {n} / 3',
+  ko:{title:'성냥개비 수수께끼',sub:'マッチ棒なぞなぞ · Matchstick Riddles',home:'← 홈',back:'← 단계',
+    inst1:'성냥 <b>1개</b>를 옮겨 올바른 식을 만드세요',
+    inst2:'성냥 <b>2개</b>를 옮겨 올바른 식을 만드세요',
+    prob:'문제 {n} / {t}',probA:'문제 {n} / {t}, {d}개 해결',
     check:'검사',hint:'힌트',reset:'되돌리기',correct:'정답!',
     wrong:['아직이에요…','음… 조금 달라요','괜찮아요, 다시 한번!'],
-    needMove:'먼저 성냥을 1개 옮겨 보세요',eqFixed:'『=』 는 움직일 수 없어요',
-    hintOn:'반짝이는 성냥을 옮겨 보세요',
-    doneT:'오늘의 머리 풀기 끝!',doneS:'3문제 모두 해결! 내일 새 문제가 도착해요.',
-    again:'다시 하기',toHome:'홈으로',blow:'후—',foot:'『=』는 고정 · 매일 새로운 3문제'},
-  ja:{title:'マッチ棒なぞなぞ',sub:'성냥개비 수수께끼 · Matchstick Riddles',home:'← ホーム',
-    inst:'マッチ棒を<b>1本</b>動かして正しい式に',prob:'第 {n} 問 / 3',
-    check:'チェック',hint:'ヒント',reset:'もどす',correct:'正解！',
-    wrong:['おしい…','うーん、ちょっとちがう','だいじょうぶ、もう一回！'],
-    needMove:'まずマッチ棒を1本動かしてみて',eqFixed:'「=」は動かせません',
-    hintOn:'光っているマッチを動かしてみて',
-    doneT:'今日の頭の体操はおしまい！',doneS:'3問クリア！明日、新しい問題が届きます。',
-    again:'もう一度',toHome:'ホームへ',blow:'ふ〜',foot:'「=」は固定 · 毎日新しい3問'},
-  en:{title:'Matchstick Riddles',sub:'성냥개비 수수께끼 · マッチ棒なぞなぞ',home:'← Home',
-    inst:'Move <b>one</b> matchstick to fix the equation',prob:'Puzzle {n} / 3',
-    check:'Check',hint:'Hint',reset:'Undo',correct:'Correct!',
+    needMove:'먼저 성냥을 옮겨 보세요',needMore:'성냥을 하나 더 옮겨야 해요',
+    eqFixed:'『=』 는 움직일 수 없어요',hintOn:'테두리 표시된 성냥을 옮겨 보세요',
+    limitBack:'처음 옮긴 성냥이 제자리로 돌아갔어요',
+    moved:'옮긴 성냥 {a} / {b}',manyAns:'답이 하나가 아니에요',
+    selT:'단계를 골라 보세요',lockT:'앞 단계를 먼저 끝내요',stageN:'{n}단계',resumeT:'이어서 하기',
+    stN:['첫 걸음','길이 여럿','한 걸음 멀리','기호를 바꿔','두 개를 옮겨','마지막 한 수'],
+    stD:['한 자리 안에서 성냥 하나를 옮겨요','정답이 하나가 아니에요',
+      '헛다리가 많아 잘 살펴봐야 해요','+와 −를 바꿔야 풀려요',
+      '이번엔 성냥 두 개를 옮겨요','두 개를 옮기는데 답은 하나뿐'],
+    doneT:'{n}단계 클리어!',doneS:'다음은 「{s}」 — 이어서 해볼까요?',
+    allT:'여섯 단계 모두 클리어!',allS:'성냥개비 여섯 단계를 전부 풀었어요. 마음에 든 단계를 다시 해도 좋아요.',
+    next:'다음 단계',again:'다시 하기',toSel:'단계 고르기',toHome:'홈으로',blow:'후—',
+    foot:'『=』는 고정 · 언제든 다시 도전할 수 있어요',
+    segN:['위','오른쪽 위','오른쪽 아래','아래','왼쪽 아래','왼쪽 위','가운데'],
+    digN:['첫째 숫자','둘째 숫자','답 숫자'],opN:['기호 가로','기호 세로'],
+    aStick:'{p} 성냥',aSlot:'{p} 빈자리',aEq:'등호, 고정',
+    aBoard:'지금 식 {s}',aMid:'옮기는 중',
+    aLang:'언어: {l}, 눌러서 바꾸기',aSnd:'소리',
+    aStage:'{n}단계 {t}, {d}'},
+  ja:{title:'マッチ棒なぞなぞ',sub:'성냥개비 수수께끼 · Matchstick Riddles',home:'← ホーム',back:'← だんかい',
+    inst1:'マッチぼうを<b>1本</b>うごかして ただしい しきに しよう',
+    inst2:'マッチぼうを<b>2本</b>うごかして ただしい しきに しよう',
+    prob:'もんだい {n} / {t}',probA:'もんだい {n} / {t}、{d}もん せいかい',
+    check:'チェック',hint:'ヒント',reset:'もどす',correct:'せいかい！',
+    wrong:['おしい…','うーん、ちょっとちがう','だいじょうぶ、もう いっかい！'],
+    needMove:'まず マッチぼうを うごかしてみて',needMore:'あと 1本 うごかしてみて',
+    eqFixed:'「=」は うごかせないよ',hintOn:'わくが ついた マッチを うごかしてみて',
+    limitBack:'さいしょに うごかした マッチが もとの ばしょに もどったよ',
+    moved:'うごかした マッチ {a} / {b}',manyAns:'こたえは ひとつじゃ ないよ',
+    selT:'だんかいを えらんでね',lockT:'まえの だんかいを クリアしてね',stageN:'{n}だんかい',resumeT:'つづきから',
+    stN:['はじめの いっぽ','こたえは いくつも','よく みてね','きごうを かえる','2本 うごかす','さいごの いっぽん'],
+    stD:['ひとつの すうじの なかで うごかすよ','こたえが ひとつじゃ ないよ',
+      'まちがえやすい かたちが おおいよ','+と −を いれかえると とけるよ',
+      'こんどは マッチを 2本 うごかすよ','2本 うごかして こたえは ひとつだけ'],
+    doneT:'{n}だんかい クリア！',doneS:'つぎは「{s}」— つづけて やってみる？',
+    allT:'6だんかい ぜんぶ クリア！',allS:'マッチぼうの 6だんかいを ぜんぶ とけたよ。すきな だんかいを もういちど やってもいいよ。',
+    next:'つぎの だんかい',again:'もう いっかい',toSel:'だんかいを えらぶ',toHome:'ホームへ',blow:'ふ〜',
+    foot:'「=」は こてい · なんども ちょうせん できるよ',
+    segN:['うえ','みぎうえ','みぎした','した','ひだりした','ひだりうえ','まんなか'],
+    digN:['1つめの すうじ','2つめの すうじ','こたえの すうじ'],opN:['きごうの よこぼう','きごうの たてぼう'],
+    aStick:'{p} の マッチ',aSlot:'{p} の あきばしょ',aEq:'イコール、こてい',
+    aBoard:'いまの しき {s}',aMid:'いどう ちゅう',
+    aLang:'ことば: {l}、おして きりかえ',aSnd:'おと',
+    aStage:'{n}だんかい {t}、{d}'},
+  en:{title:'Matchstick Riddles',sub:'성냥개비 수수께끼 · マッチ棒なぞなぞ',home:'← Home',back:'← Stages',
+    inst1:'Move <b>one</b> matchstick to fix the equation',
+    inst2:'Move <b>two</b> matchsticks to fix the equation',
+    prob:'Puzzle {n} / {t}',probA:'Puzzle {n} of {t}, {d} solved',
+    check:'Check',hint:'Hint',reset:'Reset',correct:'Correct!',
     wrong:['Not quite…','Hmm, almost…',"It's okay — try again!"],
-    needMove:'Move one matchstick first',eqFixed:'The "=" stays put',
-    hintOn:'Try moving the glowing match',
-    doneT:"That's it for today!",doneS:'All 3 solved! New puzzles arrive tomorrow.',
-    again:'Play again',toHome:'Home',blow:'whoo—',foot:'"=" is fixed · 3 new puzzles daily'}
+    needMove:'Move a matchstick first',needMore:'One more matchstick to move',
+    eqFixed:'The "=" stays put',hintOn:'Try moving the outlined match',
+    limitBack:'The match you moved first went back home',
+    moved:'Moved {a} / {b}',manyAns:'More than one answer works',
+    selT:'Pick a stage',lockT:'Clear the stage before it',stageN:'Stage {n}',resumeT:'Continue',
+    stN:['First Step','Many Ways','Look Closely','Flip the Sign','Two Matches','Last Move'],
+    stD:['Move one match inside a single digit','Find any one of several answers',
+      'Watch out for tempting wrong moves','Swap + and − to solve it',
+      'Move two matches this time','Move two matches, one answer only'],
+    doneT:'Stage {n} clear!',doneS:'Next up: "{s}" — keep going?',
+    allT:'All six stages clear!',allS:'You solved every matchstick stage. Replay any stage you liked.',
+    next:'Next stage',again:'Play again',toSel:'Choose stage',toHome:'Home',blow:'whoo—',
+    foot:'"=" is fixed · Retry as often as you like',
+    segN:['top','top right','bottom right','bottom','bottom left','top left','middle'],
+    digN:['first digit','second digit','answer digit'],opN:['sign, across','sign, upright'],
+    aStick:'{p} match',aSlot:'{p}, empty',aEq:'equals sign, fixed',
+    aBoard:'Current equation {s}',aMid:'move in progress',
+    aLang:'Language: {l}, tap to change',aSnd:'Sound',
+    aStage:'Stage {n} {t}, {d}'}
 };
+var LANGNAME={ko:'한국어',ja:'日本語',en:'English'};
 var FLAGS={ko:'🇰🇷 KO',ja:'🇯🇵 JA',en:'🇬🇧 EN'};
 var LANGS=['ko','ja','en'];
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
@@ -315,41 +482,228 @@ function solve(p){
     }}
   return sols;
 }
-/* 문제은행 — 전부 gen 스크립트(동일 solver)로 1이동 해 존재 사전 검증됨 */
-var BANK=['6+4=4','5+7=2','3+3=5','1+2=4','4+2=0','8+3=9','5+3=3','2+7=6','1+8=0',
-  '3+8=1','7+5=1','9+2=1','2+2=5','9+6=2','6+7=1',
-  '9-5=1','7-1=0','6-3=1','9-7=0','6-6=9','4-1=2','8-2=0','0-3=6','5-2=1','7-4=2'];
-function parseProb(str){
-  var m=str.match(/^(\d)([+\-])(\d)=(\d)$/);
-  return{str:str,a:+m[1],op:m[2],b:+m[3],c:+m[4]};
+/* 성냥 2개 이동 전수탐색 — solve() 와 같은 헬퍼(filledOf·parseSet·eqTrue)를 쓴다.
+   뺀 자리 2개와 꽂은 자리 2개가 겹치지 않으므로 '진짜 2개 이동'만 나온다.
+   (겹치는 경우 = 사슬 이동은 결과가 1개 이동과 같은데, 5·6단계 문제는
+    1개 이동 해가 0개임이 검증돼 있어 애초에 해가 될 수 없다) */
+function solve2(p){
+  var f=filledOf(p),sols=[],keys=[],holes=[],k,i,j,a,b;
+  for(k in f)keys.push(k);
+  for(i=0;i<ALLSLOTS.length;i++)if(!f[ALLSLOTS[i]])holes.push(ALLSLOTS[i]);
+  for(i=0;i<keys.length;i++)for(j=i+1;j<keys.length;j++){
+    var base={};
+    for(k in f)if(k!==keys[i]&&k!==keys[j])base[k]=1;
+    for(a=0;a<holes.length;a++)for(b=a+1;b<holes.length;b++){
+      var s4={};for(k in base)s4[k]=1;
+      s4[holes[a]]=1;s4[holes[b]]=1;
+      var e=parseSet(s4);
+      if(e&&eqTrue(e))sols.push({rm:[keys[i],keys[j]],ad:[holes[a],holes[b]],eq:e});
+    }
+  }
+  return sols;
 }
+/* m 에 맞는 솔버를 고른다 — m=2 문제에 solve() 를 쓰면 빈 배열이 나와 힌트가 죽는다 */
+function solveFor(p){return p.m===2?solve2(p):solve(p)}
 
-/* ============================== daily pick ============================== */
+/* ============================== 문제은행 ==============================
+   전수 검증본. 한 자리 수 3개 + 연산자(+/-) 로 만들 수 있는 식을 모두 훑어
+   같은 솔버로 판정했다. 필드:
+     s 시작식 · L 단계(1~6) · m 옮겨야 하는 성냥 개수
+     a 정답 식 목록 · x 유효하지만 틀린 변형 수(헛다리)
+     o 1이면 모든 해가 연산자를 건드려야 함 · e 기대 시도 횟수
+   L 오름차순, 같은 L 안에서는 e(체감 난이도) 오름차순으로 정렬돼 있다. */
+var BANK=[
+  /* ---- 1단계 · 유일해 · 한 자리 안에서 이동 · 헛다리 최소 ---- */
+  {s:'2+4=7',L:1,m:1,a:['3+4=7'],x:0,o:0,e:1},
+  {s:'4-1=2',L:1,m:1,a:['4-1=3'],x:0,o:0,e:1},
+  {s:'1+2=4',L:1,m:1,a:['1+3=4'],x:1,o:0,e:1.5},
+  {s:'3-1=1',L:1,m:1,a:['2-1=1'],x:1,o:0,e:1.5},
+  {s:'5-2=1',L:1,m:1,a:['3-2=1'],x:1,o:0,e:1.5},
+  {s:'7-4=2',L:1,m:1,a:['7-4=3'],x:1,o:0,e:1.5},
+  {s:'0-4=2',L:1,m:1,a:['6-4=2'],x:2,o:0,e:2},
+  {s:'4-4=6',L:1,m:1,a:['4-4=0'],x:2,o:0,e:2},
+  {s:'3+2=4',L:1,m:1,a:['2+2=4'],x:3,o:0,e:2.5},
+  {s:'4+2=0',L:1,m:1,a:['4+2=6'],x:3,o:0,e:2.5},
+  {s:'0-7=2',L:1,m:1,a:['9-7=2'],x:4,o:0,e:3},
+  {s:'2+7=6',L:1,m:1,a:['2+7=9'],x:4,o:0,e:3},
+  {s:'3-3=2',L:1,m:1,a:['5-3=2'],x:4,o:0,e:3},
+  {s:'7-1=0',L:1,m:1,a:['7-1=6'],x:4,o:0,e:3},
+  /* ---- 2단계 · 정답이 여러 개 ---- */
+  {s:'5-2=2',L:2,m:1,a:['5-3=2','5-2=3'],x:1,o:0,e:1.3},
+  {s:'6+4=4',L:2,m:1,a:['0+4=4','8-4=4'],x:1,o:0,e:1.3},
+  {s:'1+2=5',L:2,m:1,a:['1+2=3','7-2=5'],x:3,o:0,e:2},
+  {s:'2+2=5',L:2,m:1,a:['3+2=5','2+3=5'],x:3,o:0,e:2},
+  {s:'5-3=3',L:2,m:1,a:['5-2=3','5-3=2'],x:3,o:0,e:2},
+  {s:'0+5=3',L:2,m:1,a:['0+3=3','0+5=5','8-5=3'],x:6,o:0,e:2.5},
+  {s:'6+7=1',L:2,m:1,a:['6+1=7','8-7=1'],x:5,o:0,e:2.7},
+  {s:'9+2=1',L:2,m:1,a:['5+2=7','9-2=7'],x:5,o:0,e:2.7},
+  {s:'9-0=0',L:2,m:1,a:['0-0=0','9-9=0','9-0=9'],x:9,o:0,e:3.3},
+  {s:'0-3=6',L:2,m:1,a:['9-3=6','8-3=5'],x:7,o:0,e:3.3},
+  {s:'3+3=8',L:2,m:1,a:['5+3=8','3+5=8'],x:10,o:0,e:4.3},
+  {s:'3-8=3',L:2,m:1,a:['9-6=3','3+0=3'],x:11,o:0,e:4.7},
+  {s:'6-6=6',L:2,m:1,a:['6-0=6','6-6=0'],x:13,o:0,e:5.3},
+  {s:'8-8=9',L:2,m:1,a:['8-0=8','8-8=0'],x:14,o:0,e:5.7},
+  /* ---- 3단계 · 유일해 · 자리를 넘어가는 이동 ---- */
+  {s:'1-2=6',L:3,m:1,a:['7-2=5'],x:4,o:0,e:3},
+  {s:'2+3=3',L:3,m:1,a:['2+3=5'],x:6,o:0,e:4},
+  {s:'6-1=3',L:3,m:1,a:['6-1=5'],x:6,o:0,e:4},
+  {s:'6-3=1',L:3,m:1,a:['6-5=1'],x:6,o:0,e:4},
+  {s:'1-1=9',L:3,m:1,a:['1-1=0'],x:7,o:0,e:4.5},
+  {s:'9+4=3',L:3,m:1,a:['5+4=9'],x:7,o:0,e:4.5},
+  {s:'8-2=0',L:3,m:1,a:['8-2=6'],x:8,o:0,e:5},
+  {s:'0+7=9',L:3,m:1,a:['8+1=9'],x:9,o:0,e:5.5},
+  {s:'1+8=0',L:3,m:1,a:['1+8=9'],x:9,o:0,e:5.5},
+  {s:'0-8=1',L:3,m:1,a:['9-8=1'],x:10,o:0,e:6},
+  {s:'9-2=6',L:3,m:1,a:['9-3=6'],x:10,o:0,e:6},
+  {s:'9-7=0',L:3,m:1,a:['9-1=8'],x:10,o:0,e:6},
+  {s:'1+5=9',L:3,m:1,a:['1+5=6'],x:12,o:0,e:7},
+  {s:'9+1=5',L:3,m:1,a:['5+1=6'],x:12,o:0,e:7},
+  /* ---- 4단계 · 반드시 연산자를 건드려야 풀림 (+ ↔ -) ---- */
+  {s:'1+5=2',L:4,m:1,a:['7-5=2'],x:4,o:1,e:3},
+  {s:'3+5=4',L:4,m:1,a:['9-5=4'],x:5,o:1,e:3.5},
+  {s:'5+7=2',L:4,m:1,a:['9-7=2'],x:5,o:1,e:3.5},
+  {s:'2-1=9',L:4,m:1,a:['2+1=3'],x:6,o:1,e:4},
+  {s:'7+5=1',L:4,m:1,a:['7-6=1'],x:6,o:1,e:4},
+  {s:'8+0=0',L:4,m:1,a:['8-8=0','8-0=8'],x:10,o:1,e:4.3},
+  {s:'5+3=3',L:4,m:1,a:['6-3=3'],x:8,o:1,e:5},
+  {s:'3-6=8',L:4,m:1,a:['3+5=8','3+6=9'],x:13,o:1,e:5.3},
+  {s:'3+8=1',L:4,m:1,a:['9-8=1'],x:9,o:1,e:5.5},
+  {s:'5-7=6',L:4,m:1,a:['5+1=6'],x:9,o:1,e:5.5},
+  {s:'9+6=2',L:4,m:1,a:['8-6=2'],x:9,o:1,e:5.5},
+  {s:'9+1=0',L:4,m:1,a:['9-1=8'],x:10,o:1,e:6},
+  {s:'7-8=9',L:4,m:1,a:['1+8=9'],x:11,o:1,e:6.5},
+  {s:'8-3=9',L:4,m:1,a:['6+3=9'],x:16,o:1,e:9},
+  /* ---- 5단계 · 성냥 2개 이동 · 정답이 여럿이라 여지가 있음 ---- */
+  {s:'1+1=5',L:5,m:2,a:['1+1=2','1-1=0'],x:4,o:0,e:2.3},
+  {s:'9-7=1',L:5,m:2,a:['4-3=1','5-4=1','5-1=4','0+1=1'],x:11,o:0,e:3.2},
+  {s:'4+1=2',L:5,m:2,a:['3-1=2','4+1=5'],x:8,o:0,e:3.7},
+  {s:'4-0=7',L:5,m:2,a:['7+0=7','4+3=7'],x:9,o:1,e:4},
+  {s:'4+3=0',L:5,m:2,a:['3-3=0','4+4=8','4+5=9','4+2=6'],x:17,o:0,e:4.4},
+  {s:'2+7=7',L:5,m:2,a:['6+1=7','8-1=7','8-7=1'],x:16,o:0,e:5},
+  {s:'2+2=2',L:5,m:2,a:['2-0=2','2-2=0'],x:13,o:1,e:5.3},
+  {s:'7+4=2',L:5,m:2,a:['7-5=2','7+1=8'],x:14,o:0,e:5.7},
+  {s:'6-2=5',L:5,m:2,a:['3+2=5','5-0=5','6-3=3'],x:20,o:0,e:6},
+  {s:'8-4=1',L:5,m:2,a:['6-5=1','3+4=7'],x:17,o:0,e:6.7},
+  {s:'8-2=3',L:5,m:2,a:['9-6=3','0+3=3','0+2=2','8-5=3','8-3=5'],x:36,o:0,e:7},
+  {s:'1+4=8',L:5,m:2,a:['1+5=6','4-4=0'],x:20,o:0,e:7.7},
+  {s:'4-8=7',L:5,m:2,a:['9-2=7','4-0=4'],x:20,o:0,e:7.7},
+  {s:'5+1=3',L:5,m:2,a:['2+1=3','6-1=5'],x:21,o:0,e:8},
+  /* ---- 6단계 · 성냥 2개 이동 · 정답이 단 하나 ---- */
+  {s:'1-3=4',L:6,m:2,a:['4-3=1'],x:12,o:0,e:7},
+  {s:'4-6=1',L:6,m:2,a:['1+6=7'],x:12,o:1,e:7},
+  {s:'4+3=1',L:6,m:2,a:['1+3=4'],x:13,o:0,e:7.5},
+  {s:'7-4=6',L:6,m:2,a:['7+1=8'],x:13,o:1,e:7.5},
+  {s:'2+4=3',L:6,m:2,a:['2+7=9'],x:15,o:0,e:8.5},
+  {s:'4+6=2',L:6,m:2,a:['4+5=9'],x:17,o:0,e:9.5},
+  {s:'7+2=2',L:6,m:2,a:['4-2=2'],x:17,o:1,e:9.5},
+  {s:'4-7=9',L:6,m:2,a:['1+7=8'],x:18,o:1,e:10},
+  {s:'6+7=0',L:6,m:2,a:['8+1=9'],x:20,o:0,e:11},
+  {s:'0-5=7',L:6,m:2,a:['2+5=7'],x:22,o:1,e:12},
+  {s:'2+2=6',L:6,m:2,a:['3+3=6'],x:22,o:0,e:12},
+  {s:'0-4=6',L:6,m:2,a:['2+4=6'],x:23,o:1,e:12.5},
+  {s:'7+0=3',L:6,m:2,a:['7+2=9'],x:23,o:0,e:12.5},
+  {s:'3+4=3',L:6,m:2,a:['9-4=5'],x:24,o:1,e:13}
+];
+/* ROUND 은 한 판의 문제 수. 6단계만 3문제인 이유:
+   기대 시도(e) 평균이 L1~L5 는 2.1~5.5 인데 L6 만 9.96 이라
+   5문제면 한 판 50시도(12~17분)로 3~10분 목표를 크게 넘긴다.
+   3문제면 30시도 ≈ 8~10분으로 다른 단계와 비슷해진다. */
+var STAGES=6,ROUND=5,ROUNDS=[5,5,5,5,5,3];
+function roundOf(lv){return ROUNDS[lv-1]||ROUND}
+/* 은행의 a(정답 목록)와 게임 로직의 a(첫째 항)가 이름이 겹쳐 ans 로 옮겨 담는다 */
+function parseProb(o){
+  var m=o.s.match(/^(\d)([+\-])(\d)=(\d)$/);
+  return{str:o.s,a:+m[1],op:m[2],b:+m[3],c:+m[4],m:o.m,ans:o.a,stage:o.L};
+}
+function probByStr(s){
+  for(var i=0;i<BANK.length;i++)if(BANK[i].s===s)return parseProb(BANK[i]);
+  return null;
+}
+function bankOf(lv){var a=[],i;for(i=0;i<BANK.length;i++)if(BANK[i].L===lv)a.push(BANK[i]);return a}
+
+/* ============================== 판 짜기 ============================== */
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;
   var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;
   return((t^t>>>14)>>>0)/4294967296}}
-var now=new Date();
-var daySeed=now.getFullYear()*10000+(now.getMonth()+1)*100+now.getDate();
-var dayStr=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-var todays=(function(){
-  var rng=mulberry32((daySeed^0x9e3779b9)>>>0),idx=[],i,j,t;
-  for(i=0;i<BANK.length;i++)idx.push(i);
-  for(i=idx.length-1;i>0;i--){j=Math.floor(rng()*(i+1));t=idx[i];idx[i]=idx[j];idx[j]=t}
-  return[parseProb(BANK[idx[0]]),parseProb(BANK[idx[1]]),parseProb(BANK[idx[2]])];
-})();
+function shuffle(arr){
+  var i,j,t;
+  for(i=arr.length-1;i>0;i--){j=Math.floor(Math.random()*(i+1));t=arr[i];arr[i]=arr[j];arr[j]=t}
+  return arr;
+}
+/* 문제 문자열에서 시드를 뽑는다 — 날짜와 무관하게, 같은 문제는 늘 같은 모양으로 흔들린다 */
+function seedOf(s){
+  var h=2166136261,i;
+  for(i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}
+  return h>>>0;
+}
 
 /* ============================== persistence ============================== */
-var SAVEKEY='in9-matchstick';
+var SAVEKEY='in9-matchstick',SAVEV=2;
+function freshState(){return{v:SAVEV,cleared:[false,false,false,false,false,false],seen:{},cur:null}}
 function loadState(){
-  var raw=lsGet(SAVEKEY),o=null;
+  var raw=lsGet(SAVEKEY),o=null,i;
   try{o=JSON.parse(raw)}catch(e){o=null}
-  if(!o||o.day!==dayStr||!Array.isArray(o.solved)||o.solved.length!==3)
-    o={day:dayStr,solved:[false,false,false],wrong:[0,0,0]};
-  if(!Array.isArray(o.wrong)||o.wrong.length!==3)o.wrong=[0,0,0];
+  /* 옛 포맷(날짜 시드 하루 3문제)은 마이그레이션하지 않고 조용히 버린다 — 하루치라 남길 값이 없다 */
+  if(!o||o.v!==SAVEV||!Array.isArray(o.cleared)||o.cleared.length!==STAGES)return freshState();
+  if(!o.seen||typeof o.seen!=='object')o.seen={};
+  if(o.cur){
+    /* 저장본이 상하거나 은행이 바뀌었을 수 있으니 판 정보는 매번 검증한다.
+       판 길이가 단계마다 다르므로 roundOf 로 대조한다 */
+    var rn=(o.cur.L>=1&&o.cur.L<=STAGES)?roundOf(o.cur.L):-1;
+    if(rn<0||!Array.isArray(o.cur.qs)||o.cur.qs.length!==rn||
+       !(o.cur.i>=0&&o.cur.i<rn))o.cur=null;
+    else for(i=0;i<rn;i++)if(!probByStr(o.cur.qs[i])){o.cur=null;break}
+  }
   return o;
 }
 var state=loadState();
 function saveState(){lsSet(SAVEKEY,JSON.stringify(state))}
+function allCleared(){
+  for(var i=0;i<STAGES;i++)if(!state.cleared[i])return false;
+  return true;
+}
+/* 클리어한 단계 + 바로 다음 한 단계까지 열린다 */
+function maxOpen(){
+  var n=1,i;
+  for(i=0;i<STAGES;i++)if(state.cleared[i]&&i+2>n)n=i+2;
+  return n>STAGES?STAGES:n;
+}
+function markSeen(lv,s){
+  var k=''+lv;
+  if(!state.seen[k])state.seen[k]=[];
+  if(state.seen[k].indexOf(s)<0)state.seen[k].push(s);
+}
+/* 안 본 문제를 먼저 뽑는다 — 같은 단계를 다시 해도 2~3판은 새 문제가 나온다 */
+function pickRound(lv){
+  var pool=bankOf(lv),seen=state.seen[''+lv]||[],unseen=[],rest=[],out,qs=[],i,rn=roundOf(lv);
+  for(i=0;i<pool.length;i++){
+    if(seen.indexOf(pool[i].s)<0)unseen.push(pool[i]);else rest.push(pool[i]);
+  }
+  shuffle(unseen);shuffle(rest);
+  out=unseen.slice(0,rn);
+  if(out.length<rn){
+    /* 안 본 문제가 바닥나면 기록을 비워 다음 판부터 다시 한 바퀴 돈다 */
+    state.seen[''+lv]=[];
+    for(i=0;i<rest.length&&out.length<rn;i++)out.push(rest[i]);
+  }
+  for(i=0;i<out.length;i++)qs.push(out[i].s);
+  return qs;
+}
+
+/* ============================== 계측 ============================== */
+/* gtag 이 차단돼도 게임은 그대로 돌아야 한다 */
+function gaStage(lv,wrongTotal){
+  try{
+    if(typeof gtag==='function')gtag('event','game_complete',{
+      game_id:'matchstick',scene:'stage',result:'clear',lang:lang,stage:lv,wrong_total:wrongTotal});
+  }catch(e){}
+}
+function gaJourney(){
+  try{
+    if(typeof gtag==='function')gtag('event','game_complete',{
+      game_id:'matchstick',scene:'journey',result:'clear',lang:lang});
+  }catch(e){}
+}
 
 /* ============================== audio ============================== */
 var AC=null,master=null,noiseBuf=null;
@@ -447,7 +801,9 @@ function $(id){return document.getElementById(id)}
 var board=$('board'),boardWrap=$('boardWrap'),msgEl=$('msg'),bangEl=$('bang');
 var checkBtn=$('checkBtn'),resetBtn=$('resetBtn'),hintBtn=$('hintBtn');
 var langBtn=$('langBtn'),sndBtn=$('sndBtn');
-var doneOverlay=$('doneOverlay'),doneCard=$('doneCard'),scene=$('scene'),againBtn=$('againBtn');
+var doneOverlay=$('doneOverlay'),doneCard=$('doneCard'),scene=$('scene');
+var againBtn=$('againBtn'),nextBtn=$('nextBtn'),selBtn=$('selBtn'),backSel=$('backSel');
+var gameView=$('gameView'),stageView=$('stageView'),noteEl=$('note'),moveEl=$('moveCount');
 var RM=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var NS='http://www.w3.org/2000/svg';
 function mk(tag,attrs,parent){
@@ -478,6 +834,9 @@ function stickBody(g,flip){
   mk('rect',{x:-20,y:-.6,width:34,height:1.1,rx:.55,fill:'rgba(120,75,30,.16)'},inner);
   mk('ellipse',{cx:17.5,cy:0,rx:6.1,ry:4.8,fill:'url(#headG)','class':'head'},inner);
   mk('ellipse',{cx:15.6,cy:-1.6,rx:2.1,ry:1.4,fill:'rgba(255,236,214,.42)'},inner);
+  /* 상태 테두리 — 색·빛이 아닌 형태로 집음/옮김/힌트/포커스를 알린다 */
+  mk('rect',{x:-25.5,y:-8.5,width:53,height:17,rx:8.5,fill:'none',stroke:'#3b2716',
+    'stroke-width':2.2,'class':'ring'},g);
   mk('rect',{x:-28,y:-11,width:57,height:22,fill:'rgba(0,0,0,0)'},g);
   return g;
 }
@@ -492,43 +851,146 @@ var slotEls={};
 (function(){
   for(var i=0;i<ALLSLOTS.length;i++){
     var id=ALLSLOTS[i],geo=SLOT_GEO[id];
-    var g=mk('g',{'class':'slot'},slotLayer);
+    var g=mk('g',{'class':'slot',role:'button',tabindex:'-1'},slotLayer);
     g.style.transform='translate('+geo.x+'px, '+geo.y+'px) rotate('+geo.ang+'deg)';
+    /* 점선 대비가 2.5:1 이라 비텍스트 3:1 에 못 미쳤다 → 진한 색 + 불투명 */
     mk('rect',{x:-23,y:-5.4,width:46,height:10.8,rx:5.4,fill:'rgba(180,130,70,.09)',
-      stroke:'#b3854e','stroke-width':1.6,'stroke-dasharray':'5 4','stroke-opacity':.8,
+      stroke:'#8a5c2a','stroke-width':2,'stroke-dasharray':'5 4','stroke-opacity':1,
       'class':'slot-dash'},g);
     mk('rect',{x:-27,y:-11,width:54,height:22,fill:'rgba(0,0,0,0)'},g);
-    (function(sid){g.addEventListener('pointerdown',function(ev){ev.preventDefault();onSlotTap(sid)})})(id);
+    (function(sid,el){
+      el.addEventListener('keydown',function(ev){
+        if(ev.key!=='Enter'&&ev.key!==' '&&ev.key!=='Spacebar')return;
+        ev.preventDefault();ensureAC();onSlotTap(sid);
+      });
+    })(id,g);
     slotEls[id]=g;
   }
 })();
 
 /* equals sign (fixed) */
+var eqEls=[];
+function eqRefuse(){
+  if(locked)return;
+  eqLayer.classList.remove('eqshake');
+  void eqLayer.getBoundingClientRect();
+  eqLayer.classList.add('eqshake');
+  toast(T('eqFixed'));SND.ui();
+}
+var EQGEO=[{x:EQC,y:MIDY-8,ang:-1.1},{x:EQC,y:MIDY+8,ang:1.4}];
 (function(){
-  var ge=[{x:EQC,y:MIDY-8},{x:EQC,y:MIDY+8}];
   for(var i=0;i<2;i++){
-    var g=mk('g',{'class':'stick static'},eqLayer);
-    g.style.transform='translate('+ge[i].x+'px, '+(ge[i].y)+'px) rotate('+(i?1.4:-1.1)+'deg)';
+    var g=mk('g',{'class':'stick static',role:'img',tabindex:'-1'},eqLayer);
+    g.style.transform='translate('+EQGEO[i].x+'px, '+EQGEO[i].y+'px) rotate('+EQGEO[i].ang+'deg)';
     stickBody(g,i?-1:1);
-    g.addEventListener('pointerdown',function(ev){
-      ev.preventDefault();
-      if(locked)return;
-      eqLayer.classList.remove('eqshake');
-      void eqLayer.getBoundingClientRect();
-      eqLayer.classList.add('eqshake');
-      toast(T('eqFixed'));SND.ui();
-    });
+    eqEls.push(g);
   }
   eqLayer.addEventListener('animationend',function(){eqLayer.classList.remove('eqshake')});
 })();
 
 /* ============================== game state ============================== */
 var pIdx=0,sticks=[],posMap={},lifted=null,locked=false,wrongCount=0,sols=[],jmap={};
+var curL=1,curP=null,maxMove=1,movedQ=[];
+var doneShown=false,doneAll=false;
 var toastTimer=null,msgSticky=false;
 
-function displaced(){
-  for(var i=0;i<sticks.length;i++)if(sticks[i].slot!==sticks[i].origin)return sticks[i];
-  return null;
+/* ============================== 탭 판정 ==============================
+   히트 사각형을 겹쳐 놓고 '위에 그려진 것이 이긴다'로 판정하면
+   한 점에서 만나는 성냥들이 서로를 가린다. 실제로 막혀 있던 곳:
+     · '+' 의 가로 성냥 — 세로 성냥과 중심이 같아 가운데가 늘 세로에 먹혔다
+     · '−' → '+' 로 만들 때의 세로 빈자리 — 자리 레이어가 성냥 아래라
+       한가운데를 누르면 들고 있던 성냥을 놓치고 '−' 를 집었다
+     · 숫자 모서리 — 이웃 성냥끼리 히트 영역이 겹쳐 엉뚱한 쪽이 잡혔다
+   그래서 좌표를 판 좌표로 바꾼 뒤 '성냥 선분까지의 거리'로 고른다.
+   보이는 대로 가까운 쪽이 잡히고, 겹침이 있어도 판정이 뒤집히지 않는다. */
+var HALF=20,HITR=23,SLOTBIAS=6;
+function segDistAt(cx,cy,ang,px,py){
+  var r=ang*Math.PI/180,hx=Math.cos(r)*HALF,hy=Math.sin(r)*HALF;
+  var dx=px-cx,dy=py-cy,t=(dx*hx+dy*hy)/(HALF*HALF);
+  if(t>1)t=1;else if(t<-1)t=-1;
+  var qx=dx-t*hx,qy=dy-t*hy;
+  return Math.sqrt(qx*qx+qy*qy);
+}
+/* 빈자리는 흔들림 없이 그려지고, 성냥은 jmap 만큼 흔들려 그려진다 */
+function slotDist(id,px,py){var g=SLOT_GEO[id];return segDistAt(g.x,g.y,g.ang,px,py)}
+function stickDist(st,px,py){
+  var g=SLOT_GEO[st.slot],j=jmap[st.slot]||{dx:0,dy:0,da:0};
+  return segDistAt(g.x+j.dx,g.y+j.dy,g.ang+j.da,px,py);
+}
+function boardPt(ev){
+  var r=board.getBoundingClientRect();
+  if(!r.width||!r.height)return null;
+  return{x:(ev.clientX-r.left)*392/r.width,y:(ev.clientY-r.top)*176/r.height};
+}
+function onBoardDown(ev){
+  if(locked)return;
+  var pt=boardPt(ev);if(!pt)return;
+  var best=null,bd=HITR,i,d,id;
+  /* 성냥을 들고 있으면 빈자리에 약간의 가산점을 준다 — 중심이 겹치는
+     '−' 의 세로 빈자리를 놓을 수 있게. 성냥 몸통을 정확히 누르면
+     거리 0 이라 여전히 성냥 바꿔 집기가 된다 */
+  if(lifted){
+    for(i=0;i<ALLSLOTS.length;i++){
+      id=ALLSLOTS[i];
+      if(posMap[id]&&id!==lifted.slot)continue;
+      d=slotDist(id,pt.x,pt.y)-SLOTBIAS;
+      if(d<bd){bd=d;best={kind:'slot',id:id}}
+    }
+  }
+  for(i=0;i<sticks.length;i++){
+    d=stickDist(sticks[i],pt.x,pt.y);
+    if(d<bd){bd=d;best={kind:'stick',st:sticks[i]}}
+  }
+  for(i=0;i<2;i++){
+    d=segDistAt(EQGEO[i].x,EQGEO[i].y,EQGEO[i].ang,pt.x,pt.y);
+    if(d<bd){bd=d;best={kind:'eq'}}
+  }
+  if(!best)return;
+  ev.preventDefault();
+  ensureAC();
+  if(best.kind==='slot')onSlotTap(best.id);
+  else if(best.kind==='stick')onStickTap(best.st);
+  else eqRefuse();
+}
+
+/* 자리를 벗어난 성냥 전부를 '옮긴 순서대로' 들고 있는다.
+   5·6단계는 2개를 옮겨야 풀리므로 하나만 추적하면 아예 풀 수 없다. */
+function displacedList(){return movedQ}
+function qSync(st){
+  var k=movedQ.indexOf(st);
+  if(st.slot===st.origin){if(k>=0)movedQ.splice(k,1)}
+  else if(k<0)movedQ.push(st);
+}
+/* 제자리로 돌려보낸다.
+   2개 이동에서는 '사슬 이동'(a→x 다음 b→a)이 생겨 원래 자리를 다른 성냥이
+   차지하고 있을 수 있다. 그대로 밀어넣으면 두 성냥이 한 자리에 겹쳐
+   판이 깨지므로, 그럴 땐 자리를 맞바꾼다. 꽂힌 자리 집합은 그대로라
+   식은 변하지 않고 '진짜 옮긴 개수'만 정확해진다. */
+function sendHome(st){
+  var other=posMap[st.origin],here;
+  if(!other||other===st){moveTo(st,st.origin,false);return}
+  here=st.slot;
+  delete posMap[here];delete posMap[st.origin];
+  st.slot=st.origin;posMap[st.origin]=st;
+  other.slot=here;posMap[here]=other;
+  st.el.classList.remove('lifted');other.el.classList.remove('lifted');
+  st.el.style.transform=slotTf(st.slot,jmap,false);
+  other.el.style.transform=slotTf(here,jmap,false);
+  qSync(st);qSync(other);
+}
+function enforceLimit(){
+  /* 허용 개수를 넘기면 가장 먼저 옮긴 것을 제자리로(FIFO).
+     탭이 아무 반응 없이 씹히는 것보다 낫다.
+     소리로만 알리면 소리 끔 + 모션 끔 환경에서 피드백이 0이라
+     (카운터도 2/2 → 2/2 그대로) 토스트와 강조를 함께 준다 */
+  var evicted=null;
+  while(movedQ.length>maxMove){evicted=movedQ[0];sendHome(movedQ[0])}
+  if(evicted){SND.cancel();toast(T('limitBack'));flashStick(evicted)}
+}
+function flashStick(st){
+  if(!st||!st.el)return;
+  st.el.classList.add('hintblink');
+  setTimeout(function(){st.el.classList.remove('hintblink')},1400);
 }
 function setLift(st,on){
   st.el.style.transform=slotTf(st.slot,jmap,on);
@@ -539,29 +1001,60 @@ function moveTo(st,slot,snd){
   st.slot=slot;posMap[slot]=st;
   st.el.classList.remove('lifted');
   st.el.style.transform=slotTf(slot,jmap,false);
+  qSync(st);
   if(snd)SND.place();
 }
 function updateSlots(){
-  for(var i=0;i<ALLSLOTS.length;i++){
-    var id=ALLSLOTS[i];
-    var show=!!lifted&&(!posMap[id]||(lifted&&lifted.slot===id));
-    slotEls[id].classList.toggle('show',show);
+  /* 옮긴 성냥이 떠나온 빈자리는 흐리게 남긴다 — 색이 아닌 형태 단서 */
+  var origins={},i,id;
+  for(i=0;i<movedQ.length;i++)if(!posMap[movedQ[i].origin])origins[movedQ[i].origin]=1;
+  for(i=0;i<ALLSLOTS.length;i++){
+    id=ALLSLOTS[i];
+    var show=!!lifted&&(!posMap[id]||lifted.slot===id);
+    var el=slotEls[id];
+    el.classList.toggle('show',show);
+    el.classList.toggle('ghost',!show&&!!origins[id]);
+    el.setAttribute('tabindex',show?'0':'-1');
+    el.setAttribute('aria-label',T('aSlot').replace('{p}',slotName(id)));
   }
+}
+/* 스크린리더용 자리 이름: 'd0a' → '첫째 숫자 위' */
+function slotName(id){
+  if(id==='opH')return T('opN')[0];
+  if(id==='opV')return T('opN')[1];
+  return T('digN')[+id[1]]+' '+T('segN')[LET.indexOf(id[2])];
+}
+function updateMoveUI(){
+  moveEl.textContent=T('moved').replace('{a}',movedQ.length).replace('{b}',maxMove);
+  for(var i=0;i<sticks.length;i++)
+    sticks[i].el.classList.toggle('moved',sticks[i].slot!==sticks[i].origin);
+  syncBoardLabel();
+}
+/* 판 라벨은 loadProblem 에서 한 번만 세팅돼 성냥을 옮겨도 첫 식 그대로였다.
+   role 도 img 라 자식이 통째로 접근성 트리에서 사라졌다 → group + 매번 갱신 */
+function syncBoardLabel(){
+  var e=parseCurrent();
+  var s=e?(''+e.a+e.op+e.b+'='+e.c):T('aMid');
+  var txt=T('aBoard').replace('{s}',s);
+  board.setAttribute('aria-label',txt);
+  $('eqLive').textContent=txt;
+  for(var i=0;i<sticks.length;i++)
+    sticks[i].el.setAttribute('aria-label',T('aStick').replace('{p}',slotName(sticks[i].slot)));
 }
 function onStickTap(st){
   if(locked)return;
   ensureAC();
   if(lifted===st){setLift(st,false);lifted=null;SND.cancel();updateSlots();return}
   if(lifted){setLift(lifted,false);lifted=null}
-  var d=displaced();
-  if(d&&d!==st)moveTo(d,d.origin,false);
+  /* 집는 것만으로는 되돌리지 않는다 — 실제로 놓을 때 개수를 센다 */
   lifted=st;setLift(st,true);SND.pick();updateSlots();
 }
 function onSlotTap(slotId){
   if(locked||!lifted)return;
   if(posMap[slotId]&&slotId!==lifted.slot)return;
   if(slotId===lifted.slot){setLift(lifted,false);lifted=null;SND.cancel();updateSlots();return}
-  moveTo(lifted,slotId,true);lifted=null;updateSlots();
+  moveTo(lifted,slotId,true);lifted=null;
+  enforceLimit();updateSlots();updateMoveUI();
 }
 function toast(txt,sticky){
   msgEl.textContent=txt;msgEl.classList.add('show');
@@ -572,60 +1065,81 @@ function toast(txt,sticky){
 function clearToast(){if(toastTimer)clearTimeout(toastTimer);msgEl.classList.remove('show');msgSticky=false}
 
 /* ============================== problem lifecycle ============================== */
-function buildJitter(pi){
-  var rng=mulberry32((daySeed*97+pi*131+7)>>>0),jm={},i;
+function buildJitter(p,pi){
+  var rng=mulberry32((seedOf(p.str)+pi*131+7)>>>0),jm={},i;
   for(i=0;i<ALLSLOTS.length;i++)
     jm[ALLSLOTS[i]]={da:(rng()-.5)*4.6,dx:(rng()-.5)*1.8,dy:(rng()-.5)*1.8,flip:rng()<.5?1:-1};
   return jm;
 }
 function loadProblem(pi){
   pIdx=pi;
-  var p=todays[pi];
-  sols=solve(p);
-  jmap=buildJitter(pi);
-  wrongCount=state.wrong[pi]||0;
-  lifted=null;locked=false;posMap={};sticks=[];
+  var p=probByStr(state.cur.qs[pi]);
+  curP=p;maxMove=p.m;
+  sols=solveFor(p);
+  jmap=buildJitter(p,pi);
+  wrongCount=state.cur.wrong||0;
+  lifted=null;locked=false;posMap={};sticks=[];movedQ=[];
+  $('inst').innerHTML=T(p.m===2?'inst2':'inst1');
+  /* 정답이 여럿인 문제는 미리 알려 준다 — 하나 찾고도 계속 헤매지 않게 */
+  noteEl.textContent=p.ans.length>1?T('manyAns'):'';
+  noteEl.classList.toggle('hidden',p.ans.length<=1);
   clearToast();
   stickLayer.innerHTML='';fxLayer.innerHTML='';
   bangEl.classList.remove('show');
-  board.setAttribute('aria-label',p.str);
   var f=filledOf(p),order=[],k;
   for(k in f)order.push(k);
   for(var i=0;i<order.length;i++){
     var sid=order[i];
-    var g=mk('g',{'class':'stick'});
+    var g=mk('g',{'class':'stick',role:'button',tabindex:'0'});
     stickBody(g,jmap[sid].flip);
     g.style.transform=slotTf(sid,jmap,false);
     stickLayer.appendChild(g);
     var st={el:g,slot:sid,origin:sid,flip:jmap[sid].flip};
     posMap[sid]=st;sticks.push(st);
-    (function(s){g.addEventListener('pointerdown',function(ev){ev.preventDefault();onStickTap(s)})})(st);
+    /* 탭은 board 한 곳에서 거리로 판정한다(onBoardDown).
+       여기서는 키보드만 듣는다 — 예전엔 성냥에 pointerdown 만 있어
+       키보드로는 성냥을 집을 방법이 아예 없었다 */
+    (function(s){
+      g.addEventListener('keydown',function(ev){
+        if(ev.key!=='Enter'&&ev.key!==' '&&ev.key!=='Spacebar')return;
+        ev.preventDefault();ensureAC();onStickTap(s);
+      });
+    })(st);
     if(!RM&&g.animate){
       g.animate([
-        {transform:slotTf(sid,jmap,false).replace('translate','translate').replace(/,\s*([\d.]+)px\)/,function(m,y){return ', '+(parseFloat(y)-26)+'px)'}),opacity:0},
+        {transform:slotTf(sid,jmap,false).replace(/,\s*([\d.-]+)px\)/,function(m,y){return ', '+(parseFloat(y)-26)+'px)'}),opacity:0},
         {transform:slotTf(sid,jmap,false),opacity:1}
       ],{duration:380,delay:i*26,easing:'cubic-bezier(.34,1.4,.64,1)',fill:'backwards'});
     }
   }
+  for(var q=0;q<eqEls.length;q++)eqEls[q].setAttribute('aria-label',T('aEq'));
   updateSlots();
+  updateMoveUI();
   updateHintBtn();
   updateProgressUI();
 }
 function updateHintBtn(){
+  /* invis 는 자리를 남긴 채 숨긴다 — display:none 이면 힌트가 나타나는 순간
+     검사 버튼이 옆으로 밀려, 방금 검사를 누른 자리가 힌트 버튼이 된다 */
   var show=wrongCount>=3&&sols.length>0;
-  if(show&&hintBtn.classList.contains('hidden')){
-    hintBtn.classList.remove('hidden');hintBtn.classList.add('pop-in');
+  if(show&&hintBtn.classList.contains('invis')){
+    hintBtn.classList.remove('invis');hintBtn.classList.add('pop-in');
   }else if(!show){
-    hintBtn.classList.add('hidden');hintBtn.classList.remove('pop-in');
+    hintBtn.classList.add('invis');hintBtn.classList.remove('pop-in');
   }
 }
 function updateProgressUI(){
-  var dots=$('dots').children,allDone=state.solved[0]&&state.solved[1]&&state.solved[2];
-  for(var i=0;i<3;i++){
-    dots[i].classList.toggle('lit',!!state.solved[i]);
-    dots[i].classList.toggle('cur',!allDone&&i===pIdx&&!state.solved[i]);
+  var dots=$('dots').children,done=state.cur?state.cur.i:0,i,rn=roundOf(curL);
+  for(i=0;i<dots.length;i++){
+    dots[i].classList.toggle('off',i>=rn);
+    dots[i].classList.toggle('lit',i<rn&&i<done);
+    dots[i].classList.toggle('cur',i<rn&&i===pIdx&&i>=done);
   }
-  $('probLabel').textContent=T('prob').replace('{n}',pIdx+1);
+  var pl=$('probLabel');
+  pl.textContent=T('prob').replace('{n}',pIdx+1).replace('{t}',rn);
+  /* 보이는 글자는 짧게, 스크린리더에는 해결 수까지 — #dots 는 aria-hidden */
+  pl.setAttribute('aria-label',T('probA').replace('{n}',pIdx+1).replace('{t}',rn).replace('{d}',done));
+  $('stageName').textContent=T('stageN').replace('{n}',curL)+' · '+T('stN')[curL-1];
 }
 function parseCurrent(){
   var set={},k;
@@ -638,12 +1152,18 @@ function onCheck(){
   if(locked)return;
   ensureAC();
   if(lifted){setLift(lifted,false);lifted=null;updateSlots()}
-  if(!displaced()){toast(T('needMove'));SND.ui();return}
   var e=parseCurrent();
-  if(e&&eqTrue(e))onCorrect();else onWrong();
+  if(e&&eqTrue(e)){onCorrect();return}
+  if(!displacedList().length){toast(T('needMove'));SND.ui();return}
+  /* m=2 문제는 1개만 옮겨서는 절대 풀리지 않는다(검증됨) — 오답으로 세지 않고 안내만 */
+  if(displacedList().length<maxMove){toast(T('needMore'));SND.ui();return}
+  onWrong();
 }
 function onWrong(){
-  wrongCount++;state.wrong[pIdx]=wrongCount;saveState();
+  wrongCount++;
+  state.cur.wrong=wrongCount;
+  state.cur.wt=(state.cur.wt||0)+1;
+  saveState();
   SND.wrong();
   boardWrap.classList.remove('wiggle');
   void boardWrap.getBoundingClientRect();
@@ -653,43 +1173,66 @@ function onWrong(){
 }
 function onCorrect(){
   locked=true;lifted=null;updateSlots();
-  state.solved[pIdx]=true;saveState();
+  markSeen(curL,curP.str);
+  state.cur.i=pIdx+1;state.cur.wrong=0;saveState();
   clearToast();
   SND.correct();
   $('bangText').textContent=T('correct');
   bangEl.classList.remove('show');
   void bangEl.getBoundingClientRect();
   bangEl.classList.add('show');
+  /* 배너는 aria-hidden 이라 정답을 한 번은 소리 내어 알려 준다 */
+  var live=$('eqLive');
+  live.setAttribute('aria-live','assertive');
+  live.textContent=T('correct');
+  setTimeout(function(){live.setAttribute('aria-live','polite')},1200);
   updateProgressUI();
   igniteFX();
   setTimeout(function(){
-    if(state.solved[0]&&state.solved[1]&&state.solved[2])showDone(true);
-    else loadProblem(pIdx+1);
+    if(state.cur.i>=roundOf(curL))finishStage();
+    else loadProblem(state.cur.i);
   },1900);
+}
+/* 한 판(=한 단계 5문제) 완주 */
+function finishStage(){
+  var wasAll=allCleared(),wt=state.cur?(state.cur.wt||0):0;
+  state.cleared[curL-1]=true;
+  state.cur=null;
+  saveState();
+  gaStage(curL,wt);
+  doneAll=!wasAll&&allCleared();
+  if(doneAll)gaJourney();
+  showDone(true);
+}
+function returnAll(snd){
+  /* 옮긴 것을 전부 되돌린다 — sendHome 이 매번 큐를 줄이므로 루프가 끝난다 */
+  while(movedQ.length)sendHome(movedQ[0]);
+  if(snd)SND.place();
 }
 function onReset(){
   if(locked)return;
   ensureAC();
   if(lifted){setLift(lifted,false);lifted=null}
-  var d=displaced();
-  if(d)moveTo(d,d.origin,true);
-  updateSlots();SND.ui();
+  returnAll(true);
+  updateSlots();updateMoveUI();SND.ui();
 }
 function onHint(){
   if(locked||!sols.length)return;
   ensureAC();
   if(lifted){setLift(lifted,false);lifted=null}
-  var d=displaced();
-  if(d)moveTo(d,d.origin,false);
-  updateSlots();
-  var st=posMap[sols[0].rm];
-  if(st){
-    st.el.classList.remove('hintblink');
-    void st.el.getBoundingClientRect();
-    st.el.classList.add('hintblink');
-    setTimeout(function(){st.el.classList.remove('hintblink')},2400);
-  }
+  returnAll(false);
+  updateSlots();updateMoveUI();
+  /* m=1 이면 rm 이 문자열, m=2 면 배열 — 해당 성냥을 전부 반짝이게 한다 */
+  var rm=sols[0].rm,ids=(typeof rm==='string')?[rm]:rm,i;
+  for(i=0;i<ids.length;i++)blinkStick(posMap[ids[i]]);
   toast(T('hintOn'));SND.hint();
+}
+function blinkStick(st){
+  if(!st)return;
+  st.el.classList.remove('hintblink');
+  void st.el.getBoundingClientRect();
+  st.el.classList.add('hintblink');
+  setTimeout(function(){st.el.classList.remove('hintblink')},2400);
 }
 
 /* ============================== fx: sparks + flames ============================== */
@@ -733,23 +1276,148 @@ function igniteFX(){
 }
 
 /* ============================== done overlay ============================== */
-var doneShown=false;
+function applyDoneText(){
+  var nx=curL+1;
+  if(doneAll){
+    $('doneT').textContent=T('allT');
+    $('doneS').textContent=T('allS');
+  }else{
+    $('doneT').textContent=T('doneT').replace('{n}',curL);
+    $('doneS').textContent=nx>STAGES?T('allS'):T('doneS').replace('{s}',T('stN')[nx-1]);
+  }
+  nextBtn.classList.toggle('hidden',nx>STAGES);
+}
+/* 오버레이는 opacity:0 + pointer-events:none 로만 숨어 있어서, 게임 중에도
+   탭 하면 보이지 않는 '다음 단계/다시 하기/…' 로 포커스가 들어가고
+   <h2>1단계 클리어!</h2> 가 늘 스크린리더에 노출됐다 → 닫힐 땐 inert */
+var doneBtns=[nextBtn,againBtn,selBtn,$('doneHomeBtn')];
+function setDoneReachable(on){
+  doneOverlay.setAttribute('aria-hidden',on?'false':'true');
+  try{doneOverlay.inert=!on}catch(e){}
+  for(var i=0;i<doneBtns.length;i++)doneBtns[i].setAttribute('tabindex',on?'0':'-1');
+}
+/* 모달이 열린 동안 뒷배경도 막는다. 다만 포커스가 아직 뒤에 있는 사이에
+   aria-hidden 을 걸면 '숨긴 영역 안에 포커스' 상태가 되므로,
+   포커스를 카드로 옮기는 그 순간에만 켠다. */
+var wrapEl=document.querySelector('.wrap');
+function setBgInert(on){
+  if(!wrapEl)return;
+  if(on)wrapEl.setAttribute('aria-hidden','true');
+  else wrapEl.removeAttribute('aria-hidden');
+  try{wrapEl.inert=!!on}catch(e){}
+}
+function focusEl(el){
+  if(!el)return;
+  try{el.focus({preventScroll:true})}catch(e){try{el.focus()}catch(e2){}}
+}
+function firstDoneBtn(){
+  for(var i=0;i<doneBtns.length;i++)
+    if(!doneBtns[i].classList.contains('hidden'))return doneBtns[i];
+  return null;
+}
 function showDone(animate){
   doneShown=true;
+  applyDoneText();
   scene.classList.remove('blown','instant');
   doneCard.classList.remove('reveal');
   doneOverlay.classList.add('show');
-  updateProgressUI();
+  setDoneReachable(true);
   if(!animate||RM){
     scene.classList.add('instant','blown');
     doneCard.classList.add('reveal');
+    setBgInert(true);
+    focusEl(firstDoneBtn());
     return;
   }
   SND.done();
   setTimeout(function(){scene.classList.add('blown');blowSound(0)},1150);
-  setTimeout(function(){doneCard.classList.add('reveal')},1950);
+  setTimeout(function(){
+    doneCard.classList.add('reveal');
+    if(doneShown){setBgInert(true);focusEl(firstDoneBtn())}
+  },1950);
 }
-function hideDone(){doneShown=false;doneOverlay.classList.remove('show')}
+function hideDone(){doneShown=false;doneOverlay.classList.remove('show');setDoneReachable(false);setBgInert(false)}
+/* 모달인 동안 포커스를 카드 안에 가둔다 + ESC 로 빠져나갈 길을 준다 */
+document.addEventListener('keydown',function(ev){
+  if(!doneShown)return;
+  if(ev.key==='Escape'){ev.preventDefault();SND.ui();showStageSelect();return}
+  if(ev.key!=='Tab')return;
+  var list=[],i;
+  for(i=0;i<doneBtns.length;i++)if(!doneBtns[i].classList.contains('hidden'))list.push(doneBtns[i]);
+  if(!list.length)return;
+  var at=list.indexOf(document.activeElement);
+  ev.preventDefault();
+  if(at<0)at=ev.shiftKey?0:-1;
+  focusEl(list[(at+(ev.shiftKey?-1:1)+list.length)%list.length]);
+});
+
+/* ============================== 화면 전환 ============================== */
+/* 화면을 바꾸면 포커스가 body 로 떨어져 스크린리더가 어디로 갔는지 알 수 없었다 */
+function enterGame(focus){
+  hideDone();
+  stageView.classList.add('hidden');
+  gameView.classList.remove('hidden');
+  if(focus)focusEl($('inst'));
+}
+function startStage(lv,focus){
+  curL=lv;
+  state.cur={L:lv,i:0,wrong:0,wt:0,qs:pickRound(lv)};
+  saveState();
+  enterGame(focus);
+  loadProblem(0);
+}
+function resumeStage(focus){
+  curL=state.cur.L;
+  enterGame(focus);
+  loadProblem(state.cur.i);
+}
+function showStageSelect(){
+  hideDone();
+  gameView.classList.add('hidden');
+  stageView.classList.remove('hidden');
+  buildStageList();
+  focusEl($('selT'));
+}
+function buildStageList(){
+  var host=$('stages'),open=maxOpen(),i;
+  host.innerHTML='';
+  for(i=1;i<=STAGES;i++)host.appendChild(stageBtn(i,i<=open));
+}
+function stageBtn(lv,unlocked){
+  var cleared=!!state.cleared[lv-1];
+  /* 풀던 판이 남아 있으면 새로 짜지 않고 이어서 — 4문제 풀고 나갔다 돌아오면
+     startStage 가 state.cur 를 덮어써서 진행이 통째로 날아갔다 */
+  var resume=unlocked&&!!state.cur&&state.cur.L===lv;
+  var desc=unlocked?(resume?T('resumeT'):T('stD')[lv-1]):T('lockT');
+  var b=document.createElement('button');
+  b.className='stage-btn'+(unlocked?'':' locked')+(cleared?' done':'');
+  b.innerHTML='<span class="st-no"></span><span class="st-txt"><b></b><i></i></span>'+
+    '<span class="st-mark" aria-hidden="true"></span>';
+  b.querySelector('.st-no').textContent=lv;
+  b.querySelector('.st-txt b').textContent=T('stN')[lv-1];
+  /* 잠긴 단계도 목록에 남긴다 — 도감이 아니라 진행 사다리라 회색 자리가 있어도 된다 */
+  b.querySelector('.st-txt i').textContent=desc;
+  b.querySelector('.st-mark').textContent=resume?'▶':(cleared?'🔥':(unlocked?'':'🔒'));
+  b.setAttribute('aria-label',T('aStage').replace('{n}',lv)
+    .replace('{t}',T('stN')[lv-1]).replace('{d}',desc));
+  if(unlocked){
+    b.addEventListener('click',function(){
+      ensureAC();SND.ui();
+      if(resume)resumeStage(true);else startStage(lv,true);
+    });
+  }else{
+    /* disabled 로 두면 키보드·스크린리더가 잠금 사유조차 읽지 못한다.
+       사유 문구는 버튼 안에 이미 있으므로(#msg 는 게임 화면에 있어 여기선 안 보인다)
+       누르면 흔들어서 '눌리지 않았다'만 알린다 */
+    b.setAttribute('aria-disabled','true');
+    b.addEventListener('click',function(){
+      ensureAC();SND.ui();
+      b.classList.remove('wiggle');void b.getBoundingClientRect();b.classList.add('wiggle');
+    });
+    b.addEventListener('animationend',function(){b.classList.remove('wiggle')});
+  }
+  return b;
+}
 
 /* ============================== i18n apply ============================== */
 function applyLang(){
@@ -758,23 +1426,39 @@ function applyLang(){
   $('titleH').textContent=T('title');
   $('subH').textContent=T('sub');
   $('homeBtn').textContent=T('home');
-  $('inst').innerHTML=T('inst');
+  $('inst').innerHTML=T(maxMove===2?'inst2':'inst1');
   checkBtn.textContent=T('check');
   hintBtn.textContent=T('hint');
   resetBtn.textContent=T('reset');
+  backSel.textContent=T('back');
+  $('selT').textContent=T('selT');
   $('bangText').textContent=T('correct');
   $('foot').textContent=T('foot');
-  $('doneT').textContent=T('doneT');
-  $('doneS').textContent=T('doneS');
+  if(curP)noteEl.textContent=curP.ans.length>1?T('manyAns'):'';
+  applyDoneText();
+  nextBtn.textContent=T('next');
   againBtn.textContent=T('again');
+  selBtn.textContent=T('toSel');
   $('doneHomeBtn').textContent=T('toHome');
   $('blowX').textContent=T('blow');
   langBtn.textContent=FLAGS[lang];
+  /* 라벨이 'language'/'sound' 로 고정이라 언어를 바꿔도 소리를 꺼도 그대로였다 */
+  langBtn.setAttribute('aria-label',T('aLang').replace('{l}',LANGNAME[lang]));
+  syncSndBtn();
+  updateSlots();
+  updateMoveUI();
   updateProgressUI();
+  buildStageList();
   clearToast();
+}
+function syncSndBtn(){
+  sndBtn.textContent=sndOn?'🔊':'🔇';
+  sndBtn.setAttribute('aria-label',T('aSnd'));
+  sndBtn.setAttribute('aria-pressed',sndOn?'true':'false');
 }
 
 /* ============================== wiring ============================== */
+board.addEventListener('pointerdown',onBoardDown);
 checkBtn.addEventListener('click',onCheck);
 resetBtn.addEventListener('click',onReset);
 hintBtn.addEventListener('click',onHint);
@@ -787,28 +1471,39 @@ langBtn.addEventListener('click',function(){
 sndBtn.addEventListener('click',function(){
   sndOn=!sndOn;
   lsSet('in9-matchstick-snd',sndOn?'1':'0');
-  sndBtn.textContent=sndOn?'🔊':'🔇';
+  syncSndBtn();
   if(sndOn){ensureAC();SND.ui()}
 });
-sndBtn.textContent=sndOn?'🔊':'🔇';
+/* 같은 단계를 다시 — 판을 새로 짜므로 안 본 문제가 남아 있으면 새 문제가 나온다 */
 againBtn.addEventListener('click',function(){
   ensureAC();SND.ui();
-  state={day:dayStr,solved:[false,false,false],wrong:[0,0,0]};
-  saveState();
   hideDone();
-  setTimeout(function(){loadProblem(0)},120);
+  setTimeout(function(){startStage(curL,true)},120);
 });
+nextBtn.addEventListener('click',function(){
+  ensureAC();SND.ui();
+  var nx=curL+1;
+  hideDone();
+  if(nx>STAGES){showStageSelect();return}
+  setTimeout(function(){startStage(nx,true)},120);
+});
+selBtn.addEventListener('click',function(){ensureAC();SND.ui();showStageSelect()});
+backSel.addEventListener('click',function(){ensureAC();SND.ui();showStageSelect()});
 document.addEventListener('pointerdown',function(){ensureAC()},{once:true,capture:true});
 
 /* ============================== boot ============================== */
+setDoneReachable(false);
 applyLang();
-if(state.solved[0]&&state.solved[1]&&state.solved[2]){
-  pIdx=2;loadProblem(2);locked=true;
-  showDone(false);
+/* 부팅에서는 포커스를 옮기지 않는다 — 사용자가 시작한 이동이 아니라서 */
+if(state.cur){
+  resumeStage(false);
+}else if(!state.cleared[0]){
+  /* 첫 방문이면 선택 화면에서 헤매지 않게 1단계를 바로 시작 */
+  startStage(1,false);
 }else{
-  var first=0;
-  while(first<3&&state.solved[first])first++;
-  loadProblem(first);
+  gameView.classList.add('hidden');
+  stageView.classList.remove('hidden');
+  buildStageList();
 }
 })();
 </script>
