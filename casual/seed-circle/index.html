@@ -385,6 +385,7 @@ ko:{
   tipAuto:'자동 물주기 — 좋아하는 구간을 알아서 맞춰요',
   tipCircle:'씨앗이 다시 맺혔어요', tipGreen:'온실 — 목표 없이 그냥 키워요',
   spFast:'쑥쑥 자라는 중', spSlow:'천천히 자라는 중', spDry:'아주 천천히 자라는 중',
+  spWet:'물이 너무 많아요',
   unknown:'???', mm:'mm', pickTitle:'셋 다 같은 축척이에요',
   grTitle:'온실', grLead:'모은 식물 중 아무거나 다시 키워요. 목표는 없어요.',
   circleFirst:'처음 고른 씨앗', circleNew:'다시 맺힌 씨앗', circleMsg:'한 바퀴 완료',
@@ -419,6 +420,7 @@ ja:{
   tipAuto:'じどうみずやり — すきなしめりに あわせてくれるよ',
   tipCircle:'たねが またできたよ', tipGreen:'おんしつ — もくひょうなしで そだてるだけ',
   spFast:'ぐんぐん そだってる', spSlow:'ゆっくり そだってる', spDry:'とてもゆっくり そだってる',
+  spWet:'みずが おおすぎるよ',
   unknown:'???', mm:'mm', pickTitle:'3つとも おなじ しゃくどだよ',
   grTitle:'おんしつ', grLead:'あつめたなかから すきなものを もういちど。もくひょうはないよ。',
   circleFirst:'さいしょにえらんだたね', circleNew:'またできたたね', circleMsg:'ひとめぐり かんりょう',
@@ -453,6 +455,7 @@ en:{
   tipAuto:'Auto water — it holds the soil where this plant likes it',
   tipCircle:'The seed formed again', tipGreen:'Greenhouse — no goal, just growing',
   spFast:'Growing fast', spSlow:'Growing slowly', spDry:'Growing very slowly',
+  spWet:'Too much water',
   unknown:'???', mm:'mm', pickTitle:'All three at the same scale',
   grTitle:'Greenhouse', grLead:'Grow any plant you have collected again. There is no goal.',
   circleFirst:'The seed you picked', circleNew:'The seed it made', circleMsg:'Circle complete',
@@ -687,9 +690,10 @@ var SEED_PLANTS = [
 ];
 
 /* 단계별 접시 구성: [주인공, 곁들이, 곁들이]. 곁들이도 전부 끝까지 자란다.
-   sec 합계 = 224초. 여기에 퀴즈·카드 6번을 더해도 초등 쉬는 시간(10분) 안에
-   여섯 바퀴가 닫힌다. 예전 값(35~110, 합계 395초)은 물주기가 어긋나면
-   쉬는 시간을 넘겨서 '끝내지 못하고 덮는' 판이 나왔다.
+   어떻게 골라도 gameSec 합계가 243~318초라, 씬 전환과 퀴즈·카드 여섯 번을
+   더해도 물만 제대로 주면 한 바퀴가 4.4~5.7분에 닫힌다. 예전 값(35~110,
+   합계 395초)은 물주기가 어긋나면 쉬는 시간을 넘겨서 '끝내지 못하고
+   덮는' 판이 나왔다.
    best 는 여기 두지 않는다 — 습도 구간은 고른 식물(PL[id].best)에서만 온다.
    같은 값을 두 군데 두면 반드시 한쪽이 썩는다. */
 var SEED_STAGES = [
@@ -1973,7 +1977,8 @@ var S = {
   cands:[], picked:null, tsel:-1,
   p:0, moist:0, secs:20, best:[55,100], revealed:false,
   holding:false, wRamp:0, paused:false, fired:false,
-  flyT:0, circleT:0, playMs:0, guessOK:0, guessTry:0, auto:false
+  flyT:0, circleT:0, playMs:0, guessOK:0, guessTry:0, auto:false,
+  answered:false, answerOK:false
 };
 var DEX = (function(){
   var raw = store.get('in9-'+SLUG+'-dex',''), out=[], i, parts;
@@ -1999,12 +2004,25 @@ function shuffle(arr,seed){
 }
 
 /* 성장 배수. 어떤 경우에도 0 이 아니다 — 식물은 죽지 않고 느려질 뿐이다. */
+/* 좋아하는 구간을 벗어나면 느려질 뿐 죽지 않는다. 벌의 크기는 세 가지를
+   한꺼번에 만족해야 정해진다.
+   1) 꾹 누르고만 있어도 한 판이 쉬는 시간 안에 끝날 것. 물뿌리개를 든 아이가
+      제일 먼저 하는 행동이 "계속 누르기"다. 여기서 3배 느려지면 15분이 걸려
+      끝을 못 본다 (계속 누름 = 6~8분이 되도록 잡았다).
+   2) 그래도 구간을 맞춘 판이 제일 빠를 것 — 안 그러면 눈금이 장식이 된다.
+   3) 축축한 쪽보다 바싹 마른 쪽이 더 느릴 것. 실제로도 그렇다.
+   숫자를 건드리면 세 조건을 다시 계산해볼 것. */
 function growRate(m,best){
   if(m>=best[0] && m<=best[1]) return 1.0;
-  if(m<10) return 0.12;
-  return 0.35;
+  if(m>best[1]) return 0.70;   /* 너무 축축 */
+  if(m<10) return 0.25;        /* 바싹 마름 */
+  return 0.45;                 /* 조금 마름 */
 }
-function speedLabel(r){ return r>=0.9? 'spFast' : (r>=0.3? 'spSlow':'spDry'); }
+function speedLabel(r,wet){
+  if(r>=0.9) return 'spFast';
+  if(wet) return 'spWet';
+  return r>=0.3? 'spSlow':'spDry';
+}
 
 var tipTimer=0;
 function tip(msg,ms){
@@ -2172,7 +2190,7 @@ function updateHUD(){
   if(S.scene==='grow'){
     r = growRate(S.moist,S.best);
     var el=$('#speed');
-    el.innerHTML = '<b>'+L(speedLabel(r))+'</b>';
+    el.innerHTML = '<b>'+L(speedLabel(r, S.moist>S.best[1]))+'</b>';
     el.className = r>=0.9? '' : 'slow';
   } else { $('#speed').textContent=''; }
 }
@@ -2252,10 +2270,16 @@ function pickSeed(id){
   if(S.mode==='journey') openQuiz(); else beginPlant();
 }
 function openQuiz(){
+  S.answered=false; S.answerOK=false;
+  buildQuiz(); show('#ovQuiz');
+}
+/* 언어를 바꾸면 버튼 글자가 통째로 바뀌어야 해서 다시 그린다. 그런데 이미
+   답한 퀴즈까지 새로 그리면 결과가 지워지고 버튼이 되살아나 같은 문제를 또
+   맞힐 수 있었다 — 맞힌 횟수가 부풀고, 그 수가 그대로 통계로 나간다.
+   그래서 답한 상태는 S 에 두고, 다시 그린 뒤 그 상태를 도로 입힌다. */
+function buildQuiz(){
   var box=$('#quizBtns'), i, names=shuffle(S.cands, S.picked+String(S.si));
   box.innerHTML='';
-  $('#quizRes').setAttribute('hidden','');
-  $('#quizSkip').textContent = L('qzSkip');
   for(i=0;i<names.length;i++){
     (function(nm){
       var b=document.createElement('button');
@@ -2264,17 +2288,23 @@ function openQuiz(){
       box.appendChild(b);
     })(names[i]);
   }
-  show('#ovQuiz');
+  paintQuiz();
 }
-function answerQuiz(nm){
-  var ok = (nm===S.picked), res=$('#quizRes'), i, bs=$('#quizBtns').querySelectorAll('.btn');
-  S.guessTry++;
-  if(ok) S.guessOK++;
+function paintQuiz(){
+  var res=$('#quizRes'), bs=$('#quizBtns').querySelectorAll('.btn'), i;
+  $('#quizSkip').textContent = L(S.answered? 'qzGo':'qzSkip');
+  if(!S.answered){ res.setAttribute('hidden',''); return; }
   for(i=0;i<bs.length;i++){ bs[i].disabled=true; bs[i].style.opacity= (bs[i].textContent===P(S.picked))?'1':'.45'; }
   res.removeAttribute('hidden');
-  res.innerHTML = (ok? '<b>'+L('qzRight')+'</b> ' : L('qzWrong')+' ') + L('fnAns')(P(S.picked));
-  $('#quizSkip').textContent = L('qzGo');
-  SFX.boot(); if(ok) SFX.chord([659.25,880],0.4,0.10); else SFX.tone(392,0.22,0.07,'triangle');
+  res.innerHTML = (S.answerOK? '<b>'+L('qzRight')+'</b> ' : L('qzWrong')+' ') + L('fnAns')(P(S.picked));
+}
+function answerQuiz(nm){
+  if(S.answered) return;
+  S.answered=true; S.answerOK=(nm===S.picked);
+  S.guessTry++;
+  if(S.answerOK) S.guessOK++;
+  paintQuiz();
+  SFX.boot(); if(S.answerOK) SFX.chord([659.25,880],0.4,0.10); else SFX.tone(392,0.22,0.07,'triangle');
 }
 function beginPlant(){
   hideAll();
@@ -2295,7 +2325,14 @@ function finishCircle(){
 function toTitle(){
   S.paused=false; S.mode='journey'; S.scene='title';
   S.picked=null; S.revealed=false; S.p=0; S.si=0; S.tsel=-1; S.best=[55,100];
-  releaseHold(); resetGauge(); setBand([0,0]); setStrip(); show('#ovTitle');
+  releaseHold(); resetGauge(); setBand([0,0]); setStrip(); titleActs(); show('#ovTitle');
+}
+/* 온실은 모은 식물을 다시 키우는 곳이라 아무것도 없으면 열어봐야 빈 목록에
+   닫기 버튼뿐이다. 처음 온 사람에게는 없는 문이 낫다. 도감은 비어 있어도
+   '한 바퀴를 돌면 여기 쌓입니다' 를 읽고 가면 되니 그대로 둔다. */
+function titleActs(){
+  var b=$('#goGreen');
+  if(DEX.length) b.removeAttribute('hidden'); else b.setAttribute('hidden','');
 }
 function nextStage(){
   hide('#ovCard');
@@ -2597,7 +2634,7 @@ function applyI18n(){
   $('#autoBtn').setAttribute('aria-pressed', S.auto?'true':'false');
   setStrip();
   updateHUD();
-  if(!$('#ovQuiz').hasAttribute('hidden') && S.picked) openQuiz();
+  if(!$('#ovQuiz').hasAttribute('hidden') && S.picked) buildQuiz();
   if(!$('#ovCard').hasAttribute('hidden') && S.picked) showCard(S.picked);
   if(!$('#ovDex').hasAttribute('hidden')) showDex(DEXGROW);
   if(!$('#ovDone').hasAttribute('hidden')) showDone();
@@ -2623,6 +2660,7 @@ layout();
 applyI18n();
 setBand([0,0]);
 S.scene='title';
+titleActs();
 show('#ovTitle');
 raf = requestAnimationFrame(frame);
 /* 첫 사용자 제스처에서 오디오 컨텍스트를 깨운다(자동재생 정책) */
