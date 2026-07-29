@@ -1,0 +1,2633 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#CFE3DA">
+<meta name="description" content="씨앗을 골라 물을 주고, 꽃이 지면 같은 씨앗이 다시 맺힌다 — 씨앗 한 바퀴">
+<title>씨앗 한 바퀴 · たねひとめぐり · Seed Full Circle</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
+<style>
+/* ─────────────────────────────────────────────────────────────
+   팔레트 "이슬 갠 아침 마당"
+   새벽 빵집(자주+호박 #f2b25c)과 씨앗 편지(연두+미색)를 피해서,
+   청자빛 하늘 + 물빛 청록 + 테라코타 화분으로 잡았다.
+   금색(#f2b25c)은 이 파일에서 절대 쓰지 않는다 — 빵집 색이다.
+   ───────────────────────────────────────────────────────────── */
+:root{
+  --sky1:#CFE3DA; --sky2:#EDF4EC; --sky3:#A9B9B0;
+  --ink:#263A38; --ink2:#4E6663; --line:#C3D2CB;
+  --water:#2E8C93; --water2:#5FBFC2; --waterlite:#BDE6E5;
+  --card:#F2F5F2; --card2:#E4EDE6;
+  --pot:#C2714C; --pot2:#9E5334;
+  --leaf:#4C7A3E; --leaf2:#7BA85C;
+  --ok:#3E7C59;
+  --r:14px;
+  --gp:0%;   /* 습도 게이지 채움 비율 — JS 가 %로 써넣는다 */
+  --blo:0%;  /* 좋아하는 구간 시작 */
+  --bw:0%;   /* 좋아하는 구간 폭 */
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+[hidden]{display:none!important}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Hiragino Sans','Noto Sans KR','Segoe UI',sans-serif;
+  color:var(--ink);
+  background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 60%,#E0E9DF 100%);
+  overflow:hidden;                 /* 가로 스크롤 원천 차단 */
+  -webkit-user-select:none;user-select:none;
+  touch-action:manipulation;
+}
+#app{
+  height:100dvh;height:100vh;height:100dvh;   /* dvh 미지원 브라우저용 3단 폴백 */
+  display:flex;flex-direction:column;
+  padding:calc(4px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));
+  max-width:760px;margin:0 auto;
+}
+
+/* 헤더: pointer-events 를 통째로 끄고 알약 버튼만 되살린다.
+   안 그러면 제목 영역이 캔버스 위를 덮어 물주기 홀드를 먹어버린다. */
+header{display:flex;align-items:flex-start;gap:8px;pointer-events:none;min-height:34px}
+header .ttl{flex:1;min-width:0;text-align:center;line-height:1.15}
+header .ttl b{display:block;font-size:15px;font-weight:700;letter-spacing:-.01em}
+header .ttl span{display:block;font-size:10px;color:var(--ink2);opacity:.85;margin-top:1px}
+.pill{
+  pointer-events:auto;position:relative;
+  border:1px solid var(--line);background:rgba(255,255,255,.72);color:var(--ink);
+  border-radius:999px;padding:5px 9px;font-size:12px;line-height:1;
+  text-decoration:none;cursor:pointer;white-space:nowrap;
+}
+/* 실제 알약은 28px 남짓이라 손가락엔 좁다. 보이는 크기는 그대로 두고
+   투명 히트영역만 44px 로 넓힌다(±3px 이 아니라 진짜 44px 를 채운다).
+   -38% 로 살짝 내리는 이유: 헤더가 화면 맨 위라 -50% 로 두면 위쪽 6px 이
+   뷰포트 밖으로 잘려서 실제 히트영역이 38px 밖에 안 된다. */
+.pill::before{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-38%);width:44px;height:44px;border-radius:999px}
+.pill:focus-visible{outline:2px solid var(--water);outline-offset:2px}
+.pill.off{opacity:.45}
+/* gap 을 6px 로 두면 44px 히트영역끼리 겹쳐서 서로를 잘라먹는다(유효 37px). */
+.hgrp{display:flex;gap:12px;pointer-events:none}
+
+/* 진행 띠 */
+#strip{display:flex;align-items:center;gap:8px;margin:6px 2px 4px;font-size:11px;color:var(--ink2);min-height:16px}
+#dots{display:flex;gap:4px}
+#dots i{width:7px;height:7px;border-radius:50%;background:#fff;border:1px solid var(--line);display:block}
+#dots i.on{background:var(--ok);border-color:var(--ok)}
+/* '지난 단계'와 '지금 단계'는 회색조에서 휘도 차가 13/255 밖에 안 난다.
+   그래서 지금 단계에만 테두리 링을 하나 더 준다(색이 빠져도 읽힌다). */
+#dots i.now{background:var(--water);border-color:var(--water);transform:scale(1.25);box-shadow:0 0 0 2px var(--sky2),0 0 0 3px var(--ink)}
+#nameNow{font-weight:700;color:var(--ink)}
+
+#stageWrap{position:relative;flex:1;min-height:0;border-radius:var(--r);overflow:hidden;background:var(--sky2)}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+/* 캔버스가 #stageWrap 을 꽉 채우고 그 위에 overflow:hidden 이 걸려 있어서
+   바깥으로 그려지는 기본 포커스 링이 통째로 잘린다. 안쪽으로 그린다. */
+canvas:focus-visible{outline:2px solid var(--water);outline-offset:-3px}
+
+/* 캔버스 위에 겹치는 안내 문구. pointer-events:none 이라 홀드를 막지 않는다. */
+#tip{
+  position:absolute;left:50%;bottom:8px;transform:translateX(-50%);
+  background:rgba(38,58,56,.72);color:#fff;font-size:12px;padding:5px 11px;border-radius:999px;
+  pointer-events:none;opacity:0;transition:opacity .25s;max-width:92%;text-align:center;
+}
+#tip.on{opacity:1}
+
+/* HUD: 속도 표시 + 습도 게이지 + 버튼 */
+#hud{margin-top:6px;display:flex;flex-direction:column;gap:6px}
+#gwrap{display:flex;align-items:center;gap:8px}
+#gLbl{font-size:11px;color:var(--ink2);white-space:nowrap}
+#gauge{
+  position:relative;flex:1;height:16px;border-radius:999px;overflow:hidden;
+  background:linear-gradient(180deg,#E8EEE9,#DCE6DE);border:1px solid var(--line);
+}
+#gFill{position:absolute;left:0;top:0;bottom:0;width:var(--gp);background:linear-gradient(180deg,var(--water2),var(--water));transition:width .08s linear}
+/* 좋아하는 구간 띠 — 색만으로 알려주면 회색조에서 사라진다.
+   그래서 빗금 패턴 + 양끝 세로선까지 같이 준다. */
+#gBand{
+  position:absolute;top:0;bottom:0;left:var(--blo);width:var(--bw);
+  border-left:2px solid var(--ink);border-right:2px solid var(--ink);
+  background:repeating-linear-gradient(135deg,rgba(38,58,56,.30) 0 3px,rgba(38,58,56,0) 3px 7px);
+  transform:scaleX(0);transform-origin:left center;transition:transform .22s ease-out;
+}
+#gBand.on{transform:scaleX(1)}
+#gNum{font-size:11px;color:var(--ink2);width:34px;text-align:right;font-variant-numeric:tabular-nums}
+#row2{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#speed{font-size:11px;color:var(--ink2);flex:1;min-width:90px}
+#speed b{color:var(--ok)}
+#speed.slow b{color:#9A6B2F}
+.btn{
+  border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;
+  padding:9px 13px;font-size:12px;cursor:pointer;min-height:44px;line-height:1;
+}
+.btn:focus-visible{outline:2px solid var(--water);outline-offset:2px}
+.btn.pri{background:var(--water);border-color:var(--water);color:#fff;font-weight:700}
+.btn.on{background:var(--waterlite);border-color:var(--water)}
+
+/* 오버레이 — dawn-bakery 와 같은 방식. display 토글 + inert 로 뒤를 잠근다. */
+/* 노치·홈바 영역까지 padding 을 밀어야 시트 모서리가 안 잘린다. */
+.ov{position:fixed;inset:0;background:rgba(38,58,56,.42);display:flex;align-items:center;justify-content:center;z-index:20;overflow:auto;
+  padding:calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+}
+.sheet{
+  background:var(--card);border-radius:18px;padding:16px;width:100%;max-width:430px;
+  box-shadow:0 14px 40px rgba(0,0,0,.22);overflow:auto;
+  max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+}
+.sheet h2{margin:0 0 6px;font-size:17px}
+.sheet p{margin:0 0 10px;font-size:13px;line-height:1.6;color:var(--ink2)}
+.sheet .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.sheet .acts .btn{flex:1;min-width:112px}
+.quizBtns{display:flex;flex-direction:column;gap:8px}
+.quizBtns .btn{width:100%;font-size:14px;padding:12px}
+.qres{font-size:13px;line-height:1.6;margin:8px 0 0}
+.qres b{color:var(--ok)}
+
+/* 도감 카드 */
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px;margin-bottom:9px;display:flex;gap:10px;align-items:flex-start}
+.card canvas{width:64px;height:64px;flex:none;background:var(--card2);border-radius:10px}
+.card .cb{flex:1;min-width:0}
+.card h3{margin:0 0 3px;font-size:14px}
+.card dl{margin:0;font-size:11.5px;line-height:1.55;color:var(--ink2)}
+.card dt{display:inline;font-weight:700;color:var(--ink)}
+.card dd{display:inline;margin:0 0 0 4px}
+.card dd::after{content:'';display:block}
+.fact{margin-top:5px;font-size:11.5px;line-height:1.55;color:var(--ink);background:var(--card2);border-radius:9px;padding:6px 8px}
+#dexList{max-height:min(56dvh,430px);overflow:auto;-webkit-overflow-scrolling:touch}
+#dexList .btn{margin-top:6px;padding:7px 10px}
+.big{width:100%;height:auto;aspect-ratio:16/10;background:var(--card2);border-radius:12px;display:block}
+
+/* 가로 화면: HUD 를 오른쪽 열로 접고 게이지를 세로로 세운다.
+   DOM 은 하나만 두고 CSS 로 방향만 바꾼다(두 벌 만들면 반드시 어긋난다). */
+@media (orientation:landscape) and (max-height:520px){
+  /* 행을 전부 명시한다. #strip 만 auto 배치로 두면 이미 채워진 2행을 피해
+     암시적 3행으로 밀려나 캔버스 아래에 떨어진다. */
+  #app{max-width:none;display:grid;grid-template-columns:1fr 132px;grid-template-rows:auto auto 1fr;gap:6px;column-gap:8px}
+  header{grid-column:1/3;grid-row:1}
+  #strip{grid-column:1/3;grid-row:2;margin:0 2px}
+  #stageWrap{grid-column:1;grid-row:3}
+  #hud{grid-column:2;grid-row:3;margin-top:0;justify-content:flex-start}
+  #gwrap{flex-direction:column;align-items:stretch;flex:1;min-height:0}
+  /* 가로 화면에서는 게이지가 세로로 선다. 폭까지 132px 로 벌리면 999px 둥근모서리가
+     커다란 타원이 되어 물통이 아니라 고장난 도형처럼 보인다. */
+  #gauge{width:44px;height:auto;flex:1;min-height:60px;margin:0 auto;border-radius:22px}
+  #gFill{top:auto;bottom:0;left:0;right:0;width:auto;height:var(--gp);background:linear-gradient(0deg,var(--water),var(--water2));transition:height .08s linear}
+  #gBand{left:0;right:0;width:auto;top:auto;bottom:var(--blo);height:var(--bw);
+    border-left:none;border-right:none;border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);
+    transform:scaleY(0);transform-origin:center bottom}
+  #gBand.on{transform:scaleY(1)}
+  #gNum{width:auto;text-align:center}
+  #row2{flex-direction:column;align-items:stretch}
+  #speed{min-width:0}
+  .btn{padding:8px 6px}
+  header .ttl span{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  #gFill,#gBand,#tip{transition:none}
+}
+</style>
+
+<div id="app">
+  <header>
+    <a class="pill" id="homeBtn" href="../../" data-i="home">← 홈</a>
+    <div class="ttl"><b id="tMain">씨앗 한 바퀴</b><span id="tSub">たねひとめぐり · Seed Full Circle</span></div>
+    <div class="hgrp">
+      <button class="pill" id="pauseBtn" type="button" data-ia="arPause" aria-label="멈춤">⏸</button>
+      <button class="pill" id="soundBtn" type="button" data-ia="arSound" aria-label="소리">🔊</button>
+      <button class="pill" id="langBtn" type="button" data-ia="arLang" aria-label="언어">🏳</button>
+    </div>
+  </header>
+
+  <div id="strip">
+    <span id="dots" aria-hidden="true"></span>
+    <span id="stageTxt">1 / 6</span>
+    <span id="nameNow">???</span>
+  </div>
+
+  <div id="stageWrap">
+    <canvas id="stage" tabindex="0" role="button" data-ia="arStage" aria-label="화분 — 꾹 눌러 물주기"></canvas>
+    <div id="tip" role="status" aria-live="polite"></div>
+  </div>
+
+  <div id="hud">
+    <div id="gwrap">
+      <span id="gLbl" data-i="gauge">흙 습도</span>
+      <div id="gauge" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-ia="gauge" aria-label="흙 습도"><div id="gFill"></div><div id="gBand"></div></div>
+      <span id="gNum">0</span>
+    </div>
+    <div id="row2">
+      <span id="speed"></span>
+      <button class="btn" id="autoBtn" type="button" aria-pressed="false" data-i="autoOff">💧 자동 물주기</button>
+      <button class="btn" id="dexBtn" type="button" data-i="dexBtn">📖 도감</button>
+    </div>
+  </div>
+</div>
+<!-- 오버레이들. 전부 hidden 으로 시작하고 show()/hide() 가 display 만 건드린다.
+     뒤 배경에는 inert 를 걸어 탭 포커스가 캔버스로 새어 들어가지 않게 한다. -->
+<div class="ov" id="ovTitle" hidden>
+  <div class="sheet" role="dialog" aria-modal="true">
+    <h2 data-i="tiTitle">씨앗 한 바퀴</h2>
+    <p data-i="tiBody">씨앗을 골라 심고, 꾹 눌러 물을 줍니다. 싹이 트면 이름을 알게 되고, 꽃이 지면 처음 그 씨앗이 다시 맺힙니다. 한 바퀴가 닫히면 끝.</p>
+    <p data-i="tiBody2">식물은 죽지 않아요. 물을 잘못 줘도 느려질 뿐입니다. 틀려도 잃는 건 없어요. 꾹 누르기가 힘들면 자동 물주기를 켜세요.</p>
+    <div class="acts">
+      <button class="btn pri" id="goJourney" type="button" data-i="tiGo">🌱 한 바퀴 시작</button>
+      <button class="btn" id="goGreen" type="button" data-i="tiGreen">🪴 온실</button>
+    </div>
+    <div class="acts"><button class="btn" id="goDex" type="button" data-i="dexBtn">📖 도감</button></div>
+  </div>
+</div>
+
+<div class="ov" id="ovQuiz" hidden>
+  <div class="sheet" role="dialog" aria-modal="true">
+    <h2 data-i="qzTitle">무슨 씨앗일까?</h2>
+    <p data-i="qzBody">맞혀도 좋고 건너뛰어도 좋아요. 틀려도 아무 일 없어요.</p>
+    <div class="quizBtns" id="quizBtns"></div>
+    <p class="qres" id="quizRes" hidden></p>
+    <div class="acts"><button class="btn" id="quizSkip" type="button" data-i="qzSkip">건너뛰고 심기</button></div>
+  </div>
+</div>
+
+<div class="ov" id="ovCard" hidden>
+  <div class="sheet" role="dialog" aria-modal="true">
+    <h2 id="cardTitle">—</h2>
+    <p id="cardLead"></p>
+    <canvas class="big" id="cardCv"></canvas>
+    <div id="cardBody"></div>
+    <div class="acts"><button class="btn pri" id="cardNext" type="button" data-i="cdNext">다음 씨앗 ▶</button></div>
+  </div>
+</div>
+
+<div class="ov" id="ovDex" hidden>
+  <div class="sheet" role="dialog" aria-modal="true">
+    <h2 id="dexTitle" data-i="dxTitle">씨앗 도감</h2>
+    <p id="dexLead" data-i="dxLead">한 바퀴를 돈 식물만 여기 쌓입니다.</p>
+    <div id="dexList"></div>
+    <div class="acts"><button class="btn pri" id="dexClose" type="button" data-focus data-i="close">닫기</button></div>
+  </div>
+</div>
+
+<div class="ov" id="ovDone" hidden>
+  <div class="sheet" role="dialog" aria-modal="true">
+    <h2 data-i="dnTitle">여섯 바퀴, 전부 닫혔어요</h2>
+    <p id="doneBody"></p>
+    <div class="acts">
+      <button class="btn pri" id="doneDex" type="button" data-i="dexBtn">📖 도감</button>
+      <button class="btn" id="doneGreen" type="button" data-i="tiGreen">🪴 온실</button>
+    </div>
+    <div class="acts">
+      <button class="btn" id="doneAgain" type="button" data-i="dnAgain">다시 한 바퀴</button>
+      <a class="btn" id="doneHome" href="../../" data-i="home" style="text-align:center;text-decoration:none">← 홈</a>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="ovPause" hidden>
+  <div class="sheet" role="dialog" aria-modal="true">
+    <h2 data-i="psTitle">잠깐 멈춤</h2>
+    <p data-i="psBody">멈춘 동안에는 자라지 않아요. 창을 닫아도 마찬가지예요 — 자라는 건 화면을 보고 있는 동안뿐입니다.</p>
+    <div class="acts">
+      <button class="btn pri" id="psResume" type="button" data-i="psGo">이어서</button>
+      <button class="btn" id="psRestart" type="button" data-i="psRe">이 씨앗 처음부터</button>
+    </div>
+    <div class="acts"><button class="btn" id="psQuit" type="button" data-i="psQuit">처음 화면으로</button></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   씨앗 한 바퀴 (seed-circle)
+   씨앗 → 물 → 싹 → 잎 → 꽃 → 열매 → 같은 씨앗. 한살이가 닫히면 클리어.
+   설계상 지켜야 하는 것:
+   · 성장은 rAF 안, 화면이 보일 때만. 시간·진행도를 저장하지 않는다
+     (저장하면 그 순간 방치형 게임이 된다).
+   · 식물은 죽지 않는다. 습도가 틀리면 배수가 낮아질 뿐 0 은 없다.
+   · 도감은 모은 것만 쌓인다. 빈 칸·자물쇠 없음.
+   ES5 로만 쓴다 (var / function). 기존 파일들과 스타일이 섞이면 안 된다.
+   ============================================================ */
+var SLUG = 'seed-circle';
+
+var $ = function(s){ return document.querySelector(s); };
+var $$ = function(s){ return [].slice.call(document.querySelectorAll(s)); };
+var store = {
+  get:function(k,d){ try{ var v=localStorage.getItem(k); return v===null?d:v; }catch(e){ return d; } },
+  set:function(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+};
+/* 한 번만 읽으면 게임 도중에 설정을 켠 사람에게는 끝까지 안 먹는다.
+   change 를 듣는다. 구형 사파리에는 addEventListener 가 없어 addListener 로 떨어진다. */
+var reduced = false;
+try{
+  var mqReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  reduced = mqReduce.matches;
+  if(mqReduce.addEventListener) mqReduce.addEventListener('change', function(ev){ reduced = ev.matches; });
+  else if(mqReduce.addListener) mqReduce.addListener(function(ev){ reduced = ev.matches; });
+}catch(e){}
+
+/* 구형 iOS 사파리에 roundRect 가 없다. 없으면 직접 깐다. */
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
+    if(w<2*r) r=w/2; if(h<2*r) r=h/2; if(r<0) r=0;
+    this.beginPath();
+    this.moveTo(x+r,y); this.arcTo(x+w,y,x+w,y+h,r); this.arcTo(x+w,y+h,x,y+h,r);
+    this.arcTo(x,y+h,x,y,r); this.arcTo(x,y,x+w,y,r); this.closePath();
+    return this;
+  };
+}
+
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function lerp(a,b,t){ return a+(b-a)*t; }
+/* smoothstep. 성장 구간 창(window)을 겹쳐 쓰면 단계 전환이 끊기지 않는다. */
+function sm(x,a,b){ var t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); }
+function ease(t){ return t<0?0:(t>1?1:t*t*(3-2*t)); }
+
+/* 문자열 해시 + 결정론적 난수.
+   매 프레임 Math.random 을 쓰면 잎이 부들부들 떤다. 씨앗키+인덱스로 고정한다. */
+function hs(s){ var h=0,i; for(i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))|0; } return Math.abs(h%9973)/9973; }
+function rnd(key,i){ var t=Math.sin(i*12.9898 + hs(key)*78.233)*43758.5453; return t-Math.floor(t); }
+function rr(key,i,a,b){ return a+(b-a)*rnd(key,i); }
+/* ── i18n ────────────────────────────────────────────────────
+   세 언어의 키 집합이 정확히 같아야 한다. 하나라도 빠지면 L() 이
+   조용히 한국어로 떨어져서 일본어 화면에 한글이 섞인다.
+   일본어는 초등 저학년이 읽을 수 있게 히라가나 위주로 쓴다.
+   ──────────────────────────────────────────────────────────── */
+/* 받침이 있으면 '이에요/이었어요', 없으면 '예요/였어요'.
+   식물 이름 열여섯 개가 두 경우로 갈리므로 붙여 쓰는 조사는 이걸로 고른다. */
+function hasJong(s){
+  if(!s) return false;
+  var c = s.charCodeAt(s.length-1);
+  if(c<0xAC00 || c>0xD7A3) return false;
+  return ((c-0xAC00)%28)!==0;
+}
+var LANGS = ['ko','ja','en'];
+var LANG_FLAG = { ko:'🇰🇷', ja:'🇯🇵', en:'🇬🇧' };
+var TITLES = { ko:'씨앗 한 바퀴', ja:'たねひとめぐり', en:'Seed Full Circle' };
+
+var I18N = {
+ko:{
+  home:'← 홈', gauge:'흙 습도', dexBtn:'📖 도감', autoOff:'💧 자동 물주기', autoOn:'💧 자동 켜짐',
+  tiTitle:'씨앗 한 바퀴',
+  tiBody:'씨앗을 골라 심고, 꾹 눌러 물을 줍니다. 싹이 트면 이름을 알게 되고, 꽃이 지면 처음 그 씨앗이 다시 맺힙니다. 한 바퀴가 닫히면 끝이에요.',
+  tiBody2:'식물은 죽지 않아요. 물을 잘못 줘도 느려질 뿐입니다. 틀려도 잃는 건 없어요. 꾹 누르기가 힘들면 자동 물주기를 켜세요.',
+  tiGo:'🌱 한 바퀴 시작', tiGreen:'🪴 온실',
+  arPause:'멈춤', arSound:'소리 켜기·끄기', arLang:'언어 바꾸기', arStage:'화분 — 꾹 눌러 물주기',
+  arTray:'씨앗 쟁반 — 화살표로 옮기고 스페이스로 고르기',
+  seedNth:'{n}번째 씨앗',
+  qzTitle:'무슨 씨앗일까?', qzBody:'맞혀도 좋고 건너뛰어도 좋아요. 틀려도 아무 일 없어요.',
+  qzSkip:'건너뛰고 심기', qzGo:'이 씨앗 심기', qzRight:'맞혔어요!', qzWrong:'아쉬워요. 그래도 그대로 심어요.',
+  cdNext:'다음 씨앗 ▶', cdFlower:'이 씨앗의 한 마디', cdReal:'씨앗에서 씨앗까지', cdWater:'좋아하는 물', cdFact:'재미있는 사실', cdSize:'실제 크기',
+  dxTitle:'씨앗 도감', dxLead:'한 바퀴를 돈 식물만 여기 쌓입니다.',
+  dxEmpty:'아직 아무것도 없어요. 한 바퀴를 돌면 여기 쌓입니다.', dxGrow:'🪴 온실에서 키우기', close:'닫기',
+  dnTitle:'여섯 바퀴, 전부 닫혔어요', dnAgain:'다시 한 바퀴',
+  psTitle:'잠깐 멈춤',
+  psBody:'멈춘 동안에는 자라지 않아요. 창을 닫아도 마찬가지예요 — 자라는 건 화면을 보고 있는 동안뿐입니다.',
+  psGo:'이어서', psRe:'이 씨앗 처음부터', psQuit:'처음 화면으로',
+  tipPick:'씨앗 하나를 골라 탭하세요', tipHold:'화면을 꾹 눌러 물을 주세요',
+  tipKey:'스페이스바를 꾹 누르면 물이 나와요. 짧게 톡 누르면 계속 나오고, 한 번 더 누르면 멈춰요',
+  tipKeyPick:'화살표로 씨앗을 옮기고, 스페이스바로 골라요',
+  tipSprout:'싹이 텄어요',
+  tipBloom:'꽃이 폈어요', tipAutumn:'잎이 노랗게 물들었어요',
+  tipAuto:'자동 물주기 — 좋아하는 구간을 알아서 맞춰요',
+  tipCircle:'씨앗이 다시 맺혔어요', tipGreen:'온실 — 목표 없이 그냥 키워요',
+  spFast:'쑥쑥 자라는 중', spSlow:'천천히 자라는 중', spDry:'아주 천천히 자라는 중',
+  unknown:'???', mm:'mm', pickTitle:'셋 다 같은 축척이에요',
+  grTitle:'온실', grLead:'모은 식물 중 아무거나 다시 키워요. 목표는 없어요.',
+  circleFirst:'처음 고른 씨앗', circleNew:'다시 맺힌 씨앗', circleMsg:'한 바퀴 완료',
+  fnStage:function(a,b){ return a+' / '+b; },
+  fnDone:function(n){ return '도감에 '+n+'종이 쌓였어요. 심은 그 씨앗이 여섯 번 다시 맺혔어요.'; },
+  fnSprout:function(n){ return n+(hasJong(n)?'이었어요!':'였어요!'); },
+  fnAns:function(n){ return '정답은 '+n+(hasJong(n)?'이에요.':'예요.'); }
+},
+ja:{
+  home:'← ホーム', gauge:'つちのしめり', dexBtn:'📖 ずかん', autoOff:'💧 じどうみずやり', autoOn:'💧 じどう オン',
+  tiTitle:'たねひとめぐり',
+  tiBody:'たねをえらんでうえて、ぎゅっとおしてみずをあげます。めがでるとなまえがわかって、はながちるとおなじたねがまたできます。ひとめぐりでおしまい。',
+  tiBody2:'しょくぶつはかれません。みずをまちがえても、おそくなるだけ。まちがえてもなくすものはないよ。ぎゅっとおすのが たいへんなら じどうみずやりを つけてね。',
+  tiGo:'🌱 ひとめぐり スタート', tiGreen:'🪴 おんしつ',
+  arPause:'いちじ ていし', arSound:'おとを つける・けす', arLang:'ことばを かえる', arStage:'うえきばち — ぎゅっとおして みずやり',
+  arTray:'たねのおぼん — やじるしで うごかして スペースで えらぶ',
+  seedNth:'{n}ばんめの たね',
+  qzTitle:'なんのたねかな?', qzBody:'あててもいいし、とばしてもいいよ。まちがえてもなにもおきません。',
+  qzSkip:'とばしてうえる', qzGo:'このたねをうえる', qzRight:'あたり!', qzWrong:'ざんねん。でもそのままうえるよ。',
+  cdNext:'つぎのたね ▶', cdFlower:'このたねの ひとこと', cdReal:'たねからたねまで', cdWater:'すきなみず', cdFact:'おもしろいはなし', cdSize:'ほんとうのおおきさ',
+  dxTitle:'たねずかん', dxLead:'ひとめぐりしたしょくぶつだけ、ここにたまります。',
+  dxEmpty:'まだなにもないよ。ひとめぐりすると、ここにたまります。', dxGrow:'🪴 おんしつでそだてる', close:'とじる',
+  dnTitle:'6つのめぐり、ぜんぶとじたよ', dnAgain:'もういちど ひとめぐり',
+  psTitle:'ちょっとおやすみ',
+  psBody:'とまっているあいだは そだちません。ページをとじてもおなじ — そだつのは がめんをみているあいだだけ。',
+  psGo:'つづける', psRe:'このたねをさいしょから', psQuit:'さいしょのがめんへ',
+  tipPick:'たねをひとつ えらんでタップ', tipHold:'がめんを ぎゅっとおして みずをあげよう',
+  tipKey:'スペースキーを ぎゅっとおすと みずがでるよ。ちょんとおすと でつづけて、もういちどおすと とまるよ',
+  tipKeyPick:'やじるしキーで たねを うごかして、スペースキーで えらぼう',
+  tipSprout:'めがでたよ',
+  tipBloom:'はながさいたよ', tipAutumn:'はっぱが きいろく なったよ',
+  tipAuto:'じどうみずやり — すきなしめりに あわせてくれるよ',
+  tipCircle:'たねが またできたよ', tipGreen:'おんしつ — もくひょうなしで そだてるだけ',
+  spFast:'ぐんぐん そだってる', spSlow:'ゆっくり そだってる', spDry:'とてもゆっくり そだってる',
+  unknown:'???', mm:'mm', pickTitle:'3つとも おなじ しゃくどだよ',
+  grTitle:'おんしつ', grLead:'あつめたなかから すきなものを もういちど。もくひょうはないよ。',
+  circleFirst:'さいしょにえらんだたね', circleNew:'またできたたね', circleMsg:'ひとめぐり かんりょう',
+  fnStage:function(a,b){ return a+' / '+b; },
+  fnDone:function(n){ return 'ずかんに '+n+'しゅるい たまったよ。うえたそのたねが、6かい またできました。'; },
+  fnSprout:function(n){ return n+' だったよ!'; },
+  fnAns:function(n){ return 'こたえは '+n+'。'; }
+},
+en:{
+  home:'← Home', gauge:'Soil moisture', dexBtn:'📖 Field guide', autoOff:'💧 Auto water', autoOn:'💧 Auto on',
+  tiTitle:'Seed Full Circle',
+  tiBody:'Pick a seed, plant it, and hold to water. The name is revealed when it sprouts, and once the flower fades the same seed forms again. One full circle and you are done.',
+  tiBody2:'Plants never die here. Wrong watering only slows them down. Guessing wrong costs you nothing. If holding is hard, turn on auto water.',
+  tiGo:'🌱 Start the circle', tiGreen:'🪴 Greenhouse',
+  arPause:'Pause', arSound:'Sound on or off', arLang:'Change language', arStage:'Planter — press and hold to water',
+  arTray:'Seed tray — arrow keys to move, space to pick',
+  seedNth:'Seed {n} of three',
+  qzTitle:'Which seed is it?', qzBody:'Guess it or skip it. Nothing happens if you are wrong.',
+  qzSkip:'Skip and plant', qzGo:'Plant this seed', qzRight:'You got it!', qzWrong:'Not this time. We plant it anyway.',
+  cdNext:'Next seed ▶', cdFlower:'A word for this seed', cdReal:'Seed to seed', cdWater:'Water it likes', cdFact:'Something true', cdSize:'Real size',
+  dxTitle:'Seed field guide', dxLead:'Only plants you carried full circle are collected here.',
+  dxEmpty:'Nothing yet. Finish a circle and it lands here.', dxGrow:'🪴 Grow in greenhouse', close:'Close',
+  dnTitle:'Six circles, all closed', dnAgain:'One more circle',
+  psTitle:'Paused',
+  psBody:'Nothing grows while paused. Same if you close the tab — growing only happens while you are watching.',
+  psGo:'Resume', psRe:'Restart this seed', psQuit:'Back to start',
+  tipPick:'Tap one seed to plant it', tipHold:'Press and hold anywhere to water',
+  tipKey:'Hold the space bar to water. A short tap keeps it running; tap again to stop',
+  tipKeyPick:'Arrow keys move between seeds, space picks one',
+  tipSprout:'It sprouted',
+  tipBloom:'It bloomed', tipAutumn:'The leaves turned yellow',
+  tipAuto:'Auto water — it holds the soil where this plant likes it',
+  tipCircle:'The seed formed again', tipGreen:'Greenhouse — no goal, just growing',
+  spFast:'Growing fast', spSlow:'Growing slowly', spDry:'Growing very slowly',
+  unknown:'???', mm:'mm', pickTitle:'All three at the same scale',
+  grTitle:'Greenhouse', grLead:'Grow any plant you have collected again. There is no goal.',
+  circleFirst:'The seed you picked', circleNew:'The seed it made', circleMsg:'Circle complete',
+  fnStage:function(a,b){ return a+' / '+b; },
+  fnDone:function(n){ return n+' plants in your field guide. The seed you planted came back six times.'; },
+  fnSprout:function(n){ return 'It was '+n+'!'; },
+  fnAns:function(n){ return 'The answer was '+n+'.'; }
+}
+};
+
+function detectLang(){
+  var s = store.get('in9-lang','');
+  if(LANGS.indexOf(s)>=0) return s;
+  var n = (navigator.language||'ko').toLowerCase();
+  if(n.indexOf('ja')===0) return 'ja';
+  if(n.indexOf('ko')===0) return 'ko';
+  return 'en';
+}
+var lang = detectLang();
+/* 키가 없으면 한국어로 폴백. 폴백이 실제로 쓰이면 그건 버그라서, 원래 없어야 한다. */
+function L(k){ var t=I18N[lang]; if(t && t[k]!==undefined) return t[k]; return I18N.ko[k]; }
+function P(id){ var o=PL[id]; return o? (o[lang]||o.ko) : ''; }              /* 식물 이름 */
+function PF(id,f){ var o=PL[id]; if(!o) return ''; var k=f+lang.charAt(0).toUpperCase()+lang.slice(1); return o[k]!==undefined?o[k]:o[f+'Ko']; }
+
+/* ── 소리 ─────────────────────────────────────────────────────
+   물소리는 필터 건 노이즈 루프. 홀드 시작/끝에 게인을 램프해서
+   뚝 끊기지 않게 한다(뚝 끊기면 실제보다 훨씬 싸구려로 들린다).
+   ──────────────────────────────────────────────────────────── */
+var SFX = {
+  on: store.get('in9-'+SLUG+'-sound','1')==='1',
+  ctx:null, master:null, water:null,
+  boot:function(){
+    if(this.ctx) { if(this.ctx.state==='suspended'){ try{ this.ctx.resume(); }catch(e){} } return; }
+    try{
+      var AC = window.AudioContext||window.webkitAudioContext; if(!AC) return;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = this.on?0.6:0;
+      this.master.connect(this.ctx.destination);
+    }catch(e){ this.ctx=null; }
+  },
+  setOn:function(v){
+    this.on=v; store.set('in9-'+SLUG+'-sound', v?'1':'0');
+    if(this.master){ try{ this.master.gain.value = v?0.6:0; }catch(e){} }
+    if(!v) this.waterStop();
+  },
+  tone:function(f,dur,vol,type,glide){
+    if(!this.on||!this.ctx) return;
+    try{
+      var t=this.ctx.currentTime, o=this.ctx.createOscillator(), g=this.ctx.createGain();
+      o.type=type||'sine'; o.frequency.setValueAtTime(f,t);
+      if(glide) o.frequency.exponentialRampToValueAtTime(glide,t+dur);
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(vol||0.14,t+0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+      o.connect(g); g.connect(this.master); o.start(t); o.stop(t+dur+0.03);
+    }catch(e){}
+  },
+  chord:function(list,dur,vol){
+    var i; for(i=0;i<list.length;i++){ this.tone(list[i],dur,(vol||0.1)/list.length*1.6,'sine'); }
+  },
+  waterStart:function(){
+    if(!this.on||!this.ctx||this.water) return;
+    try{
+      var ctx=this.ctx, len=Math.floor(ctx.sampleRate*0.9), buf=ctx.createBuffer(1,len,ctx.sampleRate), d=buf.getChannelData(0), i;
+      for(i=0;i<len;i++){ d[i]=Math.random()*2-1; }
+      var src=ctx.createBufferSource(); src.buffer=buf; src.loop=true;
+      var lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=780; lp.Q.value=0.7;
+      var g=ctx.createGain(); g.gain.value=0.0001;
+      src.connect(lp); lp.connect(g); g.connect(this.master); src.start();
+      g.gain.linearRampToValueAtTime(0.055, ctx.currentTime+0.22);
+      this.water={src:src,g:g};
+    }catch(e){ this.water=null; }
+  },
+  waterStop:function(){
+    if(!this.water) return;
+    var w=this.water; this.water=null;
+    try{
+      var t=this.ctx.currentTime;
+      w.g.gain.cancelScheduledValues(t);
+      w.g.gain.setValueAtTime(w.g.gain.value,t);
+      w.g.gain.linearRampToValueAtTime(0.0001,t+0.22);
+      setTimeout(function(){ try{ w.src.stop(); }catch(e){} }, 400);
+    }catch(e){ try{ w.src.stop(); }catch(e2){} }
+  },
+  hush:function(){ this.waterStop(); }
+};
+/* ── 식물 데이터 ──────────────────────────────────────────────
+   숫자·문안은 자료 담당이 확정한 표를 그대로 쓴다.
+   real* 는 도감에 그대로 적히는 실제 기간이고, gameSec 은 그걸 로그로
+   압축한 게임 시간이다 (봉선화 90일 = 22초, 은행 25년 = 68초). 둘을 섞지 말 것.
+   여정이든 온실이든 자라는 시간은 언제나 gameSec 이다 — 실제 기간이 같은
+   식물은 gameSec 도 같아야 하고, 긴 식물이 짧은 식물보다 빨리 자라면 안 된다.
+   표 전체를 손볼 일이 있으면 한 값만 고치지 말고 같은 비율로 곱할 것.
+   여섯 단계를 이어 하면 물주기가 어긋난 시간까지 쳐서 쉬는 시간 안에
+   끝나야 하는데, 비율만 지키면 그 총량은 상수배로 조절된다.
+   lang* 은 '꽃말'이 아니라 이 씨앗에 붙이는 한 마디다. 출처가 분명한
+   전통 꽃말(봉선화·나팔꽃·해바라기·복숭아)만 꽃말 그대로 쓰고,
+   나머지는 지어낸 꽃말 대신 눈으로 확인되는 사실을 한 줄로 적는다.
+   ──────────────────────────────────────────────────────────── */
+var SEED_PLANTS = [
+  { id:'balsam', stage:1, ko:'봉선화', ja:'ほうせんか', en:'Garden Balsam',
+    seedMm:2, gameSec:22, best:[55,100],
+    realKo:'약 90일', realJa:'やく90にち', realEn:'about 90 days',
+    waterKo:'촉촉하게 자주', waterJa:'しっとりこまめに', waterEn:'often, keep it damp',
+    langKo:'나를 건드리지 마세요', langJa:'わたしにさわらないで', langEn:'Do not touch me',
+    factKo:'씨주머니를 살짝 건드리면 톡 터지며 씨앗이 튀어나가요. 학명 Impatiens는 "참을성이 없다"는 뜻이에요.',
+    factJa:'たねのふくろにさわると、ぱちんとはじけてたねがとぶよ。がくめいの Impatiens は「がまんできない」といういみ。',
+    factEn:'Touch the ripe pod and it pops, flinging seeds away. Its name, Impatiens, means "impatient".' },
+  { id:'lettuce', stage:1, ko:'상추', ja:'レタス', en:'Lettuce',
+    seedMm:4, gameSec:31, best:[55,95],
+    realKo:'약 100일', realJa:'やく100にち', realEn:'about 100 days',
+    waterKo:'마르지 않게 촉촉히', waterJa:'かわかさないように', waterEn:'keep it moist',
+    langKo:'뜯어도 또 자라요', langJa:'つんでも またはえてくる', langEn:'Pick it and it grows back',
+    factKo:'줄기를 자르면 하얀 즙이 나와요. 그래서 학명 Lactuca가 라틴어로 "젖(lac)"에서 왔어요.',
+    factJa:'くきをきるとしろいしるがでるよ。だから「ちち(lac)」からなまえがついたんだ。',
+    factEn:'Cut the stem and white sap comes out. That is why its name comes from lac, "milk".' },
+  { id:'radish', stage:1, ko:'무', ja:'だいこん', en:'Radish',
+    seedMm:3, gameSec:34, best:[50,90],
+    realKo:'약 110일', realJa:'やく110にち', realEn:'about 110 days',
+    waterKo:'고르게 촉촉히', waterJa:'いつもしっとり', waterEn:'evenly moist',
+    langKo:'땅속이 진짜 몸통', langJa:'つちのなかが ほんとうのからだ', langEn:'The real body is underground',
+    factKo:'꽃이 지면 초록 꼬투리가 달리는데, 어린 꼬투리는 먹을 수 있어요.',
+    factJa:'はながちるとみどりのさやができて、わかいさやはたべられるよ。',
+    factEn:'After the flowers fall, green pods form, and the young pods are good to eat.' },
+  { id:'morningglory', stage:2, ko:'나팔꽃', ja:'あさがお', en:'Morning Glory',
+    /* 무·해바라기와 같은 110일인데 혼자 45초였다. 실제 기간이 같으면
+       자라는 시간도 같아야 이 게임의 약속이 지켜진다. */
+    seedMm:5, gameSec:34, best:[55,100],
+    realKo:'약 110일', realJa:'やく110にち', realEn:'about 110 days',
+    waterKo:'촉촉하게 듬뿍', waterJa:'たっぷりしっとり', waterEn:'plenty, keep it damp',
+    langKo:'기쁜 소식', langJa:'うれしいしらせ', langEn:'Happy news',
+    factKo:'아침에 피어서 한나절이면 시들어요. 꽃 하나가 하루를 못 넘겨요.',
+    factJa:'あさにさいて、おひるすぎにはもうしぼんじゃう。',
+    factEn:'It opens in the morning and wilts by afternoon. One flower lasts less than a day.' },
+  { id:'kidneybean', stage:2, ko:'강낭콩', ja:'いんげんまめ', en:'Kidney Bean',
+    seedMm:15, gameSec:31, best:[45,80],
+    realKo:'약 100일', realJa:'やく100にち', realEn:'about 100 days',
+    waterKo:'적당히, 너무 젖지 않게', waterJa:'ほどほどに', waterEn:'moderate, not soggy',
+    langKo:'꼭 다시 만나', langJa:'きっとまたあおうね', langEn:'See you again',
+    factKo:'싹이 틀 때 콩이 통째로 땅 위로 올라와 첫 떡잎이 돼요.',
+    factJa:'めがでるとき、まめがまるごとつちのうえにあがって、さいしょのはっぱになるよ。',
+    factEn:'When it sprouts, the whole bean lifts out of the soil and becomes the first leaves.' },
+  { id:'pumpkin', stage:2, ko:'호박', ja:'かぼちゃ', en:'Pumpkin',
+    seedMm:18, gameSec:37, best:[50,90],
+    realKo:'약 120일', realJa:'やく120にち', realEn:'about 120 days',
+    waterKo:'넉넉하게', waterJa:'たっぷりと', waterEn:'generously',
+    langKo:'덩굴은 자꾸 옆으로', langJa:'つるは どんどん よこへ', langEn:'The vine keeps heading sideways',
+    factKo:'암꽃과 수꽃이 따로 펴요. 암꽃 밑에는 이미 아주 작은 호박이 달려 있어요.',
+    factJa:'めばなとおばながべつべつにさくよ。めばなのしたには、もうちいさなかぼちゃがついてるんだ。',
+    factEn:'Male and female flowers bloom separately. Under each female flower a tiny pumpkin already waits.' },
+  { id:'sunflower', stage:3, ko:'해바라기', ja:'ひまわり', en:'Sunflower',
+    seedMm:12, gameSec:34, best:[50,95],
+    realKo:'약 110일', realJa:'やく110にち', realEn:'about 110 days',
+    waterKo:'듬뿍, 사이사이 조금 마르게', waterJa:'たっぷり、ときどきかわかして', waterEn:'deep water, let it dry a little between',
+    langKo:'당신만 바라봐요', langJa:'あなただけをみつめる', langEn:'I look only at you',
+    factKo:'해를 따라 도는 건 어린 해바라기뿐이에요. 다 크면 대개 동쪽을 향한 채 멈춰요.',
+    factJa:'たいようをおいかけるのは、こどものときだけ。おおきくなるとひがしをむいてとまるよ。',
+    factEn:'Only young sunflowers follow the sun. Grown-up ones stop and face east.' },
+  { id:'corn', stage:3, ko:'옥수수', ja:'とうもろこし', en:'Corn',
+    seedMm:10, gameSec:37, best:[50,90],
+    realKo:'약 120일', realJa:'やく120にち', realEn:'about 120 days',
+    waterKo:'넉넉하게', waterJa:'たっぷりと', waterEn:'generously',
+    langKo:'알알이 가득', langJa:'つぶつぶいっぱい', langEn:'Full to the brim',
+    factKo:'옥수수 수염 한 올이 알갱이 하나와 이어져 있어요. 그 수염에 꽃가루가 닿아야 그 자리에 알이 차요.',
+    factJa:'ひげ1ぽんが、つぶ1つぶとつながっているんだ。そのひげにかふんがつくと、そこにつぶができるよ。',
+    factEn:'Every strand of corn silk leads to one kernel. Pollen has to land on the strand for that kernel to fill.' },
+  { id:'rice', stage:4, ko:'벼', ja:'いね', en:'Rice',
+    seedMm:8, gameSec:40, best:[80,100],
+    realKo:'약 140일', realJa:'やく140にち', realEn:'about 140 days',
+    waterKo:'거의 잠길 만큼', waterJa:'ほとんどみずのなかで', waterEn:'almost flooded',
+    langKo:'가득 찬 가을', langJa:'みのりのあき', langEn:'A full autumn',
+    factKo:'벼꽃은 아침에 잠깐, 한두 시간만 열렸다 닫혀요.',
+    factJa:'いねのはなは、あさに1〜2じかんだけひらいて、すぐとじちゃう。',
+    factEn:'A rice flower opens for only one or two hours in the morning.' },
+  { id:'bamboo', stage:4, ko:'왕대', ja:'まだけ', en:'Madake Bamboo',
+    seedMm:8, gameSec:81, best:[50,85],
+    realKo:'약 120년', realJa:'やく120ねん', realEn:'about 120 years',
+    waterKo:'촉촉하되 물이 잘 빠지게', waterJa:'しっとり、でもみずはけよく', waterEn:'moist but well drained',
+    langKo:'봄에는 하루가 다르게', langJa:'はるは いちにちで ぐんと', langEn:'In spring it shoots up by the day',
+    factKo:'약 120년에 한 번 꽃이 펴요. 세계 어디에 심겨 있든 함께 피고, 피고 나면 그 대숲이 통째로 함께 져요.',
+    factJa:'120ねんに1どだけはながさくよ。せかいじゅうのまだけがいっしょにさいて、いっしょにいちどのいのちをおえるんだ。',
+    factEn:'It flowers about once every 120 years, the whole species together, then the grove finishes its life together.' },
+  { id:'peach', stage:5, ko:'복숭아', ja:'もも', en:'Peach',
+    seedMm:30, gameSec:53, best:[35,70],
+    realKo:'약 4년', realJa:'やく4ねん', realEn:'about 4 years',
+    waterKo:'적게, 과습을 싫어해요', waterJa:'すこなめに。みずのやりすぎはにがて', waterEn:'a little; it dislikes soggy soil',
+    langKo:'매력', langJa:'こころをひくみりょく', langEn:'Charm',
+    factKo:'먹는 부분 속의 단단한 것은 씨앗이 아니라 껍데기예요. 그걸 깨면 안에 진짜 씨앗이 하나 들어 있어요.',
+    factJa:'たべるところのなかの かたいものは たねじゃなくて から。わると なかに ほんとうのたねが1つ はいっているよ。',
+    factEn:'The hard stone inside a peach is a shell, not the seed. Crack it open and one real seed sits inside.' },
+  { id:'apple', stage:5, ko:'사과', ja:'りんご', en:'Apple',
+    seedMm:8, gameSec:58, best:[35,70],
+    realKo:'약 8년', realJa:'やく8ねん', realEn:'about 8 years',
+    waterKo:'적당히, 물이 잘 빠지게', waterJa:'ほどほどに、みずはけよく', waterEn:'moderate, well drained',
+    langKo:'기다린 만큼 달게', langJa:'まったぶんだけあまく', langEn:'Sweet for the wait',
+    factKo:'씨앗마다 전부 다른 사과가 나와요. 그래서 같은 품종 나무는 모두 처음 한 그루에서 접붙여 늘린 거예요.',
+    factJa:'たねからはぜんぶちがうりんごができるよ。だからおなじひんしゅは、みんなさいしょの1ぽんからつぎきでふやしたんだ。',
+    factEn:'Every seed makes a different apple, so every tree of one variety is grafted from one first tree.' },
+  { id:'persimmon', stage:5, ko:'감나무', ja:'かき', en:'Persimmon',
+    seedMm:18, gameSec:58, best:[35,70],
+    realKo:'약 7년', realJa:'やく7ねん', realEn:'about 7 years',
+    waterKo:'적당히', waterJa:'ほどほどに', waterEn:'moderate',
+    langKo:'기다리면 달아져요', langJa:'まてば あまくなる', langEn:'Wait and it turns sweet',
+    factKo:'덜 익은 감이 떫은 건 타닌 때문이에요. 익거나 말리면 그 떫은맛이 사라져 달아져요.',
+    factJa:'しぶいのはタンニンのせい。じゅくしたり、ほしたりするとしぶみがきえてあまくなるよ。',
+    factEn:'Unripe persimmons are astringent from tannin. Ripening or drying makes that pucker go away.' },
+  { id:'ginkgo', stage:6, ko:'은행나무', ja:'いちょう', en:'Ginkgo',
+    seedMm:20, gameSec:68, best:[25,60],
+    realKo:'약 25년', realJa:'やく25ねん', realEn:'about 25 years',
+    waterKo:'아주 적게', waterJa:'とてもすこしだけ', waterEn:'very little',
+    langKo:'오래오래', langJa:'ながいながいいのち', langEn:'A very long life',
+    factKo:'공룡 시대부터 모습이 거의 그대로인 살아있는 화석이에요. 암수딴그루라 씨앗은 암나무에만 맺혀요. 노랗고 물렁한 겉은 열매가 아니라 씨앗 껍질이에요.',
+    factJa:'きょうりゅうのじだいからすがたがかわっていない「いきたかせき」だよ。おすとめすがべつべつで、たねができるのはめのきだけ。きいろくてやわらかいそとがわは、みではなくてたねのかわなんだ。',
+    factEn:'A living fossil, almost unchanged since the dinosaurs. Only female trees carry seeds, and the soft yellow outside is seed coat, not fruit.' },
+  { id:'oak', stage:6, ko:'참나무', ja:'どんぐりのき', en:'Oak',
+    seedMm:20, gameSec:66, best:[30,65],
+    realKo:'약 20~30년', realJa:'やく20〜30ねん', realEn:'about 20 to 30 years',
+    waterKo:'적게', waterJa:'すこしだけ', waterEn:'sparingly',
+    langKo:'씩씩함', langJa:'げんきいっぱい', langEn:'Brave and strong',
+    factKo:'다람쥐가 겨울 먹이로 묻어두고 잊어버린 도토리가 자라서 나무가 돼요.',
+    factJa:'リスがふゆのごはんにうめて、わすれたどんぐりが、きになるんだよ。',
+    factEn:'Acorns that squirrels bury for winter and forget grow into trees.' },
+  { id:'saguaro', stage:6, ko:'사구아로선인장', ja:'サワロサボテン', en:'Saguaro Cactus',
+    seedMm:2, gameSec:71, best:[10,40],
+    realKo:'약 35년', realJa:'やく35ねん', realEn:'about 35 years',
+    waterKo:'아주 조금, 바싹 마른 뒤에', waterJa:'ほんのすこし。かわいてから', waterEn:'just a little, only when bone dry',
+    langKo:'물을 몸에 담아 둬요', langJa:'みずを からだに ためておく', langEn:'It stores water in its own body',
+    factKo:'꽃이 밤에 피어서 다음 날 오후면 닫혀요. 밤엔 박쥐가, 아침엔 새와 벌이 찾아와요.',
+    factJa:'はなはよるにひらいて、つぎのひのごごにはとじちゃう。よるはコウモリ、あさはとりやハチがくるよ。',
+    factEn:'The flower opens at night and closes the next afternoon. Bats visit in the dark, birds and bees at dawn.' }
+];
+
+/* 단계별 접시 구성: [주인공, 곁들이, 곁들이]. 곁들이도 전부 끝까지 자란다.
+   sec 합계 = 224초. 여기에 퀴즈·카드 6번을 더해도 초등 쉬는 시간(10분) 안에
+   여섯 바퀴가 닫힌다. 예전 값(35~110, 합계 395초)은 물주기가 어긋나면
+   쉬는 시간을 넘겨서 '끝내지 못하고 덮는' 판이 나왔다.
+   best 는 여기 두지 않는다 — 습도 구간은 고른 식물(PL[id].best)에서만 온다.
+   같은 값을 두 군데 두면 반드시 한쪽이 썩는다. */
+var SEED_STAGES = [
+  { stage:1, main:'balsam',       side:['lettuce','radish'] },
+  { stage:2, main:'morningglory', side:['kidneybean','pumpkin'] },
+  { stage:3, main:'sunflower',    side:['corn','pumpkin'] },
+  { stage:4, main:'rice',         side:['bamboo','corn'] },
+  { stage:5, main:'peach',        side:['apple','persimmon'] },
+  { stage:6, main:'ginkgo',       side:['oak','saguaro'] }
+];
+
+var PL = {};
+(function(){ var i; for(i=0;i<SEED_PLANTS.length;i++){ PL[SEED_PLANTS[i].id]=SEED_PLANTS[i]; } })();
+
+/* ── 씨앗 그림 파라미터 ───────────────────────────────────────
+   ar  = 폭/길이 비. seedMm 은 항상 '긴 축' 이고 폭은 여기서 나온다.
+         (데이터의 mm 라벨과 실제 그림이 어긋나면 이 게임의 자가 거짓말을 한다)
+   hl  = 반짝임 세기. 나팔꽃(0.08 무광 각짐) ↔ 사과(0.55 반들반들) 대비가
+         '색이 아니라 질감으로 가른다'의 핵심 쌍이다.
+   pat = 표면 무늬. 이게 씨앗의 정체성이라 형태보다 중요하다.
+   ──────────────────────────────────────────────────────────── */
+var SART = {
+  balsam:      { ar:0.92, shape:'ball',      c0:'#6B4A2F', c1:'#3E2A18', hl:0.18, pat:'warty' },
+  lettuce:     { ar:0.22, shape:'sliver',    c0:'#D8CBA8', c1:'#6B5B40', hl:0.10, pat:'ribs' },
+  radish:      { ar:0.90, shape:'irregball', c0:'#8C5A3A', c1:'#5C3A22', hl:0.12, pat:'dimple' },
+  morningglory:{ ar:0.78, shape:'segment',   c0:'#4A3B32', c1:'#241D19', hl:0.08, pat:'facet' },
+  kidneybean:  { ar:0.62, shape:'kidney',    c0:'#8E2B2B', c1:'#4E1616', hl:0.50, pat:'hilum' },
+  pumpkin:     { ar:0.62, shape:'teardrop',  c0:'#F0E7D2', c1:'#C4B393', hl:0.14, pat:'rim' },
+  sunflower:   { ar:0.48, shape:'teardrop',  c0:'#2B2622', c1:'#14110F', hl:0.22, pat:'stripes' },
+  corn:        { ar:0.82, shape:'tooth',     c0:'#E8B93C', c1:'#B87F16', hl:0.40, pat:'dent' },
+  rice:        { ar:0.30, shape:'spindle',   c0:'#D9C58A', c1:'#A88E4C', hl:0.16, pat:'husk' },
+  bamboo:      { ar:0.30, shape:'spindle',   c0:'#C2A870', c1:'#7E6434', hl:0.14, pat:'groove' },
+  peach:       { ar:0.74, shape:'almond',    c0:'#A8794F', c1:'#5E3C20', hl:0.10, pat:'pitted' },
+  apple:       { ar:0.52, shape:'teardrop',  c0:'#6B4326', c1:'#2E1A0E', hl:0.55, pat:'smooth' },
+  persimmon:   { ar:0.60, shape:'crescent',  c0:'#6E4520', c1:'#2B1A0B', hl:0.45, pat:'rimlite' },
+  ginkgo:      { ar:0.70, shape:'egg',       c0:'#F1E9D6', c1:'#BCAE8C', hl:0.20, pat:'ridge2' },
+  oak:         { ar:0.60, shape:'acorn',     c0:'#A9702F', c1:'#5C3712', hl:0.38, pat:'cap' },
+  saguaro:     { ar:0.80, shape:'comma',     c0:'#4A403A', c1:'#12100E', hl:0.50, pat:'smooth' }
+};
+
+/* ── 식물 그림 파라미터 ───────────────────────────────────────
+   길이는 전부 U(흙에서 화면 위까지의 성장 단위)의 배수로 쓴다.
+   px 상수를 하나라도 쓰면 가로 화면이나 작은 폰에서 바로 무너진다.
+   form 6종: herb(외줄기) / rosette(방석잎) / vine(감아오름) / crawl(기어감)
+             / clump(포기) / tree(가지 갈림) / column(기둥)
+   ──────────────────────────────────────────────────────────── */
+var ART = {
+  balsam:      { form:'herb',    hMax:0.60, w0:0.030, w1:0.011, nLeaf:9,  leaf:'serrate', lLen:0.25, lc:['#2F5A2B','#4C7A3E','#7BA85C'], flo:'radial', floAt:'axil', nFlo:7, pet:['#E53935','#F06292','#FFF1F3'], nPet:5, fruit:'pod' },
+  lettuce:     { form:'rosette', hMax:0.55, w0:0.020, w1:0.010, nLeaf:8,  leaf:'wavy',    lLen:0.30, lc:['#4C7A3E','#7BA85C','#A8C87E'], flo:'disc',   floAt:'top',  nFlo:5, pet:['#F9D648','#FFF3C4','#C8A21E'], nPet:12, fruit:'fluff' },
+  radish:      { form:'rosette', hMax:0.58, w0:0.020, w1:0.009, nLeaf:7,  leaf:'lobed',   lLen:0.27, lc:['#3B6B33','#5E8F49','#8FB86A'], flo:'radial', floAt:'top',  nFlo:6, pet:['#FFFFFF','#F4EEFB','#CBB4E8'], nPet:4, fruit:'silique', root:'taproot' },
+  morningglory:{ form:'vine',    hMax:0.86, w0:0.014, w1:0.008, nLeaf:8,  leaf:'heart3',  lLen:0.17, lc:['#2E6B39','#4E9150','#84BB79'], flo:'trumpet',floAt:'node', nFlo:3, pet:['#7E57C2','#4A90D9','#F3E6FA'], nPet:5, fruit:'capsule', turns:3.1 },
+  kidneybean:  { form:'vine',    hMax:0.72, w0:0.016, w1:0.009, nLeaf:6,  leaf:'tri',     lLen:0.18, lc:['#38702F','#5A9247','#8FBB6E'], flo:'pea',    floAt:'node', nFlo:4, pet:['#FFFFFF','#F8BBD0','#B39DDB'], nPet:3, fruit:'beanpod', turns:2.3 },
+  pumpkin:     { form:'crawl',   hMax:0.26, w0:0.022, w1:0.013, nLeaf:6,  leaf:'palm',    lLen:0.24, lc:['#3E6B2E','#5F8F42','#93B96B'], flo:'trumpet',floAt:'node', nFlo:2, pet:['#FFB300','#FFD54F','#F19A00'], nPet:5, fruit:'gourd' },
+  sunflower:   { form:'herb',    hMax:0.82, w0:0.048, w1:0.024, nLeaf:6,  leaf:'bigheart',lLen:0.26, lc:['#3B6B33','#5E8F49','#93B96B'], flo:'disc',   floAt:'top',  nFlo:1, pet:['#FFC107','#FFE082','#8D6E63'], nPet:20, fruit:'disc' },
+  corn:        { form:'herb',    hMax:0.84, w0:0.030, w1:0.020, nLeaf:9,  leaf:'strap',   lLen:0.34, lc:['#4A7A34','#6E9C47','#A3C271'], flo:'tassel', floAt:'top',  nFlo:1, pet:['#EDE7B1','#C9A227','#8E7326'], nPet:7, fruit:'ear' },
+  rice:        { form:'clump',   hMax:0.60, w0:0.012, w1:0.007, nLeaf:4,  leaf:'narrow',  lLen:0.30, lc:['#4E8038','#71A24C','#A7C574'], flo:'spikelet',floAt:'top', nFlo:1, pet:['#DCE775','#F5F0C8','#C9B857'], nPet:6, fruit:'panicle', N:5 },
+  bamboo:      { form:'clump',   hMax:0.94, w0:0.017, w1:0.012, nLeaf:5,  leaf:'narrow',  lLen:0.22, lc:['#3F7A44','#5FA05C','#94C287'], flo:'spikelet',floAt:'top', nFlo:1, pet:['#D7CBA0','#EDE6C8','#B8AE84'], nPet:5, fruit:'panicle', N:4, node:true },
+  peach:       { form:'tree',    hMax:0.66, w0:0.042, w1:0.010, nLeaf:5,  leaf:'lance',   lLen:0.14, lc:['#3E6B33','#618F45','#98BC6E'], flo:'radial', floAt:'tip',  nFlo:9, pet:['#F48FB1','#FDE3EC','#E06B92'], nPet:5, fruit:'drupe', bare:true },
+  apple:       { form:'tree',    hMax:0.68, w0:0.044, w1:0.010, nLeaf:6,  leaf:'oval',    lLen:0.13, lc:['#3B6B33','#5E8F49','#93B96B'], flo:'radial', floAt:'tip',  nFlo:8, pet:['#FDE7EC','#FFFFFF','#F8BBD0'], nPet:5, fruit:'pome' },
+  persimmon:   { form:'tree',    hMax:0.64, w0:0.046, w1:0.011, nLeaf:6,  leaf:'thickoval',lLen:0.15,lc:['#2F5C2C','#4C7C3C','#7FA75F'], flo:'bell',   floAt:'tip',  nFlo:6, pet:['#F5EBA8','#FBF6D8','#DCCE7A'], nPet:4, fruit:'persim' },
+  ginkgo:      { form:'tree',    hMax:0.78, w0:0.040, w1:0.009, nLeaf:7,  leaf:'fan',     lLen:0.12, lc:['#5A8F4A','#7FB05E','#AECB84'], flo:'none',   floAt:'tip',  nFlo:5, pet:['#C5D96B','#E4EFA8','#A8BE55'], nPet:3, fruit:'ginkgo', autumn:true },
+  oak:         { form:'tree',    hMax:0.74, w0:0.048, w1:0.011, nLeaf:6,  leaf:'lobedoak',lLen:0.14, lc:['#3A6330','#578843','#8AAF66'], flo:'catkin', floAt:'tip',  nFlo:7, pet:['#CFDA8A','#E2E9B4','#B0BE6A'], nPet:3, fruit:'acorn' },
+  saguaro:     { form:'column',  hMax:0.72, w0:0.075, w1:0.062, nLeaf:0,  leaf:'none',    lLen:0.00, lc:['#2F6B45','#478B57','#79AE76'], flo:'cactus', floAt:'top',  nFlo:6, pet:['#FFFFFF','#FFF8E1','#FFE082'], nPet:14, fruit:'cfruit' }
+};
+/* ── 캔버스 좌표계 ────────────────────────────────────────────
+   W,H  : CSS 픽셀 크기
+   CX   : 화분 중심 x
+   SY   : 흙 표면 y (여기가 모든 식물의 발밑)
+   U    : 성장 단위 = 흙에서 화면 위 여백까지. 식물 치수는 전부 U 배수.
+   HZ   : 지평선 y
+   가로 화면에서는 CX 를 오른쪽으로 밀고 SY 를 낮춰서, 왼쪽에 씨앗 접시와
+   물줄기가 들어갈 자리를 만든다.
+   ──────────────────────────────────────────────────────────── */
+var cv = $('#stage'), ctx = cv.getContext('2d');
+var W=1, H=1, DPR=1, CX=0, SY=0, U=1, HZ=0, LAND=false;
+
+function layout(){
+  var r = cv.getBoundingClientRect();
+  W = Math.max(1, r.width); H = Math.max(1, r.height);
+  DPR = Math.min(window.devicePixelRatio||1, 2.5);   /* 3x 폰에서 backing store 가 커지면 저가 기기가 버벅인다 */
+  cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  LAND = (W/H) > 1.35;
+  CX = W*(LAND?0.585:0.500);
+  /* 화분 바닥은 SY + U*0.333 까지 내려간다. 가로 화면에서 0.800 을 쓰면
+     그 값이 H 를 넘어 화분 밑동이 잘린다. 0.760 이 안 잘리는 가장 큰 값이다. */
+  SY = H*(LAND?0.760:0.735);
+  U  = SY - H*(LAND?0.070:0.085);
+  HZ = H*(LAND?0.660:0.620);
+}
+/* 카드·도감의 작은 캔버스에도 같은 그리기 함수를 그대로 쓰려고
+   전역 좌표를 잠깐 갈아끼운다. 인자로 넘기면 함수 서명이 전부 부풀어서
+   이쪽이 실수가 적다. 반드시 finally 로 되돌린다. */
+function withFrame(cw,ch,cx,sy,u,hz,fn){
+  var a=CX,b=SY,c=U,d=HZ,e=W,f=H;
+  W=cw; H=ch; CX=cx; SY=sy; U=u; HZ=hz;
+  try{ fn(); } finally { CX=a; SY=b; U=c; HZ=d; W=e; H=f; }
+}
+
+function hex2rgb(h){ return [parseInt(h.substr(1,2),16), parseInt(h.substr(3,2),16), parseInt(h.substr(5,2),16)]; }
+function mix(h1,h2,t){
+  var a=hex2rgb(h1), b=hex2rgb(h2);
+  return 'rgb('+Math.round(lerp(a[0],b[0],t))+','+Math.round(lerp(a[1],b[1],t))+','+Math.round(lerp(a[2],b[2],t))+')';
+}
+
+/* ── 하늘 ────────────────────────────────────────────────────
+   진행도 p 에 따라 하늘색이 아침→한낮→늦은 오후로 아주 조금씩 움직인다.
+   한 판 = 하루. 다만 어두워지지는 않는다(#A9B9B0 아래로 안 내려간다) —
+   어두워지면 '밤이 됐으니 내일 오라'는 신호로 읽힌다. 그건 이 게임이
+   절대 하지 않기로 한 것이다.
+   ──────────────────────────────────────────────────────────── */
+function drawSky(ct,p){
+  var g = ct.createLinearGradient(0,0,0,HZ+U*0.10);
+  var warm = Math.sin(clamp(p,0,1)*Math.PI)*0.55;
+  g.addColorStop(0, mix('#BFD9CE','#D6E2CF', warm));
+  g.addColorStop(0.55, mix('#DCEAE1','#EDF1DF', warm*0.8));
+  g.addColorStop(1, mix('#EDF4EC','#F6F3E6', warm*0.6));
+  ct.fillStyle=g; ct.fillRect(0,0,W,H);
+  /* 해: 진행도에 따라 왼쪽 위에서 오른쪽 위로 아주 느리게 건너간다 */
+  var sx = W*lerp(0.16,0.86,clamp(p,0,1)), sy = HZ - U*0.62 - Math.sin(clamp(p,0,1)*Math.PI)*U*0.16;
+  var sg = ct.createRadialGradient(sx,sy,0,sx,sy,U*0.30);
+  sg.addColorStop(0,'rgba(255,252,232,.95)'); sg.addColorStop(0.35,'rgba(255,250,225,.35)'); sg.addColorStop(1,'rgba(255,250,225,0)');
+  ct.fillStyle=sg; ct.beginPath(); ct.arc(sx,sy,U*0.30,0,6.2832); ct.fill();
+  ct.fillStyle='rgba(255,253,240,.85)'; ct.beginPath(); ct.arc(sx,sy,U*0.052,0,6.2832); ct.fill();
+  /* 먼 산 — 지평선을 만들어야 화분이 '어딘가에 놓인' 느낌이 난다 */
+  var i, k;
+  for(k=0;k<2;k++){
+    ct.beginPath(); ct.moveTo(-W*0.05,HZ+U*0.02);
+    for(i=0;i<=10;i++){
+      var x=-W*0.05+ (W*1.1)*(i/10);
+      var y=HZ - U*0.10*(0.4+rnd('hill'+k,i)*0.8) - k*U*0.05;
+      ct.lineTo(x,y);
+    }
+    ct.lineTo(W*1.05,HZ+U*0.06); ct.closePath();
+    ct.fillStyle = k===0? 'rgba(150,176,158,.35)' : 'rgba(126,158,140,.42)';
+    ct.fill();
+  }
+}
+
+/* ── 흙 ──────────────────────────────────────────────────────
+   습도를 게이지 말고 흙 자체로도 읽히게 만든다. 채널 4개:
+   1) 명도 — 젖을수록 어둡고 채도가 오른다 (k 를 0.62 제곱해서 초반 변화를 크게)
+   2) 젖은 자국 — 물을 준 자리에 얼룩이 남았다가 마른다
+   3) 윤기/고인 물 — 78 이상 표면 반사, 92 이상 물이 고인다(벼용)
+   4) 갈라짐 — 18 미만에서 결정론적 실금. '흙이 마른다'지 '식물이 시든다'가 아니다.
+   ──────────────────────────────────────────────────────────── */
+var wetSpots = [];   /* {x,a} — 물 준 자리. 마르면 사라진다 */
+
+function soilColor(m){
+  var k = Math.pow(clamp(m,0,100)/100, 0.62);
+  return mix('#B49476','#4A3421',k);
+}
+function drawSoilTop(ct,x0,x1,ytop,depth,m,ripple){
+  var k = Math.pow(clamp(m,0,100)/100, 0.62), i;
+  ct.save();
+  ct.beginPath(); ct.rect(x0,ytop-U*0.02,x1-x0,depth+U*0.02); ct.clip();
+  ct.fillStyle = soilColor(m); ct.fillRect(x0,ytop-U*0.02,x1-x0,depth+U*0.04);
+  /* 알갱이 질감 — 결정론적이라 프레임마다 안 튄다 */
+  for(i=0;i<70;i++){
+    var gx = lerp(x0,x1,rnd('grain',i)), gy = ytop + depth*rnd('grainY',i)*0.9;
+    var s = U*(0.004+rnd('grainS',i)*0.008);
+    ct.fillStyle = i%2? 'rgba(255,255,255,'+(0.08-0.05*k)+')' : 'rgba(0,0,0,.10)';
+    ct.beginPath(); ct.arc(gx,gy,s,0,6.2832); ct.fill();
+  }
+  /* 젖은 자국 */
+  for(i=0;i<wetSpots.length;i++){
+    var sp=wetSpots[i]; if(sp.a<=0) continue;
+    var rg = ct.createRadialGradient(sp.x,ytop+U*0.01,0,sp.x,ytop+U*0.01,U*0.11);
+    rg.addColorStop(0,'rgba(50,36,22,'+(0.34*sp.a)+')'); rg.addColorStop(1,'rgba(50,36,22,0)');
+    ct.fillStyle=rg; ct.fillRect(sp.x-U*0.12,ytop-U*0.02,U*0.24,depth);
+  }
+  /* 갈라짐 */
+  if(m<18){
+    var cr = (18-m)/18;
+    ct.strokeStyle='rgba(255,255,255,'+(0.22*cr)+')'; ct.lineWidth=Math.max(0.6,U*0.004);
+    for(i=0;i<6;i++){
+      var bx=lerp(x0+U*0.04,x1-U*0.04,rnd('crk',i)), by=ytop+U*0.012+rnd('crkY',i)*depth*0.35;
+      ct.beginPath(); ct.moveTo(bx,by);
+      ct.lineTo(bx+rr('crkD',i,-1,1)*U*0.05, by+U*0.045);
+      ct.lineTo(bx+rr('crkE',i,-1,1)*U*0.08, by+U*0.09);
+      ct.stroke();
+    }
+  }
+  /* 윤기와 고인 물 */
+  if(m>78){
+    var s2=(m-78)/22;
+    ct.fillStyle='rgba(180,225,225,'+(0.22*s2)+')'; ct.fillRect(x0,ytop-U*0.012,x1-x0,U*0.03);
+  }
+  if(m>92){
+    var d2=(m-92)/8, wy=ytop-U*0.016*d2;
+    ct.fillStyle='rgba(78,150,150,'+(0.34+0.18*d2)+')';
+    ct.beginPath(); ct.moveTo(x0,wy);
+    for(i=0;i<=12;i++){
+      var wx=lerp(x0,x1,i/12);
+      ct.lineTo(wx, wy + Math.sin(ripple*2.2 + i*0.9)*U*0.004);
+    }
+    ct.lineTo(x1,ytop+U*0.03); ct.lineTo(x0,ytop+U*0.03); ct.closePath(); ct.fill();
+  }
+  ct.restore();
+}
+
+/* 화분 / 논 / 밭 — 단계에 따라 발밑이 바뀐다. 벼는 논이라야 '거의 잠긴다'가 납득된다. */
+function drawGround(ct,kind,m,ripple){
+  var potW, potH, x0, x1;
+  ct.fillStyle='rgba(120,140,124,.30)';
+  if(kind==='pot'){
+    potW = Math.min(W*0.52, U*0.62); potH = U*0.30;
+    x0=CX-potW/2; x1=CX+potW/2;
+    /* 바닥 그림자 먼저 — 안 그리면 화분이 공중에 뜬다 */
+    ct.beginPath(); ct.ellipse(CX, SY+potH*0.98, potW*0.56, potH*0.13, 0,0,6.2832); ct.fill();
+    var pg = ct.createLinearGradient(x0,0,x1,0);
+    pg.addColorStop(0,'#9E5334'); pg.addColorStop(0.35,'#C2714C'); pg.addColorStop(0.72,'#B0603C'); pg.addColorStop(1,'#8A4629');
+    ct.fillStyle=pg;
+    ct.beginPath();
+    ct.moveTo(x0,SY); ct.lineTo(x0+potW*0.13, SY+potH); ct.lineTo(x1-potW*0.13, SY+potH); ct.lineTo(x1,SY); ct.closePath(); ct.fill();
+    /* 흙은 테두리 안쪽에서 봉긋하게. 테두리를 나중에 앞에 그려야 흙이 담긴 것처럼 보인다 */
+    drawSoilTop(ct, x0+potW*0.055, x1-potW*0.055, SY, potH*0.55, m, ripple);
+    ct.fillStyle='rgba(0,0,0,.10)'; ct.fillRect(x0+potW*0.055, SY, potW*0.89, U*0.012);
+    ct.fillStyle='#B96545';
+    ct.beginPath(); ct.roundRect(x0-potW*0.035, SY-U*0.028, potW*1.07, U*0.048, U*0.014); ct.fill();
+    ct.fillStyle='rgba(255,255,255,.14)';
+    ct.beginPath(); ct.roundRect(x0-potW*0.035, SY-U*0.028, potW*1.07, U*0.016, U*0.008); ct.fill();
+  } else if(kind==='paddy'){
+    x0=0; x1=W;
+    drawSoilTop(ct, x0, x1, SY, H-SY, Math.max(m,10), ripple);
+    /* 논둑 */
+    ct.fillStyle='rgba(96,82,58,.55)'; ct.fillRect(0, SY+U*0.20, W, U*0.02);
+  } else {
+    x0=0; x1=W;
+    drawSoilTop(ct, x0, x1, SY, H-SY, m, ripple);
+    /* 밭고랑 — 원근으로 두 줄만. 많으면 식물이 안 보인다 */
+    ct.strokeStyle='rgba(0,0,0,.12)'; ct.lineWidth=Math.max(1,U*0.006);
+    ct.beginPath(); ct.moveTo(0,SY+U*0.10); ct.lineTo(W,SY+U*0.075); ct.stroke();
+    ct.beginPath(); ct.moveTo(0,SY+U*0.22); ct.lineTo(W,SY+U*0.19); ct.stroke();
+  }
+}
+
+/* ── 씨앗 그리기 ─────────────────────────────────────────────
+   접시·성장 마지막·비교바·도감이 전부 이 함수 하나를 쓴다.
+   여기가 갈리면 마지막 "이게 네가 심은 그거야" 장면이 통째로 무너진다.
+   pxmm = 1mm 당 픽셀. 그래서 2mm 봉선화와 30mm 복숭아씨가
+   같은 화면에서 진짜 15배 차이로 보인다.
+   ──────────────────────────────────────────────────────────── */
+function seedPath(ct,sh,a,b,key){
+  /* a = 긴 축 반지름(x), b = 짧은 축 반지름(y) */
+  var i, n;
+  ct.beginPath();
+  if(sh==='ball' || sh==='egg'){
+    if(sh==='egg'){ ct.moveTo(-a,0); ct.bezierCurveTo(-a,-b*1.15,a*0.15,-b, a,-b*0.28); ct.bezierCurveTo(a*1.06,0, a*1.06,0, a,b*0.28); ct.bezierCurveTo(a*0.15,b,-a,b*1.15,-a,0); }
+    else ct.ellipse(0,0,a,b,0,0,6.2832);
+  } else if(sh==='irregball'){
+    n=14;
+    for(i=0;i<n;i++){
+      var th=i/n*6.2832, rr2=1+ (rnd(key,i)-0.5)*0.20;
+      var x=Math.cos(th)*a*rr2, y=Math.sin(th)*b*rr2;
+      if(i===0) ct.moveTo(x,y); else ct.lineTo(x,y);
+    }
+    ct.closePath();
+  } else if(sh==='sliver' || sh==='spindle'){
+    ct.moveTo(-a,0); ct.quadraticCurveTo(-a*0.2,-b*1.35, a,0); ct.quadraticCurveTo(-a*0.2,b*1.35,-a,0);
+  } else if(sh==='segment'){
+    /* 오렌지 한 쪽: 등은 둥글고 배는 각지다. 능선이 정체성 */
+    ct.moveTo(-a,b*0.30); ct.bezierCurveTo(-a*0.9,-b*1.25, a*0.9,-b*1.25, a,b*0.30);
+    ct.lineTo(a*0.10,b*1.05); ct.lineTo(-a*0.10,b*1.05); ct.closePath();
+  } else if(sh==='kidney'){
+    ct.moveTo(-a,b*0.10);
+    ct.bezierCurveTo(-a*0.85,-b*1.30, a*0.85,-b*1.30, a,b*0.10);
+    ct.bezierCurveTo(a*0.70,b*1.15, -a*0.70,b*1.15, -a,b*0.10);
+  } else if(sh==='teardrop'){
+    ct.moveTo(-a,0); ct.bezierCurveTo(-a*0.55,-b*1.22, a*0.55,-b*0.85, a,0);
+    ct.bezierCurveTo(a*0.55,b*0.85, -a*0.55,b*1.22, -a,0);
+  } else if(sh==='tooth'){
+    ct.moveTo(-a*0.62,b); ct.bezierCurveTo(-a*1.05,-b*0.30, -a*0.45,-b*1.10, 0,-b*1.02);
+    ct.bezierCurveTo(a*0.45,-b*0.95, a*1.05,-b*0.20, a*0.62,b);
+    ct.quadraticCurveTo(0,b*1.22,-a*0.62,b); ct.closePath();
+  } else if(sh==='almond'){
+    ct.moveTo(-a,b*0.05);
+    ct.bezierCurveTo(-a*0.75,-b*1.12, a*0.35,-b*1.05, a*0.98,-b*0.12);
+    ct.bezierCurveTo(a*1.02,b*0.06, a*0.45,b*1.10, -a*0.30,b*1.05);
+    ct.bezierCurveTo(-a*0.80,b*0.95, -a,b*0.45, -a,b*0.05); ct.closePath();
+  } else if(sh==='crescent'){
+    ct.moveTo(-a,-b*0.10); ct.bezierCurveTo(-a*0.4,-b*1.20, a*0.6,-b*1.05, a,-b*0.05);
+    ct.bezierCurveTo(a*0.55,b*1.02, -a*0.5,b*1.05, -a,-b*0.10); ct.closePath();
+  } else if(sh==='acorn'){
+    ct.moveTo(-a*0.86,-b*0.20);
+    ct.bezierCurveTo(-a*0.92,b*0.70, -a*0.30,b*1.10, a*0.62,b*0.55);
+    ct.bezierCurveTo(a*1.00,b*0.20, a*0.98,-b*0.30, a*0.86,-b*0.42);
+    ct.lineTo(-a*0.80,-b*0.42); ct.closePath();
+  } else if(sh==='comma'){
+    ct.moveTo(-a,b*0.35); ct.bezierCurveTo(-a*0.6,-b*1.25, a*0.85,-b*0.95, a,b*0.10);
+    ct.bezierCurveTo(a*0.5,b*1.15, -a*0.5,b*1.15, -a,b*0.35); ct.closePath();
+  } else {
+    ct.ellipse(0,0,a,b,0,0,6.2832);
+  }
+}
+
+function seedPattern(ct,pat,a,b,key,art){
+  var i,n,x,y;
+  ct.save();
+  if(pat==='warty'){
+    for(i=0;i<16;i++){
+      x=rr(key+'w',i,-0.78,0.78)*a; y=rr(key+'h',i,-0.72,0.72)*b;
+      ct.fillStyle='rgba(255,255,255,.16)'; ct.beginPath(); ct.arc(x,y,Math.max(0.4,a*0.055),0,6.2832); ct.fill();
+      ct.fillStyle='rgba(0,0,0,.20)'; ct.beginPath(); ct.arc(x+a*0.03,y+b*0.05,Math.max(0.4,a*0.045),0,6.2832); ct.fill();
+    }
+  } else if(pat==='ribs' || pat==='groove' || pat==='husk'){
+    n = pat==='husk'?7:4;
+    ct.strokeStyle='rgba(0,0,0,.22)'; ct.lineWidth=Math.max(0.5,b*0.13);
+    for(i=0;i<n;i++){
+      y = -b*0.8 + (b*1.6)*(i+0.5)/n;
+      ct.beginPath(); ct.moveTo(-a*0.85,y*0.75); ct.quadraticCurveTo(0,y*1.15,a*0.85,y*0.70); ct.stroke();
+    }
+    if(pat==='husk'){
+      ct.strokeStyle='rgba(0,0,0,.13)'; ct.lineWidth=Math.max(0.4,a*0.02);
+      for(i=0;i<9;i++){ x=-a*0.8+(a*1.6)*i/8; ct.beginPath(); ct.moveTo(x,-b*0.8); ct.lineTo(x,b*0.8); ct.stroke(); }
+    }
+  } else if(pat==='dimple' || pat==='pitted'){
+    n = pat==='pitted'?22:10;
+    for(i=0;i<n;i++){
+      x=rr(key+'p',i,-0.80,0.80)*a; y=rr(key+'q',i,-0.75,0.75)*b;
+      var r2=Math.max(0.4,a*(pat==='pitted'?0.055:0.075));
+      ct.fillStyle='rgba(0,0,0,.26)'; ct.beginPath(); ct.arc(x,y,r2,0,6.2832); ct.fill();
+      ct.fillStyle='rgba(255,255,255,.20)'; ct.beginPath(); ct.arc(x-r2*0.35,y-r2*0.35,r2*0.6,0,6.2832); ct.fill();
+    }
+    if(pat==='pitted'){  /* 복숭아씨의 가장자리 봉합선 */
+      ct.strokeStyle='rgba(0,0,0,.32)'; ct.lineWidth=Math.max(0.7,a*0.035);
+      ct.beginPath(); ct.moveTo(-a*0.9,b*0.05); ct.quadraticCurveTo(0,b*0.45,a*0.9,-b*0.10); ct.stroke();
+    }
+  } else if(pat==='facet'){
+    /* 나팔꽃: 무광 + 등/배가 만나는 능선. 반짝임이 거의 없어야 사과와 갈린다 */
+    ct.strokeStyle='rgba(255,255,255,.13)'; ct.lineWidth=Math.max(0.6,a*0.05);
+    ct.beginPath(); ct.moveTo(-a*0.85,b*0.28); ct.lineTo(a*0.85,b*0.28); ct.stroke();
+    ct.fillStyle='rgba(0,0,0,.16)';
+    ct.beginPath(); ct.moveTo(-a*0.85,b*0.32); ct.lineTo(a*0.85,b*0.32); ct.lineTo(0,b*1.05); ct.closePath(); ct.fill();
+  } else if(pat==='hilum'){
+    ct.fillStyle='rgba(243,237,226,.92)';
+    ct.beginPath(); ct.ellipse(-a*0.05,b*0.62,a*0.20,b*0.13,0,0,6.2832); ct.fill();
+    ct.fillStyle='rgba(0,0,0,.28)';
+    ct.beginPath(); ct.ellipse(-a*0.05,b*0.62,a*0.07,b*0.06,0,0,6.2832); ct.fill();
+  } else if(pat==='rim' || pat==='rimlite'){
+    ct.strokeStyle = pat==='rim'? 'rgba(255,255,255,.55)' : 'rgba(232,205,160,.75)';
+    ct.lineWidth = Math.max(1, b*0.20);
+    seedPath(ct,art.shape,a*0.92,b*0.90,key); ct.stroke();
+  } else if(pat==='stripes'){
+    ct.strokeStyle='rgba(232,226,214,.85)'; ct.lineWidth=Math.max(0.8,b*0.16);
+    for(i=0;i<3;i++){
+      x = -a*0.45 + a*0.45*i;
+      ct.beginPath(); ct.moveTo(x-a*0.05,-b*0.85); ct.quadraticCurveTo(x+a*0.10,0,x-a*0.02,b*0.85); ct.stroke();
+    }
+  } else if(pat==='dent'){
+    ct.fillStyle='rgba(0,0,0,.14)';
+    ct.beginPath(); ct.ellipse(0,-b*0.12,a*0.34,b*0.30,0,0,6.2832); ct.fill();
+    ct.strokeStyle='rgba(255,255,255,.35)'; ct.lineWidth=Math.max(0.5,a*0.03);
+    ct.beginPath(); ct.moveTo(0,b*0.05); ct.lineTo(0,b*0.85); ct.stroke();
+  } else if(pat==='ridge2'){
+    ct.strokeStyle='rgba(0,0,0,.20)'; ct.lineWidth=Math.max(0.8,b*0.10);
+    ct.beginPath(); ct.moveTo(-a*0.85,-b*0.55); ct.quadraticCurveTo(0,-b*0.72,a*0.80,-b*0.42); ct.stroke();
+    ct.beginPath(); ct.moveTo(-a*0.85, b*0.55); ct.quadraticCurveTo(0, b*0.72,a*0.80, b*0.42); ct.stroke();
+  } else if(pat==='cap'){
+    /* 도토리 깍정이: 비늘 모자 */
+    ct.fillStyle='#7A5A32';
+    ct.beginPath(); ct.moveTo(-a*0.92,-b*0.36); ct.quadraticCurveTo(0,-b*1.30,a*0.92,-b*0.36); ct.closePath(); ct.fill();
+    ct.fillStyle='rgba(0,0,0,.18)';
+    for(i=0;i<7;i++){
+      x=-a*0.78+(a*1.56)*i/6;
+      ct.beginPath(); ct.arc(x,-b*0.52-Math.abs(x)/a*b*0.12,Math.max(0.5,a*0.09),0,6.2832); ct.fill();
+    }
+    ct.fillStyle='#6B4218';
+    ct.beginPath(); ct.ellipse(0,-b*1.02,a*0.07,b*0.16,0,0,6.2832); ct.fill();
+  }
+  ct.restore();
+}
+
+function drawSeed(ct,key,cx,cy,pxmm,opt){
+  opt = opt||{};
+  var d = PL[key], art = SART[key];
+  if(!d||!art) return;
+  var Ln = d.seedMm*pxmm*(opt.scale||1);
+  var a = Math.max(1.2, Ln/2), b = Math.max(0.9, a*art.ar);
+  var rot = (opt.rot===undefined? -0.30 : opt.rot);
+  ct.save();
+  ct.translate(cx,cy); ct.rotate(rot);
+  if(opt.alpha!==undefined) ct.globalAlpha = opt.alpha;
+  /* 1) 접지 그림자 — 이게 없으면 씨앗이 종이에 인쇄된 것처럼 붕 뜬다 */
+  if(!opt.noShadow){
+    ct.save(); ct.translate(a*0.06,b*0.30);
+    ct.fillStyle='rgba(40,34,26,.22)'; seedPath(ct,art.shape,a*1.02,b*1.0,key); ct.fill(); ct.restore();
+  }
+  /* 2) 바탕: 왼쪽 위에서 오는 빛 하나를 모든 씨앗이 공유한다 */
+  seedPath(ct,art.shape,a,b,key);
+  ct.save(); ct.clip();
+  var g = ct.createRadialGradient(-a*0.32,-b*0.42,a*0.05,0,0,a*1.25);
+  g.addColorStop(0, mix(art.c0,'#FFFFFF',0.22));
+  g.addColorStop(0.55, art.c0);
+  g.addColorStop(1, art.c1);
+  ct.fillStyle=g; ct.fillRect(-a*1.4,-b*1.6,a*2.8,b*3.2);
+  /* 3) 표면 무늬 = 정체성 */
+  seedPattern(ct,art.pat,a,b,key,art);
+  ct.restore();
+  /* 4) 반짝임 하나. hl 로 무광/유광을 가른다 */
+  if(art.hl>0.02){
+    ct.save(); seedPath(ct,art.shape,a,b,key); ct.clip();
+    var hg = ct.createRadialGradient(-a*0.34,-b*0.46,0,-a*0.34,-b*0.46,a*0.55);
+    hg.addColorStop(0,'rgba(255,255,255,'+art.hl+')'); hg.addColorStop(1,'rgba(255,255,255,0)');
+    ct.fillStyle=hg; ct.fillRect(-a*1.4,-b*1.6,a*2.8,b*3.2);
+    ct.restore();
+  }
+  ct.lineWidth=Math.max(0.5,a*0.035); ct.strokeStyle='rgba(30,24,18,.30)';
+  seedPath(ct,art.shape,a,b,key); ct.stroke();
+  ct.restore();
+}
+/* ── 씨앗 접시 ───────────────────────────────────────────────
+   규칙 하나: 한 접시 안의 세 씨앗은 **같은 PXPM** 을 쓴다.
+   각자 예쁘게 보이려고 크기를 맞추면 이 게임이 가르치려는 것이 사라진다.
+   6단계 접시(은행 20mm / 도토리 20mm / 사구아로 2mm)에서 사구아로는
+   11px 남짓한 점이 된다 — 그게 맞다. 대신 못 찾을까 봐 가는 안내원을 두른다.
+   ──────────────────────────────────────────────────────────── */
+var trayHit = [];   /* [{x,y,w,h,id}] — 포인터 히트 판정용 */
+
+function trayMetrics(cands){
+  var i, maxL=0, maxWd=0;
+  for(i=0;i<cands.length;i++){
+    var d=PL[cands[i]], ar=SART[cands[i]].ar;
+    if(d.seedMm>maxL) maxL=d.seedMm;
+    if(d.seedMm*ar>maxWd) maxWd=d.seedMm*ar;
+  }
+  var tw = Math.min(W*0.88, 420);
+  var tx = (W-tw)/2;
+  var top = H*0.075, bot = H*0.845;
+  var rowH = (bot-top)/3;
+  var pxmm = Math.min(12, (tw*0.52)/maxL, (rowH*0.62)/Math.max(maxWd,0.8));
+  return { tw:tw, tx:tx, top:top, rowH:rowH, pxmm:pxmm, maxL:maxL, bot:bot };
+}
+
+function drawTray(ct,cands,tsel,t){
+  var M = trayMetrics(cands), i;
+  trayHit = [];
+  ct.save();
+  ct.font = '600 '+Math.round(Math.max(11,H*0.021))+'px -apple-system,sans-serif';
+  ct.textBaseline='middle';
+  for(i=0;i<cands.length;i++){
+    var id=cands[i], d=PL[id];
+    var ry = M.top + M.rowH*i, cy = ry + M.rowH*0.5;
+    var sel = (tsel===i);
+    /* 접시(행) — 통째로 히트영역이라 손가락 타겟이 넉넉하다 */
+    ct.fillStyle = sel? 'rgba(255,255,255,.95)':'rgba(255,255,255,.72)';
+    ct.strokeStyle = sel? '#2E8C93':'rgba(195,210,203,.9)';
+    ct.lineWidth = sel?2:1;
+    ct.beginPath(); ct.roundRect(M.tx, ry+M.rowH*0.06, M.tw, M.rowH*0.88, 14); ct.fill(); ct.stroke();
+    trayHit.push({x:M.tx,y:ry+M.rowH*0.06,w:M.tw,h:M.rowH*0.88,id:id,i:i});
+
+    var sx = M.tx + M.tw*0.30;
+    var seedPx = d.seedMm*M.pxmm;
+    /* 14px 미만이면 손가락으로 못 찾는다. 확대하지 않고 가는 원만 둘러 위치를 알린다 */
+    if(seedPx < 14){
+      ct.strokeStyle='rgba(46,140,147,.55)'; ct.lineWidth=1;
+      ct.beginPath(); ct.arc(sx,cy,15,0,6.2832); ct.stroke();
+    }
+    drawSeed(ct,id,sx,cy,M.pxmm,{rot:-0.30 + (reduced?0:Math.sin(t*0.0008+i)*0.02)});
+
+    ct.fillStyle='#263A38'; ct.textAlign='left';
+    ct.fillText(L('unknown'), M.tx + M.tw*0.56, cy - M.rowH*0.12);
+    ct.fillStyle='#4E6663';
+    ct.font = '500 '+Math.round(Math.max(10,H*0.018))+'px -apple-system,sans-serif';
+    ct.fillText(d.seedMm+' '+L('mm'), M.tx + M.tw*0.56, cy + M.rowH*0.13);
+    ct.font = '600 '+Math.round(Math.max(11,H*0.021))+'px -apple-system,sans-serif';
+  }
+  /* 공용 자 — 세 씨앗이 같은 축척임을 눈으로 증명한다 */
+  var rMM = Math.max(5, Math.ceil(M.maxL/5)*5);
+  while(rMM*M.pxmm > M.tw-16 && rMM>5){ rMM -= 5; }
+  var rx0 = M.tx+8, ry0 = M.bot + (H-M.bot)*0.42, rlen = rMM*M.pxmm;
+  ct.strokeStyle='rgba(38,58,56,.55)'; ct.lineWidth=1.5;
+  ct.beginPath(); ct.moveTo(rx0,ry0); ct.lineTo(rx0+rlen,ry0); ct.stroke();
+  for(i=0;i<=rMM;i++){
+    if(M.pxmm<3.5 && i%5!==0) continue;     /* 눈금이 겹쳐 뭉개지면 자 구실을 못 한다 */
+    var gx = rx0+i*M.pxmm, gl = (i%5===0)?7:3;
+    ct.beginPath(); ct.moveTo(gx,ry0); ct.lineTo(gx,ry0-gl); ct.stroke();
+  }
+  ct.fillStyle='#4E6663'; ct.textAlign='left';
+  ct.font='500 '+Math.round(Math.max(10,H*0.017))+'px -apple-system,sans-serif';
+  ct.fillText(rMM+' '+L('mm'), rx0+rlen+8, ry0-2);
+  ct.textAlign='right';
+  ct.fillText(L('pickTitle'), M.tx+M.tw, ry0-2);
+  ct.restore();
+}
+
+/* ── 물줄기 ─────────────────────────────────────────────────
+   wRamp(0~1) 이 물이 나오기 시작/멈출 때 부드럽게 오르내린다. 폭과 투명도가
+   같은 값을 쓰기 때문에 물줄기가 툭 끊기지 않는다.
+   ──────────────────────────────────────────────────────────── */
+var drops = [];
+function drawWater(ct, ramp, t, targetY){
+  if(ramp<=0.01) return;
+  var topY = -U*0.02, i;
+  var wob = reduced? 0 : Math.sin(t*0.006)*U*0.010;
+  ct.save();
+  ct.globalAlpha = 0.55*ramp;
+  var g = ct.createLinearGradient(0,topY,0,targetY);
+  g.addColorStop(0,'rgba(189,230,229,.25)'); g.addColorStop(0.5,'#5FBFC2'); g.addColorStop(1,'#2E8C93');
+  ct.fillStyle=g;
+  ct.beginPath();
+  ct.moveTo(CX-U*0.016*ramp+wob, topY);
+  ct.quadraticCurveTo(CX+wob*1.4, (topY+targetY)/2, CX-U*0.011*ramp, targetY);
+  ct.lineTo(CX+U*0.011*ramp, targetY);
+  ct.quadraticCurveTo(CX+wob*1.4+U*0.02, (topY+targetY)/2, CX+U*0.016*ramp+wob, topY);
+  ct.closePath(); ct.fill();
+  ct.globalAlpha = 0.30*ramp;
+  ct.fillStyle='#EAF7F6';
+  for(i=0;i<7;i++){
+    var ph = ((t*0.0016 + i/7) % 1);
+    var dy = lerp(topY,targetY,ph);
+    ct.beginPath(); ct.ellipse(CX + Math.sin(ph*6+i)*U*0.010, dy, U*0.005, U*0.016,0,0,6.2832); ct.fill();
+  }
+  ct.restore();
+}
+function spawnSplash(x,y,n){
+  var i; if(reduced) return;
+  for(i=0;i<n;i++){
+    drops.push({ x:x, y:y, vx:rr('sp',drops.length+i,-1,1)*1.6, vy:-0.8-rnd('sv',drops.length+i)*1.4, life:1 });
+  }
+  if(drops.length>80) drops.splice(0,drops.length-80);
+}
+function stepDrops(dt){
+  var i;
+  for(i=drops.length-1;i>=0;i--){
+    var d=drops[i];
+    d.x+=d.vx*dt*0.06; d.y+=d.vy*dt*0.06; d.vy+=dt*0.010; d.life-=dt*0.0024;
+    if(d.life<=0) drops.splice(i,1);
+  }
+}
+function drawDrops(ct){
+  var i;
+  for(i=0;i<drops.length;i++){
+    var d=drops[i];
+    ct.fillStyle='rgba(95,191,194,'+(0.65*d.life)+')';
+    ct.beginPath(); ct.arc(d.x,d.y,Math.max(0.8,U*0.006),0,6.2832); ct.fill();
+  }
+}
+
+/* ── 식물 뼈대 도구 ──────────────────────────────────────────
+   lineWidth 로는 굵기가 변하는 줄기를 못 만든다(양끝이 같은 굵기가 된다).
+   그래서 축의 좌우로 오프셋한 폴리곤을 만들어 채운다.
+   같은 폴리곤을 오른쪽(그림자)·본체·왼쪽(하이라이트) 3번 그리면
+   색을 바꾸지 않고 명도만으로 입체가 생긴다 — 새벽 빵집의 원칙과 같다.
+   ──────────────────────────────────────────────────────────── */
+function taperFill(ct,pts,w0,w1,col,ox,oy){
+  if(pts.length<2) return;
+  var i, left=[], right=[];
+  for(i=0;i<pts.length;i++){
+    var t=i/(pts.length-1), w=lerp(w0,w1,t)/2;
+    var pa = pts[Math.max(0,i-1)], pb = pts[Math.min(pts.length-1,i+1)];
+    var dx=pb.x-pa.x, dy=pb.y-pa.y, len=Math.sqrt(dx*dx+dy*dy)||1;
+    var nx=-dy/len*w, ny=dx/len*w;
+    left.push({x:pts[i].x+nx+(ox||0), y:pts[i].y+ny+(oy||0)});
+    right.push({x:pts[i].x-nx+(ox||0), y:pts[i].y-ny+(oy||0)});
+  }
+  ct.beginPath(); ct.moveTo(left[0].x,left[0].y);
+  for(i=1;i<left.length;i++) ct.lineTo(left[i].x,left[i].y);
+  for(i=right.length-1;i>=0;i--) ct.lineTo(right[i].x,right[i].y);
+  ct.closePath(); ct.fillStyle=col; ct.fill();
+}
+function strokeAxis(ct,pts,w0,w1,cols){
+  var s=Math.max(0.5,w0*0.22);
+  taperFill(ct,pts,w0,w1,cols[0], s, 0);       /* 그림자 쪽을 먼저 */
+  taperFill(ct,pts,w0,w1,cols[1], 0, 0);
+  taperFill(ct,pts,w0*0.45,w1*0.45,cols[2], -s*0.8, 0);
+}
+/* 바람 — 후처리 한 번으로 모든 형태에 같은 흔들림을 준다.
+   높이의 제곱에 비례해서, 밑동은 가만있고 끝만 흔들린다. */
+function sway(pts,s){
+  var i,out=[];
+  for(i=0;i<pts.length;i++){
+    var hgt=clamp((SY-pts[i].y)/U,0,2);
+    out.push({ x:pts[i].x + s*hgt*hgt*U*0.030, y:pts[i].y });
+  }
+  return out;
+}
+/* ── 성장 구간 ───────────────────────────────────────────────
+   구간을 서로 겹쳐 두는 게 핵심이다. 겹치지 않으면 '잎 끝 → 봉오리 시작'
+   경계에서 그림이 뚝 바뀐다. 어떤 것도 if(p>x) 로 켜고 끄지 않는다.
+   ──────────────────────────────────────────────────────────── */
+var PH = {
+  root:[0.00,0.14], sprout:[0.05,0.26], grow:[0.10,0.74], leaf:[0.17,0.60],
+  bud:[0.50,0.68],  flo:[0.62,0.84],    wilt:[0.82,0.93], fruit:[0.83,0.97], seedout:[0.93,1.00]
+};
+function w(p,k){ return sm(p,PH[k][0],PH[k][1]); }
+
+/* ── 잎 ─────────────────────────────────────────────────────
+   잎은 전부 '중앙맥 + 좌우 대칭 곡선'이라는 한 틀에서 나온다.
+   종류별로 가장자리 처리만 바꾼다. 실루엣이 갈리는 건 형태보다
+   길이/폭 비와 각도라서, 그쪽에 더 신경 썼다.
+   ──────────────────────────────────────────────────────────── */
+function drawLeaf(ct,kind,x,y,ang,len,cols,key,idx){
+  if(len<=0.4 || kind==='none') return;
+  /* wd 는 반폭이다. 벼·왕대는 진짜 벼과답게 아주 가늘어야 해서
+     narrow/strap 을 눈으로 맞춘 값까지 좁혔다 (0.16→0.075). */
+  var wd = len*(kind==='narrow'?0.075: kind==='strap'?0.115: kind==='lance'?0.16:
+                kind==='serrate'?0.26: kind==='oval'?0.36: kind==='thickoval'?0.40:
+                kind==='lobedoak'?0.38: kind==='tri'?0.44:
+                kind==='fan'?0.95: kind==='palm'?0.92: kind==='bigheart'?0.86:
+                kind==='heart3'?0.88: kind==='lobed'?0.52: kind==='wavy'?0.62: 0.46);
+  var i, n=9;
+  ct.save(); ct.translate(x,y); ct.rotate(ang);
+  /* 잎 그림자 — 살짝 어긋나게 깔면 잎이 겹쳐도 서로 구분된다 */
+  ct.save(); ct.translate(len*0.02,len*0.03); ct.globalAlpha=0.28;
+  ct.fillStyle=cols[0]; leafPath(ct,kind,len,wd,key,idx,n); ct.fill(); ct.restore();
+  var g=ct.createLinearGradient(0,-wd*0.6,len,wd*0.6);
+  g.addColorStop(0,cols[2]); g.addColorStop(0.45,cols[1]); g.addColorStop(1,cols[0]);
+  ct.fillStyle=g; leafPath(ct,kind,len,wd,key,idx,n); ct.fill();
+  ct.strokeStyle='rgba(20,44,26,.28)'; ct.lineWidth=Math.max(0.5,len*0.018);
+  leafPath(ct,kind,len,wd,key,idx,n); ct.stroke();
+  /* 잎맥 */
+  ct.strokeStyle='rgba(255,255,255,.30)'; ct.lineWidth=Math.max(0.4,len*0.016);
+  if(kind==='fan'){
+    for(i=0;i<5;i++){ var a2=(-0.55+1.1*i/4);
+      ct.beginPath(); ct.moveTo(0,0); ct.lineTo(Math.cos(a2)*len*0.92, Math.sin(a2)*len*0.92); ct.stroke(); }
+  } else {
+    ct.beginPath(); ct.moveTo(0,0); ct.quadraticCurveTo(len*0.55,-wd*0.06,len*0.95,0); ct.stroke();
+    for(i=1;i<4;i++){
+      var px=len*(0.20+0.22*i);
+      ct.beginPath(); ct.moveTo(px,0); ct.lineTo(px+len*0.16,-wd*0.30); ct.stroke();
+      ct.beginPath(); ct.moveTo(px,0); ct.lineTo(px+len*0.16, wd*0.30); ct.stroke();
+    }
+  }
+  ct.restore();
+}
+function leafPath(ct,kind,len,wd,key,idx,n){
+  var i, t, x, y;
+  ct.beginPath();
+  if(kind==='fan'){
+    /* 은행: 부채꼴에 가운데가 살짝 갈라진다 */
+    ct.moveTo(0,0);
+    ct.arc(0,0,len,-0.62,0.62);
+    ct.lineTo(0,0); ct.closePath(); return;
+  }
+  if(kind==='heart3' || kind==='bigheart'){
+    ct.moveTo(0,0);
+    ct.bezierCurveTo(len*0.22,-wd*0.85, len*0.80,-wd*0.95, len*(kind==='heart3'?0.98:1.0), -wd*0.06);
+    if(kind==='heart3'){ ct.lineTo(len*0.72, wd*0.10); ct.lineTo(len*0.96, wd*0.34); }
+    ct.bezierCurveTo(len*0.80,wd*0.95, len*0.22,wd*0.85, 0,0);
+    ct.closePath(); return;
+  }
+  if(kind==='palm'){
+    for(i=0;i<=10;i++){
+      t=-0.95+1.9*i/10;
+      var lob = 1 - 0.30*Math.abs(Math.sin(t*3.2));
+      x=Math.cos(t)*len*lob; y=Math.sin(t)*wd*1.05*lob;
+      if(i===0) ct.moveTo(0,0);
+      ct.lineTo(x,y);
+    }
+    ct.closePath(); return;
+  }
+  if(kind==='lobedoak'){
+    for(i=0;i<=12;i++){
+      t=i/12;
+      var r2 = wd*(0.55+0.45*Math.abs(Math.cos(t*9.4)));
+      ct.lineTo(len*t, -r2*Math.sin(Math.PI*t));
+    }
+    for(i=12;i>=0;i--){
+      t=i/12;
+      var r3 = wd*(0.55+0.45*Math.abs(Math.cos(t*9.4)));
+      ct.lineTo(len*t, r3*Math.sin(Math.PI*t));
+    }
+    ct.closePath(); return;
+  }
+  if(kind==='lobed'){
+    ct.moveTo(0,0);
+    for(i=1;i<=6;i++){
+      t=i/6;
+      ct.quadraticCurveTo(len*(t-0.09), -wd*(1.25-t*0.5), len*t, -wd*(0.35+0.45*Math.sin(Math.PI*t)));
+    }
+    for(i=6;i>=1;i--){
+      t=i/6;
+      ct.quadraticCurveTo(len*(t-0.09), wd*(1.25-t*0.5), len*(t-1/6), wd*(0.35+0.45*Math.sin(Math.PI*(t-1/6))));
+    }
+    ct.closePath(); return;
+  }
+  /* 기본형: 톱니(serrate) / 물결(wavy) / 매끈 */
+  var amp = kind==='serrate'?0.10: kind==='wavy'?0.16: 0;
+  var frq = kind==='serrate'?11: 5;
+  ct.moveTo(0,0);
+  for(i=0;i<=n;i++){
+    t=i/n;
+    var base = wd*Math.sin(Math.PI*Math.pow(t,0.78));
+    ct.lineTo(len*t, -(base + wd*amp*Math.sin(t*frq)));
+  }
+  for(i=n;i>=0;i--){
+    t=i/n;
+    var base2 = wd*Math.sin(Math.PI*Math.pow(t,0.78));
+    ct.lineTo(len*t, (base2 + wd*amp*Math.sin(t*frq+1.7)));
+  }
+  ct.closePath();
+}
+
+/* ── 꽃 ─────────────────────────────────────────────────────
+   open 0→1 로 꽃잎이 '접힌 상태에서 펼쳐진다'. 투명도 페이드인은 쓰지 않는다 —
+   페이드인은 꽃이 나타나는 게 아니라 유령처럼 스며 나오는 걸로 보인다.
+   벼·왕대·참나무·은행은 화려한 꽃잎이 없다. 사실이 그렇다. 대신
+   각자 다른 '빛나는 순간'을 갖는다(이삭, 꼬리꽃차례, 노란 잎).
+   ──────────────────────────────────────────────────────────── */
+function drawFlower(ct,kind,x,y,ang,r,art,open,key,i){
+  if(open<=0.01 || r<=0.3 || kind==='none') return;
+  var pet=art.pet, n=art.nPet, j, o=ease(open);
+  ct.save(); ct.translate(x,y); ct.rotate(ang);
+  if(kind==='radial'){
+    for(j=0;j<n;j++){
+      var a=(j/n)*6.2832 + rr(key,i*7+j,-0.08,0.08);
+      var pr=r*(0.85+0.15*rnd(key,j))*o;
+      ct.save(); ct.rotate(a);
+      var g=ct.createLinearGradient(0,0,pr,0);
+      g.addColorStop(0,pet[1]); g.addColorStop(1,pet[0]);
+      ct.fillStyle=g;
+      ct.beginPath(); ct.moveTo(0,0);
+      ct.bezierCurveTo(pr*0.35,-pr*0.42, pr*0.92,-pr*0.30, pr,0);
+      ct.bezierCurveTo(pr*0.92, pr*0.30, pr*0.35, pr*0.42, 0,0);
+      ct.closePath(); ct.fill();
+      ct.strokeStyle='rgba(120,60,90,.16)'; ct.lineWidth=Math.max(0.4,pr*0.05); ct.stroke();
+      ct.restore();
+    }
+    ct.fillStyle=pet[2]; ct.beginPath(); ct.arc(0,0,r*0.22*o,0,6.2832); ct.fill();
+  } else if(kind==='trumpet'){
+    /* 나팔꽃: 정면에서 본 원 + 옆으로 뻗은 통. 별 모양 흰 무늬가 정체성 */
+    var R=r*o;
+    ct.save(); ct.scale(1,0.92);
+    var g2=ct.createRadialGradient(0,0,R*0.12,0,0,R);
+    g2.addColorStop(0,pet[2]); g2.addColorStop(0.45,pet[1]); g2.addColorStop(1,pet[0]);
+    ct.fillStyle=g2; ct.beginPath(); ct.arc(0,0,R,0,6.2832); ct.fill();
+    ct.strokeStyle='rgba(255,255,255,.55)'; ct.lineWidth=Math.max(0.5,R*0.07);
+    for(j=0;j<5;j++){
+      var a3=(j/5)*6.2832;
+      ct.beginPath(); ct.moveTo(0,0); ct.lineTo(Math.cos(a3)*R*0.96, Math.sin(a3)*R*0.96); ct.stroke();
+    }
+    ct.fillStyle='rgba(255,255,255,.85)'; ct.beginPath(); ct.arc(0,0,R*0.20,0,6.2832); ct.fill();
+    ct.restore();
+  } else if(kind==='disc'){
+    /* 해바라기: 통꽃(가운데)과 혀꽃(둘레). 씨앗이 여기서 나선으로 앉는다 */
+    var R2=r*o;
+    for(j=0;j<n;j++){
+      var a4=(j/n)*6.2832;
+      ct.save(); ct.rotate(a4);
+      ct.fillStyle = j%2? pet[0]:pet[1];
+      ct.beginPath(); ct.moveTo(R2*0.42,0);
+      ct.quadraticCurveTo(R2*0.80,-R2*0.20, R2*1.30,0);
+      ct.quadraticCurveTo(R2*0.80, R2*0.20, R2*0.42,0);
+      ct.closePath(); ct.fill(); ct.restore();
+    }
+    var g3=ct.createRadialGradient(-R2*0.12,-R2*0.12,R2*0.04,0,0,R2*0.48);
+    g3.addColorStop(0,'#8D6E63'); g3.addColorStop(1,'#4E342E');
+    ct.fillStyle=g3; ct.beginPath(); ct.arc(0,0,R2*0.46,0,6.2832); ct.fill();
+    for(j=0;j<26;j++){
+      var ph=j*2.39996, rr4=R2*0.44*Math.sqrt(j/26);
+      ct.fillStyle='rgba(255,255,255,.16)';
+      ct.beginPath(); ct.arc(Math.cos(ph)*rr4, Math.sin(ph)*rr4, Math.max(0.5,R2*0.035),0,6.2832); ct.fill();
+    }
+  } else if(kind==='pea'){
+    var R3=r*o;
+    ct.fillStyle=pet[1];
+    ct.beginPath(); ct.ellipse(0,-R3*0.25,R3*0.85,R3*0.60,0,0,6.2832); ct.fill();
+    ct.fillStyle=pet[2];
+    ct.beginPath(); ct.ellipse(0,R3*0.22,R3*0.55,R3*0.36,0,0,6.2832); ct.fill();
+    ct.strokeStyle='rgba(90,60,90,.25)'; ct.lineWidth=Math.max(0.4,R3*0.08); ct.stroke();
+  } else if(kind==='bell'){
+    var R4=r*o;
+    ct.fillStyle=pet[0];
+    ct.beginPath(); ct.moveTo(-R4*0.7,-R4*0.5);
+    ct.bezierCurveTo(-R4*0.9,R4*0.7, R4*0.9,R4*0.7, R4*0.7,-R4*0.5);
+    ct.closePath(); ct.fill();
+    ct.fillStyle='#6E8C3A';
+    for(j=0;j<4;j++){
+      var a5=-0.9+0.6*j;
+      ct.beginPath(); ct.ellipse(Math.cos(a5)*R4*0.8,-R4*0.55+Math.sin(a5)*R4*0.12,R4*0.30,R4*0.14,a5,0,6.2832); ct.fill();
+    }
+  } else if(kind==='cactus'){
+    var R5=r*o;
+    for(j=0;j<n;j++){
+      var a6=(j/n)*6.2832;
+      ct.save(); ct.rotate(a6);
+      ct.fillStyle = j%3? pet[0]:pet[1];
+      ct.beginPath(); ct.ellipse(R5*0.55,0,R5*0.52,R5*0.17,0,0,6.2832); ct.fill();
+      ct.restore();
+    }
+    ct.fillStyle=pet[2]; ct.beginPath(); ct.arc(0,0,R5*0.26,0,6.2832); ct.fill();
+    ct.fillStyle='rgba(120,90,20,.55)';
+    for(j=0;j<10;j++){
+      var a7=(j/10)*6.2832;
+      ct.beginPath(); ct.arc(Math.cos(a7)*R5*0.20,Math.sin(a7)*R5*0.20,Math.max(0.4,R5*0.045),0,6.2832); ct.fill();
+    }
+  } else if(kind==='spikelet'){
+    /* 벼·대나무: 껍질이 살짝 벌어지고 노란 수술이 나온다. 이게 진짜 '꽃'이다 */
+    var R6=r*o;
+    ct.fillStyle=pet[0];
+    ct.beginPath(); ct.ellipse(0,0,R6*0.55,R6*0.26,0.2,0,6.2832); ct.fill();
+    ct.strokeStyle=pet[2]; ct.lineWidth=Math.max(0.4,R6*0.10);
+    for(j=0;j<3;j++){
+      ct.beginPath(); ct.moveTo(0,0);
+      ct.lineTo(Math.cos(-0.6-j*0.5)*R6*0.9, Math.sin(-0.6-j*0.5)*R6*0.9); ct.stroke();
+    }
+  } else if(kind==='tassel'){
+    /* 옥수수 수꽃차례 */
+    var R7=r*o;
+    ct.strokeStyle=pet[1]; ct.lineWidth=Math.max(0.6,R7*0.10);
+    for(j=0;j<n;j++){
+      var a8=-1.9+ (1.6*j/(n-1));
+      ct.beginPath(); ct.moveTo(0,0);
+      ct.quadraticCurveTo(Math.cos(a8)*R7*0.6, Math.sin(a8)*R7*0.6-R7*0.2, Math.cos(a8)*R7, Math.sin(a8)*R7);
+      ct.stroke();
+    }
+  } else if(kind==='catkin'){
+    /* 참나무: 아래로 늘어지는 연두색 꼬리꽃차례 */
+    var R8=r*o;
+    ct.strokeStyle=pet[0]; ct.lineWidth=Math.max(0.7,R8*0.16);
+    for(j=0;j<3;j++){
+      var ox2=(j-1)*R8*0.34;
+      ct.beginPath(); ct.moveTo(ox2,0);
+      ct.quadraticCurveTo(ox2+R8*0.16, R8*0.8, ox2+R8*0.06, R8*1.6);
+      ct.stroke();
+    }
+  }
+  ct.restore();
+}
+
+/* ── 열매 / 씨방 ────────────────────────────────────────────
+   fr 0→1 로 여물고, sd 0→1 에서 씨앗이 드러난다.
+   봉선화만 특별하다 — 다 여문 꼬투리가 다섯 조각으로 말리며 씨앗을 튕긴다.
+   도감의 '건드리면 터진다'가 눈앞에서 벌어져야 그 문장이 살아난다.
+   ──────────────────────────────────────────────────────────── */
+function drawFruit(ct,kind,x,y,r,id,fr,sd,t,key,i){
+  if(fr<=0.01 || r<=0.3) return;
+  var f=ease(fr), R=r*f, j;
+  ct.save(); ct.translate(x,y);
+  if(kind==='pod'){
+    var burst = ease(sd);
+    if(burst<0.02){
+      ct.fillStyle='#7BA85C'; ct.strokeStyle='rgba(30,60,30,.35)'; ct.lineWidth=Math.max(0.4,R*0.10);
+      ct.beginPath(); ct.ellipse(0,0,R*0.42,R*0.72,0,0,6.2832); ct.fill(); ct.stroke();
+      ct.fillStyle='rgba(255,255,255,.25)';
+      ct.beginPath(); ct.ellipse(-R*0.12,-R*0.18,R*0.12,R*0.30,0,0,6.2832); ct.fill();
+    } else {
+      for(j=0;j<5;j++){
+        var a=(j/5)*6.2832 - 1.57;
+        ct.save(); ct.rotate(a);
+        ct.fillStyle='#9CBF74';
+        ct.beginPath(); ct.moveTo(0,0);
+        ct.quadraticCurveTo(R*0.30, -R*0.55*(1-burst*0.4), R*0.10*(1-burst)+R*0.55*burst, -R*0.95);
+        ct.quadraticCurveTo(R*0.02,-R*0.5, 0,0);
+        ct.closePath(); ct.fill(); ct.restore();
+      }
+    }
+  } else if(kind==='fluff'){
+    ct.strokeStyle='rgba(255,255,255,.85)'; ct.lineWidth=Math.max(0.4,R*0.06);
+    for(j=0;j<11;j++){
+      var a2=(j/11)*6.2832;
+      ct.beginPath(); ct.moveTo(0,0); ct.lineTo(Math.cos(a2)*R*0.8*(0.6+0.4*f), Math.sin(a2)*R*0.8*(0.6+0.4*f)); ct.stroke();
+    }
+    ct.fillStyle='#C8B78A'; ct.beginPath(); ct.arc(0,0,R*0.18,0,6.2832); ct.fill();
+  } else if(kind==='silique'){
+    ct.fillStyle=sd>0.4? '#C8B78A':'#8FBB6E';
+    ct.strokeStyle='rgba(30,60,30,.30)'; ct.lineWidth=Math.max(0.4,R*0.08);
+    ct.beginPath(); ct.ellipse(0,R*0.35,R*0.20,R*0.78,0.12,0,6.2832); ct.fill(); ct.stroke();
+  } else if(kind==='capsule'){
+    ct.fillStyle=sd>0.4? '#B79A6E':'#9BBE79';
+    ct.beginPath(); ct.arc(0,0,R*0.42,0,6.2832); ct.fill();
+    ct.strokeStyle='rgba(60,50,30,.40)'; ct.lineWidth=Math.max(0.4,R*0.07);
+    for(j=0;j<3;j++){ var a3=j*2.094;
+      ct.beginPath(); ct.moveTo(0,0); ct.lineTo(Math.cos(a3)*R*0.42,Math.sin(a3)*R*0.42); ct.stroke(); }
+    ct.fillStyle='#C7B08B'; ct.beginPath(); ct.ellipse(0,-R*0.48,R*0.30,R*0.14,0,0,6.2832); ct.fill();
+  } else if(kind==='beanpod'){
+    ct.fillStyle=sd>0.4? '#C4B478':'#7FAE55';
+    ct.strokeStyle='rgba(30,60,30,.32)'; ct.lineWidth=Math.max(0.4,R*0.07);
+    ct.beginPath(); ct.moveTo(0,0);
+    ct.quadraticCurveTo(R*0.55,R*0.55, R*0.18,R*1.30);
+    ct.quadraticCurveTo(R*0.02,R*0.62, -R*0.14,R*0.05);
+    ct.closePath(); ct.fill(); ct.stroke();
+    ct.fillStyle='rgba(0,0,0,.12)';
+    for(j=0;j<3;j++){ ct.beginPath(); ct.arc(R*(0.20-0.02*j), R*(0.38+0.30*j), R*0.11,0,6.2832); ct.fill(); }
+  } else if(kind==='gourd'){
+    var gg=ct.createRadialGradient(-R*0.3,-R*0.3,R*0.1,0,0,R);
+    gg.addColorStop(0, mix('#F2A22E','#FFD07A',0.4)); gg.addColorStop(1,'#C4711A');
+    ct.fillStyle=gg;
+    ct.beginPath(); ct.ellipse(0,0,R*0.95,R*0.78,0,0,6.2832); ct.fill();
+    ct.strokeStyle='rgba(120,70,10,.35)'; ct.lineWidth=Math.max(0.5,R*0.06);
+    for(j=-2;j<=2;j++){
+      ct.beginPath(); ct.ellipse(0,0,R*0.95*Math.abs(j/2.6+0.12),R*0.78,0,0,6.2832); ct.stroke();
+    }
+    ct.fillStyle='#6E8C3A'; ct.beginPath(); ct.roundRect(-R*0.07,-R*0.98,R*0.14,R*0.28,R*0.05); ct.fill();
+  } else if(kind==='disc'){
+    /* 해바라기 씨앗 접시 — 씨앗이 나선으로 앉는 걸 실제로 그린다 */
+    ct.fillStyle='#5D4037'; ct.beginPath(); ct.arc(0,0,R,0,6.2832); ct.fill();
+    var cnt=Math.floor(38*ease(sd*0.7+fr*0.3));
+    for(j=0;j<cnt;j++){
+      var ph=j*2.39996, rr5=R*0.92*Math.sqrt(j/38);
+      ct.save(); ct.translate(Math.cos(ph)*rr5, Math.sin(ph)*rr5); ct.rotate(ph);
+      ct.fillStyle= j%3? '#2B2622':'#4A423A';
+      ct.beginPath(); ct.ellipse(0,0,R*0.075,R*0.042,0,0,6.2832); ct.fill();
+      ct.restore();
+    }
+  } else if(kind==='ear'){
+    ct.fillStyle='#8FBB6E';
+    ct.beginPath(); ct.ellipse(0,0,R*0.30,R*0.85,0.10,0,6.2832); ct.fill();
+    if(sd>0.15){
+      ct.save(); ct.beginPath(); ct.ellipse(0,0,R*0.26,R*0.80,0.10,0,6.2832); ct.clip();
+      for(j=0;j<22;j++){
+        ct.fillStyle= j%2? '#E8B93C':'#D9A62A';
+        ct.beginPath(); ct.arc(-R*0.12+ (j%3)*R*0.13, -R*0.72+ (Math.floor(j/3))*R*0.20, R*0.075,0,6.2832); ct.fill();
+      }
+      ct.restore();
+    }
+    ct.strokeStyle='rgba(180,120,60,.75)'; ct.lineWidth=Math.max(0.4,R*0.05);
+    for(j=0;j<6;j++){
+      ct.beginPath(); ct.moveTo(rr('silk',j,-0.2,0.2)*R,-R*0.82);
+      ct.quadraticCurveTo(R*0.25,-R*1.15, rr('silk2',j,-0.5,0.6)*R,-R*1.35); ct.stroke();
+    }
+  } else if(kind==='panicle'){
+    /* 벼·대나무 이삭: 여물수록 황금빛이 되고 고개를 숙인다 */
+    var gold = ease(sd);
+    ct.strokeStyle= mix('#8FBB6E','#C9A227',gold); ct.lineWidth=Math.max(0.6,R*0.09);
+    ct.beginPath(); ct.moveTo(0,0); ct.quadraticCurveTo(R*0.25,R*0.45, R*0.55*gold+R*0.10, R*0.95); ct.stroke();
+    for(j=0;j<9;j++){
+      var tt=j/8;
+      var gx=lerp(0,R*0.55*gold+R*0.10,tt)+rr('pk',j,-0.10,0.10)*R;
+      var gy=lerp(0,R*0.95,tt);
+      ct.save(); ct.translate(gx,gy); ct.rotate(0.5+tt*0.5);
+      ct.fillStyle= mix('#A8C574','#E0C25A',gold);
+      ct.beginPath(); ct.ellipse(0,0,R*0.16,R*0.07,0,0,6.2832); ct.fill();
+      ct.restore();
+    }
+  } else if(kind==='drupe' || kind==='pome' || kind==='persim'){
+    var c0 = kind==='drupe'? '#F2A2A0' : (kind==='pome'? '#E14B3C':'#F08A1E');
+    var c1 = kind==='drupe'? '#E0713F' : (kind==='pome'? '#9E2A22':'#C25A08');
+    var fg=ct.createRadialGradient(-R*0.32,-R*0.34,R*0.06,0,0,R);
+    fg.addColorStop(0, mix(c0,'#FFFFFF',0.30)); fg.addColorStop(0.6,c0); fg.addColorStop(1,c1);
+    ct.fillStyle=fg;
+    ct.beginPath();
+    if(kind==='persim') ct.ellipse(0,0,R*1.02,R*0.82,0,0,6.2832);
+    else ct.arc(0,0,R,0,6.2832);
+    ct.fill();
+    if(kind==='drupe'){
+      ct.strokeStyle='rgba(150,60,50,.35)'; ct.lineWidth=Math.max(0.5,R*0.07);
+      ct.beginPath(); ct.moveTo(0,-R*0.95); ct.quadraticCurveTo(R*0.18,0,0,R*0.95); ct.stroke();
+    }
+    if(kind==='persim'){
+      ct.fillStyle='#5E7A34';
+      for(j=0;j<4;j++){
+        var a9=j*1.5708;
+        ct.save(); ct.rotate(a9);
+        ct.beginPath(); ct.ellipse(0,-R*0.70,R*0.42,R*0.17,0,0,6.2832); ct.fill(); ct.restore();
+      }
+    } else {
+      ct.strokeStyle='#6E5230'; ct.lineWidth=Math.max(0.6,R*0.08);
+      ct.beginPath(); ct.moveTo(0,-R*0.86); ct.lineTo(R*0.06,-R*1.25); ct.stroke();
+    }
+  } else if(kind==='ginkgo'){
+    var yg=ct.createRadialGradient(-R*0.3,-R*0.3,R*0.05,0,0,R);
+    yg.addColorStop(0,'#F6E9A8'); yg.addColorStop(1,'#C9A94C');
+    ct.fillStyle=yg; ct.beginPath(); ct.ellipse(0,0,R*0.82,R*0.95,0,0,6.2832); ct.fill();
+    ct.strokeStyle='rgba(120,100,40,.4)'; ct.lineWidth=Math.max(0.4,R*0.06);
+    ct.beginPath(); ct.moveTo(0,-R*0.95); ct.lineTo(0,-R*1.35); ct.stroke();
+  } else if(kind==='acorn'){
+    ct.fillStyle='#A9702F';
+    ct.beginPath(); ct.ellipse(0,R*0.16,R*0.55,R*0.78,0,0,6.2832); ct.fill();
+    ct.fillStyle='#7A5A32';
+    ct.beginPath(); ct.moveTo(-R*0.58,-R*0.30); ct.quadraticCurveTo(0,-R*1.10, R*0.58,-R*0.30); ct.closePath(); ct.fill();
+    ct.fillStyle='rgba(255,255,255,.22)';
+    ct.beginPath(); ct.ellipse(-R*0.18,R*0.10,R*0.12,R*0.26,0,0,6.2832); ct.fill();
+  } else if(kind==='cfruit'){
+    ct.fillStyle='#B2413C';
+    ct.beginPath(); ct.ellipse(0,0,R*0.55,R*0.72,0,0,6.2832); ct.fill();
+    if(sd>0.35){
+      ct.fillStyle='#E8544A';
+      ct.beginPath(); ct.moveTo(-R*0.30,-R*0.45); ct.quadraticCurveTo(0,R*0.10, R*0.30,-R*0.45);
+      ct.quadraticCurveTo(0,-R*0.75,-R*0.30,-R*0.45); ct.fill();
+      ct.fillStyle='#1C1714';
+      for(j=0;j<8;j++){ ct.beginPath(); ct.arc(rr('cs',j,-0.25,0.25)*R, -R*0.34+rr('cs2',j,0,0.28)*R, Math.max(0.4,R*0.05),0,6.2832); ct.fill(); }
+    }
+  }
+  ct.restore();
+}
+/* ── 줄기·형태 ──────────────────────────────────────────────
+   형태 6종을 공통 뼈대(축 목록 + 마디 + 가지끝)로 환원한다.
+   축을 다 모은 다음 한 번에 그려야 잎이 줄기 뒤로 들어가는 순서가 맞다.
+   ──────────────────────────────────────────────────────────── */
+var BARK = ['#4A3A28','#6E5637','#8C7148'];
+var STEM = ['#33612F','#4C7A3E','#84A85E'];
+
+function curvePts(x0,y0,x1,y1,bx,by,n){
+  var i,out=[];
+  for(i=0;i<=n;i++){
+    var t=i/n, mt=1-t;
+    out.push({ x:mt*mt*x0+2*mt*t*bx+t*t*x1, y:mt*mt*y0+2*mt*t*by+t*t*y1 });
+  }
+  return out;
+}
+function ptAt(pts,t){
+  var f = clamp(t,0,1)*(pts.length-1), i=Math.floor(f), r=f-i;
+  var a=pts[i], b=pts[Math.min(pts.length-1,i+1)];
+  return { x:lerp(a.x,b.x,r), y:lerp(a.y,b.y,r) };
+}
+function branchRec(x,y,ang,len,wid,depth,key,idx,axes,tips){
+  var ex=x+Math.cos(ang)*len, ey=y+Math.sin(ang)*len;
+  var bx=x+Math.cos(ang+rr(key,idx,-0.28,0.28))*len*0.55;
+  var by=y+Math.sin(ang+rr(key,idx,-0.20,0.20))*len*0.55;
+  axes.push({ pts:curvePts(x,y,ex,ey,bx,by,6), w0:wid, w1:wid*0.62, d:depth });
+  if(depth<=0){ tips.push({x:ex,y:ey,ang:ang,i:idx}); return; }
+  var spread = 0.46 + rnd(key,idx*3+1)*0.30;
+  branchRec(ex,ey,ang-spread, len*0.70, wid*0.62, depth-1, key, idx*2+1, axes, tips);
+  branchRec(ex,ey,ang+spread*0.85, len*0.74, wid*0.62, depth-1, key, idx*2+2, axes, tips);
+  if(depth===2){  /* 가운데 가지 하나를 더 — 이게 없으면 나무가 Y 자로만 보인다 */
+    branchRec(ex,ey,ang+rr(key,idx,-0.14,0.14), len*0.62, wid*0.55, depth-1, key, idx*2+30, axes, tips);
+  }
+}
+
+/* 떡잎 — 싹이 트고 본잎이 나오면 자연스럽게 작아진다(사라지는 게 아니라 밀려난다) */
+function drawCotyl(ct,x,y,k,fade,cols){
+  if(k<=0.01) return;
+  var r=U*0.045*ease(k)*(1-fade*0.75), j;
+  for(j=0;j<2;j++){
+    ct.save(); ct.translate(x,y); ct.rotate(j? 0.55:-0.55+3.1416);
+    ct.fillStyle=cols[1];
+    ct.beginPath(); ct.ellipse(r*0.9,0,r*0.95,r*0.52,0,0,6.2832); ct.fill();
+    ct.strokeStyle='rgba(20,44,26,.25)'; ct.lineWidth=Math.max(0.4,r*0.10); ct.stroke();
+    ct.restore();
+  }
+}
+function drawRoots(ct,x,y,k,key){
+  if(k<=0.01) return;
+  var j, dep=U*0.14*ease(k);
+  ct.save(); ct.globalAlpha=0.42; ct.strokeStyle='#E8DFC8';
+  for(j=0;j<5;j++){
+    ct.lineWidth=Math.max(0.5,U*0.006*(1-j*0.12));
+    var a=(-0.5+j*0.25)+1.57;
+    ct.beginPath(); ct.moveTo(x,y);
+    ct.quadraticCurveTo(x+Math.cos(a)*dep*0.5, y+Math.sin(a)*dep*0.6, x+Math.cos(a)*dep*(0.6+rnd(key,j)*0.6), y+dep*(0.7+rnd(key,j+9)*0.5));
+    ct.stroke();
+  }
+  ct.restore();
+}
+
+/* ── 식물 전체 ──────────────────────────────────────────────
+   p 0→1 하나로 씨앗부터 씨앗까지 전부 결정된다. 상태 변수가 따로 없어야
+   되감기(온실 재시작)와 카드·도감의 정지 그림이 전부 같은 코드로 나온다.
+   ──────────────────────────────────────────────────────────── */
+function drawPlant(ct,id,p,t,windAmt){
+  var a=ART[id], i, j;
+  if(!a) return;
+  var gp = ease(w(p,'grow'));
+  var h  = U*a.hMax*gp;
+  var s  = (windAmt===undefined? 0 : windAmt);
+  var lk = w(p,'leaf'), bud=w(p,'bud'), fl=w(p,'flo'), wl=w(p,'wilt'), fr=w(p,'fruit'), sd=w(p,'seedout');
+  var open = fl*(1-wl);                 /* 꽃은 피었다가 진다 */
+  var budK = bud*(1-sm(p,PH.flo[0],PH.flo[0]+0.05));
+  var axes=[], tips=[], nodes=[];
+  var key=id;
+  /* 옆으로 기는 형태(호박)만 쓰는 가로 단위. U 는 '흙에서 화면 위'라 세로
+     기준이고, 세로로 긴 폰에서는 U 가 화면 반폭보다 훨씬 크다. 그대로 쓰면
+     덩굴과 호박이 캔버스 오른쪽 밖으로 나간다. 오른쪽 여백에 맞춰 줄인다.
+     가로 화면·카드 캔버스에서는 U 보다 작아지지 않으므로 그림이 안 변한다. */
+  var UH = U;
+  if(a.form==='crawl') UH = Math.min(U, Math.max(U*0.35, (W - CX - 6)/0.62));
+
+  drawRoots(ct,CX,SY,w(p,'root'),key);
+
+  if(a.form==='herb' || a.form==='rosette'){
+    var hh = a.form==='rosette'? h*(0.30+0.70*sm(p,0.45,0.80)) : h;
+    var pts = curvePts(CX,SY, CX+s*U*0.05, SY-hh, CX+s*U*0.03, SY-hh*0.55, 10);
+    axes.push({pts:pts,w0:U*a.w0*gp,w1:U*a.w1*gp,d:0});
+    for(i=0;i<a.nLeaf;i++){
+      var born = PH.leaf[0] + (PH.leaf[1]-PH.leaf[0])*(i/Math.max(1,a.nLeaf));
+      var k = sm(p,born,born+0.13);
+      if(k<=0.01) continue;
+      var tt = a.form==='rosette'? 0.02+0.05*(i/a.nLeaf) : (i+0.9)/(a.nLeaf+1.2);
+      var pp = ptAt(pts,tt);
+      var side = (i%2)?1:-1;
+      var ang = a.form==='rosette'
+        ? (side>0? -0.28 : 3.1416+0.28) + side*rr(key,i,-0.35,0.35) - (i%3)*0.12*side
+        : (side>0? -0.62 : 3.1416+0.62) + side*rr(key,i,-0.18,0.18);
+      nodes.push({x:pp.x,y:pp.y,ang:ang,k:k,i:i,side:side,t:tt});
+    }
+  } else if(a.form==='vine'){
+    /* 지지대 — 덩굴은 감을 대상이 있어야 덩굴로 보인다 */
+    var poleH = U*a.hMax*1.02, px = CX+U*0.055;
+    ct.save();
+    ct.fillStyle='#B99A6C'; ct.strokeStyle='rgba(80,60,34,.35)'; ct.lineWidth=1;
+    ct.beginPath(); ct.roundRect(px-U*0.010, SY-poleH, U*0.020, poleH, U*0.010); ct.fill(); ct.stroke();
+    ct.restore();
+    var n2=26, rad=U*0.052;
+    var vp=[];
+    for(i=0;i<=n2;i++){
+      var tv=i/n2, yv=SY-h*tv;
+      var th=tv*(a.turns||3)*6.2832;
+      vp.push({ x:px+Math.sin(th)*rad*(a.crawl?0:1) + s*U*0.02*tv*tv, y:yv });
+    }
+    axes.push({pts:vp,w0:U*a.w0*gp,w1:U*a.w1*gp,d:0});
+    for(i=0;i<a.nLeaf;i++){
+      var born2 = PH.leaf[0] + (PH.leaf[1]-PH.leaf[0])*(i/Math.max(1,a.nLeaf));
+      var k2 = sm(p,born2,born2+0.13);
+      if(k2<=0.01) continue;
+      var tv2=(i+0.6)/(a.nLeaf+0.8);
+      var pv=ptAt(vp,tv2);
+      var facing = Math.cos(tv2*(a.turns||3)*6.2832)>=0 ? 1 : -1;
+      nodes.push({x:pv.x,y:pv.y,ang:(facing>0?-0.35:3.1416+0.35),k:k2,i:i,side:facing,t:tv2});
+    }
+  } else if(a.form==='crawl'){
+    /* 호박: 위로 안 가고 옆으로 긴다. 실루엣이 확실히 달라야 하니 이 형태만 따로 둔다 */
+    var run = UH*0.62*gp, cp=[];
+    for(i=0;i<=14;i++){
+      var tc=i/14;
+      cp.push({ x:CX-UH*0.05+run*tc, y:SY-U*0.05-Math.sin(tc*3.6)*U*0.045*gp });
+    }
+    axes.push({pts:cp,w0:U*a.w0*gp,w1:U*a.w1*gp,d:0});
+    for(i=0;i<a.nLeaf;i++){
+      var born3 = PH.leaf[0] + (PH.leaf[1]-PH.leaf[0])*(i/Math.max(1,a.nLeaf));
+      var k3=sm(p,born3,born3+0.13); if(k3<=0.01) continue;
+      var pc=ptAt(cp,(i+0.5)/a.nLeaf);
+      /* lq: 잎도 같은 비율로 줄여야 덩굴만 짧아지고 잎만 큰 그림이 안 된다 */
+      nodes.push({x:pc.x,y:pc.y,ang:-1.25+rr(key,i,-0.45,0.45),k:k3,i:i,side:1,t:(i+0.5)/a.nLeaf,lq:UH/U});
+    }
+  } else if(a.form==='clump'){
+    /* 포기 — 여러 대가 부채처럼 벌어진다. 벼와 대나무의 정체성 */
+    var N=a.N||5;
+    for(j=0;j<N;j++){
+      var off=(j-(N-1)/2);
+      var hj = h*(0.80+0.20*rnd(key,j))*(1-Math.abs(off)*0.05);
+      var tipx = CX+off*U*0.075+ s*U*0.05;
+      var cpts = curvePts(CX+off*U*0.012, SY, tipx, SY-hj, CX+off*U*0.05, SY-hj*0.55, 9);
+      axes.push({pts:cpts,w0:U*a.w0*gp,w1:U*a.w1*gp,d:0,culm:j,tipx:tipx,tipy:SY-hj});
+      for(i=0;i<a.nLeaf;i++){
+        var born4 = PH.leaf[0] + (PH.leaf[1]-PH.leaf[0])*((i+j*0.3)/(a.nLeaf+1));
+        var k4=sm(p,born4,born4+0.13); if(k4<=0.01) continue;
+        var pj=ptAt(cpts,(i+0.7)/(a.nLeaf+0.7));
+        var sd2=((i+j)%2)?1:-1;
+        nodes.push({x:pj.x,y:pj.y,ang:(sd2>0?-0.42:3.1416+0.42)+sd2*rr(key,i*4+j,-0.22,0.22),k:k4,i:i,side:sd2,t:(i+0.7)/(a.nLeaf+0.7)});
+      }
+    }
+  } else if(a.form==='tree'){
+    branchRec(CX, SY, -1.5708 + s*0.03, U*a.hMax*0.42*gp, U*a.w0*gp, 2, key, 1, axes, tips);
+  } else if(a.form==='column'){
+    var colH = h, colW = U*a.w0*(0.55+0.45*gp);
+    var cpts2 = curvePts(CX,SY, CX+s*U*0.02, SY-colH, CX, SY-colH*0.5, 8);
+    axes.push({pts:cpts2,w0:colW,w1:colW*0.82,d:0,col:true});
+    if(p>0.55){    /* 팔은 늦게 — 사구아로는 수십 년 뒤에야 팔이 난다 */
+      var armK=sm(p,0.55,0.78);
+      for(j=0;j<2;j++){
+        var sgn=j?1:-1, ax0=CX+sgn*colW*0.32, ay0=SY-colH*(0.52+0.06*j);
+        var arm=[{x:ax0,y:ay0}];
+        for(i=1;i<=6;i++){
+          var ta=i/6;
+          arm.push({ x:ax0+sgn*colW*0.95*armK*Math.sin(ta*1.2), y:ay0 - colH*0.30*armK*ta*ta });
+        }
+        axes.push({pts:arm,w0:colW*0.55*armK,w1:colW*0.48*armK,d:0,col:true});
+      }
+    }
+  }
+
+  /* 축 그리기 — 나무는 껍질색, 나머지는 줄기색 */
+  var cols = (a.form==='tree')? BARK : STEM;
+  for(i=0;i<axes.length;i++){
+    var ax=axes[i];
+    if(ax.w0<0.25) continue;
+    strokeAxis(ct, sway(ax.pts, s*0.6), ax.w0, ax.w1, cols);
+  }
+  /* 대나무 마디 */
+  if(a.node){
+    ct.strokeStyle='rgba(30,60,32,.45)';
+    for(i=0;i<axes.length;i++){
+      var ax2=axes[i]; ct.lineWidth=Math.max(0.6,ax2.w0*0.55);
+      for(j=1;j<5;j++){
+        var pn=ptAt(sway(ax2.pts,s*0.6), j/5);
+        ct.beginPath(); ct.moveTo(pn.x-ax2.w0*0.6,pn.y); ct.lineTo(pn.x+ax2.w0*0.6,pn.y); ct.stroke();
+      }
+    }
+  }
+  /* 선인장 세로 주름 */
+  if(a.form==='column'){
+    ct.save(); ct.strokeStyle='rgba(20,60,40,.28)';
+    var cw=U*a.w0*(0.55+0.45*gp);
+    for(j=-2;j<=2;j++){
+      if(j===0) continue;
+      ct.lineWidth=Math.max(0.5,cw*0.05);
+      ct.beginPath();
+      var apts=sway(axes[0].pts,s*0.6);
+      for(i=0;i<apts.length;i++){
+        var xx=apts[i].x+j*cw*0.17;
+        if(i===0) ct.moveTo(xx,apts[i].y); else ct.lineTo(xx,apts[i].y);
+      }
+      ct.stroke();
+    }
+    ct.strokeStyle='rgba(255,255,255,.35)';
+    for(j=0;j<14;j++){
+      var yy=SY-h*(j/14+0.03);
+      ct.lineWidth=Math.max(0.4,cw*0.035);
+      ct.beginPath(); ct.moveTo(CX-cw*0.5,yy); ct.lineTo(CX-cw*0.62,yy-cw*0.06); ct.stroke();
+      ct.beginPath(); ct.moveTo(CX+cw*0.5,yy); ct.lineTo(CX+cw*0.62,yy-cw*0.06); ct.stroke();
+    }
+    ct.restore();
+  }
+
+  /* 잎 — 은행은 가을에 노랗게 물든다. 꽃이 없는 대신 이게 이 나무의 절정이다 */
+  var lc = a.lc;
+  if(a.autumn){
+    var au = sm(p,0.62,0.86);
+    lc = [ mix(a.lc[0],'#C79B25',au), mix(a.lc[1],'#E8C24A',au), mix(a.lc[2],'#F6E08C',au) ];
+  }
+  for(i=0;i<nodes.length;i++){
+    var nd=nodes[i];
+    drawLeaf(ct,a.leaf, nd.x + s*U*0.02*Math.pow(clamp((SY-nd.y)/U,0,1.6),2), nd.y, nd.ang, U*a.lLen*(nd.lq||1)*ease(nd.k)*(0.85+0.3*rnd(key,nd.i)), lc, key, nd.i);
+  }
+  /* 나무: 가지 끝마다 잎 다발 */
+  if(a.form==='tree'){
+    for(i=0;i<tips.length;i++){
+      var tp=tips[i];
+      var lk2 = sm(p, PH.leaf[0]+ (i%5)*0.02, PH.leaf[1]);
+      if(a.bare) lk2 *= (1-0.65*(1-sm(p,PH.flo[1]-0.04,PH.flo[1]+0.10)));  /* 복숭아는 잎보다 꽃이 먼저 */
+      if(lk2<=0.01) continue;
+      for(j=0;j<3;j++){
+        var la=tp.ang + (j-1)*0.85 + rr(key,i*5+j,-0.25,0.25);
+        drawLeaf(ct,a.leaf, tp.x, tp.y, la, U*a.lLen*ease(lk2)*(0.8+0.4*rnd(key,i*3+j)), lc, key, i*3+j);
+      }
+    }
+  }
+
+  /* 봉오리 → 꽃 → 열매. 자리는 형태마다 다르다 */
+  var spots=[];
+  if(a.floAt==='top'){
+    if(a.form==='clump'){
+      for(i=0;i<axes.length;i++){ if(axes[i].tipx!==undefined) spots.push({x:axes[i].tipx,y:axes[i].tipy,ang:0}); }
+    } else if(a.form==='column'){
+      spots.push({x:CX,y:SY-h,ang:0});
+      for(i=0;i<a.nFlo;i++){
+        var ac=(i/a.nFlo)*6.2832;
+        spots.push({x:CX+Math.cos(ac)*U*a.w0*0.42, y:SY-h+Math.sin(ac)*U*0.012, ang:0});
+      }
+    } else {
+      var top = ptAt(sway(axes[0].pts,s*0.6),1);
+      spots.push({x:top.x,y:top.y,ang:0});
+    }
+  } else if(a.floAt==='tip'){
+    for(i=0;i<tips.length && i<a.nFlo;i++) spots.push({x:tips[i].x,y:tips[i].y,ang:0});
+  } else {
+    for(i=0;i<nodes.length && spots.length<a.nFlo;i++){
+      if(nodes[i].t<0.32) continue;
+      spots.push({x:nodes[i].x + nodes[i].side*U*0.028, y:nodes[i].y-U*0.012, ang:0});
+    }
+  }
+  var fR = U*(a.form==='tree'?0.055: a.flo==='disc'? (id==='sunflower'?0.155:0.05) : a.flo==='trumpet'? (id==='pumpkin'?0.075:0.062) : 0.045);
+  if(a.form==='crawl') fR *= UH/U;    /* 덩굴을 줄였으면 꽃도 같이 줄인다 */
+  for(i=0;i<spots.length;i++){
+    var sp2=spots[i];
+    if(budK>0.01 && open<0.98){
+      var br=fR*0.42*ease(budK)*(1-open);
+      if(br>0.4){
+        ct.save(); ct.translate(sp2.x,sp2.y);
+        ct.fillStyle= a.pet[0];
+        ct.beginPath(); ct.ellipse(0,-br*0.3,br*0.62,br*1.05,0,0,6.2832); ct.fill();
+        ct.fillStyle='#5E8C43';
+        ct.beginPath(); ct.ellipse(0,br*0.42,br*0.55,br*0.42,0,0,6.2832); ct.fill();
+        ct.restore();
+      }
+    }
+    drawFlower(ct,a.flo,sp2.x,sp2.y,sp2.ang,fR,a,open,key,i);
+    /* 호박은 열매가 꽃 자리에 달리지 않는다(땅에 눕는다).
+       옥수수 이삭도 꽃(수꽃 = 꼭대기 수술) 자리가 아니라 줄기 중간
+       잎겨드랑이에서 나온다. 둘 다 아래에서 따로 그린다. */
+    if(a.fruit!=='gourd' && a.fruit!=='ear')
+      drawFruit(ct,a.fruit,sp2.x,sp2.y+ (a.fruit==='drupe'||a.fruit==='pome'||a.fruit==='persim'? fR*0.5:0), fR*(a.form==='tree'?1.15:1.0), id, fr, sd, t, key, i);
+  }
+  if(a.fruit==='gourd' && fr>0.01){
+    drawFruit(ct,'gourd', CX+UH*0.42, SY-U*0.055, UH*0.115, id, fr, sd, t, key, 99);
+  }
+  if(a.fruit==='ear' && fr>0.01 && axes.length){
+    var em = ptAt(sway(axes[0].pts, s*0.6), 0.46);
+    drawFruit(ct,'ear', em.x + U*0.030, em.y, fR*1.9, id, fr, sd, t, key, 98);
+  }
+  drawCotyl(ct, CX, SY-U*0.020, w(p,'sprout'), lk, a.lc);
+}
+/* ── 상태 ────────────────────────────────────────────────────
+   저장하는 건 도감 목록 하나뿐이다. 진행도·시각·연속일수 같은 건
+   일부러 저장하지 않는다. 저장하는 순간 "돌아오면 자라 있는" 게임이 된다.
+   ──────────────────────────────────────────────────────────── */
+var S = {
+  mode:'journey', scene:'title', si:0,
+  cands:[], picked:null, tsel:-1,
+  p:0, moist:0, secs:20, best:[55,100], revealed:false,
+  holding:false, wRamp:0, paused:false, fired:false,
+  flyT:0, circleT:0, playMs:0, guessOK:0, guessTry:0, auto:false
+};
+var DEX = (function(){
+  var raw = store.get('in9-'+SLUG+'-dex',''), out=[], i, parts;
+  if(!raw) return out;
+  parts = raw.split(',');
+  for(i=0;i<parts.length;i++){ if(PL[parts[i]] && out.indexOf(parts[i])<0) out.push(parts[i]); }
+  return out;
+})();
+function dexAdd(id){
+  if(DEX.indexOf(id)<0){ DEX.push(id); store.set('in9-'+SLUG+'-dex', DEX.join(',')); }
+}
+function groundKind(id){
+  var st = PL[id]? PL[id].stage : 1;
+  return st<=3? 'pot' : (st===4? 'paddy':'field');
+}
+function shuffle(arr,seed){
+  var i,j,tmp,out=arr.slice();
+  for(i=out.length-1;i>0;i--){
+    j = Math.floor(rnd('sh'+seed,i)* (i+1)) % (i+1);
+    tmp=out[i]; out[i]=out[j]; out[j]=tmp;
+  }
+  return out;
+}
+
+/* 성장 배수. 어떤 경우에도 0 이 아니다 — 식물은 죽지 않고 느려질 뿐이다. */
+function growRate(m,best){
+  if(m>=best[0] && m<=best[1]) return 1.0;
+  if(m<10) return 0.12;
+  return 0.35;
+}
+function speedLabel(r){ return r>=0.9? 'spFast' : (r>=0.3? 'spSlow':'spDry'); }
+
+var tipTimer=0;
+function tip(msg,ms){
+  var el=$('#tip'); el.textContent=msg; el.className='on'; tipTimer=ms||2200;
+}
+function tipStep(dt){
+  if(tipTimer>0){ tipTimer-=dt; if(tipTimer<=0) $('#tip').className=''; }
+}
+
+/* ── 비교바 ─────────────────────────────────────────────────
+   이 게임의 마지막 한 방. 왼쪽은 접시에서 골랐던 그 씨앗,
+   오른쪽은 방금 맺힌 씨앗. **같은 pxmm** 을 쓰고 같은 drawSeed 를 부른다.
+   여기서 크기나 그림이 조금이라도 다르면 "이게 네가 심은 그거야"가 거짓말이 된다.
+   ──────────────────────────────────────────────────────────── */
+function drawCompare(ct,id,k){
+  var d=PL[id];
+  var bw = Math.min(W*0.90, 400), bh = Math.min(H*0.34, 150);
+  var bx = (W-bw)/2, by = H - bh - H*0.045 + (1-ease(k))*H*0.10;
+  ct.save();
+  ct.globalAlpha = clamp(k*1.4,0,1);
+  ct.fillStyle='rgba(255,255,255,.94)'; ct.strokeStyle='rgba(46,140,147,.55)'; ct.lineWidth=1.5;
+  ct.beginPath(); ct.roundRect(bx,by,bw,bh,16); ct.fill(); ct.stroke();
+  var pxmm = Math.min(9, (bw*0.30)/d.seedMm, (bh*0.40)/Math.max(0.8,d.seedMm*SART[id].ar));
+  var lx = bx+bw*0.26, rx = bx+bw*0.74, cy = by+bh*0.48;
+  ct.strokeStyle='rgba(195,210,203,.9)'; ct.lineWidth=1;
+  ct.beginPath(); ct.moveTo(bx+bw*0.5,by+bh*0.16); ct.lineTo(bx+bw*0.5,by+bh*0.84); ct.stroke();
+  drawSeed(ct,id,lx,cy,pxmm,{});
+  /* 오른쪽은 조금 늦게 등장 — '방금 맺혔다'는 시간차가 있어야 한 바퀴로 읽힌다 */
+  var k2 = clamp((k-0.30)/0.55,0,1);
+  if(k2>0.01) drawSeed(ct,id,rx,cy,pxmm,{scale:0.55+0.45*ease(k2)});
+  ct.textAlign='center'; ct.textBaseline='middle';
+  ct.fillStyle='#4E6663'; ct.font='500 '+Math.round(Math.max(10,H*0.017))+'px -apple-system,sans-serif';
+  ct.fillText(L('circleFirst'), lx, by+bh*0.86);
+  if(k2>0.4) ct.fillText(L('circleNew'), rx, by+bh*0.86);
+  ct.fillStyle='#263A38'; ct.font='700 '+Math.round(Math.max(12,H*0.022))+'px -apple-system,sans-serif';
+  ct.fillText(L('circleMsg')+' · '+P(id), bx+bw*0.5, by+bh*0.14);
+  ct.restore();
+}
+
+/* ── 화면 ────────────────────────────────────────────────────*/
+function render(t){
+  ctx.clearRect(0,0,W,H);
+  if(S.scene==='tray'){
+    drawSky(ctx,0.10);
+    drawGround(ctx,'field',22,t*0.001);
+    drawTray(ctx,S.cands,S.tsel,t);
+    return;
+  }
+  var id=S.picked||'balsam';
+  drawSky(ctx, S.scene==='grow'||S.scene==='circle'? S.p : 0.10);
+  /* 흔들림 줄이기를 켠 사람에게는 바람을 끈다. 자라는 것 자체는 그대로 둔다 —
+     식물이 안 자라면 게임이 성립하지 않는다. */
+  var wind = reduced? 0 : (Math.sin(t*0.00062)*0.6 + Math.sin(t*0.00113+1.3)*0.4);
+  drawGround(ctx, groundKind(id), S.moist, t*0.001);
+  if(S.scene==='fly'){
+    /* 씨앗이 접시에서 흙으로 떨어진다. 포물선 한 번이면 '심었다'가 전달된다 */
+    var k=clamp(S.flyT/520,0,1), M=trayMetrics(S.cands);
+    var sx=M.tx+M.tw*0.30, sy=M.top+M.rowH*(S.cands.indexOf(id)+0.5);
+    var ex=CX, ey=SY-U*0.01;
+    var x=lerp(sx,ex,k), y=lerp(sy,ey,k) - Math.sin(k*3.1416)*H*0.10;
+    drawSeed(ctx,id,x,y, M.pxmm*(1-0.35*k), {rot:-0.3+k*2.2});
+    return;
+  }
+  drawPlant(ctx,id,S.p,t,wind);
+  if(S.scene==='grow'){
+    drawWater(ctx,S.wRamp,t,SY-U*0.01);
+    drawDrops(ctx);
+  }
+  if(S.scene==='circle') drawCompare(ctx,id,clamp(S.circleT/900,0,1));
+}
+
+/* ── 루프 ────────────────────────────────────────────────────
+   성장은 여기 안에서만 일어난다. rAF 는 탭이 숨으면 멈추고,
+   dt 는 200ms 로 자른다 — 복귀 직후 큰 dt 가 들어와 몇 초를 건너뛰면
+   그게 곧 '나갔다 온 사이에 자랐다'가 되기 때문이다.
+   ──────────────────────────────────────────────────────────── */
+var last=0, raf=0;
+function frame(ts){
+  raf = requestAnimationFrame(frame);
+  var dt = last? Math.min(200, ts-last) : 16; last=ts;
+  var blocked = S.paused || overlayOpen();
+  if(blocked){
+    if(S.holding) releaseHold();
+    /* 멈춘 동안 물줄기가 공중에 얼어붙어 있으면 안 된다. 램프만 0 으로 내린다 —
+       습도는 건드리지 않는다. 멈춘 사이에 상태가 나빠지면 멈추기가 벌이 된다. */
+    S.wRamp += (0-S.wRamp) * Math.min(1, dt/180);
+    stepDrops(dt); render(ts); tipStep(dt); return;
+  }
+
+  /* 자동 물주기도 물줄기가 보여야 한다. 아무것도 안 보이면 켜졌는지 알 수 없다. */
+  var mid=(S.best[0]+S.best[1])/2;
+  var autoFlow = S.auto && S.scene==='grow' && S.moist < mid-0.5;
+  /* 물 램프 — 소리·물줄기·습도가 같은 값을 본다 */
+  var target = (S.holding||autoFlow)?1:0;
+  S.wRamp += (target-S.wRamp) * Math.min(1, dt/(target?120:180));
+
+  if(S.scene==='grow'){
+    S.playMs += dt;
+    if(S.auto){
+      /* 접근성 대체 조작: 손으로 오래 못 누르는 사람을 위해 구간 한가운데를 유지한다.
+         손으로 잘 맞춘 것과 같은 속도다 — 대신 눌러줄 뿐 더 빨라지지는 않는다. */
+      S.moist += clamp(mid-S.moist,-1,1)*dt*0.045;
+    } else {
+      if(S.holding) S.moist += 40*dt/1000;
+      S.moist -= (6 + S.moist*0.10)*dt/1000;     /* 젖을수록 빨리 마른다 = 벼가 진짜로 어렵다 */
+    }
+    S.moist = clamp(S.moist,0,100);
+    if((S.holding||autoFlow) && !reduced && Math.random()<dt/90) spawnSplash(CX+rr('sx',Math.floor(ts/90),-1,1)*U*0.03, SY-U*0.01, 2);
+
+    var was=S.p;
+    S.p = clamp(S.p + growRate(S.moist,S.best)*dt/(S.secs*1000), 0, 1);
+    /* 싹이 트는 순간 이름이 밝혀지고, 그때서야 좋아하는 구간이 게이지에 나타난다 */
+    if(!S.revealed && S.p>=0.16){
+      S.revealed=true;
+      $('#nameNow').textContent = P(S.picked);
+      $('#gBand').className='on';
+      tip(L('tipSprout')+' — '+L('fnSprout')(P(S.picked)), 2600);
+      SFX.chord([523.25,659.25,783.99],0.5,0.10);
+    }
+    if(was<PH.flo[0]+0.03 && S.p>=PH.flo[0]+0.03){
+      /* 은행나무는 이 게임에서 꽃을 그리지 않는다. '꽃이 폈어'라고 하면 거짓말이 된다. */
+      var noFlo = ART[S.picked] && ART[S.picked].flo==='none';
+      tip(L(noFlo?'tipAutumn':'tipBloom'),2200);
+      SFX.chord([659.25,880,1046.5],0.7,0.09);
+    }
+    if(S.p>=1){
+      S.scene='circle'; S.circleT=0; releaseHold();
+      tip(L('tipCircle'),2600); SFX.chord([523.25,783.99,1046.5],0.9,0.12);
+    }
+  } else if(S.scene==='fly'){
+    S.flyT += dt;
+    if(S.flyT>=520){
+      S.scene='grow'; S.moist=18; wetSpots=[];
+      spawnSplash(CX,SY-U*0.01,10);
+      tip(L('tipHold'),2800);
+    }
+  } else if(S.scene==='circle'){
+    S.circleT += dt;
+    if(S.circleT>2600) finishCircle();
+  }
+  stepDrops(dt);
+  /* 젖은 자국은 물을 준 자리에 남았다가 마르면서 사라진다 */
+  if((S.holding||autoFlow) && S.scene==='grow' && wetSpots.length<8 && Math.random()<dt/240) wetSpots.push({x:CX+rr('ws',wetSpots.length,-1,1)*U*0.10,a:1});
+  var i;
+  for(i=wetSpots.length-1;i>=0;i--){ wetSpots[i].a -= dt/6000; if(wetSpots[i].a<=0) wetSpots.splice(i,1); }
+
+  updateHUD();
+  tipStep(dt);
+  render(ts);
+}
+
+/* 습도는 1초에 수십 번 바뀐다. 그대로 aria 에 흘리면 스크린리더가
+   숫자만 계속 읽어 다른 안내를 다 덮어버린다. 0.9 초에 한 번만 알린다. */
+var gaugeLast=-1, gaugeAt=0;
+function updateHUD(){
+  var g=$('#gauge'), r;
+  document.documentElement.style.setProperty('--gp', S.moist.toFixed(1)+'%');
+  $('#gNum').textContent = Math.round(S.moist);
+  var mv = Math.round(S.moist), now = Date.now();
+  if(mv!==gaugeLast && now-gaugeAt>900){
+    gaugeAt=now; gaugeLast=mv;
+    g.setAttribute('aria-valuenow', mv);
+    g.setAttribute('aria-valuetext', (S.revealed && S.best[1]>0)? mv+' / '+S.best[0]+'~'+S.best[1] : String(mv));
+  }
+  if(S.scene==='grow'){
+    r = growRate(S.moist,S.best);
+    var el=$('#speed');
+    el.innerHTML = '<b>'+L(speedLabel(r))+'</b>';
+    el.className = r>=0.9? '' : 'slow';
+  } else { $('#speed').textContent=''; }
+}
+/* ── 오버레이 ────────────────────────────────────────────────
+   display 토글 + 뒤 배경 inert. inert 를 안 걸면 오버레이가 떠 있는 동안
+   탭 포커스가 캔버스와 HUD 버튼으로 새어 들어가 키보드 사용자가 갇힌다.
+   ──────────────────────────────────────────────────────────── */
+var OVS = ['#ovTitle','#ovQuiz','#ovCard','#ovDex','#ovDone','#ovPause'];
+function overlayOpen(){
+  var i; for(i=0;i<OVS.length;i++){ if(!$(OVS[i]).hasAttribute('hidden')) return true; }
+  return false;
+}
+function syncInert(){
+  var open=overlayOpen(), el=$('#app');
+  if(open) el.setAttribute('inert',''); else el.removeAttribute('inert');
+}
+function hideAll(){ var i; for(i=0;i<OVS.length;i++) $(OVS[i]).setAttribute('hidden',''); syncInert(); }
+function show(sel){
+  releaseHold();                       /* 오버레이가 뜨는 순간 홀드를 반드시 푼다 */
+  hideAll(); $(sel).removeAttribute('hidden'); syncInert();
+  /* 지난번에 내려둔 스크롤이 남아 있으면 새 오버레이가 중간부터 보인다 */
+  var box=$(sel).querySelector('.sheet'); if(box) box.scrollTop=0;
+  var dl=$(sel).querySelector('#dexList'); if(dl) dl.scrollTop=0;
+  var b=$(sel).querySelector('[data-focus]') || $(sel).querySelector('.btn');
+  if(b){ try{ b.focus({preventScroll:true}); }catch(e){ try{ b.focus(); }catch(e2){} } }
+}
+function hide(sel){ $(sel).setAttribute('hidden',''); syncInert(); }
+
+/* ── 장면 전환 ───────────────────────────────────────────────*/
+function setStrip(){
+  var dots=$('#dots'), i, html='';
+  if(S.mode==='journey'){
+    for(i=0;i<SEED_STAGES.length;i++){
+      html += '<i class="'+(i<S.si?'on':(i===S.si?'now':''))+'"></i>';
+    }
+    $('#stageTxt').textContent = L('fnStage')(S.si+1, SEED_STAGES.length);
+  } else {
+    $('#stageTxt').textContent = L('grTitle');
+  }
+  dots.innerHTML = html;
+  $('#nameNow').textContent = S.revealed && S.picked? P(S.picked) : L('unknown');
+}
+function resetGauge(){
+  S.moist=0; wetSpots=[]; drops=[]; S.wRamp=0;
+  $('#gBand').className='';
+  updateHUD();
+}
+function setBand(best){
+  document.documentElement.style.setProperty('--blo', best[0]+'%');
+  document.documentElement.style.setProperty('--bw', (best[1]-best[0])+'%');
+}
+
+function startJourney(){
+  S.mode='journey'; S.si=0; S.fired=false; S.playMs=0; S.guessOK=0; S.guessTry=0;
+  hideAll(); setupStage();
+}
+function setupStage(){
+  var st=SEED_STAGES[S.si];
+  S.cands = shuffle([st.main, st.side[0], st.side[1]], String(S.si)+st.main);
+  S.picked=null; S.tsel=-1; S.p=0; S.revealed=false; S.scene='tray';
+  resetGauge(); setStrip();
+  tip(L('tipPick'),2600);
+  focusStage();
+}
+function pickSeed(id){
+  S.picked=id;
+  S.best = PL[id].best;
+  /* 자란 시간은 언제나 「고른 식물」의 것이다. 단계 슬롯의 시간을 쓰면
+     4단계에서 왕대(실제 120년)를 골라도 옥수수와 똑같이 끝나는데,
+     그러면 도감에 적어둔 '약 120년'과 게임이 대놓고 어긋난다.
+     이 게임이 가르치려는 게 바로 그 비율이라 여기서 양보하면 남는 게 없다.
+     시간 예산은 계산해뒀다 — 물을 제대로 주면 여섯 단계를 어떻게 골라도
+     자라는 시간이 4.0~5.3분, 고르고 맞히고 도감 보는 시간까지 쉬는 시간 안이다. */
+  S.secs = PL[id].gameSec;
+  setBand(S.best);
+  SFX.boot(); SFX.tone(392,0.16,0.10,'sine',523.25);
+  if(S.mode==='journey') openQuiz(); else beginPlant();
+}
+function openQuiz(){
+  var box=$('#quizBtns'), i, names=shuffle(S.cands, S.picked+String(S.si));
+  box.innerHTML='';
+  $('#quizRes').setAttribute('hidden','');
+  $('#quizSkip').textContent = L('qzSkip');
+  for(i=0;i<names.length;i++){
+    (function(nm){
+      var b=document.createElement('button');
+      b.className='btn'; b.type='button'; b.textContent=P(nm);
+      b.onclick=function(){ answerQuiz(nm); };
+      box.appendChild(b);
+    })(names[i]);
+  }
+  show('#ovQuiz');
+}
+function answerQuiz(nm){
+  var ok = (nm===S.picked), res=$('#quizRes'), i, bs=$('#quizBtns').querySelectorAll('.btn');
+  S.guessTry++;
+  if(ok) S.guessOK++;
+  for(i=0;i<bs.length;i++){ bs[i].disabled=true; bs[i].style.opacity= (bs[i].textContent===P(S.picked))?'1':'.45'; }
+  res.removeAttribute('hidden');
+  res.innerHTML = (ok? '<b>'+L('qzRight')+'</b> ' : L('qzWrong')+' ') + L('fnAns')(P(S.picked));
+  $('#quizSkip').textContent = L('qzGo');
+  SFX.boot(); if(ok) SFX.chord([659.25,880],0.4,0.10); else SFX.tone(392,0.22,0.07,'triangle');
+}
+function beginPlant(){
+  hideAll();
+  S.scene='fly'; S.flyT=0; S.p=0; S.revealed=false;
+  resetGauge(); setBand(S.best); setStrip();
+  /* 오버레이를 닫고 나면 포커스가 사라진 버튼에 남는다. 캔버스로 되돌려야
+     키보드로 바로 물을 줄 수 있다. */
+  focusStage();
+}
+function finishCircle(){
+  if(S.scene!=='circle') return;
+  S.scene='card';
+  dexAdd(S.picked);
+  showCard(S.picked);
+}
+/* 처음 화면으로 돌아가는 길은 여러 갈래인데, 하나라도 상태를 덜 되돌리면
+   다음 판에 지난 판의 씨앗·구간·단계가 남는다. 한 군데로 모은다. */
+function toTitle(){
+  S.paused=false; S.mode='journey'; S.scene='title';
+  S.picked=null; S.revealed=false; S.p=0; S.si=0; S.tsel=-1; S.best=[55,100];
+  releaseHold(); resetGauge(); setBand([0,0]); setStrip(); show('#ovTitle');
+}
+function nextStage(){
+  hide('#ovCard');
+  if(S.mode!=='journey'){ toTitle(); return; }
+  if(S.si < SEED_STAGES.length-1){ S.si++; setupStage(); }
+  else { fireComplete(); showDone(); }
+}
+function startGreen(id){
+  S.mode='greenhouse'; S.picked=id; S.best=PL[id].best; S.secs=PL[id].gameSec;
+  S.revealed=true; S.si=0;
+  hideAll();
+  S.scene='fly'; S.flyT=0; S.p=0; S.cands=[id,id,id];
+  resetGauge(); setBand(S.best); setStrip();
+  $('#gBand').className='on';       /* 온실은 이미 아는 식물이라 구간을 처음부터 보여준다 */
+  tip(L('tipGreen'),2600);
+  focusStage();
+}
+
+/* ── 카드 / 도감 ────────────────────────────────────────────
+   도감에는 모은 것만 쌓인다. 잠긴 칸도, 회색 자리도 만들지 않는다.
+   ──────────────────────────────────────────────────────────── */
+function paintPlantCanvas(el,id,p){
+  var cw = el.clientWidth||300, ch = Math.round(cw*10/16);
+  var c = el.getContext('2d');
+  el.width=Math.round(cw*DPR); el.height=Math.round(ch*DPR);
+  c.setTransform(DPR,0,0,DPR,0,0);
+  withFrame(cw,ch, cw*0.5, ch*0.84, ch*0.84-ch*0.08, ch*0.60, function(){
+    drawSky(c,0.45);
+    drawGround(c,groundKind(id),58,0);
+    drawPlant(c,id,p,0,0.15);
+  });
+}
+function paintSeedCanvas(el,id){
+  var cw=64, c=el.getContext('2d');
+  el.width=Math.round(cw*DPR); el.height=Math.round(cw*DPR);
+  c.setTransform(DPR,0,0,DPR,0,0);
+  var d=PL[id];
+  var pxmm = Math.min(9, (cw*0.72)/d.seedMm, (cw*0.60)/Math.max(0.8,d.seedMm*SART[id].ar));
+  drawSeed(c,id,cw*0.5,cw*0.5,pxmm,{});
+}
+function entryHTML(id){
+  var d=PL[id];
+  return '<dl>'
+    + '<dt>'+L('cdSize')+'</dt><dd>'+d.seedMm+' '+L('mm')+'</dd>'
+    + '<dt>'+L('cdFlower')+'</dt><dd>'+PF(id,'lang')+'</dd>'
+    + '<dt>'+L('cdReal')+'</dt><dd>'+PF(id,'real')+'</dd>'
+    + '<dt>'+L('cdWater')+'</dt><dd>'+PF(id,'water')+'</dd>'
+    + '</dl><div class="fact"><b>'+L('cdFact')+'</b> '+PF(id,'fact')+'</div>';
+}
+function showCard(id){
+  $('#cardTitle').textContent = P(id);
+  $('#cardLead').textContent = L('circleMsg');
+  $('#cardBody').innerHTML = entryHTML(id);
+  $('#cardNext').textContent = (S.mode==='journey' && S.si<SEED_STAGES.length-1)? L('cdNext') : L('close');
+  show('#ovCard');
+  paintPlantCanvas($('#cardCv'), id, 0.78);   /* 꽃이 활짝 핀 순간으로 고정 */
+}
+function showDex(fromTitle){
+  var list=$('#dexList'), i, html='';
+  if(DEX.length===0){
+    html = '<p style="font-size:13px;color:#4E6663;margin:0">'+L('dxEmpty')+'</p>';
+  } else {
+    for(i=0;i<DEX.length;i++){
+      var id=DEX[i];
+      html += '<div class="card"><canvas data-seed="'+id+'" width="64" height="64"></canvas>'
+           +  '<div class="cb"><h3>'+P(id)+'</h3>'+entryHTML(id)
+           +  (fromTitle? '<button class="btn" data-grow="'+id+'" type="button">'+L('dxGrow')+'</button>':'')
+           +  '</div></div>';
+    }
+  }
+  list.innerHTML=html;
+  /* 온실 진입용으로 열었을 때는 제목과 안내 문구가 바뀐다 — 같은 목록을 두 용도로 쓴다 */
+  $('#dexTitle').textContent = fromTitle? L('grTitle') : L('dxTitle');
+  $('#dexLead').textContent = fromTitle? L('grLead') : L('dxLead');
+  show('#ovDex');
+  var cvs=list.querySelectorAll('canvas[data-seed]');
+  for(i=0;i<cvs.length;i++) paintSeedCanvas(cvs[i], cvs[i].getAttribute('data-seed'));
+  var gbs=list.querySelectorAll('[data-grow]');
+  for(i=0;i<gbs.length;i++){
+    (function(b){ b.onclick=function(){ startGreen(b.getAttribute('data-grow')); }; })(gbs[i]);
+  }
+}
+function showDone(){
+  $('#doneBody').textContent = L('fnDone')(DEX.length);
+  show('#ovDone');
+}
+
+/* GA4 — 한 판에 한 번만. startJourney() 가 S.fired 를 되돌리므로
+   새로 시작해서 또 완주하면 그 판의 완주로 다시 잡힌다. gtag 가 없어도 게임은 그대로 돈다. */
+function fireComplete(){
+  if(S.fired) return; S.fired=true;
+  try{
+    if(typeof gtag==='function'){
+      gtag('event','game_complete',{
+        game_id:SLUG, scene:'journey', result:'clear', lang:lang,
+        play_sec: Math.round(S.playMs/1000),
+        dex_count: DEX.length,
+        guess_ok: S.guessOK, guess_try: S.guessTry
+      });
+    }
+  }catch(e){}
+}
+
+/* ── 입력 ────────────────────────────────────────────────────
+   홀드가 안 풀리면 물이 계속 나오고 습도가 100 에 붙어버린다.
+   그래서 풀 수 있는 모든 경로에서 releaseHold() 를 부른다.
+   ──────────────────────────────────────────────────────────── */
+var holdPid=null, keyDownAt=0, latched=false;
+function startHold(pid){
+  if(S.holding || S.scene!=='grow' || S.paused || overlayOpen() || S.auto) return;
+  S.holding=true; holdPid = (pid===undefined? 'key' : pid);
+  SFX.boot(); SFX.waterStart();
+}
+function releaseHold(){
+  if(!S.holding) return;
+  S.holding=false; holdPid=null; latched=false; SFX.waterStop();
+}
+function canvasPoint(e){
+  var r=cv.getBoundingClientRect();
+  return { x:e.clientX-r.left, y:e.clientY-r.top };
+}
+/* 쟁반 위 씨앗은 캔버스에 그려질 뿐이라 화면을 못 보면 어느 걸 짚고 있는지
+   알 방법이 없다. 어떤 씨앗인지는 알려주지 않는다 — 그건 다음 화면에서
+   맞히는 재미다. 몇 번째인지만 말해주면 고르는 데는 충분하다. */
+function sayTsel(){
+  if(S.scene!=='tray') return;
+  tip(L('seedNth').replace('{n}', S.tsel+1), 1400);
+}
+/* 캔버스 하나가 쟁반도 되고 화분도 되니 이름표도 장면 따라 바뀌어야 한다.
+   data-ia 를 같이 갈아둬야 언어를 바꿔도 그 장면의 이름표가 유지된다. */
+function stageAria(){
+  var k = (S.scene==='tray')? 'arTray' : 'arStage';
+  cv.setAttribute('data-ia', k);
+  cv.setAttribute('aria-label', L(k));
+}
+cv.setAttribute('tabindex','0');
+cv.addEventListener('pointerdown', function(e){
+  if(overlayOpen()||S.paused) return;
+  try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+  if(S.scene==='tray'){
+    var pt=canvasPoint(e), i;
+    for(i=0;i<trayHit.length;i++){
+      var hb=trayHit[i];
+      if(pt.x>=hb.x && pt.x<=hb.x+hb.w && pt.y>=hb.y && pt.y<=hb.y+hb.h){ S.tsel=hb.i; pickSeed(hb.id); return; }
+    }
+    return;
+  }
+  if(S.scene==='circle'){ finishCircle(); return; }
+  if(S.scene==='grow') startHold(e.pointerId);
+});
+/* 손가락 두 개로 만지면 나중에 뗀 손가락의 pointerup 이 먼저 오는 일이 있다.
+   홀드를 시작한 그 손가락이 아니면 무시해야 물이 갑자기 끊기지 않는다. */
+cv.addEventListener('pointerup', function(e){
+  try{ cv.releasePointerCapture(e.pointerId); }catch(err){}
+  if(S.holding && holdPid!==null && holdPid!==e.pointerId) return;
+  releaseHold();
+});
+cv.addEventListener('pointercancel', function(e){
+  if(S.holding && holdPid!==null && e && holdPid!==e.pointerId) return;
+  releaseHold();
+});
+cv.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+cv.addEventListener('keydown', function(e){
+  if(overlayOpen()) return;
+  if(e.key===' '||e.key==='Enter'||e.key==='Spacebar'){
+    e.preventDefault();
+    if(e.repeat) return;
+    if(S.scene==='tray'){ if(S.tsel<0) S.tsel=0; pickSeed(S.cands[S.tsel]); }
+    else if(S.scene==='circle') finishCircle();
+    else if(latched){ releaseHold(); }
+    else { keyDownAt=Date.now(); startHold(); }
+  } else if(e.key==='ArrowDown'||e.key==='ArrowRight'){
+    if(S.scene==='tray'){ e.preventDefault(); S.tsel=(S.tsel+1)%3; sayTsel(); }
+  } else if(e.key==='ArrowUp'||e.key==='ArrowLeft'){
+    if(S.scene==='tray'){ e.preventDefault(); S.tsel=(S.tsel+2)%3; sayTsel(); }
+  }
+});
+/* 스페이스바를 계속 누르고 있기 어려운 사람이 있다. 짧게 톡 누르면
+   물주기가 걸린 채로 유지되고, 다시 누르면 멈춘다. 길게 누르면 예전처럼
+   뗄 때 멈춘다. */
+cv.addEventListener('keyup', function(e){
+  if(e.key!==' '&&e.key!=='Enter'&&e.key!=='Spacebar') return;
+  if(holdPid!=='key') return;
+  if(!latched && Date.now()-keyDownAt < 280){ latched=true; return; }
+  releaseHold();
+});
+cv.addEventListener('blur', function(){ releaseHold(); });
+/* 키보드로 캔버스에 들어온 순간이 스페이스바 안내가 필요한 유일한 때다.
+   코드가 직접 focus() 를 부른 경우는 안내가 튀어나오면 방해만 된다. */
+var progFocus=false;
+function focusStage(){
+  stageAria();
+  if(overlayOpen()) return;
+  progFocus=true;
+  try{ cv.focus({preventScroll:true}); }catch(e){ try{ cv.focus(); }catch(e2){} }
+  setTimeout(function(){ progFocus=false; }, 0);
+}
+cv.addEventListener('focus', function(){
+  if(progFocus) return;
+  if(S.scene==='tray') tip(L('tipKeyPick'),2600);
+  else if(S.scene==='grow') tip(L('tipKey'),2600);
+});
+
+/* 창을 벗어나면 홀드를 풀고 멈춘다. 여기서 안 멈추면 배경 탭에서
+   rAF 가 도는 브라우저에서 방치 성장이 생긴다. */
+/* 멈춤 화면은 씨앗을 고르는 중에도 열려야 한다. 안 그러면 쟁반에서
+   ⏸ 를 눌러도 아무 일이 없어 버튼이 고장난 것처럼 보인다. */
+function openPause(){
+  S.paused=true;
+  if(S.picked && S.scene!=='tray') $('#psRestart').removeAttribute('hidden');
+  else $('#psRestart').setAttribute('hidden','');
+  show('#ovPause');
+}
+function away(){
+  releaseHold(); SFX.hush();
+  if(S.scene!=='title' && !overlayOpen()) openPause();
+}
+window.addEventListener('blur', away);
+document.addEventListener('visibilitychange', function(){ if(document.hidden) away(); });
+/* ── 버튼 배선 ───────────────────────────────────────────────*/
+var DEXBACK=null, DEXGROW=false;
+function openDex(canGrow,back){ DEXBACK=back||null; DEXGROW=!!canGrow; showDex(DEXGROW); }
+
+$('#goJourney').onclick = function(){ startJourney(); };
+$('#goGreen').onclick   = function(){ openDex(true,'#ovTitle'); };
+$('#goDex').onclick     = function(){ openDex(false,'#ovTitle'); };
+$('#dexBtn').onclick    = function(){ openDex(false, S.scene==='title'?'#ovTitle':null); };
+$('#dexClose').onclick  = function(){
+  hide('#ovDex'); DEXGROW=false;
+  if(DEXBACK){ show(DEXBACK); DEXBACK=null; } else focusStage();
+};
+$('#doneDex').onclick   = function(){ openDex(false,'#ovDone'); };
+$('#doneGreen').onclick = function(){ openDex(true,'#ovDone'); };
+$('#doneAgain').onclick = function(){ startJourney(); };
+$('#cardNext').onclick  = function(){ nextStage(); };
+$('#quizSkip').onclick  = function(){ beginPlant(); };
+
+$('#autoBtn').onclick = function(){
+  S.auto = !S.auto;
+  if(S.auto) releaseHold();
+  this.textContent = L(S.auto?'autoOn':'autoOff');
+  this.className = 'btn'+(S.auto?' on':'');
+  this.setAttribute('aria-pressed', S.auto?'true':'false');
+  if(S.auto) tip(L('tipAuto'),2600);
+};
+$('#psResume').onclick = function(){ hide('#ovPause'); S.paused=false; last=0; focusStage(); };
+$('#psRestart').onclick = function(){
+  hide('#ovPause'); S.paused=false; last=0;
+  S.p=0; S.scene='fly'; S.flyT=0;
+  resetGauge(); setBand(S.best);
+  if(S.revealed) $('#gBand').className='on';
+  focusStage();
+};
+$('#psQuit').onclick = function(){ toTitle(); };
+$('#pauseBtn').onclick = function(){
+  if(overlayOpen() || S.scene==='title') return;
+  openPause();
+};
+$('#soundBtn').onclick = function(){
+  SFX.boot(); SFX.setOn(!SFX.on);
+  this.className = 'pill'+(SFX.on?'':' off');
+  this.textContent = SFX.on?'🔊':'🔇';
+};
+$('#langBtn').onclick = function(){
+  lang = LANGS[(LANGS.indexOf(lang)+1)%LANGS.length];
+  store.set('in9-lang', lang);
+  applyI18n();
+};
+/* 헤더 버튼에 포커스가 눌러앉으면 그 다음 스페이스바가 버튼을 다시 눌러
+   물주기가 먹통이 된다. mousedown 을 막아 포커스가 옮겨가지 않게 한다. */
+['#pauseBtn','#soundBtn','#langBtn'].forEach(function(sel){
+  $(sel).addEventListener('mousedown', function(e){ e.preventDefault(); });
+});
+/* Esc 는 되돌릴 수 있는 두 곳에서만 듣는다. 카드·완주 화면에서까지 받으면
+   진행이 건너뛰어져 방금 얻은 걸 못 보고 지나친다. */
+document.addEventListener('keydown', function(e){
+  if(e.key!=='Escape' && e.key!=='Esc') return;
+  if(!$('#ovPause').hasAttribute('hidden')){ e.preventDefault(); $('#psResume').onclick(); }
+  else if(!$('#ovDex').hasAttribute('hidden')){ e.preventDefault(); $('#dexClose').onclick(); }
+});
+
+/* ── 언어 적용 ───────────────────────────────────────────────
+   화면에 이미 떠 있는 오버레이의 동적 문구까지 다시 써야 한다.
+   안 그러면 언어를 바꿔도 도감 카드만 이전 언어로 남는다.
+   ──────────────────────────────────────────────────────────── */
+function applyI18n(){
+  document.documentElement.lang = lang;
+  $('#tMain').textContent = TITLES[lang];
+  var others=[], i;
+  for(i=0;i<LANGS.length;i++){ if(LANGS[i]!==lang) others.push(TITLES[LANGS[i]]); }
+  $('#tSub').textContent = others.join(' · ');
+  $$('[data-i]').forEach(function(el){ el.textContent = L(el.getAttribute('data-i')); });
+  /* 글자가 없는 버튼은 aria-label 이 유일한 이름이다. 언어를 바꾸면 같이 바꿔야 한다. */
+  $$('[data-ia]').forEach(function(el){ el.setAttribute('aria-label', L(el.getAttribute('data-ia'))); });
+  $('#langBtn').textContent = LANG_FLAG[lang];
+  $('#soundBtn').textContent = SFX.on?'🔊':'🔇';
+  $('#soundBtn').className='pill'+(SFX.on?'':' off');
+  $('#autoBtn').textContent = L(S.auto?'autoOn':'autoOff');
+  $('#autoBtn').setAttribute('aria-pressed', S.auto?'true':'false');
+  setStrip();
+  updateHUD();
+  if(!$('#ovQuiz').hasAttribute('hidden') && S.picked) openQuiz();
+  if(!$('#ovCard').hasAttribute('hidden') && S.picked) showCard(S.picked);
+  if(!$('#ovDex').hasAttribute('hidden')) showDex(DEXGROW);
+  if(!$('#ovDone').hasAttribute('hidden')) showDone();
+}
+
+/* ── 레이아웃 ────────────────────────────────────────────────*/
+var rlT=0;
+function relayout(){
+  clearTimeout(rlT);
+  rlT = setTimeout(function(){ layout(); }, 110);
+}
+window.addEventListener('resize', relayout);
+window.addEventListener('orientationchange', function(){
+  /* iOS 는 orientationchange 시점의 크기가 아직 옛날 값이다. 두 번 잰다. */
+  setTimeout(layout, 80); setTimeout(layout, 320);
+});
+if(window.ResizeObserver){
+  try{ new ResizeObserver(relayout).observe($('#stageWrap')); }catch(e){}
+}
+
+/* ── 시작 ────────────────────────────────────────────────────*/
+layout();
+applyI18n();
+setBand([0,0]);
+S.scene='title';
+show('#ovTitle');
+raf = requestAnimationFrame(frame);
+/* 첫 사용자 제스처에서 오디오 컨텍스트를 깨운다(자동재생 정책) */
+['pointerdown','keydown'].forEach(function(ev){
+  window.addEventListener(ev, function once(){ SFX.boot(); window.removeEventListener(ev, once); });
+});
+</script>
+
