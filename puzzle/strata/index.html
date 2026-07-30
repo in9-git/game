@@ -3,22 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#1a1026">
-<title>새벽 빵집 · よあけのパンや · Dawn Bakery</title>
-<meta name="description" content="새벽에 빵을 구워 진열대에 채우는 낙하 퍼즐 — 한 줄이 차면 손님에게 나간다">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥐</text></svg>">
+<meta name="theme-color" content="#12100e">
+<title>화석이 되는 시간 · かせきになる じかん · Time Into Stone</title>
+<meta name="description" content="퇴적물을 한 겹씩 쌓아 올리는 낙하 퍼즐 — 한 겹이 다 차면 눌려 굳고 그 시대의 화석이 드러난다">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐚</text></svg>">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
 <style>
 :root{
-  --bg0:#1a1026;
-  --sky:#3a2740;                 /* 단계마다 밝아지는 새벽 하늘 — JS가 갈아 끼운다 */
-  --shelf:#191338; --shelf2:#2e2456;
-  --line:rgba(251,231,198,.16); --line2:rgba(251,231,198,.30);
-  --ink:#fbe7c6; --ink2:rgba(251,231,198,.70); --ink3:rgba(251,231,198,.46);
-  --gold:#f2b25c; --cream:#fff6e6;
-  --panel:rgba(20,16,44,.72);
+  --bg0:#12100e;
+  --sky:#2a2620;                 /* 시대가 올라갈수록 밝아지는 지층 색 — JS가 갈아 끼운다 */
+  --face:#1c1813; --face2:#2f2820;
+  --line:rgba(240,232,214,.16); --line2:rgba(240,232,214,.30);
+  --ink:#f0e8d6; --ink2:rgba(240,232,214,.70); --ink3:rgba(240,232,214,.46);
+  --gold:#dca24a; --cream:#f7f1e2;
+  --panel:rgba(24,20,15,.72);
   --sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Hiragino Sans","Noto Sans KR","Noto Sans JP",system-ui,sans-serif;
   --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
 }
@@ -28,7 +28,7 @@
 html,body{height:100%}
 body{
   font-family:var(--sans); color:var(--ink);
-  background:radial-gradient(130% 90% at 50% -15%,var(--sky) 0%,#241633 45%,var(--bg0) 100%);
+  background:radial-gradient(130% 90% at 50% -15%,var(--sky) 0%,#241d16 45%,var(--bg0) 100%);
   overflow:hidden;
   user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
 }
@@ -58,7 +58,7 @@ header .pill{pointer-events:auto}
 }
 .pill{
   position:relative;
-  flex:0 0 auto; border:1px solid var(--line); background:rgba(242,178,92,.10);
+  flex:0 0 auto; border:1px solid var(--line); background:rgba(220,162,74,.10);
   color:var(--ink2); border-radius:10px; padding:7px 10px; font-size:.75rem; font-weight:600;
   text-decoration:none; line-height:1; transition:.15s; touch-action:manipulation;
 }
@@ -88,25 +88,25 @@ header .pill{pointer-events:auto}
 .bNext{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 7px}
 #nextCv{display:block;margin-top:1px}
 #goalBar{height:6px;border-radius:99px;background:rgba(0,0,0,.42);overflow:hidden;margin-top:4px}
-#goalFill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#c9835f,var(--gold));transition:width .25s ease}
+#goalFill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#6f6350,var(--gold));transition:width .25s ease}
 #dots{display:flex;gap:4px;margin-top:4px}
-#dots i{width:6px;height:6px;border-radius:99px;background:rgba(251,231,198,.16);display:block}
-#dots i.on{background:var(--gold);box-shadow:0 0 6px rgba(242,178,92,.7)}
+#dots i{width:6px;height:6px;border-radius:99px;background:rgba(240,232,214,.16);display:block}
+#dots i.on{background:var(--gold);box-shadow:0 0 6px rgba(220,162,74,.7)}
 
-/* ── 진열대 ── */
+/* ── 절벽 단면 ── */
 #cab{flex:1 1 auto;width:100%;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
 #screenWrap{
   position:relative; flex:0 0 auto;
   border-radius:14px; padding:6px;
-  background:linear-gradient(160deg,#3a2b5e,#221a48 60%,#150f31);
+  background:linear-gradient(160deg,#4a4034,#2a241c 60%,#171410);
   box-shadow:0 10px 30px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.10);
   transition:box-shadow .35s ease;
 }
-/* 오븐이 달아오르면 진열대 테두리가 붉어진다 — 숨은 마법이 아니라 보이는 규칙 */
-#screenWrap.hot{box-shadow:0 10px 30px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.10), 0 0 0 2px rgba(242,178,92,.5), 0 0 18px rgba(242,178,92,.28)}
-#fld{display:block;border-radius:8px;background:var(--shelf);touch-action:none}
+/* 위에서 누르는 힘이 세지면 단면 테두리에 열이 돈다 — 숨은 마법이 아니라 보이는 규칙 */
+#screenWrap.press{box-shadow:0 10px 30px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.10), 0 0 0 2px rgba(220,162,74,.5), 0 0 18px rgba(220,162,74,.28)}
+#fld{display:block;border-radius:8px;background:var(--face);touch-action:none}
 
-/* ── 남은 반죽 트레이 — 다음에 뭐가 남았는지 확률이 아니라 사실로 보여준다 ── */
+/* ── 남은 퇴적물 — 다음에 뭐가 남았는지 확률이 아니라 사실로 보여준다 ── */
 #tray{
   width:100%;max-width:470px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:7px;
 }
@@ -118,13 +118,13 @@ header .pill{pointer-events:auto}
   flex:0 0 auto; width:100%; max-width:430px;
   display:flex; align-items:center; justify-content:space-between; gap:10px;
   padding:8px 10px; border-radius:14px;
-  background:linear-gradient(180deg,#2e2456,#1a1440); border:1px solid var(--line);
+  background:linear-gradient(180deg,#2f2820,#1b1710); border:1px solid var(--line);
   box-shadow:0 6px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
 }
-#pad.lefty{flex-direction:row-reverse}   /* 왼손잡이 — 큰 굽기 버튼이 왼쪽으로 */
+#pad.lefty{flex-direction:row-reverse}   /* 왼손잡이 — 큰 다지기 버튼이 왼쪽으로 */
 .padgrp{display:flex;gap:8px;align-items:center}
 .pbtn{
-  border-radius:13px; color:#2a1a10; font-weight:800;
+  border-radius:13px; color:#241d12; font-weight:800;
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
   touch-action:none; transition:transform .06s, filter .12s;
   box-shadow:0 4px 0 rgba(0,0,0,.42), 0 5px 12px rgba(0,0,0,.35);
@@ -132,10 +132,10 @@ header .pill{pointer-events:auto}
 .pbtn.hit{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.42);filter:brightness(1.12)}
 .pbtn small{font-size:.55rem;font-weight:700;opacity:.72;letter-spacing:-.2px}
 .pbtn .g{font-size:1.12rem;line-height:1}
-.pmove{width:54px;height:52px;background:linear-gradient(180deg,#ffeccb,#e8bf86)}
-.pdown{width:54px;height:52px;background:linear-gradient(180deg,#ffe0bd,#dda36a)}
-.pturn{width:60px;height:56px;border-radius:50%;background:linear-gradient(180deg,#fff3d6,#f2b25c)}
-.pbake{width:64px;height:58px;border-radius:50%;background:linear-gradient(180deg,#ffd3a8,#e08a4a)}
+.pmove{width:54px;height:52px;background:linear-gradient(180deg,#f4ecd9,#c9bda0)}
+.pdown{width:54px;height:52px;background:linear-gradient(180deg,#ecdfc2,#bcab88)}
+.pturn{width:60px;height:56px;border-radius:50%;background:linear-gradient(180deg,#f8f0dc,#dca24a)}
+.ptamp{width:64px;height:58px;border-radius:50%;background:linear-gradient(180deg,#e7c98f,#bd7f36)}
 
 /* ── 오버레이 ──
    display 토글이라 사라지는 즉시 포커스·클릭 대상에서 빠진다.
@@ -143,12 +143,12 @@ header .pill{pointer-events:auto}
 .ov{
   position:absolute; inset:0; z-index:40; display:none;
   align-items:center; justify-content:center; padding:18px;
-  background:rgba(10,7,26,.84); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  background:rgba(14,12,9,.86); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
 }
 .ov.on{display:flex}
 .card{
   width:100%; max-width:360px; max-height:calc(100dvh - 56px); overflow-y:auto;
-  background:linear-gradient(170deg,#2f2258,#171034);
+  background:linear-gradient(170deg,#332c22,#191510);
   border:1px solid var(--line2); border-radius:18px; padding:20px 18px;
   box-shadow:0 20px 60px rgba(0,0,0,.6); text-align:center;
   animation:pop .26s cubic-bezier(.2,.9,.3,1.2);
@@ -173,7 +173,7 @@ header .pill{pointer-events:auto}
   transition:.15s; touch-action:manipulation; text-decoration:none; display:block;
 }
 .btn:active{transform:scale(.98)}
-.btn.primary{background:linear-gradient(135deg,#e08a4a,#f2b25c);color:#2a1a10;box-shadow:0 6px 18px rgba(224,138,74,.42)}
+.btn.primary{background:linear-gradient(135deg,#b8863a,#dca24a);color:#1e1a12;box-shadow:0 6px 18px rgba(184,134,58,.42)}
 .btn.primary:hover{filter:brightness(1.08)}
 .btn.ghost{background:rgba(255,255,255,.07);color:var(--ink2);border:1px solid var(--line)}
 .btn.ghost:hover{border-color:var(--line2);color:var(--ink)}
@@ -182,7 +182,7 @@ header .pill{pointer-events:auto}
   flex:1;border-radius:12px;padding:11px 8px;
   background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink2);transition:.15s;
 }
-.mode button.on{border-color:var(--gold);background:rgba(242,178,92,.20);color:var(--ink)}
+.mode button.on{border-color:var(--gold);background:rgba(220,162,74,.20);color:var(--ink)}
 .mode b{display:block;font-size:.82rem;font-weight:700}
 .mode small{display:block;font-size:.6rem;color:var(--ink3);margin-top:2px}
 .opt{
@@ -194,11 +194,25 @@ header .pill{pointer-events:auto}
   border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:.72rem;font-weight:700;
   color:var(--ink2);background:rgba(255,255,255,.05);transition:.15s;touch-action:manipulation;
 }
-.opt button.on{border-color:var(--gold);background:rgba(242,178,92,.2);color:var(--ink)}
+.opt button.on{border-color:var(--gold);background:rgba(220,162,74,.2);color:var(--ink)}
+
+/* ── 화석 도감 ── 찾은 것만 줄지어 놓는다. 잠긴 칸도 물음표도 두지 않는다 */
+.fossil,.frow{
+  display:flex;gap:10px;align-items:center;text-align:left;
+  background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:12px;padding:9px 10px;
+}
+.fossil{margin:12px 0 2px}
+.fossil canvas,.frow canvas{display:block;flex:0 0 auto;border-radius:10px}
+#bookList{display:flex;flex-direction:column;gap:8px;margin:12px 0 2px;text-align:left}
+.ftx{min-width:0}
+.ftx b{display:block;font-size:.82rem;font-weight:800;letter-spacing:-.2px}
+.ftx i{display:block;font-style:normal;font-size:.56rem;color:var(--gold);letter-spacing:.5px;margin-top:1px}
+.ftx span{display:block;font-size:.68rem;line-height:1.5;color:var(--ink2);margin-top:3px}
+.bkempty{font-size:.76rem!important;color:var(--ink3)!important;line-height:1.65;padding:16px 6px;text-align:center}
 
 .tost{
   position:absolute;left:50%;bottom:22%;transform:translateX(-50%);
-  background:rgba(16,10,36,.92);border:1px solid var(--line2);color:var(--ink);
+  background:rgba(20,17,12,.94);border:1px solid var(--line2);color:var(--ink);
   padding:9px 15px;border-radius:99px;font-size:.76rem;font-weight:600;white-space:nowrap;
   z-index:30;opacity:0;pointer-events:none;transition:opacity .25s;
 }
@@ -210,7 +224,7 @@ header .pill{pointer-events:auto}
   .bScore{min-width:52px}
   .pmove,.pdown{width:48px;height:48px}
   .pturn{width:54px;height:52px}
-  .pbake{width:56px;height:54px}
+  .ptamp{width:56px;height:54px}
 }
 /* 가로 폰 — 고정 크롬을 줄여 필드와 조작판이 함께 들어오게 한다 */
 @media (max-height:520px){
@@ -220,18 +234,18 @@ header .pill{pointer-events:auto}
   .box{padding:3px 7px}
   #goalBar{margin-top:3px}
   #dots{margin-top:3px}
-  /* 남은 반죽 트레이는 참고 정보다 — 진열대 16줄이 잘리느니 트레이가 물러선다 */
+  /* 남은 퇴적물은 참고 정보다 — 단면 16겹이 잘리느니 이쪽이 물러선다 */
   #tray{display:none}
   #pad{max-width:340px;padding:4px 8px}
   .pmove,.pdown{width:46px;height:38px}
   .pturn{width:50px;height:44px}
-  .pbake{width:52px;height:46px}
+  .ptamp{width:52px;height:46px}
   .pbtn small{display:none}
   .card{padding:14px 14px}
   .rules{margin:8px 0;padding:9px 11px}
 }
-/* 가로 폰에서 세로로 쌓으면 진열대에 남는 높이가 없어 16줄이 손톱만 해진다.
-   좌우 여백은 남아도니 HUD 와 조작판을 진열대 옆으로 돌린다.
+/* 가로 폰에서 세로로 쌓으면 단면에 남는 높이가 없어 16겹이 손톱만 해진다.
+   좌우 여백은 남아도니 HUD 와 조작판을 단면 옆으로 돌린다.
    가운데 칸 폭은 높이에서 역산한다(10:16 비율 + 여백) — 폭이 좁아 CELL 이 다시
    깎이지 않게. 옆으로 돌릴 자리조차 없는 기기는 원래대로 세로 스택을 쓴다. */
 @media (max-height:520px) and (orientation:landscape) and (min-width:560px){
@@ -250,14 +264,14 @@ header .pill{pointer-events:auto}
   #pad.lefty{flex-direction:column-reverse}
   .pmove,.pdown{width:44px;height:40px}
   .pturn{width:48px;height:44px}
-  .pbake{width:52px;height:46px}
+  .ptamp{width:52px;height:46px}
   .pbtn small{display:block}
 }
 /* 폭이 넉넉해지면 조작판도 원래 크기로 — 세로 화면과 같은 손가락 크기 */
 @media (max-height:520px) and (orientation:landscape) and (min-width:720px){
   .pmove,.pdown{width:52px;height:46px}
   .pturn{width:56px;height:50px}
-  .pbake{width:60px;height:52px}
+  .ptamp{width:60px;height:52px}
 }
 @media (prefers-reduced-motion:reduce){
   *{transition-duration:.01ms!important;animation-duration:.01ms!important}
@@ -270,8 +284,8 @@ header .pill{pointer-events:auto}
   <header>
     <a class="pill" id="homeLink" href="../../index.html">← <span data-i="home">홈</span></a>
     <div class="titles">
-      <h1 id="titleMain">새벽 빵집</h1>
-      <div class="sub" id="titleSub">よあけのパンや · Dawn Bakery</div>
+      <h1 id="titleMain">화석이 되는 시간</h1>
+      <div class="sub" id="titleSub">かせきになる じかん · Time Into Stone</div>
     </div>
     <div class="tops">
       <button class="pill icon" id="pauseBtn" type="button" aria-label="pause">⏸</button>
@@ -283,7 +297,7 @@ header .pill{pointer-events:auto}
   <div id="hud">
     <div class="box bScore"><h4 data-i="score">점수</h4><div class="v" id="vScore">0</div></div>
     <div class="box bGoal">
-      <h4><span id="goalLabel" data-i="order">오늘의 주문</span><em id="vHour">04:00</em></h4>
+      <h4><span id="goalLabel" data-i="order">쌓을 층</span><em id="vEra">캄브리아기</em></h4>
       <div class="v" id="vGoal">0/3</div>
       <div id="goalBar"><div id="goalFill"></div></div>
       <div id="dots"></div>
@@ -296,7 +310,7 @@ header .pill{pointer-events:auto}
   </div>
 
   <div id="tray">
-    <span class="tlab" data-i="dough">남은 반죽</span>
+    <span class="tlab" data-i="left">남은 퇴적물</span>
     <canvas id="trayCv"></canvas>
   </div>
 
@@ -310,92 +324,109 @@ header .pill{pointer-events:auto}
     </div>
     <div class="padgrp">
       <button class="pbtn pturn" id="bC" type="button" tabindex="-1" aria-label="돌리기"><span class="g">↻</span><small data-i="turn">돌리기</small></button>
-      <button class="pbtn pbake" id="bH" type="button" tabindex="-1" aria-label="굽기"><span class="g">⤓</span><small data-i="bake">굽기</small></button>
+      <button class="pbtn ptamp" id="bH" type="button" tabindex="-1" aria-label="다지기"><span class="g">⤓</span><small data-i="tamp">다지기</small></button>
     </div>
   </div>
 
   <div class="tost" id="tost"></div>
 
   <div class="ov on" id="ovStart"><div class="card">
-    <h2 id="startTitle">새벽 빵집</h2>
-    <div class="sub" data-i="tagline">새벽에 빵을 구워 진열대를 채웁니다</div>
+    <h2 id="startTitle">화석이 되는 시간</h2>
+    <div class="sub" data-i="tagline">퇴적물을 쌓아 한 겹씩 굳힙니다</div>
     <canvas id="howCv"></canvas>
     <div class="rules">
-      <p data-i="r1">네 칸짜리 빵 조각이 위에서 내려옵니다.</p>
-      <p data-i="r2">돌리고 밀어서 진열대 <b>한 줄</b>을 빈틈없이 채우세요.</p>
-      <p data-i="r3">줄이 차면 그 줄은 <b>손님에게 나갑니다</b>.</p>
-      <p data-i="r4">여섯 시간대의 <b>오늘의 주문</b>을 다 채우면 문을 엽니다.</p>
+      <p data-i="r1">네 칸짜리 퇴적물 덩어리가 위에서 내려옵니다.</p>
+      <p data-i="r2">돌리고 밀어서 <b>한 겹</b>을 빈틈없이 채우세요.</p>
+      <p data-i="r3">겹이 다 차면 눌려 굳고, 그 시대의 <b>화석</b>이 하나 드러납니다.</p>
+      <p data-i="r4">여섯 시대를 다 쌓으면 절벽 한 면이 완성됩니다.</p>
     </div>
     <div class="mode">
-      <button id="mJ" class="on" type="button"><b data-i="mJt">새벽 영업</b><small data-i="mJs">6단계 · 주문 27줄</small></button>
-      <button id="mF" type="button"><b data-i="mFt">자유 굽기</b><small data-i="mFs">끝없이 · 목표 없음</small></button>
+      <button id="mJ" class="on" type="button"><b data-i="mJt">여섯 시대</b><small data-i="mJs">6시대 · 27겹</small></button>
+      <button id="mF" type="button"><b data-i="mFt">자유 퇴적</b><small data-i="mFs">끝없이 · 목표 없음</small></button>
     </div>
     <div class="opt">
       <span data-i="handLab">조작판 손잡이</span>
       <button id="handBtn" type="button" aria-label="hand">오른손</button>
     </div>
-    <div class="btns"><button class="btn primary" id="startBtn" type="button" data-i="play">▶ 시작</button></div>
+    <div class="btns">
+      <button class="btn primary" id="startBtn" type="button" data-i="play">▶ 시작</button>
+      <button class="btn ghost" id="sBook" type="button" data-i="book">화석 도감</button>
+    </div>
   </div></div>
 
   <div class="ov" id="ovPause"><div class="card">
     <h2 data-i="pTitle">잠깐 멈춤</h2>
-    <p data-i="pDesc">천천히 해도 됩니다. 빵은 식지 않아요.</p>
+    <p data-i="pDesc">천천히 해도 됩니다. 돌은 서두르지 않아요.</p>
     <div class="opt">
       <span data-i="handLab">조작판 손잡이</span>
       <button id="pHandBtn" type="button" aria-label="hand">오른손</button>
     </div>
     <div class="btns">
-      <button class="btn primary" id="pResume" type="button" data-i="pResume">이어서 굽기</button>
-      <button class="btn ghost" id="pRestart" type="button" data-i="pRestart">이 시간대 다시</button>
+      <button class="btn primary" id="pResume" type="button" data-i="pResume">이어서 쌓기</button>
+      <button class="btn ghost" id="pRestart" type="button" data-i="pRestart">이 시대 다시</button>
       <a class="btn ghost" href="../../index.html"><span data-i="goHome">홈으로</span></a>
     </div>
   </div></div>
 
   <div class="ov" id="ovStage"><div class="card">
-    <h2 data-i="scTitle">주문 완료!</h2>
+    <h2 data-i="scTitle">층이 굳었습니다</h2>
     <div class="sub" id="scSub"></div>
+    <div class="fossil">
+      <canvas id="scFsCv"></canvas>
+      <div class="ftx"><b id="scFsName"></b><i id="scFsEra"></i><span id="scFsFact"></span></div>
+    </div>
     <div class="stats">
       <div class="stat"><b id="scScore">0</b><span data-i="statScore">점수</span></div>
-      <div class="stat"><b id="scLines">0</b><span data-i="bestLines">가장 큰 판</span></div>
-      <div class="stat"><b id="scTidy">0</b><span data-i="tidy">정리 보너스</span></div>
+      <div class="stat"><b id="scLines">0</b><span data-i="bestLines">한 번에 굳힌 층</span></div>
+      <div class="stat"><b id="scTidy">0</b><span data-i="tidy">고른 면 보너스</span></div>
     </div>
-    <div class="btns"><button class="btn primary" id="scNext" type="button" data-i="scNext">다음 시간대 ▶</button></div>
+    <div class="btns"><button class="btn primary" id="scNext" type="button" data-i="scNext">다음 시대 ▶</button></div>
   </div></div>
 
   <div class="ov" id="ovDone"><div class="card">
-    <h2 data-i="dTitle">문 엽니다 ☀</h2>
-    <div class="sub" data-i="dSub">오늘 빵은 다 나갔습니다</div>
-    <p data-i="dMsg">아침 손님이 문 앞에 와 있어요. 오늘은 여기까지도 충분합니다.</p>
+    <h2 data-i="dTitle">절벽 한 면이 드러났습니다</h2>
+    <div class="sub" data-i="dSub">여섯 시대가 한 벽에 쌓였습니다</div>
+    <p data-i="dMsg">맨 아래가 가장 오래된 층입니다. 오늘은 여기까지도 충분합니다.</p>
     <div class="stats">
       <div class="stat"><b id="dScore">0</b><span data-i="statScore">점수</span></div>
-      <div class="stat"><b id="dLines">0</b><span data-i="bestLines">가장 큰 판</span></div>
+      <div class="stat"><b id="dLines">0</b><span data-i="bestLines">한 번에 굳힌 층</span></div>
       <div class="stat"><b id="dTime">0:00</b><span data-i="time">걸린 시간</span></div>
     </div>
     <p class="rec" id="dRec"></p>
     <div class="btns">
-      <button class="btn primary" id="dAgain" type="button" data-i="dAgain">다시 굽기</button>
-      <button class="btn ghost" id="dFree" type="button" data-i="dFree">자유 굽기로</button>
+      <button class="btn primary" id="dAgain" type="button" data-i="dAgain">다시 쌓기</button>
+      <button class="btn ghost" id="dBook" type="button"><span data-i="book">화석 도감</span> <span id="dBookN"></span></button>
+      <button class="btn ghost" id="dFree" type="button" data-i="dFree">자유 퇴적으로</button>
       <a class="btn ghost" href="../../index.html"><span data-i="goHome">홈으로</span></a>
     </div>
   </div></div>
 
   <div class="ov" id="ovOver"><div class="card">
-    <h2 data-i="oTitle">진열대가 넘쳤어요</h2>
+    <h2 data-i="oTitle">쌓을 자리가 없어요</h2>
     <div class="sub" id="oSub"></div>
     <div class="stats">
       <div class="stat"><b id="oScore">0</b><span data-i="statScore">점수</span></div>
-      <div class="stat"><b id="oLines">0</b><span data-i="bestLines">가장 큰 판</span></div>
+      <div class="stat"><b id="oLines">0</b><span data-i="bestLines">한 번에 굳힌 층</span></div>
       <div class="stat"><b id="oBest">0</b><span data-i="best">최고 기록</span></div>
     </div>
     <div class="opt" id="slowRow" hidden>
-      <span data-i="slowLab">천천히 굽기</span>
-      <button id="slowBtn" type="button" aria-label="slow">끄기</button>
+      <span data-i="slowLab">천천히 쌓기</span>
+      <button id="slowBtn" type="button" aria-label="slow">꺼짐</button>
     </div>
     <div class="btns">
-      <button class="btn primary" id="oRetry" type="button" data-i="oRetry">이 시간대 다시</button>
+      <button class="btn primary" id="oRetry" type="button" data-i="oRetry">이 시대 다시</button>
       <button class="btn ghost" id="oStart" type="button" data-i="oStart">처음 화면</button>
       <a class="btn ghost" href="../../index.html"><span data-i="goHome">홈으로</span></a>
     </div>
+  </div></div>
+
+  <!-- 도감은 시작·완주 카드 위에 겹쳐 뜬다. 닫으면 아래 카드가 그대로 남아 있으니
+       '어디서 왔는지'를 기억해 둘 필요가 없다 -->
+  <div class="ov" id="ovBook"><div class="card">
+    <h2 data-i="book">화석 도감</h2>
+    <div class="sub" id="bkSub"></div>
+    <div id="bookList"></div>
+    <div class="btns"><button class="btn primary" id="bkClose" type="button" data-i="bookClose">닫기</button></div>
   </div></div>
 
 </div>
@@ -403,15 +434,16 @@ header .pill{pointer-events:auto}
 <script>
 'use strict';
 /* ══════════════════════════════════════════════════════════════
-   새벽 빵집 — 네 칸짜리 빵 조각이 진열대에 쌓이고,
-   가로 한 줄이 꽉 차면 그 줄이 손님에게 나간다.
+   화석이 되는 시간 — 네 칸짜리 퇴적물이 절벽 단면에 아래에서 위로 쌓인다.
+   가로 한 겹이 빈틈없이 차면 그 겹이 눌려 굳고, 그 시대의 화석이 하나 드러난다.
+   판 아래쪽이 오래된 층, 위로 갈수록 최근이다.
    ══════════════════════════════════════════════════════════════ */
 
-var SLUG = 'dawn-bakery';
+var SLUG = 'strata';
 var SAVE_KEY = 'in9-' + SLUG;
 var SOUND_KEY = 'in9-' + SLUG + '-sound';
 var HAND_KEY = 'in9-' + SLUG + '-hand';
-var NAMES = { ko:'새벽 빵집', ja:'よあけのパンや', en:'Dawn Bakery' };
+var NAMES = { ko:'화석이 되는 시간', ja:'かせきになる じかん', en:'Time Into Stone' };
 
 var $ = function(s){ return document.querySelector(s); };
 var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
@@ -443,96 +475,138 @@ var LANGS = ['ko','ja','en'];
 var LANG_FLAG = { ko:'🇰🇷', ja:'🇯🇵', en:'🇬🇧' };
 var I18N = {
 ko:{
-  home:'홈', goHome:'홈으로', tagline:'새벽에 빵을 구워 진열대를 채웁니다',
-  next:'다음', score:'점수', order:'오늘의 주문', level:'속도', dough:'남은 반죽',
+  home:'홈', goHome:'홈으로', tagline:'퇴적물을 쌓아 한 겹씩 굳힙니다',
+  next:'다음', score:'점수', order:'쌓을 층', level:'속도', left:'남은 퇴적물',
   statScore:'점수',                                  /* 결과 카드용 — 머리띠의 큰 라벨과 대소문자 규칙이 다르다 */
-  best:'최고 기록', bestLines:'가장 큰 판', tidy:'정리 보너스', time:'걸린 시간',
-  move:'이동', down:'내리기', turn:'돌리기', bake:'굽기',
+  best:'최고 기록', bestLines:'한 번에 굳힌 층', tidy:'고른 면 보너스', time:'걸린 시간',
+  move:'이동', down:'내리기', turn:'돌리기', tamp:'다지기',
   moveL:'왼쪽으로', moveR:'오른쪽으로',
-  r1:'네 칸짜리 빵 조각이 위에서 내려옵니다.',
-  r2:'돌리고 밀어서 진열대 <b>한 줄</b>을 빈틈없이 채우세요.',
-  r3:'줄이 차면 그 줄은 <b>손님에게 나갑니다</b>.',
-  r4:'여섯 시간대의 <b>오늘의 주문</b>을 다 채우면 문을 엽니다.',
-  mJt:'새벽 영업', mJs:'6단계 · 주문 27줄', mFt:'자유 굽기', mFs:'끝없이 · 목표 없음',
+  r1:'네 칸짜리 퇴적물 덩어리가 위에서 내려옵니다.',
+  r2:'돌리고 밀어서 <b>한 겹</b>을 빈틈없이 채우세요.',
+  r3:'겹이 다 차면 눌려 굳고, 그 시대의 <b>화석</b>이 하나 드러납니다.',
+  r4:'여섯 시대를 다 쌓으면 절벽 한 면이 완성됩니다.',
+  mJt:'여섯 시대', mJs:'6시대 · 27겹', mFt:'자유 퇴적', mFs:'끝없이 · 목표 없음',
   play:'▶ 시작', handLab:'조작판 손잡이', handR:'오른손', handL:'왼손', handAria:'조작판 손잡이 바꾸기',
-  pTitle:'잠깐 멈춤', pDesc:'천천히 해도 됩니다. 빵은 식지 않아요.',
-  pResume:'이어서 굽기', pRestart:'이 시간대 다시',
-  scTitle:'주문 완료!', scNext:'다음 시간대 ▶',
-  dTitle:'문 엽니다 ☀', dSub:'오늘 빵은 다 나갔습니다',
-  dMsg:'아침 손님이 문 앞에 와 있어요. 오늘은 여기까지도 충분합니다.',
-  dAgain:'다시 굽기', dFree:'자유 굽기로',
-  oTitle:'진열대가 넘쳤어요', oRetry:'이 시간대 다시', oStart:'처음 화면',
+  book:'화석 도감', bookClose:'닫기',
+  bookEmpty:'아직 찾은 화석이 없습니다. 한 겹을 다 채우면 하나가 드러납니다.',
+  pTitle:'잠깐 멈춤', pDesc:'천천히 해도 됩니다. 돌은 서두르지 않아요.',
+  pResume:'이어서 쌓기', pRestart:'이 시대 다시',
+  scTitle:'층이 굳었습니다', scNext:'다음 시대 ▶',
+  dTitle:'절벽 한 면이 드러났습니다', dSub:'여섯 시대가 한 벽에 쌓였습니다',
+  dMsg:'맨 아래가 가장 오래된 층입니다. 오늘은 여기까지도 충분합니다.',
+  dAgain:'다시 쌓기', dFree:'자유 퇴적으로',
+  oTitle:'쌓을 자리가 없어요', oRetry:'이 시대 다시', oStart:'처음 화면',
   /* 상태 표시다 — 누르라는 말이 아니다. '끄기'라고 쓰면 꺼져 있는 버튼이
      끄는 버튼처럼 읽혀서 켜려던 사람이 손을 뗀다 */
-  slowLab:'천천히 굽기', slowOn:'켜짐', slowOff:'꺼짐',
+  slowLab:'천천히 쌓기', slowOn:'켜짐', slowOff:'꺼짐',
   soundOn:'소리 켜기', soundOff:'소리 끄기', langAria:'언어 바꾸기', pauseAria:'일시정지',
-  oven:'오븐이 달아올랐습니다 🔥', emptyShelf:'진열대가 텅 비었어요',
-  overF:'자유 굽기를 마쳤습니다.',
-  fnStageSub:function(h){ return h + ' · 남은 빵은 다 팔렸습니다'; },
-  fnOverJ:function(n){ return n + '번째 시간대에서 멈췄습니다. 몇 번이든 다시 구울 수 있어요.'; },
-  fnServe:function(n){ return n + '줄 나갔어요'; },
+  press:'누르는 힘이 세졌습니다 ⛰', emptyFace:'바닥까지 훤히 드러났어요',
+  overF:'자유 퇴적을 마쳤습니다.',
+  eras:['캄브리아기','석탄기','쥐라기','백악기','팔레오기','제4기'],
+  fsName:['삼엽충','양치식물','암모나이트','공룡 발자국','화폐석','매머드'],
+  fsFact:[
+    '바다 밑을 기어다녔습니다. 눈이 방해석이라는 돌로 되어 있었어요.',
+    '이 시대 숲이 통째로 묻히고 눌려서 석탄이 되었습니다.',
+    '오징어의 먼 친척. 껍데기 방에 기체를 채워 물에 떴어요.',
+    '뼈가 아니라 걸어간 자국이 굳은 것. 보폭으로 걷는 속도를 짐작합니다.',
+    '동전처럼 납작한, 세포 하나짜리 생물. 이집트 피라미드 돌에도 박혀 있어요.',
+    '시베리아 언 땅에서 털이 남은 채로 발견되기도 합니다.'
+  ],
+  fnStageSub:function(e){ return e + ' · 그 위로 새 흙이 내려앉습니다'; },
+  fnOverJ:function(e){ return e + ' 층에서 멈췄습니다. 몇 번이든 다시 쌓을 수 있어요.'; },
+  fnServe:function(n){ return n + '겹 굳었어요'; },
   fnBest:function(n){ return '최고 기록 ' + n; },
-  fnLevel:function(n){ return '속도 ▲ ' + n; }
+  fnLevel:function(n){ return '속도 ▲ ' + n; },
+  fnFound:function(s){ return '화석 발견 — ' + s; },
+  fnBookCount:function(n){ return '찾은 화석 ' + n + ' / 6'; }
 },
 ja:{
-  home:'ホーム', goHome:'ホームへ', tagline:'よあけに パンを やいて たなを うめます',
-  next:'つぎ', score:'スコア', order:'きょうの ちゅうもん', level:'はやさ', dough:'のこりの きじ',
+  home:'ホーム', goHome:'ホームへ', tagline:'つちを つんで 1そうずつ かためます',
+  next:'つぎ', score:'スコア', order:'つむ そう', level:'はやさ', left:'のこりの いし',
   statScore:'スコア',
-  best:'ベスト', bestLines:'いちばん おおきい ばん', tidy:'かたづけ ボーナス', time:'かかった じかん',
-  move:'いどう', down:'おろす', turn:'まわす', bake:'やく',
+  best:'ベスト', bestLines:'いちどに かためた そう', tidy:'たいらさ ボーナス', time:'かかった じかん',
+  move:'いどう', down:'おろす', turn:'まわす', tamp:'かためる',
   moveL:'ひだりへ', moveR:'みぎへ',
-  r1:'4マスの パンが うえから おちてきます。',
-  r2:'まわして よこに おして、たなの <b>1れつ</b>を すきまなく うめましょう。',
-  r3:'れつが そろうと、その れつは <b>おきゃくさんへ</b> でていきます。',
-  r4:'6つの じかんたいの <b>きょうの ちゅうもん</b>を こなすと おみせを ひらけます。',
-  mJt:'よあけの えいぎょう', mJs:'6ステージ · 27れつ', mFt:'じゆうに やく', mFs:'エンドレス · もくひょう なし',
+  r1:'4マスの つちの かたまりが うえから おちてきます。',
+  r2:'まわして よこに おして、<b>1そう</b>を すきまなく うめましょう。',
+  r3:'1そう うまると おされて かたまり、その じだいの <b>かせき</b>が ひとつ でてきます。',
+  r4:'6つの じだいを つみあげると、がけが 1めん できあがります。',
+  mJt:'6つの じだい', mJs:'6じだい · 27そう', mFt:'じゆうに つむ', mFs:'エンドレス · もくひょう なし',
   play:'▶ スタート', handLab:'ボタンの むき', handR:'みぎきき', handL:'ひだりきき', handAria:'ボタンの むきを かえる',
-  pTitle:'いちじ ていし', pDesc:'ゆっくりで だいじょうぶ。パンは さめません。',
-  pResume:'つづきから', pRestart:'この じかんたいを やりなおす',
-  scTitle:'ちゅうもん かんりょう！', scNext:'つぎの じかんたい ▶',
-  dTitle:'かいてん ☀', dSub:'きょうの パンは ぜんぶ でました',
-  dMsg:'あさの おきゃくさんが まっています。きょうは ここまでで じゅうぶんです。',
-  dAgain:'もう いちど やく', dFree:'じゆうに やく',
-  oTitle:'たなが いっぱいです', oRetry:'この じかんたいを やりなおす', oStart:'さいしょの がめん',
-  slowLab:'ゆっくり やく', slowOn:'オン', slowOff:'オフ',
+  book:'かせき ずかん', bookClose:'とじる',
+  bookEmpty:'まだ かせきは ありません。1そう うめると ひとつ でてきます。',
+  pTitle:'いちじ ていし', pDesc:'ゆっくりで だいじょうぶ。いしは いそぎません。',
+  pResume:'つづきから', pRestart:'この じだいを やりなおす',
+  scTitle:'そうが かたまった', scNext:'つぎの じだい ▶',
+  dTitle:'がけが 1めん あらわれた', dSub:'6つの じだいが かさなりました',
+  dMsg:'いちばん したが いちばん ふるい そうです。きょうは ここまでで じゅうぶんです。',
+  dAgain:'もう いちど つむ', dFree:'じゆうに つむ',
+  oTitle:'つむ ばしょが ありません', oRetry:'この じだいを やりなおす', oStart:'さいしょの がめん',
+  slowLab:'ゆっくり つむ', slowOn:'オン', slowOff:'オフ',
   soundOn:'おとを つける', soundOff:'おとを けす', langAria:'ことばを かえる', pauseAria:'いちじ ていし',
-  oven:'オーブンが あつく なりました 🔥', emptyShelf:'たなが からっぽ！',
-  overF:'じゆうに やくのを おえました。',
-  fnStageSub:function(h){ return h + ' · のこった パンは ぜんぶ うれました'; },
-  fnOverJ:function(n){ return n + 'ばんめの じかんたいで とまりました。なんどでも やりなおせます。'; },
-  fnServe:function(n){ return n + 'れつ でました'; },
+  press:'おす ちからが つよく なりました ⛰', emptyFace:'そこまで みえた！',
+  overF:'じゆうに つむのを おえました。',
+  eras:['カンブリアき','せきたんき','ジュラき','はくあき','こだいさんき','だいよんき'],
+  fsName:['さんようちゅう','シダしょくぶつ','アンモナイト','きょうりゅうの あしあと','かへいせき','マンモス'],
+  fsFact:[
+    'うみの そこを はっていました。めが ほうかいせきという いしで できていました。',
+    'この じだいの もりが うもれて おされ、せきたんに なりました。',
+    'イカの とおい なかま。からの へやに きたいを ためて ういていました。',
+    'ほねでは なく、あるいた あとが かたまった もの。ほはばから はやさを さっします。',
+    'コインみたいに ぺったんこな、さいぼう ひとつの いきもの。ピラミッドの いしにも あります。',
+    'シベリアの こおった つちから、けが のこったまま みつかることも あります。'
+  ],
+  fnStageSub:function(e){ return e + ' · そのうえに あたらしい つちが つもります'; },
+  fnOverJ:function(e){ return e + 'の そうで とまりました。なんどでも つみなおせます。'; },
+  fnServe:function(n){ return n + 'そう かたまった'; },
   fnBest:function(n){ return 'ベスト ' + n; },
-  fnLevel:function(n){ return 'はやさ ▲ ' + n; }
+  fnLevel:function(n){ return 'はやさ ▲ ' + n; },
+  fnFound:function(s){ return 'かせき はっけん — ' + s; },
+  fnBookCount:function(n){ return 'みつけた かせき ' + n + ' / 6'; }
 },
 en:{
-  home:'Home', goHome:'Back to games', tagline:'Bake before dawn and fill the shelf',
-  next:'NEXT', score:'SCORE', order:'ORDERS', level:'SPEED', dough:'dough left',
+  home:'Home', goHome:'Back to games', tagline:'Stack sediment and press it into stone',
+  next:'NEXT', score:'SCORE', order:'LAYERS', level:'SPEED', left:'sediment left',
   statScore:'score',
-  best:'best', bestLines:'best serve', tidy:'tidy bonus', time:'time',
-  move:'move', down:'down', turn:'turn', bake:'bake',
+  best:'best', bestLines:'best set', tidy:'flat bonus', time:'time',
+  move:'move', down:'down', turn:'turn', tamp:'pack',
   moveL:'move left', moveR:'move right',
-  r1:'Four-cell breads come down from the top.',
-  r2:'Turn and slide them to fill <b>one whole shelf row</b>.',
-  r3:'A full row <b>goes out to a customer</b>.',
-  r4:'Fill the <b>orders</b> for all six hours and the shop opens.',
-  mJt:'Opening run', mJs:'6 stages · 27 rows', mFt:'Free bake', mFs:'Endless, no goal',
+  r1:'Four-cell lumps of sediment drift down from above.',
+  r2:'Turn and slide them to fill <b>one whole layer</b>.',
+  r3:'A full layer is pressed into rock, and one <b>fossil</b> of that era comes to light.',
+  r4:'Stack all six eras and one face of the cliff is finished.',
+  mJt:'Six eras', mJs:'6 eras · 27 layers', mFt:'Free stacking', mFs:'Endless, no goal',
   play:'▶ Start', handLab:'Pad layout', handR:'Right hand', handL:'Left hand', handAria:'switch pad layout',
-  pTitle:'Paused', pDesc:'Take your time. The bread will keep.',
-  pResume:'Resume', pRestart:'Restart this hour',
-  scTitle:'Order filled!', scNext:'Next hour ▶',
-  dTitle:'Doors open ☀', dSub:'Every loaf went out today',
-  dMsg:'The morning customers are at the door. This much is plenty for today.',
-  dAgain:'Bake again', dFree:'Try free bake',
-  oTitle:'The shelf overflowed', oRetry:'Restart this hour', oStart:'Title screen',
-  slowLab:'Bake slower', slowOn:'on', slowOff:'off',
+  book:'Fossil book', bookClose:'Close',
+  bookEmpty:'No fossils yet. Fill one whole layer and one turns up.',
+  pTitle:'Paused', pDesc:'Take your time. Stone is in no hurry.',
+  pResume:'Resume', pRestart:'Restart this era',
+  scTitle:'The layer set', scNext:'Next era ▶',
+  dTitle:'One face of the cliff', dSub:'Six eras stacked into one wall',
+  dMsg:'The lowest band is the oldest. This much is plenty for today.',
+  dAgain:'Stack again', dFree:'Try free stacking',
+  oTitle:'No room left to stack', oRetry:'Restart this era', oStart:'Title screen',
+  slowLab:'Settle slower', slowOn:'on', slowOff:'off',
   soundOn:'sound on', soundOff:'sound off', langAria:'change language', pauseAria:'pause',
-  oven:'the oven is hot 🔥', emptyShelf:'the shelf is empty!',
-  overF:'Free bake over.',
-  fnStageSub:function(h){ return h + ' — the rest of the batch sold out'; },
-  fnOverJ:function(n){ return 'Stopped on hour ' + n + '. Retry as often as you like.'; },
-  fnServe:function(n){ return n + ' rows out'; },
+  press:'the weight from above grows ⛰', emptyFace:'cleared down to bedrock!',
+  overF:'Free stacking over.',
+  eras:['Cambrian','Carboniferous','Jurassic','Cretaceous','Paleogene','Quaternary'],
+  fsName:['Trilobite','Fern','Ammonite','Dinosaur track','Nummulite','Mammoth'],
+  fsFact:[
+    'Crawled the sea floor. Its eyes were built from crystals of calcite.',
+    'Whole forests from this age were buried and squeezed into coal.',
+    'A far cousin of the squid. Gas in its shell chambers kept it afloat.',
+    'Not a bone — the print itself turned to stone. Stride length hints at speed.',
+    'A single cell, flat as a coin. Some sit in the stones of the Egyptian pyramids.',
+    'Some turn up in frozen Siberian ground with the hair still on them.'
+  ],
+  fnStageSub:function(e){ return e + ' — new sediment settles on top'; },
+  fnOverJ:function(e){ return 'Stopped in the ' + e + ' layer. Retry as often as you like.'; },
+  fnServe:function(n){ return n + ' layers set'; },
   fnBest:function(n){ return 'best ' + n; },
-  fnLevel:function(n){ return 'speed ▲ ' + n; }
+  fnLevel:function(n){ return 'speed ▲ ' + n; },
+  fnFound:function(s){ return 'fossil found — ' + s; },
+  fnBookCount:function(n){ return n + ' / 6 fossils found'; }
 }};
 
 var lang = 'ko';
@@ -545,11 +619,12 @@ function detectLang(){
   return 'ko';
 }
 function L(k){ var d = I18N[lang] || I18N.ko; return d[k] !== undefined ? d[k] : I18N.ko[k]; }
+function eraName(i){ return L('eras')[i]; }
 
-/* ═══════════ 빵 그리기 ═══════════
-   일곱 종류를 색이 아니라 '무늬 실루엣 + 명도'로 가른다.
-   직선 가로결 / 볼록 아치 / 사선↘+흰 점 / 선 없는 알갱이밭 / 사선↗ 칼집 /
-   매끈+큰 흰 타원 / 나선 — 회색조로 바꿔도 일곱이 다 읽힌다. */
+/* ═══════════ 퇴적물 그리기 ═══════════
+   일곱 종류를 색이 아니라 '무늬 실루엣 + 명도'로 가른다. 하나씩 저만 갖는 문법이 있다 —
+   교차 격자 / 곡선만 / 예각 파편 / 선 없는 자갈밭 / 가로 결만 / 세로 결만 / 나선.
+   돌은 색폭이 넓어 색으로도 갈리지만, 회색조로 바꿔도 일곱이 다 읽히는 게 먼저다. */
 var NOEDGE = { top:false, right:false, bottom:false, left:false };
 
 /* 이웃이 있는 방향은 여백도 둥근 모서리도 주지 않는다 — 두 칸이 이음매 없이 맞닿게 */
@@ -604,147 +679,138 @@ function cellRnd(ci, cj, i){
   return t - Math.floor(t);
 }
 
-var BREADS = [
-  /* 0. 식빵 — 2×2. 가장 밝고, 일곱 중 유일한 곧은 가로 결 */
-  { key:'loaf', box:2, m:['XX','XX'], rk:0.22,
-    inner:'rgba(180,132,72,0.28)', innerW:0.24, edge:'#C99B54', edgeW:0.085,
-    paint:function(ctx,x,y,s,e){
+var ROCKS = [
+  /* 0. 암염 — 2×2. 가장 밝고, 가로선과 세로선이 서로 만나는 유일한 돌(정육면체 결정 격자) */
+  { key:'halite', box:2, m:['XX','XX'], rk:0.10,
+    inner:'rgba(150,140,118,0.26)', innerW:0.22, edge:'#BEB39A', edgeW:0.085,
+    paint:function(ctx,x,y,s){
       var g = ctx.createLinearGradient(x,y,x,y+s);
-      g.addColorStop(0,'#FFFCF3'); g.addColorStop(1,'#F7E6C4');
+      g.addColorStop(0,'#FFFDF6'); g.addColorStop(1,'#E7E0CB');
       ctx.fillStyle = g; ctx.fillRect(x-1,y-1,s+2,s+2);
-      if (!e.top){                                  /* 윗면 크러스트 띠는 맨 윗칸에만 */
-        var cg = ctx.createLinearGradient(x,y,x,y+s*0.34);
-        cg.addColorStop(0,'#EFCB92'); cg.addColorStop(1,'rgba(239,203,146,0)');
-        ctx.fillStyle = cg; ctx.fillRect(x-1,y-1,s+2,s*0.36);
-      }
-      /* 결은 전폭으로 — 좌우로 붙은 칸끼리 선이 정확히 이어진다 */
+      /* 격자는 전폭·전고로 — 붙은 칸끼리 결정면이 정확히 이어진다 */
       ctx.lineCap = 'butt';
-      var rows = [0.46,0.72], i, yy;
-      for (i=0;i<2;i++){
-        yy = y + s*rows[i];
-        ctx.strokeStyle = 'rgba(196,152,96,0.50)'; ctx.lineWidth = s*0.045;
-        ctx.beginPath(); ctx.moveTo(x-1,yy); ctx.lineTo(x+s+1,yy); ctx.stroke();
-        ctx.strokeStyle = 'rgba(255,252,240,0.85)'; ctx.lineWidth = s*0.030;
-        ctx.beginPath(); ctx.moveTo(x-1,yy-s*0.045); ctx.lineTo(x+s+1,yy-s*0.045); ctx.stroke();
+      var k, v;
+      for (k=1;k<3;k++){
+        v = s*k/3;
+        ctx.strokeStyle = 'rgba(144,134,110,0.55)'; ctx.lineWidth = s*0.042;
+        ctx.beginPath(); ctx.moveTo(x-1,y+v); ctx.lineTo(x+s+1,y+v); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x+v,y-1); ctx.lineTo(x+v,y+s+1); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,253,246,0.92)'; ctx.lineWidth = s*0.026;
+        ctx.beginPath(); ctx.moveTo(x-1,y+v-s*0.040); ctx.lineTo(x+s+1,y+v-s*0.040); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x+v-s*0.040,y-1); ctx.lineTo(x+v-s*0.040,y+s+1); ctx.stroke();
       }
     } },
-  /* 1. 크루아상 — S자. 곧은 선이 하나도 없는 유일한 빵(위로 볼록한 아치 4겹) */
-  { key:'croissant', box:3, m:['.XX','XX.','...'], rk:0.32,
-    inner:'rgba(150,98,34,0.26)', innerW:0.24, edge:'#A8702B', edgeW:0.085,
+  /* 1. 사암 — S자. 곧은 선이 하나도 없는 유일한 돌(비스듬히 잘려 나가는 사층리 4겹) */
+  { key:'sandstone', box:3, m:['.XX','XX.','...'], rk:0.26,
+    inner:'rgba(150,110,58,0.26)', innerW:0.24, edge:'#AE8853', edgeW:0.085,
     paint:function(ctx,x,y,s){
-      ctx.fillStyle = '#F7E3BA'; ctx.fillRect(x-1,y-1,s+2,s+2);
+      ctx.fillStyle = '#DEBF89'; ctx.fillRect(x-1,y-1,s+2,s+2);
       ctx.lineCap = 'butt';
       var k, yy;
       for (k=0;k<4;k++){
         yy = y + s*(0.11 + k*0.30);
-        ctx.strokeStyle = 'rgba(158,104,36,0.55)'; ctx.lineWidth = s*0.095;
-        ctx.beginPath(); ctx.moveTo(x-2,yy+s*0.14); ctx.quadraticCurveTo(x+s*0.5,yy-s*0.24,x+s+2,yy+s*0.14); ctx.stroke();
-        ctx.strokeStyle = '#FEF6E2'; ctx.lineWidth = s*0.085;
-        ctx.beginPath(); ctx.moveTo(x-2,yy+s*0.055); ctx.quadraticCurveTo(x+s*0.5,yy-s*0.325,x+s+2,yy+s*0.055); ctx.stroke();
-        ctx.strokeStyle = 'rgba(222,172,104,0.45)'; ctx.lineWidth = s*0.028;
-        ctx.beginPath(); ctx.moveTo(x-2,yy-s*0.005); ctx.quadraticCurveTo(x+s*0.5,yy-s*0.385,x+s+2,yy-s*0.005); ctx.stroke();
+        /* 좌우 끝 높이를 어긋나게 둔다 — 아치가 아니라 물살에 비스듬히 깎인 결이 된다 */
+        ctx.strokeStyle = 'rgba(146,106,54,0.55)'; ctx.lineWidth = s*0.090;
+        ctx.beginPath(); ctx.moveTo(x-2,yy+s*0.17); ctx.quadraticCurveTo(x+s*0.55,yy-s*0.20,x+s+2,yy+s*0.06); ctx.stroke();
+        ctx.strokeStyle = '#FBF0D6'; ctx.lineWidth = s*0.062;
+        ctx.beginPath(); ctx.moveTo(x-2,yy+s*0.10); ctx.quadraticCurveTo(x+s*0.55,yy-s*0.27,x+s+2,yy-s*0.01); ctx.stroke();
+        ctx.strokeStyle = 'rgba(214,180,124,0.45)'; ctx.lineWidth = s*0.026;
+        ctx.beginPath(); ctx.moveTo(x-2,yy+s*0.045); ctx.quadraticCurveTo(x+s*0.55,yy-s*0.325,x+s+2,yy-s*0.055); ctx.stroke();
       }
     } },
-  /* 2. 꽈배기 — Z자. 사선 홈은 ↘, 바게트 칼집(↗)과 정확히 반대 방향 */
-  { key:'twist', box:3, m:['XX.','.XX','...'], rk:0.34,
-    inner:'rgba(140,88,32,0.30)', innerW:0.24, edge:'#9C6A2E', edgeW:0.085,
+  /* 2. 응회암 — Z자. 뾰족하게 찢긴 화산재 파편 — 예각을 가진 유일한 돌 */
+  { key:'tuff', box:3, m:['XX.','.XX','...'], rk:0.20,
+    inner:'rgba(48,46,52,0.34)', innerW:0.24, edge:'#565360', edgeW:0.085,
     paint:function(ctx,x,y,s){
-      var ci = Math.round(x/s), cj = Math.round(y/s), i, j, o, sx, sy, sr;
-      ctx.fillStyle = '#E2B57F'; ctx.fillRect(x-1,y-1,s+2,s+2);
-      ctx.lineCap = 'butt';
-      for (i=-1;i<3;i++){
-        o = s*(i*0.50 + 0.04);
-        ctx.strokeStyle = 'rgba(136,84,30,0.72)'; ctx.lineWidth = s*0.145;
-        ctx.beginPath(); ctx.moveTo(x+o-s*0.6,y-s*0.6); ctx.lineTo(x+o+s*0.9,y+s*0.9); ctx.stroke();
-        ctx.strokeStyle = 'rgba(255,240,208,0.88)'; ctx.lineWidth = s*0.075;
-        ctx.beginPath(); ctx.moveTo(x+o-s*0.6+s*0.115,y-s*0.6); ctx.lineTo(x+o+s*0.9+s*0.115,y+s*0.9); ctx.stroke();
-      }
-      for (j=0;j<11;j++){                       /* 설탕 알갱이 — 순백 점이 셀 안 최대 명도를 찍는다 */
-        sx = x + s*(0.10 + cellRnd(ci,cj,j*2+11)*0.80);
-        sy = y + s*(0.10 + cellRnd(ci,cj,j*2+12)*0.80);
-        sr = s*(0.032 + cellRnd(ci,cj,j*2+13)*0.034);
-        ctx.fillStyle = 'rgba(120,74,30,0.35)';
-        ctx.beginPath(); ctx.arc(sx+sr*0.5,sy+sr*0.6,sr,0,6.2832); ctx.fill();
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath(); ctx.arc(sx,sy,sr,0,6.2832); ctx.fill();
+      var ci = Math.round(x/s), cj = Math.round(y/s), i, ax, ay, r0, a0;
+      var g = ctx.createLinearGradient(x,y,x+s,y+s);
+      g.addColorStop(0,'#918D97'); g.addColorStop(1,'#66626E');
+      ctx.fillStyle = g; ctx.fillRect(x-1,y-1,s+2,s+2);
+      ctx.lineJoin = 'miter';
+      for (i=0;i<7;i++){
+        ax = x + s*(0.16 + cellRnd(ci,cj,i*4+21)*0.68);
+        ay = y + s*(0.16 + cellRnd(ci,cj,i*4+22)*0.68);
+        r0 = s*(0.12 + cellRnd(ci,cj,i*4+23)*0.09);
+        a0 = cellRnd(ci,cj,i*4+24)*6.2832;
+        /* 세 꼭짓점 중 하나만 멀리 빼둔다 — 어떤 각도로 나와도 뾰족한 끝이 하나는 생긴다 */
+        ctx.fillStyle = 'rgba(28,26,32,0.42)';
+        ctx.beginPath();
+        ctx.moveTo(ax + Math.cos(a0)*r0*1.95, ay + Math.sin(a0)*r0*1.95);
+        ctx.lineTo(ax + Math.cos(a0+2.1)*r0*0.72, ay + Math.sin(a0+2.1)*r0*0.72);
+        ctx.lineTo(ax + Math.cos(a0-2.1)*r0*0.72, ay + Math.sin(a0-2.1)*r0*0.72);
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = (i%2) ? '#DCD7E0' : '#B4AFBC';
+        ctx.beginPath();
+        ctx.moveTo(ax + Math.cos(a0)*r0*1.85 - s*0.025, ay + Math.sin(a0)*r0*1.85 - s*0.025);
+        ctx.lineTo(ax + Math.cos(a0+2.1)*r0*0.62 - s*0.025, ay + Math.sin(a0+2.1)*r0*0.62 - s*0.025);
+        ctx.lineTo(ax + Math.cos(a0-2.1)*r0*0.62 - s*0.025, ay + Math.sin(a0-2.1)*r0*0.62 - s*0.025);
+        ctx.closePath(); ctx.fill();
       }
     } },
-  /* 3. 소보로빵 — T자. 선이 하나도 없고 덩어리만 있는 유일한 빵 */
-  { key:'streusel', box:3, m:['.X.','XXX','...'], rk:0.34,
-    inner:'rgba(74,42,12,0.34)', innerW:0.24, edge:'#7C4C1E', edgeW:0.085,
+  /* 3. 역암 — T자. 선이 하나도 없고 둥근 자갈 덩어리만 있는 유일한 돌 */
+  { key:'conglomerate', box:3, m:['.X.','XXX','...'], rk:0.30,
+    inner:'rgba(58,42,24,0.34)', innerW:0.24, edge:'#6A5233', edgeW:0.085,
     paint:function(ctx,x,y,s){
       var ci = Math.round(x/s), cj = Math.round(y/s), i, gx, gy, rad;
-      var tone = ['#F6D69C','#E8BE7C','#D2A05C','#B67F3E','#94622A'];
-      ctx.fillStyle = '#C89544'; ctx.fillRect(x-1,y-1,s+2,s+2);
-      for (i=0;i<22;i++){
+      var tone = ['#EBE0C6','#CEBD99','#AD9971','#8C7853','#6D5C3C'];
+      ctx.fillStyle = '#9A8557'; ctx.fillRect(x-1,y-1,s+2,s+2);
+      for (i=0;i<14;i++){
         gx = x + cellRnd(ci,cj,i*3+1)*s;
         gy = y + cellRnd(ci,cj,i*3+2)*s;
-        rad = s*(0.095 + cellRnd(ci,cj,i*3+3)*0.095);
-        ctx.fillStyle = 'rgba(104,64,22,0.45)';
-        ctx.beginPath(); ctx.arc(gx+rad*0.28,gy+rad*0.34,rad,0,6.2832); ctx.fill();
+        rad = s*(0.130 + cellRnd(ci,cj,i*3+3)*0.110);
+        ctx.fillStyle = 'rgba(46,34,18,0.45)';
+        ctx.beginPath(); ctx.arc(gx+rad*0.24,gy+rad*0.30,rad,0,6.2832); ctx.fill();
         ctx.fillStyle = tone[Math.floor(cellRnd(ci,cj,i*3+4)*5)%5];
         ctx.beginPath(); ctx.arc(gx,gy,rad,0,6.2832); ctx.fill();
-        ctx.fillStyle = 'rgba(255,246,224,0.48)';
-        ctx.beginPath(); ctx.arc(gx-rad*0.28,gy-rad*0.30,rad*0.36,0,6.2832); ctx.fill();
+        ctx.fillStyle = 'rgba(255,250,236,0.42)';
+        ctx.beginPath(); ctx.arc(gx-rad*0.28,gy-rad*0.30,rad*0.32,0,6.2832); ctx.fill();
       }
     } },
-  /* 4. 바게트 — 4칸 일자. 어두운 바탕 위 밝고 굵은 사선 칼집 2줄(↗) */
-  { key:'baguette', box:4, m:['....','XXXX','....','....'], rk:0.30,
-    inner:'rgba(70,38,10,0.34)', innerW:0.26, edge:'#6E4318', edgeW:0.085,
+  /* 4. 이암 — 4칸 일자. 나란한 가로 층리만 — 가로 결만 가진 유일한 돌 */
+  { key:'mudstone', box:4, m:['....','XXXX','....','....'], rk:0.14,
+    inner:'rgba(26,28,32,0.34)', innerW:0.26, edge:'#383C43', edgeW:0.085,
+    paint:function(ctx,x,y,s){
+      var g = ctx.createLinearGradient(x,y,x,y+s);
+      g.addColorStop(0,'#6F757D'); g.addColorStop(1,'#4A4F56');
+      ctx.fillStyle = g; ctx.fillRect(x-1,y-1,s+2,s+2);
+      /* 층리는 전폭으로 — 좌우로 붙은 칸끼리 결이 정확히 이어진다 */
+      ctx.lineCap = 'butt';
+      var rows = [0.22,0.46,0.70,0.90], i, yy;
+      for (i=0;i<rows.length;i++){
+        yy = y + s*rows[i];
+        ctx.strokeStyle = 'rgba(24,26,30,0.58)'; ctx.lineWidth = s*0.055;
+        ctx.beginPath(); ctx.moveTo(x-1,yy); ctx.lineTo(x+s+1,yy); ctx.stroke();
+        ctx.strokeStyle = 'rgba(206,212,220,0.75)'; ctx.lineWidth = s*0.028;
+        ctx.beginPath(); ctx.moveTo(x-1,yy-s*0.048); ctx.lineTo(x+s+1,yy-s*0.048); ctx.stroke();
+      }
+    } },
+  /* 5. 석탄 — J자. 가장 어둡고, 나란한 세로 줄기 결만 — 세로 결만 가진 유일한 돌 */
+  { key:'coal', box:3, m:['X..','XXX','...'], rk:0.16,
+    inner:'rgba(0,0,0,0.46)', innerW:0.26, edge:'#16161A', edgeW:0.09,
     paint:function(ctx,x,y,s){
       var g = ctx.createLinearGradient(x,y,x+s,y+s);
-      g.addColorStop(0,'#C68E4C'); g.addColorStop(0.55,'#AE7433'); g.addColorStop(1,'#8E5A1B');
+      g.addColorStop(0,'#3E3D42'); g.addColorStop(0.55,'#26252B'); g.addColorStop(1,'#131217');
       ctx.fillStyle = g; ctx.fillRect(x-1,y-1,s+2,s+2);
-      /* 칼집 둘을 같은 직선 위에 두면 긴 선 하나로 보인다 — 수직으로 벌려 나란한 2줄로 */
-      var ux = 0.814, uy = -0.581, px = 0.581, py = 0.814, i, off, cx, cy, hx, hy;
-      ctx.lineCap = 'round';
-      for (i=0;i<2;i++){
-        off = (i?1:-1)*s*0.235;
-        cx = x + s*0.5 + px*off; cy = y + s*0.5 + py*off;
-        hx = ux*s*0.255; hy = uy*s*0.255;
-        ctx.strokeStyle = 'rgba(80,44,10,0.80)'; ctx.lineWidth = s*0.165;
-        ctx.beginPath(); ctx.moveTo(cx-hx,cy-hy); ctx.lineTo(cx+hx,cy+hy); ctx.stroke();
-        ctx.strokeStyle = '#F2D3A0'; ctx.lineWidth = s*0.095;
-        ctx.beginPath(); ctx.moveTo(cx-hx,cy-hy); ctx.lineTo(cx+hx,cy+hy); ctx.stroke();
-        ctx.strokeStyle = 'rgba(255,250,236,0.95)'; ctx.lineWidth = s*0.034;
-        ctx.beginPath();
-        ctx.moveTo(cx-hx*0.85-px*s*0.028, cy-hy*0.85-py*s*0.028);
-        ctx.lineTo(cx+hx*0.85-px*s*0.028, cy+hy*0.85-py*s*0.028);
-        ctx.stroke();
+      /* 결은 전고로 — 위아래로 붙은 칸끼리 줄기가 끊기지 않는다 */
+      ctx.lineCap = 'butt';
+      var cols = [0.18,0.40,0.62,0.84], i, xx;
+      for (i=0;i<cols.length;i++){
+        xx = x + s*cols[i];
+        ctx.strokeStyle = 'rgba(0,0,0,0.72)'; ctx.lineWidth = s*0.062;
+        ctx.beginPath(); ctx.moveTo(xx,y-1); ctx.lineTo(xx,y+s+1); ctx.stroke();
+        ctx.strokeStyle = 'rgba(196,194,206,0.62)'; ctx.lineWidth = s*0.026;   /* 석탄 특유의 유리 광택 */
+        ctx.beginPath(); ctx.moveTo(xx-s*0.052,y-1); ctx.lineTo(xx-s*0.052,y+s+1); ctx.stroke();
       }
     } },
-  /* 5. 단팥빵 — J자. 매끈한 저주파 면 + 크고 성긴 흰 깨 타원 4알 */
-  { key:'redbean', box:3, m:['X..','XXX','...'], rk:0.40,
-    inner:'rgba(40,20,4,0.40)', innerW:0.26, edge:'#5E3512', edgeW:0.085,
-    paint:function(ctx,x,y,s){
-      var ci = Math.round(x/s), cj = Math.round(y/s), i, sx, sy, a;
-      var g = ctx.createRadialGradient(x+s*0.36,y+s*0.30,s*0.05,x+s*0.5,y+s*0.5,s*0.85);
-      g.addColorStop(0,'#A9682F'); g.addColorStop(0.55,'#8A5124'); g.addColorStop(1,'#613312');
-      ctx.fillStyle = g; ctx.fillRect(x-1,y-1,s+2,s+2);
-      ctx.fillStyle = 'rgba(255,214,158,0.28)';
-      ctx.beginPath(); ctx.ellipse(x+s*0.34,y+s*0.28,s*0.24,s*0.13,-0.55,0,6.2832); ctx.fill();
-      /* 꽈배기의 설탕(작고 둥근 11알)과 개수·크기·모양으로 갈린다 */
-      for (i=0;i<4;i++){
-        sx = x + s*(0.20 + cellRnd(ci,cj,i*4+5)*0.60);
-        sy = y + s*(0.20 + cellRnd(ci,cj,i*4+6)*0.60);
-        a = cellRnd(ci,cj,i*4+7)*3.14;
-        ctx.fillStyle = 'rgba(50,26,6,0.55)';
-        ctx.beginPath(); ctx.ellipse(sx+s*0.02,sy+s*0.025,s*0.098,s*0.058,a,0,6.2832); ctx.fill();
-        ctx.fillStyle = '#FFF4DE';
-        ctx.beginPath(); ctx.ellipse(sx,sy,s*0.092,s*0.052,a,0,6.2832); ctx.fill();
-        ctx.fillStyle = 'rgba(196,150,96,0.55)';
-        ctx.beginPath(); ctx.ellipse(sx+s*0.018,sy+s*0.014,s*0.046,s*0.024,a,0,6.2832); ctx.fill();
-      }
-    } },
-  /* 6. 초코롤 — L자. 가장 어둡고 셀 안 명도폭이 가장 크다(코코아 ↔ 크림 나선) */
-  { key:'chocoroll', box:3, m:['..X','XXX','...'], rk:0.30,
-    inner:'rgba(10,4,0,0.42)', innerW:0.26, edge:'#2A160B', edgeW:0.09,
+  /* 6. 석회암 — L자. 조개가 감긴 자국 — 나선을 가진 유일한 돌 */
+  { key:'limestone', box:3, m:['..X','XXX','...'], rk:0.28,
+    inner:'rgba(136,124,98,0.30)', innerW:0.26, edge:'#A79876', edgeW:0.085,
     paint:function(ctx,x,y,s){
       var ci = Math.round(x/s), cj = Math.round(y/s);
       var g = ctx.createRadialGradient(x+s*0.5,y+s*0.5,s*0.05,x+s*0.5,y+s*0.5,s*0.8);
-      g.addColorStop(0,'#5A3720'); g.addColorStop(1,'#331D10');
+      g.addColorStop(0,'#F3ECD9'); g.addColorStop(1,'#CDC1A4');
       ctx.fillStyle = g; ctx.fillRect(x-1,y-1,s+2,s+2);
-      /* 셀마다 시작각을 조금 돌려서, 여러 칸이 붙으면 롤을 여러 조각 썬 모양이 된다 */
+      /* 셀마다 시작각을 조금 돌려서, 여러 칸이 붙으면 조개가 여기저기 박힌 면이 된다 */
       var ang = ((ci*3 + cj*5)%4)*0.9, cx = x+s*0.5, cy = y+s*0.5;
       function spiral(w, col, off){
         ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -756,21 +822,161 @@ var BREADS = [
         }
         ctx.stroke();
       }
-      spiral(s*0.155,'rgba(20,10,4,0.55)', s*0.022);
-      spiral(s*0.105,'#EFDCBB', 0);
-      spiral(s*0.038,'rgba(255,250,238,0.9)', -s*0.024);
+      spiral(s*0.150,'rgba(118,104,78,0.52)', s*0.022);
+      spiral(s*0.100,'#8B7C5C', 0);
+      spiral(s*0.034,'rgba(255,252,242,0.92)', -s*0.024);
     } }
 ];
 
-function drawBread(ctx, kind, x, y, s, e){
-  var B = BREADS[kind];
+function drawRock(ctx, kind, x, y, s, e){
+  var B = ROCKS[kind];
   var h = shell(x, y, s, e, B.rk);
   ctx.save();
   shellPath(ctx, h); ctx.clip();
   B.paint(ctx, x, y, s, e);
   shellCrust(ctx, h, e, B.inner, s*B.innerW);   /* clip 안 — 굵고 반투명한 안쪽 그늘 */
   ctx.restore();
-  shellCrust(ctx, h, e, B.edge, s*B.edgeW);     /* clip 밖 — 가늘고 진한 껍질선 */
+  shellCrust(ctx, h, e, B.edge, s*B.edgeW);     /* clip 밖 — 가늘고 진한 테두리선 */
+}
+
+/* ═══════════ 화석 그리기 ═══════════
+   시대마다 하나씩. 조각과 같은 방식으로 캔버스에 직접 긋는다 — 외부 그림은 쓰지 않는다.
+   어두운 돌 판 위에 밝은 뼈색으로 얹어, 파낸 자리에 드러난 것처럼 보이게 한다. */
+var FS_BODY = '#E4DAC0', FS_HEAD = '#F7F0DE', FS_LINE = 'rgba(38,32,22,0.82)';
+var FOSSILS = [
+  /* 삼엽충 — 세로로 셋으로 나뉜 등판. 이름 그대로 '세 조각 잎' */
+  { key:'trilobite', draw:function(ctx,x,y,s){
+      var cx = x+s*0.5, i, ry;
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.fillStyle = FS_BODY;
+      ctx.beginPath(); ctx.ellipse(cx, y+s*0.54, s*0.27, s*0.38, 0, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = FS_HEAD;
+      ctx.beginPath(); ctx.ellipse(cx, y+s*0.28, s*0.30, s*0.19, 0, 0, 6.2832); ctx.fill();
+      ctx.strokeStyle = FS_LINE; ctx.lineWidth = s*0.030;
+      ctx.beginPath(); ctx.moveTo(cx-s*0.09, y+s*0.22); ctx.lineTo(cx-s*0.07, y+s*0.86); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+s*0.09, y+s*0.22); ctx.lineTo(cx+s*0.07, y+s*0.86); ctx.stroke();
+      for (i=0;i<6;i++){
+        ry = y + s*(0.40 + i*0.082);
+        ctx.beginPath(); ctx.moveTo(cx-s*0.09, ry); ctx.lineTo(cx-s*0.25, ry+s*0.045); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx+s*0.09, ry); ctx.lineTo(cx+s*0.25, ry+s*0.045); ctx.stroke();
+      }
+      ctx.fillStyle = FS_LINE;
+      ctx.beginPath(); ctx.arc(cx-s*0.15, y+s*0.26, s*0.034, 0, 6.2832); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx+s*0.15, y+s*0.26, s*0.034, 0, 6.2832); ctx.fill();
+    } },
+  /* 양치식물 — 가운데 대에 잎이 짝지어 붙는다. 위로 갈수록 짧아진다 */
+  { key:'fern', draw:function(ctx,x,y,s){
+      var i, t, px, py, len;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = FS_BODY; ctx.lineWidth = s*0.048;
+      ctx.beginPath(); ctx.moveTo(x+s*0.46, y+s*0.93);
+      ctx.quadraticCurveTo(x+s*0.44, y+s*0.46, x+s*0.56, y+s*0.10); ctx.stroke();
+      ctx.lineWidth = s*0.028;
+      for (i=0;i<8;i++){
+        t = i/7;
+        px = x + s*(0.455 + t*t*0.105);
+        py = y + s*(0.88 - t*0.75);
+        len = s*(0.30 - t*0.20);
+        ctx.beginPath(); ctx.moveTo(px,py);
+        ctx.quadraticCurveTo(px-len*0.70, py-len*0.22, px-len, py-len*0.66); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(px,py);
+        ctx.quadraticCurveTo(px+len*0.70, py-len*0.22, px+len, py-len*0.66); ctx.stroke();
+      }
+    } },
+  /* 암모나이트 — 안으로 갈수록 촘촘해지는 로그 나선 + 방을 가르는 칸막이 */
+  { key:'ammonite', draw:function(ctx,x,y,s){
+      var cx = x+s*0.5, cy = y+s*0.52, t, rad, a, i, pxx, pyy;
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.strokeStyle = FS_BODY; ctx.lineWidth = s*0.135;
+      ctx.beginPath();
+      for (t=0;t<=11;t+=0.12){
+        rad = s*0.035*Math.exp(t*0.205);
+        if (rad > s*0.38) break;
+        pxx = cx + Math.cos(t)*rad; pyy = cy + Math.sin(t)*rad;
+        if (t === 0) ctx.moveTo(pxx,pyy); else ctx.lineTo(pxx,pyy);
+      }
+      ctx.stroke();
+      ctx.strokeStyle = FS_LINE; ctx.lineWidth = s*0.022;
+      for (i=0;i<14;i++){
+        a = i*0.62;
+        rad = s*0.035*Math.exp(a*0.205);
+        if (rad > s*0.38) break;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a)*(rad-s*0.058), cy + Math.sin(a)*(rad-s*0.058));
+        ctx.lineTo(cx + Math.cos(a)*(rad+s*0.058), cy + Math.sin(a)*(rad+s*0.058));
+        ctx.stroke();
+      }
+    } },
+  /* 공룡 발자국 — 발가락 셋에 발톱 자국. 뼈가 아니라 눌린 자리다 */
+  { key:'track', draw:function(ctx,x,y,s){
+      var cx = x+s*0.5, cy = y+s*0.66, i, a, tx0, ty0;
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.fillStyle = FS_BODY;
+      ctx.beginPath(); ctx.ellipse(cx, cy+s*0.06, s*0.19, s*0.16, 0, 0, 6.2832); ctx.fill();
+      ctx.strokeStyle = FS_BODY; ctx.lineWidth = s*0.135;
+      for (i=-1;i<2;i++){
+        a = -1.5708 + i*0.64;
+        tx0 = cx + Math.cos(a)*s*0.38; ty0 = cy + Math.sin(a)*s*0.38;
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tx0, ty0); ctx.stroke();
+        ctx.fillStyle = FS_LINE;
+        ctx.beginPath(); ctx.arc(tx0 + Math.cos(a)*s*0.065, ty0 + Math.sin(a)*s*0.065, s*0.033, 0, 6.2832); ctx.fill();
+      }
+    } },
+  /* 화폐석 — 동전처럼 납작한 원반. 속을 부챗살로 나눈 방 벽 */
+  { key:'nummulite', draw:function(ctx,x,y,s){
+      var cx = x+s*0.5, cy = y+s*0.5, i, a;
+      ctx.fillStyle = FS_BODY;
+      ctx.beginPath(); ctx.ellipse(cx, cy, s*0.37, s*0.29, 0, 0, 6.2832); ctx.fill();
+      ctx.strokeStyle = FS_LINE; ctx.lineWidth = s*0.020; ctx.lineCap = 'round';
+      for (i=0;i<18;i++){
+        a = i*0.349;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a)*s*0.09, cy + Math.sin(a)*s*0.07);
+        ctx.lineTo(cx + Math.cos(a)*s*0.345, cy + Math.sin(a)*s*0.270);
+        ctx.stroke();
+      }
+      ctx.fillStyle = FS_HEAD;
+      ctx.beginPath(); ctx.ellipse(cx, cy, s*0.085, s*0.066, 0, 0, 6.2832); ctx.fill();
+      ctx.strokeStyle = FS_LINE; ctx.lineWidth = s*0.030;
+      ctx.beginPath(); ctx.ellipse(cx, cy, s*0.37, s*0.29, 0, 0, 6.2832); ctx.stroke();
+    } },
+  /* 매머드 — 어깨 위가 혹처럼 솟은 등, 안으로 휜 엄니 */
+  { key:'mammoth', draw:function(ctx,x,y,s){
+      var cx = x+s*0.5;
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.fillStyle = FS_BODY;
+      ctx.beginPath();
+      ctx.moveTo(cx-s*0.26, y+s*0.62);
+      ctx.quadraticCurveTo(cx-s*0.22, y+s*0.30, cx-s*0.02, y+s*0.30);
+      ctx.quadraticCurveTo(cx+s*0.26, y+s*0.32, cx+s*0.33, y+s*0.58);
+      ctx.lineTo(cx+s*0.33, y+s*0.80);
+      ctx.lineTo(cx-s*0.26, y+s*0.80);
+      ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx-s*0.28, y+s*0.51, s*0.15, s*0.17, 0, 0, 6.2832); ctx.fill();
+      ctx.strokeStyle = FS_BODY; ctx.lineWidth = s*0.072;
+      ctx.beginPath(); ctx.moveTo(cx-s*0.37, y+s*0.57);
+      ctx.quadraticCurveTo(cx-s*0.45, y+s*0.75, cx-s*0.34, y+s*0.86); ctx.stroke();
+      ctx.strokeStyle = FS_HEAD; ctx.lineWidth = s*0.050;
+      ctx.beginPath(); ctx.moveTo(cx-s*0.35, y+s*0.59);
+      ctx.quadraticCurveTo(cx-s*0.46, y+s*0.74, cx-s*0.38, y+s*0.87); ctx.stroke();
+      ctx.strokeStyle = FS_BODY; ctx.lineWidth = s*0.100;
+      ctx.beginPath(); ctx.moveTo(cx-s*0.14, y+s*0.78); ctx.lineTo(cx-s*0.14, y+s*0.92); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+s*0.18, y+s*0.78); ctx.lineTo(cx+s*0.18, y+s*0.92); ctx.stroke();
+    } }
+];
+
+/* 화석 한 칸 — 판을 깔고 그 위에 그린다. 도감·결과 카드·발굴 연출이 전부 이 함수를 쓴다 */
+function drawFossil(ctx, idx, x, y, s){
+  var r = s*0.16;
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(x, y, s, s, r); ctx.clip();
+  var g = ctx.createLinearGradient(x,y,x,y+s);
+  g.addColorStop(0,'#4b453b'); g.addColorStop(1,'#2a2721');
+  ctx.fillStyle = g; ctx.fillRect(x,y,s,s);
+  FOSSILS[idx].draw(ctx, x, y, s);
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(240,232,214,.26)'; ctx.lineWidth = Math.max(1, s*0.02);
+  ctx.beginPath(); ctx.roundRect(x+0.5, y+0.5, s-1, s-1, r); ctx.stroke();
 }
 
 /* ═══════════ 조각 형태 ═══════════ */
@@ -786,10 +992,10 @@ function cellsOf(m){
 }
 /* 네 회전 상태를 부팅 때 한 번만 계산한다 — 매 회전마다 행렬을 돌릴 이유가 없다 */
 (function(){
-  for (var k=0;k<BREADS.length;k++){
-    var m = BREADS[k].m, st = [];
+  for (var k=0;k<ROCKS.length;k++){
+    var m = ROCKS[k].m, st = [];
     for (var i=0;i<4;i++){ st.push(cellsOf(m)); m = rotCW(m); }
-    BREADS[k].st = st;
+    ROCKS[k].st = st;
   }
 })();
 
@@ -808,30 +1014,30 @@ function edgeFn(cells){
   };
 }
 
-/* 반죽 밀기 표 — 회전이 막히면 이 순서대로 밀어 본다. y 는 아래가 + 라 dy:-1 은 들어올린다 */
+/* 밀어넣기 표 — 회전이 막히면 이 순서대로 밀어 본다. y 는 아래가 + 라 dy:-1 은 들어올린다 */
 var NUDGE = {
   small: {
     cw:  [[0,0],[-1,0],[1,0],[0,-1],[-1,-1],[1,-1],[0,-2]],
     ccw: [[0,0],[1,0],[-1,0],[0,-1],[1,-1],[-1,-1],[0,-2]]
   },
-  /* 맨 끝 [0,1] 은 아래로 한 칸 — 갓 태어난 바게트를 천장 밑에서 세울 때만 걸린다.
+  /* 맨 끝 [0,1] 은 아래로 한 칸 — 갓 떨어지기 시작한 네 칸짜리 이암을 천장 밑에서 세울 때만 걸린다.
      들어올리기를 다 시도한 뒤에 오므로, 아래가 널널하다고 먼저 파고들지는 않는다. */
   long: {
     cw:  [[0,0],[-1,0],[1,0],[-2,0],[2,0],[0,-1],[-1,-1],[1,-1],[-2,-1],[2,-1],[0,-2],[0,1]],
     ccw: [[0,0],[1,0],[-1,0],[2,0],[-2,0],[0,-1],[1,-1],[-1,-1],[2,-1],[-2,-1],[0,-2],[0,1]]
   },
-  square: [[0,0]]                                 /* 2×2 식빵은 밀 이유가 없다 */
+  square: [[0,0]]                                 /* 2×2 암염 덩이는 밀 이유가 없다 */
 };
 function nudgeList(kind, from, to){
-  var box = BREADS[kind].box;
+  var box = ROCKS[kind].box;
   if (box === 2) return NUDGE.square;
   var dir = (((to - from + 4) % 4) === 1) ? 'cw' : 'ccw';
   return (box === 4 ? NUDGE.long : NUDGE.small)[dir];
 }
 
 /* ═══════════ 코어 규칙 ═══════════ */
-/* 화면 밖 버퍼는 두지 않는다. 진열대 위쪽 두 줄을 숨겨두면 조각이 안 보이는 데서
-   움직이거나, 안 보이는 자리에 잠겨 진 게 된다 — 손님한테 안 보이는 빵은 빵이 아니다.
+/* 화면 밖 버퍼는 두지 않는다. 절벽 단면 위쪽 두 줄을 숨겨두면 조각이 안 보이는 데서
+   움직이거나, 안 보이는 자리에 굳어 진 게 된다 — 단면에 안 드러난 층은 층이 아니다.
    대신 밀기 표에 아래로 한 칸(0,1)을 넣어, 천장에 붙어서도 회전은 성사되게 했다. */
 var COLS = 10, ROWS = 16;
 var SOFT_MS = 45, LOCK_DELAY = 500, LOCK_RESETS = 10, LOCK_CAP_MS = 2400;
@@ -847,7 +1053,7 @@ function fits(cells, x, y){
   for (var i=0;i<cells.length;i++){
     var gx = x + cells[i][0], gy = y + cells[i][1];
     if (gx < 0 || gx >= COLS) return false;
-    if (gy < 0 || gy >= ROWS) return false;        // 진열대 밖은 위아래 똑같이 밖이다
+    if (gy < 0 || gy >= ROWS) return false;        // 단면 밖은 위아래 똑같이 밖이다
     if (S.grid[gy][gx]) return false;
   }
   return true;
@@ -882,7 +1088,7 @@ function isBoardEmpty(g){
   return true;
 }
 
-/* 오늘 아침 반죽 일곱 덩이 — 일곱 종이 정확히 한 번씩 나오고 비면 새로 채운다 */
+/* 이번에 실려 올 퇴적물 일곱 덩이 — 일곱 종이 정확히 한 번씩 나오고 비면 새로 채운다 */
 function refillBag(){
   var b = [0,1,2,3,4,5,6], i, j, t;
   for (i=b.length-1;i>0;i--){                      // Fisher-Yates
@@ -892,21 +1098,24 @@ function refillBag(){
   return b;
 }
 
-/* 손님에게 나간 판 — 동시에 나간 줄 수별 기본 점수 */
-var TRAY = [0,100,260,480,800];
+/* 한 번에 굳은 층 수별 기본 점수 */
+var LAYER_PTS = [0,100,260,480,800];
 function streakMul(n){ return 1 + 0.1*Math.min(n,5); }   // 상한 1.5배, 5연속에서 평평
 
 /* ═══════════ 단계 ═══════════ */
+/* 여섯 시대. 아래가 오래된 층이니 순서도 오래된 쪽부터다.
+   시대 이름은 언어마다 다르므로 여기 두지 않고 i18n 의 eras 배열에서 꺼낸다 */
 var STAGES = [
-  { hour:'04:00', goal:3, fall:700, ovenAt:12 },
-  { hour:'04:40', goal:4, fall:580, ovenAt:12 },
-  { hour:'05:20', goal:4, fall:470, ovenAt:12 },
-  { hour:'06:00', goal:5, fall:380, ovenAt:12 },
-  { hour:'06:30', goal:5, fall:300, ovenAt:12 },
-  { hour:'06:50', goal:6, fall:235, ovenAt:12 }
+  { era:0, goal:3, fall:700, pressAt:12 },
+  { era:1, goal:4, fall:580, pressAt:12 },
+  { era:2, goal:4, fall:470, pressAt:12 },
+  { era:3, goal:5, fall:380, pressAt:12 },
+  { era:4, goal:5, fall:300, pressAt:12 },
+  { era:5, goal:6, fall:235, pressAt:12 }
 ];
-/* 새벽에서 아침으로 — 단계마다 하늘이 밝아진다. 조작 압박이 아니라 색으로 주는 진행감 */
-var SKY = ['#12102a','#1e1940','#3b2a57','#7c5271','#c9835f','#f2b25c'];
+/* 깊은 고생대의 어둠에서 지표 가까운 제4기의 밝음으로 — 단계마다 단면 뒤가 밝아진다.
+   조작 압박이 아니라 색으로 주는 진행감 */
+var SKY = ['#191410','#241c14','#33291c','#4d3f2a','#7d6a48','#b39a66'];
 
 var S = {
   mode:'journey', stage:0, level:1,
@@ -916,28 +1125,40 @@ var S = {
   fallT:0, lockT:0, lockResets:0, groundedMs:0, lowestSeen:-99, softDrop:false,
   score:0, stageStartScore:0, lines:0, linesTotal:0, freeLines:0,
   streak:0, bestLines:0,
-  piecesInStage:0, ovenStep:0, slow:false, stageFails:0,
+  piecesInStage:0, pressStep:0, slow:false, stageFails:0,
   running:false, paused:false,
   startedAt:0, pauseAt:0, pausedMs:0, elapsed:0, fired:false
 };
-var anim = { clearRows:null, clearT:0, rise:null, collapseT:0, particles:[], banners:[], shake:0 };
+var anim = { clearRows:null, clearT:0, rise:null, collapseT:0, particles:[], banners:[], shake:0,
+             fsIdx:-1, fsRow:0 };
 
-/* 최고 점수는 모드별로 나눈다 — 목표가 없는 자유 굽기 점수가 27줄로 끝나는
-   새벽 영업의 기록칸을 덮으면, 완주 화면이 구조적으로 닿을 수 없는 숫자를 띄운다 */
-var save = { best:0, freeBest:0, bestLines:0, cleared:false };
+/* 최고 점수는 모드별로 나눈다 — 목표가 없는 자유 퇴적 점수가 27겹으로 끝나는
+   시대 여행의 기록칸을 덮으면, 완주 화면이 구조적으로 닿을 수 없는 숫자를 띄운다.
+   도감(found)도 여기 같이 담는다 — 저장 키를 따로 늘리지 않는다 */
+var SAVE_V = 2;
+var save = { v:SAVE_V, best:0, freeBest:0, bestLines:0, cleared:false, found:{} };
 (function(){
   var raw = store.get(SAVE_KEY);
   if (!raw) return;
   try{
     var o = JSON.parse(raw);
-    if (o && typeof o === 'object'){
+    /* 형식이 다르면 조용히 버린다 — 억지로 옮겨 붙이면 없던 화석이 도감에 생긴다 */
+    if (o && typeof o === 'object' && o.v === SAVE_V){
       save.best = o.best|0; save.freeBest = o.freeBest|0;
       save.bestLines = o.bestLines|0; save.cleared = !!o.cleared;
+      if (o.found && typeof o.found === 'object'){
+        for (var i=0;i<FOSSILS.length;i++) if (o.found[FOSSILS[i].key]) save.found[FOSSILS[i].key] = 1;
+      }
     }
   }catch(e){}
 })();
 function bestKey(){ return (S.mode === 'free') ? 'freeBest' : 'best'; }
 function persist(){ store.set(SAVE_KEY, JSON.stringify(save)); }
+function foundCount(){
+  var n = 0, i;
+  for (i=0;i<FOSSILS.length;i++) if (save.found[FOSSILS[i].key]) n++;
+  return n;
+}
 /* 날짜·연속일수는 저장하지 않는다 — 스트릭 UI 가 생길 여지 자체를 없앤다 */
 
 /* ═══════════ 소리 ═══════════ */
@@ -976,11 +1197,15 @@ var SFX = {
   turn:function(){ this.tone(410, .07, .065, 'triangle'); },
   land:function(){ this.tone(128, .1, .10, 'sine', 76); },
   drop:function(){ this.tone(190, .13, .07, 'sawtooth', 62); },
-  serve:function(n){                                  // 줄이 나갈수록 위로 뻗는 종소리
+  harden:function(n){                                  // 층이 굳을수록 위로 뻗는 종소리
     var base = 523.25;
     for (var i=0;i<n;i++) this.tone(base*Math.pow(1.26,i), .26, .10, 'triangle', 0, i*0.07);
   },
-  oven:function(){ this.tone(150, .3, .08, 'sawtooth', 320); },
+  press:function(){ this.tone(150, .3, .08, 'sawtooth', 320); },
+  find:function(){                                    // 화석이 드러날 때 — 굳는 소리보다 맑게 위로
+    this.tone(880, .2, .07, 'sine', 0, 0);
+    this.tone(1318.5, .3, .06, 'sine', 0, .09);
+  },
   level:function(){ this.tone(660, .12, .08, 'triangle'); this.tone(880, .12, .07, 'triangle', 0, .1); },
   stage:function(){ var s=[523.25,659.25,783.99,1046.5]; for (var i=0;i<s.length;i++) this.tone(s[i], .22, .10, 'triangle', 0, i*0.095); },
   done:function(){ var s=[523.25,659.25,783.99,1046.5,1318.5]; for (var i=0;i<s.length;i++) this.tone(s[i], .36, .11, 'triangle', 0, i*0.13); },
@@ -994,7 +1219,7 @@ var fld = $('#fld'), fx = fld.getContext('2d');
 var nextCv = $('#nextCv'), nx = nextCv.getContext('2d');
 var trayCv = $('#trayCv'), tx = trayCv.getContext('2d');
 var howCv = $('#howCv'), hx = howCv.getContext('2d');
-/* 확정된 진열대는 오프스크린에 한 번만 그려 둔다 — 소보로 한 칸이 원 22개라
+/* 굳은 층은 오프스크린에 한 번만 그려 둔다 — 역암 한 칸이 원 42개라
    160칸을 매 프레임 다시 그리면 폰에서 프레임이 무너진다 */
 var boardCv = document.createElement('canvas'), bx = boardCv.getContext('2d');
 var boardDirty = true;
@@ -1026,21 +1251,21 @@ function layout(){
   drawNext(); drawTray(); draw();
 }
 
-/* 진열대 바닥 — 캐시가 아니라 매 프레임 그린다(줄이 내려앉을 때 배경까지 밀리면 안 되므로) */
-function shelfBg(w, h){
+/* 파낸 절벽 단면 — 캐시가 아니라 매 프레임 그린다(층이 내려앉을 때 배경까지 밀리면 안 되므로) */
+function faceBg(w, h){
   var g = fx.createLinearGradient(0,0,0,h);
-  g.addColorStop(0,'#191338'); g.addColorStop(1,'#2e2456');
+  g.addColorStop(0,'#211b13'); g.addColorStop(1,'#171310');
   fx.fillStyle = g; fx.fillRect(0,0,w,h);
-  fx.strokeStyle = 'rgba(251,231,198,.07)'; fx.lineWidth = 1;
+  fx.strokeStyle = 'rgba(240,232,214,.06)'; fx.lineWidth = 1;
   var i;
   for (i=1;i<COLS;i++){ fx.beginPath(); fx.moveTo(i*CELL+.5,0); fx.lineTo(i*CELL+.5,h); fx.stroke(); }
   for (i=1;i<ROWS;i++){ fx.beginPath(); fx.moveTo(0,i*CELL+.5); fx.lineTo(w,i*CELL+.5); fx.stroke(); }
-  fx.strokeStyle = 'rgba(251,231,198,.16)';
+  fx.strokeStyle = 'rgba(240,232,214,.15)';
   fx.strokeRect(.5,.5,w-1,h-1);
 }
 
-/* 셀의 이웃 판정은 빵 '종류'가 아니라 '조각 인스턴스(pid)' 로 한다 —
-   kind 만 보면 다른 때 떨어진 같은 빵끼리 세로로 달라붙어 기괴한 기둥이 된다 */
+/* 셀의 이웃 판정은 퇴적물 '종류'가 아니라 '조각 인스턴스(pid)' 로 한다 —
+   kind 만 보면 다른 때 떨어진 같은 돌끼리 세로로 달라붙어 기괴한 기둥이 된다 */
 function edgesAt(r, c){
   var cell = S.grid[r][c];
   return {
@@ -1054,11 +1279,11 @@ function renderBoard(){
   var w = CELL*COLS, h = CELL*ROWS, r, c;
   boardCv.width = Math.round(w*DPR); boardCv.height = Math.round(h*DPR);
   bx.setTransform(DPR,0,0,DPR,0,0);
-  bx.clearRect(0,0,w,h);                            // 배경 없이 빵만 — 행 단위로 밀 수 있게
+  bx.clearRect(0,0,w,h);                            // 배경 없이 돌만 — 행 단위로 밀 수 있게
   for (r=0;r<ROWS;r++){
     for (c=0;c<COLS;c++){
       if (!S.grid[r][c]) continue;
-      drawBread(bx, S.grid[r][c].kind, c*CELL, r*CELL, CELL, edgesAt(r,c));
+      drawRock(bx, S.grid[r][c].kind, c*CELL, r*CELL, CELL, edgesAt(r,c));
     }
   }
   boardDirty = false;
@@ -1070,7 +1295,7 @@ function draw(){
   fx.save();
   if (anim.shake > 0) fx.translate((Math.random()-.5)*anim.shake, (Math.random()-.5)*anim.shake);
   fx.clearRect(-12,-12,w+24,h+24);
-  shelfBg(w,h);
+  faceBg(w,h);
 
   if (S.phase === 'collapse' && anim.rise){
     var p = Math.min(1, anim.collapseT/COLLAPSE_MS), ez = 1-(1-p)*(1-p);
@@ -1082,7 +1307,7 @@ function draw(){
     fx.drawImage(boardCv, 0, 0, w, h);
   }
 
-  /* 나가는 줄 — 하얗게 번쩍이고 금빛 잔광이 오른쪽으로 흐른다 */
+  /* 눌려 굳는 층 — 하얗게 번쩍이고 황토빛 잔광이 오른쪽으로 흐른다 */
   if (S.phase === 'clear' && anim.clearRows){
     var q = Math.min(1, anim.clearT/CLEAR_MS);
     for (i=0;i<anim.clearRows.length;i++){
@@ -1093,8 +1318,18 @@ function draw(){
       fx.fillStyle = '#fff6e6'; fx.fillRect(0, ry, w, CELL);
       fx.restore();
       fx.save();
-      fx.globalAlpha = 0.9*(1-q); fx.fillStyle = '#f2b25c';
+      fx.globalAlpha = 0.9*(1-q); fx.fillStyle = '#dca24a';
       fx.fillRect(w*q, ry, w*0.5, CELL);
+      fx.restore();
+    }
+    /* 굳은 자리에서 화석이 솟는다 — 번쩍임이 잦아드는 뒤쪽 절반에서만 보이게 */
+    if (anim.fsIdx >= 0){
+      var fq = Math.max(0, (q-0.25)/0.75), fs = CELL*2.3;
+      fx.save();
+      fx.globalAlpha = Math.min(1, fq*2.2);
+      fx.translate(w/2, anim.fsRow*CELL + CELL/2 - fq*CELL*0.7);
+      fx.scale(0.7 + fq*0.3, 0.7 + fq*0.3);
+      drawFossil(fx, anim.fsIdx, -fs/2, -fs/2, fs);
       fx.restore();
     }
   }
@@ -1102,16 +1337,16 @@ function draw(){
   if (S.phase === 'play' && S.cells){
     var eg = edgeFn(S.cells), gy = S.y;
     while (fits(S.cells, S.x, gy+1)) gy++;
-    /* 고스트도 같은 무늬로 — 색이 아니라 형태로 어떤 빵인지 읽히게 */
+    /* 고스트도 같은 무늬로 — 색이 아니라 형태로 어떤 돌인지 읽히게 */
     if (gy > S.y){
       fx.save(); fx.globalAlpha = 0.25;
       for (i=0;i<S.cells.length;i++){
         var grr = gy + S.cells[i][1];
         if (grr < 0) continue;
-        drawBread(fx, S.kind, (S.x+S.cells[i][0])*CELL, grr*CELL, CELL, eg(i));
+        drawRock(fx, S.kind, (S.x+S.cells[i][0])*CELL, grr*CELL, CELL, eg(i));
       }
       fx.restore();
-      fx.save(); fx.globalAlpha = .3; fx.strokeStyle = '#fbe7c6'; fx.lineWidth = 1.5;
+      fx.save(); fx.globalAlpha = .3; fx.strokeStyle = '#f0e8d6'; fx.lineWidth = 1.5;
       fx.setLineDash([4,4]);
       for (i=0;i<S.cells.length;i++){
         var gr2 = gy + S.cells[i][1];
@@ -1123,7 +1358,7 @@ function draw(){
     for (i=0;i<S.cells.length;i++){
       var pr = S.y + S.cells[i][1];
       if (pr < 0) continue;                        // 버퍼에 있는 칸은 화면 밖
-      drawBread(fx, S.kind, (S.x+S.cells[i][0])*CELL, pr*CELL, CELL, eg(i));
+      drawRock(fx, S.kind, (S.x+S.cells[i][0])*CELL, pr*CELL, CELL, eg(i));
     }
   }
 
@@ -1136,10 +1371,12 @@ function draw(){
     var bn = anim.banners[i], prog = 1 - bn.life/bn.max;
     fx.save();
     fx.globalAlpha = Math.min(1, bn.life/220);
-    fx.translate(w/2, h*0.4 - prog*30);
+    /* dy 는 같은 순간에 두 줄이 뜰 때 겹치지 말라고 미리 박아 둔 자리다 —
+       그리는 순서(i)로 밀면 앞줄이 먼저 사라질 때 뒷줄이 위로 튄다 */
+    fx.translate(w/2, h*0.4 - prog*30 + (bn.dy || 0));
     fx.font = '800 ' + Math.round(CELL*0.72) + 'px ' + getComputedStyle(document.body).fontFamily;
     fx.textAlign = 'center'; fx.textBaseline = 'middle';
-    fx.lineWidth = 5; fx.strokeStyle = 'rgba(10,6,24,.85)';
+    fx.lineWidth = 5; fx.strokeStyle = 'rgba(12,10,7,.85)';
     fx.strokeText(bn.txt, 0, 0, w-8);
     fx.fillStyle = bn.col; fx.fillText(bn.txt, 0, 0, w-8);
     fx.restore();
@@ -1151,7 +1388,7 @@ function drawNext(){
   var w = NEXT_S*4, h = NEXT_S*2;
   nx.clearRect(0,0,w,h);
   if (S.nextKind < 0) return;
-  var cells = BREADS[S.nextKind].st[0], i;
+  var cells = ROCKS[S.nextKind].st[0], i;
   var minx = 99, maxx = -99, miny = 99, maxy = -99;
   for (i=0;i<cells.length;i++){
     if (cells[i][0] < minx) minx = cells[i][0];
@@ -1163,11 +1400,11 @@ function drawNext(){
   var oy = (2 - (maxy-miny+1))/2*NEXT_S - miny*NEXT_S;
   var eg = edgeFn(cells);
   for (i=0;i<cells.length;i++){
-    drawBread(nx, S.nextKind, ox + cells[i][0]*NEXT_S, oy + cells[i][1]*NEXT_S, NEXT_S, eg(i));
+    drawRock(nx, S.nextKind, ox + cells[i][0]*NEXT_S, oy + cells[i][1]*NEXT_S, NEXT_S, eg(i));
   }
 }
 
-/* 남은 반죽 — 아직 안 나온 빵은 밝게, 이미 쓴 빵은 흐리게.
+/* 남은 퇴적물 — 아직 안 실려 온 돌은 밝게, 이미 쌓은 돌은 흐리게.
    무엇이 남았는지 눈으로 세어지는 순간 그건 가챠가 아니라 재료함이다 */
 function drawTray(){
   var g = Math.max(3, Math.round(TRAY_S*0.2));
@@ -1179,12 +1416,12 @@ function drawTray(){
   for (var k=0;k<7;k++){
     tx.save();
     tx.globalAlpha = (S.bag.indexOf(k) >= 0) ? 1 : 0.2;
-    drawBread(tx, k, k*(TRAY_S+g), 0, TRAY_S, NOEDGE);
+    drawRock(tx, k, k*(TRAY_S+g), 0, TRAY_S, NOEDGE);
     tx.restore();
   }
 }
 
-/* 규칙 그림 — 아래 한 줄이 꽉 찬 미니 진열대. 글자는 넣지 않는다(언어 전환에 안 흔들리게) */
+/* 규칙 그림 — 아래 한 겹이 빈틈없이 찬 미니 단면. 글자는 넣지 않는다(언어 전환에 안 흔들리게) */
 function drawHow(){
   var s = 22, cols = 6, rows = 3, w = cols*s + 4, h = rows*s + 4;
   howCv.width = Math.round(w*DPR); howCv.height = Math.round(h*DPR);
@@ -1194,13 +1431,13 @@ function drawHow(){
   hx.fillStyle = 'rgba(0,0,0,.3)';
   hx.beginPath(); hx.roundRect(2,2,cols*s,rows*s,8); hx.fill();
   var top = [[1,0,3],[2,0,3],[4,1,6],[5,1,6]], i;
-  for (i=0;i<top.length;i++) drawBread(hx, top[i][2], 2+top[i][0]*s, 2+top[i][1]*s, s, NOEDGE);
-  for (i=0;i<cols;i++) drawBread(hx, [0,4,2,5,1,3][i], 2+i*s, 2+2*s, s, NOEDGE);
+  for (i=0;i<top.length;i++) drawRock(hx, top[i][2], 2+top[i][0]*s, 2+top[i][1]*s, s, NOEDGE);
+  for (i=0;i<cols;i++) drawRock(hx, [0,4,2,5,1,3][i], 2+i*s, 2+2*s, s, NOEDGE);
   hx.save();
   hx.globalCompositeOperation = 'lighter'; hx.globalAlpha = .34;
   hx.fillStyle = '#fff6e6'; hx.fillRect(2, 2+2*s, cols*s, s);
   hx.restore();
-  hx.strokeStyle = 'rgba(242,178,92,.85)'; hx.lineWidth = 2;
+  hx.strokeStyle = 'rgba(220,162,74,.85)'; hx.lineWidth = 2;
   hx.strokeRect(3, 3+2*s, cols*s-2, s-2);
 }
 
@@ -1210,7 +1447,7 @@ function fallInterval(){
   if (S.mode === 'free') iv = Math.max(140, 760 - (S.level-1)*48);
   else {
     var base = STAGES[S.stage].fall;
-    var step = Math.floor(S.piecesInStage / STAGES[S.stage].ovenAt);
+    var step = Math.floor(S.piecesInStage / STAGES[S.stage].pressAt);
     iv = Math.max(120, Math.round(base * Math.pow(0.88, step)));
   }
   if (S.slow) iv = Math.round(iv * 1.25);          // 접근성 옵션 — 구매도 광고도 아니다
@@ -1222,7 +1459,7 @@ function drawFromBag(){
 }
 function firstDraw(){
   var k = drawFromBag();
-  /* 첫 조각 배려 — 다루기 까다로운 크루아상·꽈배기면 한 번만 다시 섞는다 */
+  /* 첫 조각 배려 — 다루기 까다로운 사암·응회암이면 한 번만 다시 섞는다 */
   if (k === 1 || k === 2){ S.bag = refillBag(); k = drawFromBag(); }
   return k;
 }
@@ -1235,8 +1472,8 @@ function spawn(){
   S.kind = S.nextKind;
   S.nextKind = drawFromBag();
   S.rot = 0;
-  S.cells = BREADS[S.kind].st[0];
-  S.x = Math.floor((COLS - BREADS[S.kind].box)/2);
+  S.cells = ROCKS[S.kind].st[0];
+  S.x = Math.floor((COLS - ROCKS[S.kind].box)/2);
   var minDy = 99, i;
   for (i=0;i<S.cells.length;i++) if (S.cells[i][1] < minDy) minDy = S.cells[i][1];
   /* 맨 윗칸이 0행에 오도록 태어난다 — 태어나는 순간부터 조각 전체가 보인다.
@@ -1250,19 +1487,19 @@ function spawn(){
   S.fallT = 0; S.lockT = 0; S.lockResets = 0; S.groundedMs = 0; S.softDrop = !!softHold;
   S.lowestSeen = lowestRow();
   S.piecesInStage++;
-  checkOven();
+  checkPress();
   drawNext(); drawTray();
   if (!ok){ S.cells = null; gameOver(); return false; }
   S.phase = 'play';
   return true;
 }
-function checkOven(){
+function checkPress(){
   if (S.mode !== 'journey') return;
-  var step = Math.floor(S.piecesInStage / STAGES[S.stage].ovenAt);
-  if (step > S.ovenStep){
-    S.ovenStep = step;
-    SFX.oven(); toast(L('oven'));
-    $('#screenWrap').classList.add('hot');
+  var step = Math.floor(S.piecesInStage / STAGES[S.stage].pressAt);
+  if (step > S.pressStep){
+    S.pressStep = step;
+    SFX.press(); toast(L('press'));
+    $('#screenWrap').classList.add('press');
   }
 }
 
@@ -1275,7 +1512,7 @@ function tryMove(d){
 function rotate(dirSign){
   if (S.phase !== 'play' || !S.cells) return;
   var from = S.rot, to = (from + dirSign + 4) % 4;
-  var shape = BREADS[S.kind].st[to];
+  var shape = ROCKS[S.kind].st[to];
   var list = nudgeList(S.kind, from, to), i, dx, dy;
   for (i=0;i<list.length;i++){
     dx = list[i][0]; dy = list[i][1];
@@ -1315,8 +1552,8 @@ function hardDrop(){
   if (!reduced) anim.shake = Math.min(7, 2 + n*0.28);
   lock();                                          // 접지 유예를 건너뛰고 바로 잠근다
 }
-/* 조각은 언제나 진열대 안에서만 살기 때문에(fits 가 위쪽도 막는다) 여기서 넘침을 볼 일은 없다.
-   넘침은 오직 한 곳 — 새 빵이 놓일 자리가 없는 spawn — 에서만 난다. */
+/* 조각은 언제나 단면 안에서만 살기 때문에(fits 가 위쪽도 막는다) 여기서 넘침을 볼 일은 없다.
+   넘침은 오직 한 곳 — 새 퇴적물이 놓일 자리가 없는 spawn — 에서만 난다. */
 function lock(){
   var i, gx, gy;
   for (i=0;i<S.cells.length;i++){
@@ -1330,13 +1567,26 @@ function lock(){
   resolveLines();
 }
 
-/* ═══════════ 줄 내보내기 ═══════════ */
+/* ═══════════ 층 굳히기 ═══════════ */
+/* 화석은 시대 여행에서만 나온다 — 자유 퇴적에는 시대가 없고,
+   시대 없이 나온 화석은 도감이 대답해야 할 '언제'를 무너뜨린다 */
+function revealFossil(rows){
+  if (S.mode !== 'journey') return;
+  var idx = STAGES[S.stage].era, key = FOSSILS[idx].key;
+  anim.fsIdx = idx;
+  anim.fsRow = rows[rows.length-1];               // 가장 아래 굳은 층에서 드러난다
+  if (!save.found[key]){
+    save.found[key] = 1; persist();
+    SFX.find();
+    anim.banners.push({ txt:L('fnFound')(L('fsName')[idx]), life:1000, max:1000, col:'#f7f1e2', dy:CELL*1.6 });
+  }
+}
 function resolveLines(){
   var full = fullRows(S.grid);
-  if (!full.length){ S.streak = 0; afterLock(); return; }   // 줄을 못 낸 조각 하나면 연속이 끊긴다
+  if (!full.length){ S.streak = 0; afterLock(); return; }   // 층을 못 채운 조각 하나면 연속이 끊긴다
   S.streak++;
   var n = full.length;
-  var pts = Math.round(TRAY[n] * streakMul(S.streak - 1));
+  var pts = Math.round(LAYER_PTS[n] * streakMul(S.streak - 1));
   S.score += pts;
   S.lines += n; S.linesTotal += n;
   if (n > S.bestLines) S.bestLines = n;
@@ -1345,12 +1595,13 @@ function resolveLines(){
     var lv = 1 + Math.floor(S.freeLines/8);
     if (lv > S.level){ S.level = lv; SFX.level(); toast(L('fnLevel')(lv)); }
   }
-  /* 축포는 2줄 이상·3연속 이상에서만 — 매 줄마다 터지면 그건 중독 루프다 */
-  if (n >= 2) anim.banners.push({ txt:L('fnServe')(n), life:850, max:850, col:(n>=4?'#fff6e6':'#f2b25c') });
-  else if (S.streak >= 3) anim.banners.push({ txt:'×'+S.streak, life:700, max:700, col:'#f2b25c' });
+  /* 축포는 2겹 이상·3연속 이상에서만 — 매 겹마다 터지면 그건 중독 루프다 */
+  if (n >= 2) anim.banners.push({ txt:L('fnServe')(n), life:850, max:850, col:(n>=4?'#fff6e6':'#dca24a') });
+  else if (S.streak >= 3) anim.banners.push({ txt:'×'+S.streak, life:700, max:700, col:'#dca24a' });
   if (!reduced) anim.shake = Math.min(8, 2 + n*1.4);
   for (var i=0;i<n;i++) burstRow(full[i]);
-  SFX.serve(n);
+  SFX.harden(n);
+  revealFossil(full);
   anim.clearRows = full; anim.clearT = 0;
   S.phase = 'clear';
   updateHUD();
@@ -1358,9 +1609,9 @@ function resolveLines(){
 function endClear(){
   var res = collapseRows(S.grid, anim.clearRows);
   S.grid = res.grid; anim.rise = res.rise;
-  anim.clearRows = null;
+  anim.clearRows = null; anim.fsIdx = -1;
   boardDirty = true;
-  if (isBoardEmpty(S.grid)){ S.score += 300; toast(L('emptyShelf')); }
+  if (isBoardEmpty(S.grid)){ S.score += 300; toast(L('emptyFace')); }
   anim.collapseT = 0;
   S.phase = 'collapse';
   updateHUD();
@@ -1381,7 +1632,7 @@ function burstRow(r){
         x:c*CELL + CELL/2 + (Math.random()-.5)*CELL*0.7,
         y:r*CELL + CELL/2 + (Math.random()-.5)*CELL*0.7,
         vx:(0.04 + Math.random()*0.16)*CELL, vy:-(0.03+Math.random()*0.11)*CELL,
-        r:CELL*(0.05+Math.random()*0.07), col:(Math.random()<.5?'#fff6e6':'#f2b25c'),
+        r:CELL*(0.05+Math.random()*0.07), col:(Math.random()<.5?'#f7f1e2':'#dca24a'),
         life:520, max:520
       });
     }
@@ -1394,18 +1645,35 @@ function stageClear(){
   /* 결과 화면 동안은 '실행 중'이 아니다 — finish()·gameOver() 와 같은 규칙.
      여기서 running 을 켜 둔 채 탭을 전환하면 away() 가 멈춤 카드를 겹쳐 띄운다 */
   S.running = false;
-  /* "남은 빵이 많을수록"이 아니라 "진열대가 정리돼 있을수록" 보너스 — 좋은 플레이와 같은 방향 */
+  /* "많이 쌓을수록"이 아니라 "면이 고르게 남을수록" 보너스 — 좋은 플레이와 같은 방향 */
   var tidy = (ROWS - stackHeight(S.grid)) * 15;
   S.score += tidy;
+  var era = STAGES[S.stage].era;
   S.grid = makeGrid(); boardDirty = true;
   SFX.stage();
   updateHUD();
   if (S.stage + 1 >= STAGES.length){ finish(); return; }
-  $('#scSub').textContent = L('fnStageSub')(STAGES[S.stage+1].hour);
+  $('#scSub').textContent = L('fnStageSub')(eraName(STAGES[S.stage+1].era));
   $('#scScore').textContent = S.score;
   $('#scLines').textContent = S.bestLines;
   $('#scTidy').textContent = '+' + tidy;
+  fillFossilCard(era);
   show('#ovStage');
+}
+/* 방금 지나온 시대의 화석 한 칸 — 캔버스 크기는 여기서 정해 DPR 까지 맞춘다 */
+var scFsIdx = -1;
+function fillFossilCard(idx){
+  scFsIdx = idx;
+  var cv = $('#scFsCv'), s = 56;
+  cv.width = Math.round(s*DPR); cv.height = Math.round(s*DPR);
+  cv.style.width = s+'px'; cv.style.height = s+'px';
+  var c2 = cv.getContext('2d');
+  c2.setTransform(DPR,0,0,DPR,0,0);
+  c2.clearRect(0,0,s,s);
+  drawFossil(c2, idx, 0, 0, s);
+  $('#scFsName').textContent = L('fsName')[idx];
+  $('#scFsEra').textContent  = eraName(idx);
+  $('#scFsFact').textContent = L('fsFact')[idx];
 }
 function nextStage(){
   hideAll();                                       // 겹쳐 떠 있는 게 있어도 여기서 전부 내린다
@@ -1421,7 +1689,7 @@ function nextStage(){
 }
 function finish(){
   S.running = false;
-  /* 멈춰 있던 시간은 구운 시간이 아니다 — 쉬는 시간에 앱을 잠깐 전환했다고
+  /* 멈춰 있던 시간은 쌓은 시간이 아니다 — 쉬는 시간에 앱을 잠깐 전환했다고
      '3~10분 완결'을 내세운 화면이 11분을 띄우면 안 된다 */
   if (S.paused && S.pauseAt){ S.pausedMs += Date.now() - S.pauseAt; S.pauseAt = 0; }
   S.elapsed = Math.max(0, Date.now() - S.startedAt - S.pausedMs);
@@ -1433,6 +1701,7 @@ function finish(){
   $('#dLines').textContent = S.bestLines;
   $('#dTime').textContent = fmtTime(S.elapsed);
   $('#dRec').textContent = L('fnBest')(save.best);
+  $('#dBookN').textContent = L('fnBookCount')(foundCount());
   show('#ovDone');
   fireComplete();
 }
@@ -1443,7 +1712,7 @@ function fireComplete(){
     if (typeof gtag === 'function'){               // 차단돼도 게임은 계속 돈다
       gtag('event','game_complete',{
         game_id:SLUG, scene:'journey', result:'clear', lang:lang,
-        score:S.score, best_lines:S.bestLines
+        score:S.score, best_lines:S.bestLines, fossils:foundCount()
       });
     }
   }catch(e){}
@@ -1456,11 +1725,11 @@ function gameOver(){
   if (S.score > save[bk]) save[bk] = S.score;
   if (S.bestLines > save.bestLines) save.bestLines = S.bestLines;
   persist();
-  $('#oSub').textContent = (S.mode === 'free') ? L('overF') : L('fnOverJ')(S.stage+1);
+  $('#oSub').textContent = (S.mode === 'free') ? L('overF') : L('fnOverJ')(eraName(STAGES[S.stage].era));
   $('#oScore').textContent = S.score;
   $('#oLines').textContent = S.bestLines;
   $('#oBest').textContent = save[bk];
-  /* 같은 시간대에서 두 번 넘치면 세 번째부터 조용히 뜬다.
+  /* 같은 시대에서 두 번 넘치면 세 번째부터 조용히 뜬다.
      한 번 켠 뒤에는 끌 수도 있어야 하니 켜져 있는 동안은 계속 보인다 */
   $('#slowRow').hidden = !(S.mode === 'journey' && (S.slow || S.stageFails >= 2));
   syncSlowBtn();
@@ -1477,7 +1746,7 @@ function applySky(){
 
 function updateHUD(){
   $('#vScore').textContent = S.score;
-  var vg = $('#vGoal'), gf = $('#goalFill'), dots = $('#dots'), lbl = $('#goalLabel'), hr = $('#vHour');
+  var vg = $('#vGoal'), gf = $('#goalFill'), dots = $('#dots'), lbl = $('#goalLabel'), hr = $('#vEra');
   if (S.mode === 'free'){
     lbl.textContent = L('level');
     hr.textContent = '';
@@ -1486,7 +1755,7 @@ function updateHUD(){
     dots.style.display = 'none';
   } else {
     lbl.textContent = L('order');
-    hr.textContent = STAGES[S.stage].hour;
+    hr.textContent = eraName(STAGES[S.stage].era);
     dots.style.display = 'flex';
     vg.textContent = Math.min(S.lines, STAGES[S.stage].goal) + '/' + STAGES[S.stage].goal;
     gf.style.width = Math.min(100, S.lines / STAGES[S.stage].goal * 100) + '%';
@@ -1562,13 +1831,14 @@ function frame(ts){
 function resetStage(){
   S.grid = makeGrid(); boardDirty = true;
   S.cells = null; S.kind = -1;
-  S.lines = 0; S.piecesInStage = 0; S.ovenStep = 0; S.streak = 0;
+  S.lines = 0; S.piecesInStage = 0; S.pressStep = 0; S.streak = 0;
   S.softDrop = false;
   /* 멈춘 채로 '다시'를 눌렀다면 멈춰 있던 만큼은 여기서 걷어 두고 푼다 */
   if (S.paused && S.pauseAt) S.pausedMs += Date.now() - S.pauseAt;
   S.pauseAt = 0; S.paused = false;
   anim.clearRows = null; anim.rise = null; anim.particles = []; anim.banners = []; anim.shake = 0;
-  $('#screenWrap').classList.remove('hot');
+  anim.fsIdx = -1;
+  $('#screenWrap').classList.remove('press');
   releaseHold();
 }
 function startGame(mode){
@@ -1608,7 +1878,7 @@ function pause(on){
     last = 0; hide('#ovPause');
   }
 }
-var OVS = ['#ovStart','#ovPause','#ovStage','#ovDone','#ovOver'];
+var OVS = ['#ovStart','#ovPause','#ovStage','#ovDone','#ovOver','#ovBook'];
 /* 오버레이가 덮고 있는 동안 뒤쪽 UI 는 탭 순서에서도 빠진다 —
    안 그러면 카드 뒤 안 보이는 버튼으로 포커스가 넘어가 어디 있는지 알 수 없다 */
 var BEHIND = ['header','#hud','#tray','#pad'];
@@ -1678,7 +1948,7 @@ bindBtn('#bD', function(down){ setSoft(down); }, {hold:true, sustain:true});
 bindBtn('#bC', function(){ rotate(1); });
 bindBtn('#bH', hardDrop);
 
-/* 필드 제스처 — 끌면 이동, 툭 치면 시계 회전, 두 손가락은 반시계, 아래로 쓸면 바로 굽기 */
+/* 필드 제스처 — 끌면 이동, 툭 치면 시계 회전, 두 손가락은 반시계, 아래로 쓸면 바로 다지기 */
 (function(){
   var sx=0, sy=0, st=0, moved=0, active=false, pid=null, touches=0, two=false;
   fld.addEventListener('pointerdown', function(e){
@@ -1824,7 +2094,7 @@ $('#langBtn').addEventListener('click', function(){
   applyI18n();
 });
 
-/* 손잡이 토글 — 큰 굽기 버튼이 쓰는 손 엄지 쪽으로 온다 */
+/* 손잡이 토글 — 큰 다지기 버튼이 쓰는 손 엄지 쪽으로 온다 */
 var lefty = (store.get(HAND_KEY) === 'L');
 function syncHand(){
   $('#pad').classList.toggle('lefty', lefty);
@@ -1857,6 +2127,44 @@ $('#slowBtn').addEventListener('click', function(){
   syncSlowBtn();
 });
 
+/* ═══════════ 화석 도감 ═══════════ */
+/* 찾은 것만 줄지어 놓는다. 잠긴 칸도, 물음표도, 회색 실루엣도 두지 않는다 —
+   아직 없는 것을 자리로 보여 주는 순간 도감이 '수집 압박'이 된다 */
+function renderBook(){
+  var list = $('#bookList'), i, f, row, cv, c2, tx2, s = 44;
+  list.innerHTML = '';
+  $('#bkSub').textContent = L('fnBookCount')(foundCount());
+  if (!foundCount()){
+    row = document.createElement('div');
+    row.className = 'sub bkempty';
+    row.textContent = L('bookEmpty');
+    list.appendChild(row);
+    return;
+  }
+  for (i=0;i<FOSSILS.length;i++){
+    if (!save.found[FOSSILS[i].key]) continue;
+    f = document.createElement('div'); f.className = 'frow';
+    cv = document.createElement('canvas');
+    cv.width = Math.round(s*DPR); cv.height = Math.round(s*DPR);
+    cv.style.width = s+'px'; cv.style.height = s+'px';
+    c2 = cv.getContext('2d');
+    c2.setTransform(DPR,0,0,DPR,0,0);
+    drawFossil(c2, i, 0, 0, s);
+    f.appendChild(cv);
+    tx2 = document.createElement('div'); tx2.className = 'ftx';
+    tx2.innerHTML = '<b></b><i></i><span></span>';
+    tx2.querySelector('b').textContent    = L('fsName')[i];
+    tx2.querySelector('i').textContent    = eraName(i);
+    tx2.querySelector('span').textContent = L('fsFact')[i];
+    f.appendChild(tx2);
+    list.appendChild(f);
+  }
+}
+function openBook(){ SFX.boot(); SFX.turn(); renderBook(); show('#ovBook'); }
+$('#sBook').addEventListener('click', openBook);
+$('#dBook').addEventListener('click', openBook);
+$('#bkClose').addEventListener('click', function(){ hide('#ovBook'); });
+
 /* ═══════════ i18n 적용 ═══════════ */
 function applyI18n(){
   document.documentElement.lang = lang;
@@ -1872,17 +2180,22 @@ function applyI18n(){
   $('#langBtn').setAttribute('aria-label', L('langAria'));
   $('#pauseBtn').setAttribute('aria-label', L('pauseAria'));
   /* aria-label 은 안쪽 글자를 덮으므로 여기서 같이 갈지 않으면 읽히는 이름만 영어로 남는다 */
-  [['#bL','moveL'],['#bR','moveR'],['#bD','down'],['#bC','turn'],['#bH','bake']]
+  [['#bL','moveL'],['#bR','moveR'],['#bD','down'],['#bC','turn'],['#bH','tamp']]
     .forEach(function(p){ $(p[0]).setAttribute('aria-label', L(p[1])); });
   syncSoundBtn(); syncHand(); syncSlowBtn();
   /* 열려 있는 오버레이의 '동적' 문장은 여기서 다시 써 준다 */
   if ($('#ovStage').classList.contains('on') && S.stage + 1 < STAGES.length){
-    $('#scSub').textContent = L('fnStageSub')(STAGES[S.stage+1].hour);
+    $('#scSub').textContent = L('fnStageSub')(eraName(STAGES[S.stage+1].era));
+    if (scFsIdx >= 0) fillFossilCard(scFsIdx);        // 화석 이름·설명도 언어를 따라간다
   }
   if ($('#ovOver').classList.contains('on')){
-    $('#oSub').textContent = (S.mode === 'free') ? L('overF') : L('fnOverJ')(S.stage+1);
+    $('#oSub').textContent = (S.mode === 'free') ? L('overF') : L('fnOverJ')(eraName(STAGES[S.stage].era));
   }
-  if ($('#ovDone').classList.contains('on')) $('#dRec').textContent = L('fnBest')(save[bestKey()]);
+  if ($('#ovDone').classList.contains('on')){
+    $('#dRec').textContent = L('fnBest')(save[bestKey()]);
+    $('#dBookN').textContent = L('fnBookCount')(foundCount());
+  }
+  if ($('#ovBook').classList.contains('on')) renderBook();
   updateHUD();
   drawHow();                                          // 캔버스 그림은 data-i 스윕이 못 닿는다
 }
