@@ -1,0 +1,2574 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1120">
+<title>시야각 · Seeing</title>
+<meta name="description" content="퍼즐 셋을 풀며 답에 어떻게 도착하는지와 그때의 확신을 기록하는 실험. M1 코어 루프.">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
+<style>
+/* =========================================================================
+   시야각 (Seeing) M1 — 스타일
+   어두운 배경 + 섬광 옐로 포인트. 심리테스트가 아니라 실험실 톤.
+   기준 뷰포트 390px, 데스크톱은 중앙 카드(max 460px).
+   ========================================================================= */
+:root{
+  --bg:#0e1120; --bg2:#151a2c; --bg3:#1d2440;
+  --line:rgba(232,185,58,.16); --line2:rgba(232,185,58,.34); --line3:rgba(255,255,255,.09);
+  --ink:#e9ecf6; --ink2:#a8afc6; --ink3:#6f7794;
+  --acc:#e8b93a; --acc2:#f6dc93; --acc3:rgba(232,185,58,.12);
+  --r:14px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}   /* .cvwrap{display:flex} 같은 클래스 규칙이 hidden 속성을 이기지 못하게 */
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  background-image:radial-gradient(120% 60% at 50% -10%, #1a2039 0%, #0e1120 62%);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Noto Sans KR","Malgun Gothic",sans-serif;
+  font-size:16px; line-height:1.62; letter-spacing:.005em;
+  -webkit-text-size-adjust:100%;
+  -webkit-tap-highlight-color:transparent;
+  min-height:100dvh;
+}
+.wrap{max-width:460px;margin:0 auto;padding:0 14px 40px}
+
+/* ---------------- 머리 ---------------- */
+.top{
+  display:flex;align-items:center;gap:10px;
+  padding:calc(env(safe-area-inset-top,0px) + 12px) 2px 10px;
+}
+.home{
+  font-size:.76rem;color:var(--ink3);text-decoration:none;
+  border:1px solid var(--line3);border-radius:999px;padding:5px 10px;white-space:nowrap;
+}
+.home:hover{color:var(--ink2);border-color:var(--line2)}
+.brand{flex:1;min-width:0;text-align:center;font-weight:700;font-size:.98rem;letter-spacing:.03em}
+.brand span{display:block;font-weight:400;font-size:.6rem;color:var(--ink3);letter-spacing:.28em;margin-top:1px}
+.prog{display:flex;gap:5px}
+.prog i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.14);display:block}
+.prog i.on{background:var(--acc)}
+.prog i.done{background:rgba(232,185,58,.42)}
+
+/* ---------------- 화면 ---------------- */
+.screen{padding:2px 0 24px;animation:fade .28s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.stage{font-size:.66rem;letter-spacing:.22em;color:var(--ink3);text-transform:uppercase;margin:2px 0 8px}
+.card{
+  background:linear-gradient(178deg,var(--bg2),#12172a);
+  border:1px solid var(--line3);border-radius:var(--r);
+  padding:16px 16px 17px;
+  box-shadow:0 10px 26px rgba(0,0,0,.28);
+}
+.card + .card{margin-top:12px}
+h1.t{font-size:1.42rem;line-height:1.32;margin:2px 0 10px;letter-spacing:-.01em}
+.q{font-size:1.04rem;line-height:1.7;margin:0 0 12px;font-weight:600}
+.q.sm{font-size:.96rem;font-weight:500}
+.p{font-size:.92rem;color:var(--ink2);margin:0 0 .7em}
+.p:last-child{margin-bottom:0}
+.p.dim{color:var(--ink3);font-size:.82rem}
+.note{font-size:.78rem;color:var(--ink3);line-height:1.66;margin-top:14px}
+.hr{height:1px;background:var(--line3);margin:14px 0}
+
+/* ---------------- 버튼 ---------------- */
+.btn{
+  display:block;width:100%;font:inherit;font-weight:700;font-size:.98rem;
+  color:#191408;background:linear-gradient(180deg,var(--acc2),var(--acc));
+  border:0;border-radius:12px;padding:14px 16px;cursor:pointer;
+  transition:transform .12s ease,opacity .18s ease;
+}
+.btn:active{transform:scale(.985)}
+.btn[disabled]{opacity:.32;cursor:default}
+.ghost{
+  font:inherit;font-size:.84rem;color:var(--ink2);background:rgba(255,255,255,.04);
+  border:1px solid var(--line3);border-radius:11px;padding:10px 13px;cursor:pointer;
+}
+.ghost:active{transform:scale(.98)}
+.ghost[disabled]{opacity:.3;cursor:default}
+.ghost.warm{color:var(--acc2);border-color:var(--line2)}
+.row{display:flex;gap:8px;align-items:center}
+.row.wrap{flex-wrap:wrap}
+.row.end{justify-content:flex-end}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.tools .ghost{flex:0 0 auto}
+.spacer{flex:1}
+.mt{margin-top:14px}
+.mt8{margin-top:8px}
+
+/* ---------------- 타임박스 막대(숫자 없음) ---------------- */
+.tbar{height:3px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden;margin:0 0 14px}
+.tbar i{display:block;height:100%;width:100%;transform-origin:left center;
+  background:linear-gradient(90deg,rgba(232,185,58,.75),rgba(232,185,58,.3));
+  transition:transform .25s linear}
+
+/* ---------------- p1 ---------------- */
+.cues{display:flex;gap:8px;margin:0 0 14px}
+.cue{
+  flex:1;text-align:center;padding:13px 0;border-radius:12px;
+  background:var(--acc3);border:1px solid var(--line);font-size:1.16rem;font-weight:700;
+}
+.cue b{color:var(--acc2)}
+.cue span{color:var(--ink3);font-weight:400}
+input.tx{
+  flex:1;min-width:0;font:inherit;font-size:1.06rem;color:var(--ink);
+  background:#0b0f1c;border:1px solid var(--line3);border-radius:11px;padding:13px 14px;
+}
+input.tx:focus{outline:none;border-color:var(--line2)}
+.fb{font-size:.88rem;margin:12px 0 0;color:var(--ink2)}
+.fb.good{color:var(--acc2);font-weight:600}
+.hintbox{margin-top:12px}
+.hintbox .h{
+  font-size:.86rem;color:var(--ink2);background:rgba(255,255,255,.035);
+  border-left:2px solid var(--line2);border-radius:0 8px 8px 0;padding:9px 12px;margin-top:8px;
+}
+.hintbox .h b{color:var(--acc2);font-weight:700;margin-right:6px}
+
+/* ---------------- p3 숫자 키패드 ---------------- */
+.ansbox{
+  display:flex;align-items:baseline;justify-content:center;gap:4px;
+  margin:14px 0 2px;padding:12px;border-radius:12px;background:#0b0f1c;border:1px solid var(--line3);
+}
+.ansbox b{font-size:1.7rem;font-weight:700;letter-spacing:.02em;min-width:1ch}
+.ansbox b.empty{color:var(--ink3)}
+.ansbox span{font-size:.95rem;color:var(--ink2)}
+.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.kp button{
+  font:inherit;font-size:1.28rem;font-weight:600;color:var(--ink);
+  background:var(--bg3);border:1px solid var(--line3);border-radius:12px;
+  padding:15px 0;cursor:pointer;
+}
+.kp button:active{background:#28304f}
+.kp button.fn{font-size:.92rem;color:var(--ink2)}
+.kp button.void{visibility:hidden}
+
+/* ---------------- p4 캔버스 ---------------- */
+.cvwrap{display:flex;justify-content:center;margin:6px 0 4px;max-width:100%}
+canvas{display:block;touch-action:none;cursor:pointer;border-radius:10px;max-width:100%}
+.cnt{font-size:.82rem;color:var(--ink3)}
+
+/* ---------------- 확신도 탭바 ---------------- */
+.bar{
+  position:relative;height:46px;border-radius:12px;margin:16px 0 6px;
+  background:linear-gradient(90deg,#141a2e,#232c4c);border:1px solid var(--line3);
+  cursor:pointer;touch-action:none;overflow:hidden;
+}
+.bar:focus{outline:2px solid var(--line2);outline-offset:2px}
+.bar .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,rgba(232,185,58,.22),rgba(232,185,58,.5))}
+.bar .knob{position:absolute;top:-1px;bottom:-1px;width:3px;background:var(--acc2);box-shadow:0 0 10px rgba(232,185,58,.7)}
+.bar .grid{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.12)}
+.ticks{display:flex;justify-content:space-between;font-size:.72rem;color:var(--ink3)}
+.axlab{display:flex;justify-content:space-between;font-size:.78rem;color:var(--ink2);margin-top:6px}
+.val{text-align:center;font-size:1.5rem;font-weight:700;color:var(--acc2);margin:14px 0 2px;min-height:1.6em}
+.val small{display:block;font-size:.74rem;font-weight:400;color:var(--ink3);letter-spacing:.06em}
+
+/* ---------------- 아하 2D 탭패드 ---------------- */
+.padrow{display:flex;gap:9px;align-items:stretch;margin-top:14px}
+.ylab{
+  width:19px;flex:0 0 19px;font-size:.72rem;color:var(--ink2);
+  writing-mode:vertical-rl;text-orientation:mixed;   /* 한글은 세로쓰기에서 글자가 바로 선다. rotate(180) 를 걸면 뒤집힌다 */
+  display:flex;align-items:center;justify-content:center;text-align:center;letter-spacing:.02em;
+}
+.pad2d{
+  position:relative;flex:1;aspect-ratio:1/1;border-radius:12px;cursor:pointer;touch-action:none;
+  background:radial-gradient(120% 120% at 0% 100%, #141a2e 0%, #232c4c 100%);
+  border:1px solid var(--line3);overflow:hidden;
+}
+.pad2d .gl{position:absolute;background:rgba(255,255,255,.07)}
+.pad2d .gl.h{left:0;right:0;height:1px}
+.pad2d .gl.v{top:0;bottom:0;width:1px}
+.pad2d .dot{position:absolute;width:15px;height:15px;margin:-7.5px 0 0 -7.5px;border-radius:50%;
+  background:var(--acc2);box-shadow:0 0 14px rgba(232,185,58,.8)}
+.padfoot{display:flex;justify-content:space-between;font-size:.72rem;color:var(--ink3);margin:6px 0 0 28px}
+.xlab{font-size:.78rem;color:var(--ink2);text-align:center;margin-top:4px}
+
+/* ---------------- 예/아니오 ---------------- */
+.yn{display:flex;gap:10px;margin-top:16px}
+.yn button{
+  flex:1;font:inherit;font-size:1rem;font-weight:600;color:var(--ink);
+  background:var(--bg3);border:1px solid var(--line3);border-radius:12px;padding:16px 0;cursor:pointer;
+}
+.yn button:active{background:#28304f}
+.yn button[disabled]{opacity:.5;cursor:default}
+/* 응답한 쪽을 그대로 남겨 둔다(색에만 의존하지 않도록 체크 표식은 ::before) */
+.yn button.sel{opacity:1;color:var(--acc2);background:var(--acc3);border-color:var(--line2)}
+.yn button.sel::before{content:"✓ ";font-weight:700}
+
+/* ---------------- 공개 화면 ---------------- */
+.verdict{
+  display:inline-flex;align-items:center;gap:7px;font-size:.8rem;font-weight:700;letter-spacing:.04em;
+  border:1px solid var(--line2);border-radius:999px;padding:5px 12px;color:var(--acc2);margin-bottom:12px;
+}
+.verdict i{font-style:normal;font-size:.92rem}
+.answer{
+  font-size:1.24rem;font-weight:700;color:var(--acc2);
+  padding:12px 14px;border-radius:12px;background:var(--acc3);border:1px solid var(--line);margin:2px 0 12px;
+}
+.answer small{display:block;font-size:.8rem;font-weight:400;color:var(--ink2);margin-top:4px;letter-spacing:0}
+.knownbox{margin-top:16px;padding-top:14px;border-top:1px solid var(--line3)}
+
+/* ---------------- 결과 ---------------- */
+.banner{
+  font-size:.8rem;color:var(--ink2);background:rgba(232,185,58,.07);
+  border:1px dashed var(--line2);border-radius:12px;padding:11px 13px;margin-bottom:12px;
+}
+.rrow{padding:12px 0;border-top:1px solid var(--line3)}
+.rrow:first-child{border-top:0;padding-top:2px}
+.rrow h3{margin:0 0 6px;font-size:.95rem;font-weight:700}
+.rrow h3 em{font-style:normal;color:var(--acc2);font-size:.78rem;font-weight:600;margin-left:7px;letter-spacing:.02em}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:.83rem;color:var(--ink2);padding:2px 0}
+.kv span:first-child{color:var(--ink3);flex:0 0 auto}
+.kv span:last-child{text-align:right}
+a.dl{display:block;text-decoration:none;text-align:center}
+
+/* ---------------- 셀프테스트 ---------------- */
+.st{font-size:.84rem}
+.st .l{display:flex;gap:9px;padding:7px 0;border-top:1px solid var(--line3);align-items:baseline}
+.st .l:first-child{border-top:0}
+.st .m{flex:0 0 auto;font-weight:700;font-size:.74rem;letter-spacing:.04em}
+.st .m.p{color:#9fdcb8}
+.st .m.f{color:#f0a58a}
+.st .n{flex:1;min-width:0;word-break:break-all;color:var(--ink2)}
+.st .d{color:var(--ink3);font-size:.76rem}
+
+@media (min-width:520px){ .wrap{padding-bottom:56px} }
+@media (prefers-reduced-motion: reduce){
+  .screen{animation:none}
+  .tbar i{transition:none}
+  .btn{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="home" href="../../index.html">← 게임 홈</a>
+    <div class="brand">시야각<span>SEEING</span></div>
+    <div class="prog" id="prog"><i></i><i></i><i></i></div>
+  </header>
+
+  <main id="app">
+
+    <!-- ============ 인트로 ============ -->
+    <section class="screen" id="scrIntro">
+      <div class="card">
+        <h1 class="t" id="inTitle"></h1>
+        <p class="p" id="inLead"></p>
+        <p class="p" id="inLead2"></p>
+        <div class="hr"></div>
+        <p class="p dim" id="inNote"></p>
+      </div>
+      <div class="mt"><button class="btn" id="inGo">시작하기</button></div>
+      <p class="note" id="inDisc"></p>
+    </section>
+
+    <!-- ============ 이어하기 ============ -->
+    <section class="screen" id="scrResume" hidden>
+      <div class="card">
+        <p class="q">하던 판이 남아 있어요.</p>
+        <p class="p" id="rsInfo"></p>
+      </div>
+      <div class="mt"><button class="btn" id="rsCont">이어하기</button></div>
+      <div class="mt8"><button class="ghost" id="rsNew" style="width:100%">새로 시작</button></div>
+    </section>
+
+    <!-- ============ p1_rat ============ -->
+    <section class="screen" id="scrP1" hidden>
+      <div class="stage">퍼즐 1 / 3</div>
+      <div class="tbar" id="tb1"><i></i></div>
+      <div class="card">
+        <p class="q" id="p1Q"></p>
+        <div class="cues" id="p1Cues"></div>
+        <div class="row">
+          <input class="tx" id="p1In" type="text" inputmode="text" enterkeyhint="done"
+                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                 maxlength="8" aria-label="답 입력">
+          <button class="ghost warm" id="p1Go">제출</button>
+        </div>
+        <p class="fb" id="p1Fb" hidden></p>
+      </div>
+      <div class="tools">
+        <button class="ghost" id="p1H1" disabled>힌트 ①</button>
+        <button class="ghost" id="p1H2" disabled>힌트 ②</button>
+        <span class="spacer"></span>
+        <button class="ghost" id="p1Give" hidden>답 보기</button>
+      </div>
+      <div class="hintbox" id="p1Hb"></div>
+    </section>
+
+    <!-- ============ p3_trap ============ -->
+    <section class="screen" id="scrP3" hidden>
+      <div class="stage">퍼즐 2 / 3</div>
+      <div class="tbar" id="tb3"><i></i></div>
+      <div class="card">
+        <p class="q sm" id="p3Text"></p>
+        <div class="ansbox"><b id="p3Val" class="empty">—</b><span id="p3Unit"></span></div>
+        <div class="kp" id="p3Kp"></div>
+      </div>
+      <div class="mt"><button class="btn" id="p3Go" disabled>제출</button></div>
+      <div class="tools">
+        <span class="spacer"></span>
+        <button class="ghost" id="p3Give" hidden>모르겠어요 / 대충 찍어볼게요</button>
+      </div>
+    </section>
+
+    <!-- ============ p4_ninedot ============ -->
+    <section class="screen" id="scrP4" hidden>
+      <div class="stage">퍼즐 3 / 3</div>
+      <div class="tbar" id="tb4"><i></i></div>
+      <div class="card">
+        <p class="q sm">아홉 개의 점을 <b>직선 네 개</b>로, 펜을 떼지 않고 모두 지나가 보세요.</p>
+        <div class="cvwrap"><canvas id="nine"></canvas></div>
+        <div class="row mt8">
+          <span class="cnt" id="p4Cnt">0 / 4획</span>
+          <span class="spacer"></span>
+          <button class="ghost" id="p4Undo" disabled>되돌리기</button>
+        </div>
+        <p class="p dim mt8">점을 탭하면 그 점끼리 직선으로 이어집니다. 바깥의 옅은 점도 탭할 수 있어요.</p>
+      </div>
+      <div class="tools">
+        <button class="ghost" id="p4H1" disabled>힌트 ①</button>
+        <button class="ghost" id="p4H2" disabled>힌트 ②</button>
+        <span class="spacer"></span>
+        <button class="ghost" id="p4Give" hidden>답 보기</button>
+      </div>
+      <div class="hintbox" id="p4Hb"></div>
+    </section>
+
+    <!-- ============ 확신도 탭바 ============ -->
+    <section class="screen" id="scrConf" hidden>
+      <div class="stage" id="confStage"></div>
+      <div class="card">
+        <p class="q" id="confQ"></p>
+        <p class="p dim" id="confSub"></p>
+        <div class="bar" id="confBar" role="slider" tabindex="0"
+             aria-label="확신도" aria-valuemin="0" aria-valuemax="100">
+          <i class="fill"></i><span class="grid" style="left:25%"></span>
+          <span class="grid" style="left:50%"></span><span class="grid" style="left:75%"></span>
+          <b class="knob" hidden></b>
+        </div>
+        <div class="ticks"><span>0</span><span>50</span><span>100</span></div>
+        <div class="axlab"><span id="confLo"></span><span id="confHi"></span></div>
+        <div class="val" id="confVal"><small>막대를 한 번 탭해 주세요</small></div>
+      </div>
+      <div class="mt"><button class="btn" id="confNext" disabled>다음</button></div>
+      <div class="mt8"><button class="ghost" id="confSkip" hidden style="width:100%">건너뛰기</button></div>
+    </section>
+
+    <!-- ============ 아하 2D 탭패드 ============ -->
+    <section class="screen" id="scrAha" hidden>
+      <div class="stage" id="ahaStage"></div>
+      <div class="card">
+        <p class="q" id="ahaQ"></p>
+        <div class="padrow">
+          <div class="ylab" id="ahaY">갑작스러움 · 위로 갈수록 갑자기</div>
+          <div class="pad2d" id="ahaPad">
+            <span class="gl h" style="top:50%"></span><span class="gl v" style="left:50%"></span>
+            <b class="dot" hidden></b>
+          </div>
+        </div>
+        <div class="padfoot"><span id="ahaXLo"></span><span id="ahaXHi"></span></div>
+        <div class="xlab" id="ahaX"></div>
+        <div class="val" id="ahaVal"><small>패드를 한 번 탭해 주세요</small></div>
+      </div>
+      <div class="mt"><button class="btn" id="ahaNext" disabled>다음</button></div>
+      <div class="mt8"><button class="ghost" id="ahaSkip" hidden style="width:100%">건너뛰기</button></div>
+    </section>
+
+    <!-- ============ 기지 확인 ============ -->
+    <section class="screen" id="scrKnown" hidden>
+      <div class="stage" id="knownStage"></div>
+      <div class="card">
+        <p class="q" id="knownQ"></p>
+        <p class="p dim" id="knownSub"></p>
+        <div class="yn"><button id="knownYes">예</button><button id="knownNo">아니오</button></div>
+      </div>
+    </section>
+
+    <!-- ============ 공개 화면 ============ -->
+    <section class="screen" id="scrReveal" hidden>
+      <div class="stage" id="revStage"></div>
+      <div class="card" id="revCard">
+        <div id="revBody"></div>
+        <div class="cvwrap" id="revCvWrap" hidden><canvas id="nineSol"></canvas></div>
+        <div id="revBody2"></div>
+        <div class="knownbox" id="revKnown" hidden>
+          <p class="q sm" id="revKnownQ"></p>
+          <div class="yn"><button id="revKnownYes">예</button><button id="revKnownNo">아니오</button></div>
+        </div>
+      </div>
+      <div class="mt"><button class="btn" id="revNext">계속</button></div>
+    </section>
+
+    <!-- ============ 결과(M1 간이) ============ -->
+    <section class="screen" id="scrResult" hidden>
+      <div class="stage">기록</div>
+      <div class="banner" id="resBanner"></div>
+      <div class="card" id="resList"></div>
+      <p class="note" id="resDisc"></p>
+      <div class="mt"><a class="btn dl" id="resDl" download>내 데이터 JSON 내려받기</a></div>
+      <div class="mt8"><button class="ghost" id="resAgain" style="width:100%">처음부터 다시</button></div>
+      <div class="mt8"><a class="ghost" href="../../index.html" style="display:block;width:100%;text-align:center;text-decoration:none">← 게임 홈</a></div>
+    </section>
+
+    <!-- ============ 셀프테스트 ============ -->
+    <section class="screen" id="scrSelftest" hidden>
+      <div class="stage">selftest</div>
+      <div class="card"><div class="st" id="stList"></div></div>
+      <p class="note" id="stSum"></p>
+    </section>
+
+  </main>
+</div>
+
+<script>
+/* =========================================================================
+   「시야각」(Seeing) — M1 코어 루프
+   SSOT: SEEING_SPEC_v0.2.md (config_version 0.2.1). 본 빌드는 0.2.1-m1.
+
+   ── 목차 ────────────────────────────────────────────────────────────────
+   §0  타임스탬프 규약
+   §1  CONFIG (스펙 §7-1 그대로 + M1 추가 키)
+   §2  유틸 (DOM / localStorage / 난수 / 양자화)
+   §3  순수 함수 (normRat · segPointDist · judgeNinedot)
+   §4  세션 스키마 (스펙 §7-2) · 생성 · 저장 · 이어하기
+   §5  타이밍 (visibility · blocked · 타임박스 · 세션 캡)
+   §6  GA4 (game_step / game_complete, 3중 가드)
+   §7  라우터 · 퍼즐 진행 큐
+   §8  공통 위젯 (확신도 탭바 · 아하 2D 탭패드 · 기지 확인 · 공개 화면)
+   §9  p1_rat
+   §10 p3_trap
+   §11 p4_ninedot
+   §12 결과 화면 (M1 간이)
+   §13 셀프테스트 (?selftest=1)
+   §14 부트 · 테스트 훅 (window.SEEING, ?tb=)
+   ────────────────────────────────────────────────────────────────────────
+
+   §0 타임스탬프 규약 (파일 전체 통일)
+   시각을 담는 모든 필드 — ts_start / ts_last / ts_end / dropped_at /
+   t_start / t_first_input / t_solve_end / t_end / events[].t / attempts[].t /
+   hints[].t / conf.t / aha.t / hidden_spans[].t0·t1 / blocked_spans[].t0·t1 —
+   는 **epoch ms (Date.now())** 다. 상대 길이 값만 *_ms 이름을 쓴다
+   (hidden_ms · blocked_ms · pre_input_gap_ms · active_total_ms).
+   ========================================================================= */
+(function(){
+'use strict';
+
+/* =========================================================================
+   §1 CONFIG — 스펙 §7-1 JSON을 그대로 옮긴다.
+   · config_version 만 "0.2.1-m1" (M1 데이터가 M2와 섞이지 않게)
+   · M1에서 쓰지 않는 키(wason·reframe_pool·pre_items·fov·axis_*)도 그대로 둔다
+     → M2 diff 최소화
+   · M1 추가 키는 주석 [M1+] 로 표시: rat_pool[].explain · trap_pool[].explain ·
+     ninedot.hints · m1_copy
+   ========================================================================= */
+var CONFIG = {
+  config_version: "0.2.1-m1",
+  session: {
+    soft_cap_s:360, soft_cap_shrink:0.6, hard_cap_s:480,
+    cap_clock:"active",
+    cap_skip_order:["p2_wason","p1_rat","p3_trap","p4_ninedot"],
+    cap_exempt:["p5_reframe"],
+    resume_ask_after_s:7200, resume_expire_s:86400,
+    scale_input_budget:15, idle_grace_s:20,
+    scale_idle_timeout_s:25, manual_reveal_after_s:15, pad_quantize:5
+  },
+  timebox_s: {
+    p1_rat:{scope:"stage",stage:"solve",s:60},
+    p2_wason:{scope:"stage",stage:"tests",s:90,choice_s:20},
+    p3_trap:{scope:"stage",stage:"solve",s:45},
+    p4_ninedot:{scope:"stage",stage:"draw",s:70},
+    p5_reframe:{scope:"stage",stage:"judge_pre",s:60}
+  },
+  timeout_action: {
+    p1_rat:"reveal", p2_wason:"advance", p3_trap:"reveal_via_conf",
+    p4_ninedot:"reveal", p5_reframe:"skip"
+  },
+  reveal: {
+    conf_tap_before_reveal:true, aha_after_reveal:true,
+    known_before_after_reveal:["p1_rat","p2_wason","p4_ninedot"]
+  },
+  aha: {
+    mode_default:"pad2d", full_slider_puzzles:[], full_slider_max:2,
+    collect_on:["p1_rat","p3_trap","p4_ninedot"],
+    p3_before_reveal:true, axis_contexts:["self_solved"]
+  },
+  pre_items: [
+    {id:"A1",text:"재능은 노력보다 중요하다",scored:false},
+    {id:"A2",text:"돈으로 행복을 살 수 있다",scored:false},
+    {id:"A3",text:"MBTI 같은 성격 유형 검사는 과학적이다",scored:false,excluded_from_all:true}
+  ],
+  rat_pool: [{
+    id:"gil", cues:["물","눈","불"], accept:["길","빛"],
+    /* 문항 지시문. '뒤에 붙는다'는 위치 정보는 힌트 ①의 몫이므로 여기서 새지 않게 중립으로 둔다 */
+    prompt:"세 낱말에 공통으로 어울리는 한 글자를 찾아 주세요.",
+    hints:[
+      "세 낱말 뒤에 똑같이 붙는 한 글자가 있어요.",
+      "'물○·눈○·불○'이 모두 자연스럽게 말이 되는 한 글자면 됩니다. 답이 하나뿐인 문제는 아니에요."
+    ],
+    /* [M1+] 공개 화면 해설 */
+    explain:"물길·눈길·불길, 그리고 물빛·눈빛·불빛. 뒤에 붙는 글자가 '길'이어도 '빛'이어도 세 낱말이 모두 자연스럽게 말이 됩니다. 답이 하나뿐인 문제가 아니었어요."
+  }],
+  rat_default: "gil",
+  wason: {
+    min_tests:3, min_tests_waived_on_timeout:true, shuffle_choices:true,
+    answer_id:3,
+    choices:[
+      {id:1,text:"앞의 수보다 2씩 커지는 세 수",pred:"b-a===2&&c-b===2"},
+      {id:2,text:"앞의 수보다 커지는 짝수 세 수",pred:"a<b&&b<c&&a%2===0&&b%2===0&&c%2===0"},
+      {id:3,text:"앞의 수보다 커지기만 하는 세 수",pred:"a<b&&b<c"},
+      {id:4,text:"앞의 수와 다르기만 하면 되는 세 수",pred:"a!==b&&b!==c"}
+    ]
+  },
+  stall: {
+    min_active_ms:5000, min_gap_ms:1500, tail_cap_ms:10000, rule_version:2,
+    window:["t_start","t_solve_end"],
+    norm:{p1_rat:[0.15,0.70],p2_wason:[0.10,0.55],p4_ninedot:[0.12,0.60]}
+  },
+  axis_rhythm: {
+    w_stall:0.5, w_sudden:0.5, low_n_below:3,
+    cut_both:0.50, cut_behavior_only:null, cut_self_report_only:null,
+    stall_ref_q:null, sudden_ref_q:null
+  },
+  axis_conf: {cut_lo:42, cut_hi:68, low_n_below:4, shrink_k:1, shrink_prior:50, ref_q:null},
+  fov: {
+    cap:30, rescale_min_max:15,
+    t1:{max:8,delta_full:30,room_ref:50,room_factor_min:0.5,conf_full:30,deadzone:5},
+    t2:{max:10,brier_max:0.5,shrink_k:1,shrink_k_n1:2,brier_prior:0.25,
+        items:["p1_rat","p2_wason","p4_ninedot"]},
+    t3:{max:7,drop_full:25,conf_floor:10,min_room:8,
+        pre:["p1_rat","p2_wason"],post:"p4_ninedot"},
+    t4:{max:5,items:["p1_rat","p2_wason","p4_ninedot"]}
+  },
+  ninedot: {
+    grid:{n:3,spacing_units:100,origin:[0,0]},
+    outer_anchor_rings:1, anchor_step_units:100,
+    hit_radius_units:22, coord_space:"units",
+    max_strokes:4, undo_depth:1, require_connected:true,
+    solution:[[0,0],[3,0],[0,3],[0,0],[2,2]],
+    /* [M1+] 힌트 2단계 (스펙 §4 P4 본문의 문구) */
+    hints:[
+      "선이 꼭 점에서 끝나야 할까요?",
+      "상자 밖으로 나간 예시 한 획을 옅게 그려 둘게요."
+    ]
+  },
+  trap_pool: [
+    {id:"bat_ball",
+     text:"야구방망이와 공을 합치면 1,100원입니다. 방망이는 공보다 1,000원 비쌉니다. 공은 얼마일까요?",
+     unit:"원", answer:50, intuitive:100,
+     /* [M1+] 공개 화면 풀이 */
+     explain:"공이 50원이면 방망이는 1,050원, 합쳐서 1,100원이 됩니다. 1,000원이라는 큰 수가 먼저 눈에 들어오면 1,100에서 1,000을 빼는 계산이 저절로 시작되곤 해요."},
+    {id:"race_second",
+     text:"달리기 경주에서 당신이 2등을 추월했습니다. 지금 당신은 몇 등일까요?",
+     unit:"등", answer:2, intuitive:1,
+     explain:"2등을 앞질렀다면 그 사람의 자리를 대신 차지한 것이니 2등입니다. '앞질렀다'는 말이 '맨 앞'이라는 그림을 먼저 그려 놓기 쉽습니다."},
+    {id:"sheep_left",
+     text:"농부에게 양이 15마리 있었습니다. 8마리를 제외하고 모두 죽었습니다. 몇 마리가 남았을까요?",
+     unit:"마리", answer:8, intuitive:7,
+     explain:"'8마리를 제외하고 모두 죽었다'는 8마리가 남았다는 뜻입니다. 문장을 끝까지 읽기 전에 15에서 8을 빼는 계산이 먼저 시작되곤 해요."}
+  ],
+  trap_first: "random", trap_max_swap: 1,
+  reframe_scenario: "absent_colleague", reframe_warn_line: false,
+  reframe_pool: [{
+    id:"absent_colleague",
+    scene:"같은 팀 동료 J가 오늘 아침 회의에 말없이 나타나지 않았습니다. 연락도 없었습니다. 이번 달만 세 번째입니다. 팀은 J가 맡은 자료 없이 회의를 진행했습니다.",
+    claim:"J는 팀에 무책임하다",
+    info:"회의가 끝난 뒤 J에게서 메시지가 왔습니다. 지난달 계정 이관 과정에서 J의 사내 알림이 통째로 꺼져 있었고, 오늘 회의는 어제 저녁에 시간이 옮겨진 것이었습니다. J는 원래 시간에 맞춰 빈 회의실에 혼자 앉아 있었습니다.",
+    warn_line:false
+  }],
+  hints: {levels:2, auto_offer_at_ratio:[0.5,0.8], auto_show:false,
+          enabled_on:["p1_rat","p4_ninedot"], decisive_level:2},
+  share: {inapp_ua:["KAKAOTALK","Instagram","FBAN","FBAV","Line"]},
+  forms: {b:{rat:"[M2-b 확정]",trap:"[M2-b 확정]",exclude:["p4_ninedot"]}},
+
+  /* [M1+] 화면 카피. 스펙에 문구가 확정된 곳은 글자 그대로, 침묵 영역은 §8 톤(다정하고 담백)으로. */
+  m1_copy: {
+    intro:{
+      title:"답에 도착하는 방식을 재는 실험",
+      lead:"퍼즐 셋을 풉니다. 맞히는 게 목적이 아니라, 답에 어떻게 도착하는지와 그때의 확신이 어떻게 움직이는지를 기록하는 게 목적이에요.",
+      lead2:"모든 기록은 이 기기 안에만 남습니다. 마지막 화면에서 통째로 내려받을 수 있어요.",
+      note:"3분쯤 걸립니다. 답이 안 떠올라도 괜찮게 설계돼 있어요 — 못 푼 자리도 그대로 기록입니다.",
+      go:"시작하기"
+    },
+    disclaimer:"이 테스트는 오락과 연구 목적이며 심리 진단이 아닙니다",
+    conf:{
+      submit_q:"제출하기 전에 — 지금 이 답, 맞을 것 같나요?",
+      submit_sub:"확신이 서지 않으면 낮게 두셔도 됩니다.",
+      reveal_q:"답을 보기 전에 — 지금 떠오른 답, 맞을 것 같나요?",
+      reveal_sub:"답을 못 정했다면 낮게 두세요",
+      nine_q:"지금 그은 선이 9개 점을 다 지났을까요?",
+      nine_sub:"확신이 서지 않으면 낮게 두셔도 됩니다.",
+      lo:"아닐 것 같다", hi:"맞을 것 같다",
+      hint:"막대를 한 번 탭해 주세요"
+    },
+    aha:{
+      q_self:"답에 도착한 순간, 얼마나 갑자기·얼마나 시원했나요?",
+      q_reveal:"답을 본 순간, 얼마나 갑자기·얼마나 시원했나요?",
+      q_trap:"답이 떠올랐을 때, 얼마나 갑자기·얼마나 시원했나요?",
+      y:"갑작스러움 · 위로 갈수록 갑자기",
+      x:"시원함 (쾌감)", x_lo:"덤덤", x_hi:"아주 시원",
+      hint:"패드를 한 번 탭해 주세요"
+    },
+    known:{
+      q:"이 문제, 전에 본 적 있나요?",
+      q_trap:"이 문제, 본 적 있나요?",
+      sub:"점수와는 무관합니다. 기록에만 남습니다."
+    },
+    p1:{
+      wrong:"아직이에요 — 다른 글자를 떠올려 보세요.",
+      right:"맞았어요.",
+      head_solved:"직접 도착하셨어요",
+      head_revealed:"답을 열어 볼게요"
+    },
+    p3:{
+      /* 스펙 §4 P3 공개 화면 4분기 — 글자 그대로. {conf}는 사용자의 확신도 원값 */
+      wrong1:"방금 확신도 {conf}을 주셨어요.",
+      wrong1_untouched:"확신도는 건너뛰셨네요.",
+      wrong2:"틀렸다는 게 중요한 게 아니라, '맞다는 느낌'이 이렇게 강할 수 있다는 게 중요합니다. 깨달음의 느낌은 진리의 보증서가 아니거든요.",
+      right:"이 문제는 먼저 떠오르는 답과 맞는 답이 갈리는 자리예요. 이번엔 그 갈림을 그대로 지나오셨네요. 방금 주신 확신도 {conf}도 함께 기록해 두었습니다.",
+      right_untouched:"이 문제는 먼저 떠오르는 답과 맞는 답이 갈리는 자리예요. 이번엔 그 갈림을 그대로 지나오셨네요.",
+      known:"이미 아는 문제라도, 확신이 어떻게 움직이는지만 볼게요. 점수에서 손해 보시는 일은 없습니다.",
+      none:"답을 정하지 못한 채로 지나가는 것도 기록입니다. 방금 주신 확신도 {conf}이 그 순간의 솔직한 눈금이에요.",
+      none_untouched:"답을 정하지 못한 채로 지나가는 것도 기록입니다. 지나간 자리도 그대로 남겨 두었어요."
+    },
+    p4:{
+      win:"상자 밖으로 나가 보셨네요 — 상자는 문제에 없고 보는 쪽에 있었습니다.",
+      lose:"상자가 어디 있었는지 보여드릴게요.",
+      note:"이 문제는 못 푸는 쪽이 기본 경로입니다. 해답을 보는 것도 이 실험의 한 부분이에요.",
+      disconnected:"선분이 서로 떨어져 있었어요. 한붓그리기로 이어져야 합니다."
+    },
+    result:{
+      banner:"M1 테스트 빌드 — 유형·시야각 판정은 다음 버전에서",
+      tail:"여기까지 잰 것만 더했어요."
+    }
+  }
+};
+
+/* =========================================================================
+   §2 유틸
+   ========================================================================= */
+var K_SESSION = 'seeing-session', K_META = 'seeing-meta', K_ARCHIVE = 'seeing-archive';
+var PUZZLE_ORDER = ['p1_rat','p3_trap','p4_ninedot'];   // M1 제시 순서 (스펙 §10 M1 행)
+var LANG = 'ko';                                        // 한국어 전용. 포털 공용 언어 키는 쓰지 않는다
+
+function $(sel, root){ return (root||document).querySelector(sel); }
+function now(){ return Date.now(); }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function quant(v){ var q=CONFIG.session.pad_quantize; return Math.round(v/q)*q; }
+function txt(node, s){ if(node) node.textContent = (s==null?'':String(s)); }
+function reduceMotion(){
+  try{ return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  catch(e){ return false; }
+}
+function uuid(){
+  try{ if(window.crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID(); }catch(e){}
+  try{
+    if(window.crypto && crypto.getRandomValues){
+      var b = new Uint8Array(16); crypto.getRandomValues(b);
+      b[6]=(b[6]&0x0f)|0x40; b[8]=(b[8]&0x3f)|0x80;
+      var h=[],i; for(i=0;i<16;i++) h.push(('0'+b[i].toString(16)).slice(-2));
+      return h.slice(0,4).join('')+'-'+h.slice(4,6).join('')+'-'+h.slice(6,8).join('')+
+             '-'+h.slice(8,10).join('')+'-'+h.slice(10,16).join('');
+    }
+  }catch(e2){}
+  var s='', k;
+  for(k=0;k<32;k++) s += Math.floor(Math.random()*16).toString(16);
+  return s.slice(0,8)+'-'+s.slice(8,12)+'-4'+s.slice(13,16)+'-a'+s.slice(17,20)+'-'+s.slice(20,32);
+}
+function pickOne(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function fmtDur(ms){
+  if(!isFinite(ms) || ms<0) ms=0;
+  var s = Math.round(ms/1000);
+  if(s<60) return s+'초';
+  return Math.floor(s/60)+'분 '+(s%60)+'초';
+}
+/* 경과 시간(이어하기 안내용). fmtDur 는 '푸는 데 쓴 시간'용 초단위 표기라
+   반나절 자리에서 '431분 12초' 같은 문구가 된다. 여기서는 눈금을 올린다. */
+function fmtGap(ms){
+  if(!isFinite(ms) || ms<0) ms=0;
+  var m = Math.floor(ms/60000);       // 반올림하면 30초가 '1분 전'이 된다
+  if(m<1)  return '방금';
+  if(m<60) return m+'분';
+  var h = Math.floor(m/60);
+  if(h<24) return h+'시간';
+  return '하루쯤';
+}
+
+/* localStorage — 사파리 프라이빗 모드 등에서 던지는 예외를 전부 삼킨다 */
+var LS = {
+  get:function(k){ try{ var v=localStorage.getItem(k); return v==null?null:JSON.parse(v); }catch(e){ return null; } },
+  set:function(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } },
+  del:function(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+/* seeing-archive: 완주 세션 FIFO. QuotaExceededError → 오래된 것부터 버리고 재시도 3회 */
+var ARCHIVE_MAX = 20;   // 스펙 미규정 상한. 세션당 수십 KB 이므로 20건이면 1MB 안쪽 — 진행 키 저장을 굶기지 않게
+function archivePush(sess){
+  var arr = LS.get(K_ARCHIVE);
+  if(!arr || Object.prototype.toString.call(arr)!=='[object Array]') arr = [];
+  arr.push(sess);
+  while(arr.length > ARCHIVE_MAX) arr.shift();
+  for(var i=0;i<3;i++){
+    if(LS.set(K_ARCHIVE, arr)) return true;
+    if(arr.length<=1) break;
+    arr.shift();
+  }
+  return false;   // 3회 실패 → 아카이브 포기 (진행은 막지 않는다)
+}
+
+/* =========================================================================
+   §3 순수 함수 — 셀프테스트가 이 셋만 직접 호출한다
+   ========================================================================= */
+var JOSA = ['이','가','은','는','요'];
+
+/* 스펙 §4 P1: trim → 공백 전량 제거 → 후행 조사 제거 → NFC.
+   NFC는 멱등이므로, 분해형(NFD) 입력에서 종성 판정이 깨지는 것을 막기 위해
+   조사 제거 앞에도 한 번 적용한다(결과는 스펙과 동일). */
+function normRat(s){
+  var t = String(s==null?'':s).trim().replace(/\s+/g,'');
+  if(t.normalize) t = t.normalize('NFC');
+  while(t.length>1 && JOSA.indexOf(t.charAt(t.length-1))>=0) t = t.slice(0,-1);
+  if(t.normalize) t = t.normalize('NFC');
+  return t;
+}
+function ratItem(){
+  var pool = CONFIG.rat_pool, i;
+  for(i=0;i<pool.length;i++) if(pool[i].id===CONFIG.rat_default) return pool[i];
+  return pool[0];
+}
+function ratCorrect(raw, item){
+  var it = item || ratItem();
+  return it.accept.indexOf(normRat(raw)) >= 0;
+}
+
+/* 선분(a,b)와 점 p 사이 거리. 좌표계 무관(9점은 units 공간에서 호출) */
+function segPointDist(a,b,p){
+  var vx=b.x-a.x, vy=b.y-a.y, wx=p.x-a.x, wy=p.y-a.y;
+  var L2 = vx*vx+vy*vy;
+  var t = L2===0 ? 0 : (wx*vx+wy*vy)/L2;
+  t = clamp(t,0,1);
+  var dx = a.x+vx*t-p.x, dy = a.y+vy*t-p.y;
+  return Math.sqrt(dx*dx+dy*dy);
+}
+
+/* strokes: [[{x,y},{x,y}], ...] — **격자 인덱스** 좌표(y 위쪽 +).
+   판정은 units 공간(인덱스 × spacing_units)에서 수행한다(스펙 §4 P4). */
+function judgeNinedot(strokes, cfg){
+  cfg = cfg || CONFIG.ninedot;
+  var sp = cfg.grid.spacing_units, n = cfg.grid.n, R = cfg.hit_radius_units;
+  var out = {correct:false, connected:true, disconnected:false, covered:0, total:n*n,
+             strokes:(strokes?strokes.length:0), over_max:false, missing:[]};
+  /* 획이 0개면 '한붓그리기 연결성 위반'이 아니다 — 스펙 §4 P4 ①의 disconnected 는
+     stroke[i].start ≠ stroke[i-1].end 인 경우에만 정의된다. covered=0 으로 자연 탈락시킨다. */
+  if(!strokes || !strokes.length){ out.connected=false; out.disconnected=false; return out; }
+  var i,j;
+  /* ① 연결성 — stroke[i].start === stroke[i-1].end */
+  for(i=1;i<strokes.length;i++){
+    var prev = strokes[i-1][strokes[i-1].length-1], cur = strokes[i][0];
+    if(!prev || !cur || prev.x!==cur.x || prev.y!==cur.y){ out.connected=false; }
+  }
+  out.disconnected = !out.connected;
+  /* ② 통과 — 각 실점에 대해 어떤 선분과의 거리 ≤ hit_radius_units */
+  for(var gy=0; gy<n; gy++) for(var gx=0; gx<n; gx++){
+    var pt = {x:gx*sp, y:gy*sp}, hit=false;
+    for(i=0;i<strokes.length && !hit;i++){
+      var st = strokes[i];
+      for(j=1;j<st.length && !hit;j++){
+        var A={x:st[j-1].x*sp, y:st[j-1].y*sp}, B={x:st[j].x*sp, y:st[j].y*sp};
+        if(segPointDist(A,B,pt) <= R) hit=true;
+      }
+    }
+    if(hit) out.covered++; else out.missing.push({x:gx,y:gy});
+  }
+  /* ③ 4획 이하 && 9점 전량 && 연결성 */
+  out.over_max = strokes.length > cfg.max_strokes;
+  /* require_connected:false 면 연결성은 계산만 하고 정오 판정에서 뺀다(스펙 §7-1 CONFIG) */
+  out.correct = (!out.over_max) && (cfg.require_connected===false || out.connected)
+                && (out.covered === out.total);
+  return out;
+}
+
+/* =========================================================================
+   §4 세션 (스펙 §7-2 스키마) · 저장 · 이어하기
+   미수집 값은 null 로 둔다 — §6-2가 `t_first_input != null`,
+   `known_before === false`, `correct !== null` 을 구분해 소비하기 때문.
+   ========================================================================= */
+var S = null;                  // 현재 세션 (스키마 = 스펙 §7-2, 여분 필드 없음)
+var R = {                      // 런타임 상태. 절대 저장하지 않는다
+  screen:null, pidx:-1, queue:[], box:null,
+  hiddenAt:0, blockedAt:0, blockedScope:null, lastTick:0, timer:null,
+  confPrompted:{}, ahaPrompted:{}, knownPrompted:{},
+  pendingSubmit:null, pendingResume:null,
+  scale:null, conf:null, aha:null, known:null,
+  gaSteps:{}, completeFired:false, nine:null, sol:null, solRedraw:null, dlUrl:null, token:0,
+  done:false                   // 결과 도달 → save() 차단
+};
+
+function newPuzzle(id, orderIndex){
+  return {
+    id:id, order_index:orderIndex, config_version:CONFIG.config_version,
+    presented:false, skipped:false,
+    t_start:0, t_first_input:null, t_solve_end:null, t_end:null, pre_input_gap_ms:null,
+    solved:false, correct:false, revealed:false, timeout:false, gave_up:false,
+    assisted:false, assist_level:0,
+    hidden_ms:0, hidden_spans:[], blocked_ms:0, blocked_spans:[],
+    events:[], stall_rule_version:CONFIG.stall.rule_version, stall_excluded_reason:null,
+    attempts:[], hints:[],
+    conf:{v:null, touched:false, t:0},
+    aha:{mode:CONFIG.aha.mode_default, sudden:null, pleasure:null, certain:null,
+         context:null, touched:false, t:0},
+    known_before:null,
+    extra:{}
+  };
+}
+/* 스펙 §7-2 세션 루트. 키 이름·순서·타입이 스펙 그대로다 (여분 필드 0) */
+function blankSession(){
+  var t = now();
+  return {
+    schema:3, config_version:CONFIG.config_version, session_id:uuid(),
+    ts_start:t, ts_last:t, ts_end:0, play_index:1, dropped_at:null,
+    hidden_ms:0, hidden_spans:[], blocked_ms:0, blocked_spans:[], active_total_ms:0,
+    skipped:[], cap_soft:false, cap_truncated:false, resumed_discard:false,
+    pre:[],                     // M1: 사전 태도 3문항 없음 (M2에서 채운다)
+    puzzles:[],
+    result:null,                // M1: judge() 없음 (M2)
+    consent:{research:false, age_band:null, age_14_plus:null, t:0}
+  };
+}
+function newSession(){
+  var meta = LS.get(K_META);
+  var pi = (meta && typeof meta.play_index==='number' ? meta.play_index : 0) + 1;
+  LS.set(K_META, {play_index:pi});
+  var s = blankSession();
+  s.play_index = pi;
+  for(var i=0;i<PUZZLE_ORDER.length;i++) s.puzzles.push(newPuzzle(PUZZLE_ORDER[i], i+1));
+  return s;
+}
+function curP(){ return (S && R.pidx>=0 && R.pidx<S.puzzles.length) ? S.puzzles[R.pidx] : null; }
+function puzzleById(id){
+  if(!S) return null;
+  for(var i=0;i<S.puzzles.length;i++) if(S.puzzles[i].id===id) return S.puzzles[i];
+  return null;
+}
+function save(){
+  if(!S || R.done) return;               // 결과 도달 뒤에는 진행 키를 다시 쓰지 않는다 (archive 가 사본)
+  S.ts_last = now();
+  if(!LS.set(K_SESSION, S)){
+    /* 용량 초과 — 아카이브에서 가장 오래된 완주 기록 하나를 비우고 한 번만 재시도 */
+    try{
+      var arr = LS.get(K_ARCHIVE) || [];
+      if(arr.length){ arr.shift(); LS.set(K_ARCHIVE, arr); LS.set(K_SESSION, S); }
+    }catch(e){}
+  }
+}
+
+/* 이벤트 로깅 — kind ∈ enter|key|tap|submit|hint|pad|reveal|timeout (스펙 §5-1)
+   · submit 은 **사용자가 실제로 제출한 경우에만**. 타임박스 만료는 timeout,
+     해답 열람(revealed=true 경로)은 reveal 로 남긴다.
+   · timeout/reveal 은 사용자 활동이 아니라 경로 표식이다. §5-1 longest_stall
+     재계산기는 이 둘을 공백의 경계로 세지 말 것(세면 tail_cap_ms 절단이 무력화된다). */
+function logEvent(kind, isSolveInput){
+  var p = curP(); if(!p) return;
+  var t = now();
+  p.events.push({t:t, kind:kind});
+  if(isSolveInput && p.t_first_input==null){
+    p.t_first_input = t;
+    p.pre_input_gap_ms = t - p.t_start;
+  }
+}
+
+/* =========================================================================
+   §5 타이밍 — visibility / blocked / 타임박스 / 세션 캡
+   ========================================================================= */
+/* 창 [t0,t1] 안에서 span 집합들이 실제로 덮은 총 시간. 겹치는 구간은 **한 번만** 센다.
+   숨김과 강제 대기가 겹치면(연출 중 앱 전환) 단순 합산은 이중 차감이 되어 active 가
+   음수까지 내려간다. 파생값을 저장하지 않고 원값 span 에서 매번 재계산한다(§7-2). */
+function coveredMs(spanSets, t0, t1){
+  var all = [], i, j, s, a, b;
+  if(!(t1>t0)) return 0;
+  for(i=0;i<spanSets.length;i++){
+    s = spanSets[i] || [];
+    for(j=0;j<s.length;j++){
+      a = Math.max(s[j].t0, t0); b = Math.min(s[j].t1, t1);
+      if(b>a) all.push({t0:a, t1:b});
+    }
+  }
+  all.sort(function(x,y){ return x.t0-y.t0; });
+  var sum = 0, curA = null, curB = null;
+  for(i=0;i<all.length;i++){
+    if(curA===null){ curA = all[i].t0; curB = all[i].t1; continue; }
+    if(all[i].t0 > curB){ sum += curB-curA; curA = all[i].t0; curB = all[i].t1; }
+    else if(all[i].t1 > curB){ curB = all[i].t1; }
+  }
+  if(curA!==null) sum += curB-curA;
+  return sum;
+}
+/* 스펙 §5-1 active_ms_i = (t_solve_end − t_start) − hidden_ms_i − blocked_ms_i.
+   퍼즐 span 은 이미 창으로 잘려 있으므로(pushSpan), 여기서는 겹침만 한 번 더 정리한다. */
+function puzzleActiveMs(p){
+  var t0 = p.t_start;
+  var t1 = (p.t_solve_end!=null) ? p.t_solve_end : (p.t_end!=null ? p.t_end : now());
+  var d = (t1-t0) - coveredMs([p.hidden_spans, p.blocked_spans], t0, t1);
+  return d>0 ? d : 0;
+}
+/* hidden_ms · blocked_ms 는 **누산하지 않고 스팬 배열에서 매번 재계산**한다.
+   += 로 각각 누산하면 두 종류가 겹칠 때(연출 중 앱 전환) 같은 시간이 두 번 더해져
+   스펙 §5-1·§8-1 의 (t1−t0) − hidden_ms − blocked_ms 가 음수까지 내려간다.
+   재계산 규약: hidden 이 우선, blocked 는 **합집합에서 hidden 을 뺀 잔여분**.
+   따라서 항상 hidden_ms + blocked_ms === coveredMs(합집합) 이고 두 필드는 서로소다. */
+function recalcSpanScalars(o, t0, t1){
+  var h = coveredMs([o.hidden_spans], t0, t1);
+  var u = coveredMs([o.hidden_spans, o.blocked_spans], t0, t1);
+  o.hidden_ms = h;
+  o.blocked_ms = (u - h) > 0 ? (u - h) : 0;
+}
+/* scope: 'session'(기본, 세션+퍼즐 양쪽) | 'puzzle'(퍼즐에만 적재)
+   'puzzle' 은 stall 창 오염만 막고 세션 캡 시계에서는 사용자 시간이 정상 소모되게 한다
+   — 확신도 탭처럼 **사용자 입력을 기다리는** 구간은 스펙 §2-1 캡 예산에 포함돼 있다. */
+function pushSpanAt(kind, t0, t1, scope){
+  if(!S) return;
+  if(!(t1>t0)) return;
+  if(scope!=='puzzle'){
+    if(kind==='hidden') S.hidden_spans.push({t0:t0, t1:t1});
+    else                S.blocked_spans.push({t0:t0, t1:t1});
+    recalcSpanScalars(S, S.ts_start, Math.max(t1, now()));
+  }
+  /* 퍼즐 누산기는 stall 계산 창 [t_start, t_solve_end] 로 **잘라서** 적재한다(§5-1).
+     자르지 않으면 해답 애니메이션·아하·공개 화면처럼 t_solve_end 이후에 생긴 구간이
+     active_ms_i = (t_solve_end − t_start) − hidden_ms − blocked_ms 에서 이중으로 빠져
+     active 가 음수까지 내려가고 stall 표본이 short_active 로 잘못 배제된다. */
+  var p = curP();
+  if(p && p.presented && p.t_end==null){
+    var lo = p.t_start, hi = (p.t_solve_end!=null ? p.t_solve_end : t1);
+    var a = Math.max(t0, lo), b = Math.min(t1, hi);
+    if(b>a){
+      if(kind==='hidden') p.hidden_spans.push({t0:a, t1:b});
+      else                p.blocked_spans.push({t0:a, t1:b});
+      recalcSpanScalars(p, lo, hi);
+    }
+  }
+  save();
+}
+function pushSpan(kind, t0, scope){ pushSpanAt(kind, t0, now(), scope); }
+/* 시스템이 강제로 대기시키는 구간(해답 애니메이션·판정 연출) + 퍼즐 스코프 확신 구간 */
+function beginBlock(scope){ if(!R.blockedAt){ R.blockedAt = now(); R.blockedScope = scope||'session'; } }
+function endBlock(){
+  if(R.blockedAt){
+    pushSpan('blocked', R.blockedAt, R.blockedScope);
+    R.blockedAt=0; R.blockedScope=null; R.lastTick=now();
+  }
+}
+
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden){ if(!R.hiddenAt) R.hiddenAt = now(); }
+  else if(R.hiddenAt){ pushSpan('hidden', R.hiddenAt); R.hiddenAt=0; R.lastTick=now(); }
+});
+window.addEventListener('pagehide', function(){
+  if(R.hiddenAt){ pushSpan('hidden', R.hiddenAt); R.hiddenAt=0; }
+  save();
+});
+/* bfcache 복귀 — pagehide 에서 hidden 스팬을 닫고 R.hiddenAt 을 비웠으므로
+   visibilitychange(visible) 분기는 아무것도 적재하지 못한다. 얼어 있던 구간
+   (마지막 저장 ~ 지금)을 여기서 hidden 으로 적재하지 않으면 그 시간이 통째로
+   활성 시간이 되어 복귀 직후 하드캡 절단이 난다(resumeInto 의 away 처리와 동일). */
+window.addEventListener('pageshow', function(e){
+  if(!e || !e.persisted || !S) return;
+  var t0 = S.ts_last || now();
+  R.hiddenAt = 0;
+  pushSpanAt('hidden', t0, now());
+  R.lastTick = now();
+});
+
+function boxSeconds(id){
+  var c = CONFIG.timebox_s[id];
+  var s = c ? c.s : 60;
+  if(S && S.cap_soft) s = s * CONFIG.session.soft_cap_shrink;   // 소프트캡 압축
+  return s;
+}
+function startBox(id){
+  R.box = {id:id, limitMs:boxSeconds(id)*1000, elapsed:0, graceMs:0, started:false,
+           running:true, expired:false, bar:null, giveShown:false, h1:false, h2:false};
+}
+function pauseBox(){ if(R.box) R.box.running = false; }
+function resumeBox(){ if(R.box && !R.box.expired){ R.box.running = true; R.lastTick = now(); } }
+function stopBox(){ if(R.box) { R.box.running=false; R.box.expired=true; } }
+
+function tick(){
+  var t = now(), dt = t - R.lastTick; R.lastTick = t;
+  if(dt<0) dt = 0;
+  if(dt>2000) dt = 2000;                 // 백그라운드 복귀 등 큰 점프는 잘라 낸다
+  var frozen = (R.hiddenAt!==0 || R.blockedAt!==0);
+  var b = R.box, p = curP();
+
+  /* ── 타임박스 카운트다운: t_first_input 부터, 첫 입력이 없으면 t_start + idle_grace 부터 */
+  if(b && b.running && !b.expired && !frozen && p){
+    var add = dt;                        // 이번 tick 에 elapsed 로 넘길 양
+    if(!b.started){
+      /* 유예시간도 **활성 시간**으로 잰다. 벽시계(t − t_start)로 재면 퍼즐 진입 직후
+         앱을 전환한 시간이 유예를 소모해 복귀 즉시 카운트다운이 시작된다.
+         이 블록은 !frozen && b.running 아래에 있으므로 hidden·blocked·일시정지
+         구간에서는 graceMs 가 늘지 않는다.
+         개시 tick 에서는 개시 시점 이후의 잔여분만 elapsed 로 넘긴다 (tick 폭 250ms 를
+         통째로 더하면 백그라운드 탭의 1s 스로틀에서 최대 1초를 과대 계상). */
+      if(p.t_first_input!=null){ b.started = true; add = clamp(t - p.t_first_input, 0, dt); }
+      else {
+        b.graceMs += dt;
+        var gl = CONFIG.session.idle_grace_s*1000;
+        if(b.graceMs >= gl){ b.started = true; add = clamp(b.graceMs - gl, 0, dt); }
+      }
+    }
+    if(b.started){
+      b.elapsed += add;
+      var ratio = b.limitMs>0 ? b.elapsed/b.limitMs : 1;
+      if(b.bar) b.bar.style.transform = 'scaleX('+clamp(1-ratio,0,1).toFixed(3)+')';
+      if(!b.giveShown && b.elapsed >= CONFIG.session.manual_reveal_after_s*1000){
+        b.giveShown = true; showGiveButton(p.id);
+      }
+      if(CONFIG.hints.enabled_on.indexOf(p.id)>=0){
+        if(!b.h1 && ratio >= CONFIG.hints.auto_offer_at_ratio[0]){ b.h1=true; enableHint(p.id,1); }
+        if(!b.h2 && ratio >= CONFIG.hints.auto_offer_at_ratio[1]){ b.h2=true; enableHint(p.id,2); }
+      }
+      if(b.elapsed >= b.limitMs){ b.expired=true; b.running=false; onTimeout(p); }
+    }
+  }
+
+  /* ── 척도 화면 무반응 타임아웃 → '건너뛰기' 노출 (스펙 §2-2 정상 경로)
+     확신 구간 자체가 blocked 로 잡히는 경로(p1)가 있으므로 blocked 로는 멈추지 않는다.
+     여기서 blocked 로 멈추면 '건너뛰기'가 영영 안 나와 척도 화면에서 갇힌다. */
+  if(R.scale && R.hiddenAt===0){
+    R.scale.idle += dt;
+    if(!R.scale.shown && !R.scale.touched && R.scale.idle >= CONFIG.session.scale_idle_timeout_s*1000){
+      R.scale.shown = true;
+      var sk = $(R.scale.skipSel); if(sk) sk.hidden = false;
+    }
+  }
+}
+
+/* 세션 캡 — 화면 전환(퍼즐 경계) 시점에만 검사한다(스펙 §2-1: 진행 중인 화면은 끊지 않는다).
+   캡 시계의 기준은 스펙 §8-1 그대로 **세션 시작(ts_start)** 이다. 첫 퍼즐 t_start 를 기준으로
+   삼으면 인트로 체류가 캡에서 빠지고 이어하기마다 캡이 사실상 리셋된다(스펙 "이어하기 시
+   리셋하지 않고 이어서 누산한다" 위반). 인트로 체류를 예산에서 빼야 한다는 판단은 §2-1
+   개정 사안이므로 코드가 아니라 스펙에서 결정한다. */
+function capCheck(){
+  if(!S) return false;
+  var t = now();
+  /* hidden_ms + blocked_ms 는 recalcSpanScalars 로 서로소가 보장되므로 스펙 수식을 그대로 쓴다 */
+  S.active_total_ms = (t - S.ts_start) - S.hidden_ms - S.blocked_ms;   // 스펙 §8-1 수식
+  var act = S.active_total_ms;
+  if(act > CONFIG.session.hard_cap_s*1000){ capTruncate(); return true; }
+  if(act > CONFIG.session.soft_cap_s*1000 && !S.cap_soft){ S.cap_soft = true; save(); }
+  return false;
+}
+function capTruncate(){
+  var order = CONFIG.session.cap_skip_order, i, j;
+  for(i=0;i<order.length;i++){
+    var id = order[i];
+    if(CONFIG.session.cap_exempt.indexOf(id)>=0) continue;
+    for(j=0;j<S.puzzles.length;j++){
+      var p = S.puzzles[j];
+      if(p.id===id && !p.presented && p.t_end==null){
+        p.presented = false; p.skipped = false;          // 미제시: 항 제외 대상
+        p.stall_excluded_reason = 'not_presented';
+        if(S.skipped.indexOf(id)<0) S.skipped.push(id);
+      }
+    }
+  }
+  S.dropped_at = now();
+  S.cap_truncated = true;
+  save();
+  goResult();
+}
+
+/* =========================================================================
+   §6 GA4 — 3중 가드(중복 플래그 + typeof gtag 검사 + try/catch).
+   gtag 부재·예외가 흐름을 절대 막지 않는다.
+   ========================================================================= */
+function gaStep(step){
+  if(R.gaSteps[step]) return;          // 같은 화면 재진입(재시도 루프·스왑)은 1회만
+  R.gaSteps[step] = true;
+  try{
+    if(typeof gtag === 'function'){
+      /* 이어하기 화면은 S 로드 전에 뜬다 — 후보 세션(R.pendingResume)의 play_index 를 쓴다 */
+      var src = S || R.pendingResume;
+      gtag('event','game_step',{game_id:'seeing', step:step,
+        play_index:(src?src.play_index:0), lang:LANG});
+    }
+  }catch(e){}
+}
+function fireComplete(){
+  if(R.completeFired) return;
+  R.completeFired = true;
+  try{
+    if(typeof gtag === 'function'){
+      gtag('event','game_complete',{game_id:'seeing', scene:'result', result:'m1', lang:LANG});
+    }
+  }catch(e){}
+}
+
+/* =========================================================================
+   §7 라우터 — 한 방향 전진만(뒤로가기 없음)
+   ========================================================================= */
+var SCREENS = {
+  intro:'#scrIntro', resume:'#scrResume', p1:'#scrP1', p3:'#scrP3', p4:'#scrP4',
+  conf:'#scrConf', aha:'#scrAha', known:'#scrKnown', reveal:'#scrReveal',
+  result:'#scrResult', selftest:'#scrSelftest'
+};
+function show(name, stepId){
+  for(var k in SCREENS){ if(SCREENS.hasOwnProperty(k)){ var n=$(SCREENS[k]); if(n) n.hidden = (k!==name); } }
+  R.screen = name;
+  try{ window.scrollTo(0,0); }catch(e){}
+  if(stepId) gaStep(stepId);
+}
+function stepId(kind){
+  var p = curP();
+  return (p ? p.id + '_' : '') + kind;
+}
+function renderProg(){
+  var dots = $('#prog').children, i;
+  for(i=0;i<dots.length;i++){
+    dots[i].className = (i<R.pidx) ? 'done' : (i===R.pidx ? 'on' : '');
+  }
+}
+
+/* 퍼즐 진행 큐 — 각 단계는 함수 하나, 끝나면 nextStep() 을 부른다 */
+function nextStep(){
+  var f = R.queue.shift();
+  if(f) f(); else endPuzzle();
+}
+function startPuzzle(idx){
+  if(!S) return;
+  if(capCheck()) return;                       // 하드캡 → 절단 후 결과 화면
+  R.pidx = idx;
+  var p = S.puzzles[idx];
+  if(S.skipped.indexOf(p.id)>=0){              // 이미 절단된 퍼즐은 건너뛴다
+    return (idx+1 < S.puzzles.length) ? startPuzzle(idx+1) : goResult();
+  }
+  /* 이미 끝난 기록으로 재진입하면(테스트 훅 goto 등) 기록을 새로 만든다 */
+  if(p.t_solve_end!=null || p.t_end!=null){ p = S.puzzles[idx] = newPuzzle(p.id, p.order_index); }
+  p.presented = true;
+  p.config_version = CONFIG.config_version;
+  p.t_start = now();
+  p.events.push({t:p.t_start, kind:'enter'});  // §5-1: 첫 공백이 계수되도록 가상 enter
+  R.confPrompted[p.id] = false;
+  R.ahaPrompted[p.id] = false;
+  R.knownPrompted[p.id] = false;
+  R.queue = [];
+  startBox(p.id);
+  renderProg();
+  save();
+  if(p.id==='p1_rat') enterP1();
+  else if(p.id==='p3_trap') enterP3();
+  else enterP4();
+}
+function endPuzzle(){
+  var p = curP();
+  if(p){
+    p.t_end = now();
+    if(p.t_solve_end==null) p.t_solve_end = p.t_end;
+    p.skipped = !!(p.presented && !p.solved && !p.revealed);
+    /* stall 표본 유효 조건(§5-1)을 여기서 한 번 계산해 로깅만 해 둔다 */
+    var act = puzzleActiveMs(p);
+    var activity = (p.attempts.length>=2) || p.correct || (p.hints.length>=1) ||
+                   (p.id==='p4_ninedot' && ((p.extra.strokes||[]).length>=2));
+    if(!p.presented) p.stall_excluded_reason = 'not_presented';
+    else if(act < CONFIG.stall.min_active_ms) p.stall_excluded_reason = 'short_active';
+    else if(!activity) p.stall_excluded_reason = 'no_activity';
+    else p.stall_excluded_reason = null;
+  }
+  R.box = null;
+  save();
+  var nx = R.pidx + 1;
+  if(nx < S.puzzles.length) startPuzzle(nx); else goResult();
+}
+
+/* =========================================================================
+   §8 공통 위젯
+   ========================================================================= */
+
+/* ── 8-1 확신도 탭바 (0~100, 핸들 없이 시작, 최초 터치 전 다음 비활성) ── */
+var confBar = $('#confBar'), confKnob = $('.knob', confBar), confFill = $('.fill', confBar);
+function stepConf(kind){
+  return function(){
+    var p = curP();
+    /* 확신도는 경로 무관 1회만 (스펙 §4 공통 규칙) */
+    if(R.confPrompted[p.id]){ nextStep(); return; }
+    R.confPrompted[p.id] = true;
+    var C = CONFIG.m1_copy.conf;
+    txt($('#confStage'), stageLabel());
+    if(kind==='nine'){ txt($('#confQ'), C.nine_q); txt($('#confSub'), C.nine_sub); }
+    else if(kind==='reveal'){ txt($('#confQ'), C.reveal_q); txt($('#confSub'), C.reveal_sub); }
+    else { txt($('#confQ'), C.submit_q); txt($('#confSub'), C.submit_sub); }
+    txt($('#confLo'), C.lo); txt($('#confHi'), C.hi);
+    confFill.style.width = '0'; confKnob.hidden = true;
+    $('#confVal').innerHTML = '';
+    var sm = document.createElement('small'); sm.textContent = C.hint;
+    $('#confVal').appendChild(sm);
+    $('#confNext').disabled = true;
+    $('#confSkip').hidden = true;
+    R.conf = {v:null, touched:false};
+    R.scale = {idle:0, touched:false, shown:false, skipSel:'#confSkip'};
+    confBar.removeAttribute('aria-valuenow');   // role=slider 에 빈 문자열은 유효하지 않다(미설정으로 둔다)
+    show('conf', stepId('conf'));
+  };
+}
+function confSet(v){
+  var p = curP(); if(!p) return;
+  v = quant(clamp(v,0,100));
+  R.conf.v = v; R.conf.touched = true;
+  if(R.scale) R.scale.touched = true;
+  confFill.style.width = v+'%';
+  confKnob.hidden = false; confKnob.style.left = 'calc('+v+'% - 1px)';
+  $('#confVal').textContent = v;
+  confBar.setAttribute('aria-valuenow', String(v));
+  $('#confNext').disabled = false;
+}
+/* 'pad' 이벤트는 **입력 1회당 1개**만 남긴다. pointermove 마다 쌓으면 §5-1 최장 공백
+   재계산이 드래그 궤적 때문에 달라진다(값 자체는 confSet 이 갱신한다). */
+function confFromX(clientX){
+  var r = confBar.getBoundingClientRect();
+  if(r.width<=0) return;
+  confSet((clientX - r.left)/r.width*100);
+}
+confBar.addEventListener('pointerdown', function(e){
+  e.preventDefault();
+  try{ confBar.setPointerCapture(e.pointerId); }catch(err){}
+  confBar._down = true; logEvent('pad', false); confFromX(e.clientX);
+});
+confBar.addEventListener('pointermove', function(e){ if(confBar._down) confFromX(e.clientX); });
+confBar.addEventListener('pointerup', function(){ confBar._down = false; });
+confBar.addEventListener('pointercancel', function(){ confBar._down = false; });
+confBar.addEventListener('keydown', function(e){
+  var q = CONFIG.session.pad_quantize, base = (R.conf && R.conf.v!=null) ? R.conf.v : 50;
+  if(e.key==='ArrowLeft' || e.key==='ArrowDown'){ e.preventDefault(); logEvent('pad',false); confSet(base-q); }
+  else if(e.key==='ArrowRight' || e.key==='ArrowUp'){ e.preventDefault(); logEvent('pad',false); confSet(base+q); }
+  else if(e.key==='Home'){ e.preventDefault(); logEvent('pad',false); confSet(0); }
+  else if(e.key==='End'){ e.preventDefault(); logEvent('pad',false); confSet(100); }
+});
+function confCommit(touched){
+  var p = curP();
+  if(!p || !R.conf || R.screen!=='conf') return;   // 화면을 떠난 뒤의 늦은 클릭 방지
+  p.conf = {v: touched ? R.conf.v : null, touched: !!touched, t: now()};
+  R.scale = null; R.conf = null;
+  save();
+  nextStep();
+}
+$('#confNext').addEventListener('click', function(){ if(R.conf && R.conf.touched) confCommit(true); });
+$('#confSkip').addEventListener('click', function(){ confCommit(false); });
+
+/* ── 8-2 아하 2D 탭패드 (x=쾌감, y=갑작스러움, 1탭, 양자화 5) ── */
+var ahaPad = $('#ahaPad'), ahaDot = $('.dot', ahaPad);
+function stepAha(ctxOrFn){
+  return function(){
+    var p = curP();
+    if(CONFIG.aha.collect_on.indexOf(p.id)<0 || R.ahaPrompted[p.id]){ nextStep(); return; }
+    R.ahaPrompted[p.id] = true;
+    var ctx = (typeof ctxOrFn==='function') ? ctxOrFn() : ctxOrFn;
+    var A = CONFIG.m1_copy.aha;
+    txt($('#ahaStage'), stageLabel());
+    txt($('#ahaQ'), p.id==='p3_trap' ? A.q_trap : (ctx==='after_reveal' ? A.q_reveal : A.q_self));
+    /* 축 라벨도 전부 config 에서 — HTML 에 상수로 박으면 m1_copy.aha.x/x_lo/x_hi 가
+       고쳐도 화면이 안 바뀌는 죽은 키가 된다(confLo/confHi 와 같은 규약). */
+    txt($('#ahaY'), A.y); txt($('#ahaX'), A.x);
+    txt($('#ahaXLo'), A.x_lo); txt($('#ahaXHi'), A.x_hi);
+    txt($('#ahaVal'), '');
+    var sm = document.createElement('small'); sm.textContent = A.hint;
+    $('#ahaVal').innerHTML=''; $('#ahaVal').appendChild(sm);
+    ahaDot.hidden = true;
+    $('#ahaNext').disabled = true; $('#ahaSkip').hidden = true;
+    R.aha = {sudden:null, pleasure:null, touched:false, context:ctx};
+    R.scale = {idle:0, touched:false, shown:false, skipSel:'#ahaSkip'};
+    show('aha', stepId('aha'));
+  };
+}
+function ahaFromPoint(clientX, clientY){
+  var r = ahaPad.getBoundingClientRect();
+  if(r.width<=0||r.height<=0) return;
+  var px = quant(clamp((clientX-r.left)/r.width*100, 0, 100));
+  var py = quant(clamp((1-(clientY-r.top)/r.height)*100, 0, 100));
+  R.aha.pleasure = px; R.aha.sudden = py; R.aha.touched = true;
+  if(R.scale) R.scale.touched = true;
+  ahaDot.hidden = false;
+  ahaDot.style.left = px+'%'; ahaDot.style.top = (100-py)+'%';
+  $('#ahaVal').textContent = '갑작스러움 '+py+' · 시원함 '+px;
+  $('#ahaNext').disabled = false;
+}
+ahaPad.addEventListener('pointerdown', function(e){
+  e.preventDefault();
+  try{ ahaPad.setPointerCapture(e.pointerId); }catch(err){}
+  ahaPad._down = true; logEvent('pad', false); ahaFromPoint(e.clientX, e.clientY);
+});
+ahaPad.addEventListener('pointermove', function(e){ if(ahaPad._down) ahaFromPoint(e.clientX,e.clientY); });
+ahaPad.addEventListener('pointerup', function(){ ahaPad._down = false; });
+ahaPad.addEventListener('pointercancel', function(){ ahaPad._down = false; });
+function ahaCommit(touched){
+  var p = curP();
+  if(!p || !R.aha || R.screen!=='aha') return;      // 화면을 떠난 뒤의 늦은 클릭 방지
+  p.aha = {
+    mode: CONFIG.aha.mode_default,
+    sudden: touched ? R.aha.sudden : null,
+    pleasure: touched ? R.aha.pleasure : null,
+    certain: null,                       // pad2d 는 확신 차원을 수집하지 않는다
+    context: R.aha.context,
+    touched: !!touched,
+    t: now()
+  };
+  R.scale = null; R.aha = null;
+  save();
+  nextStep();
+}
+$('#ahaNext').addEventListener('click', function(){ if(R.aha && R.aha.touched) ahaCommit(true); });
+$('#ahaSkip').addEventListener('click', function(){ ahaCommit(false); });
+
+/* ── 8-3 기지 확인 (척도 아님, 예/아니오 1탭) ── */
+function stepKnown(){
+  return function(){
+    var p = curP();
+    if(R.knownPrompted[p.id]){ nextStep(); return; }
+    R.knownPrompted[p.id] = true;
+    txt($('#knownStage'), stageLabel());
+    txt($('#knownQ'), CONFIG.m1_copy.known.q);
+    txt($('#knownSub'), CONFIG.m1_copy.known.sub);
+    R.known = function(yes){ p.known_before = !!yes; save(); nextStep(); };
+    show('known', stepId('known'));
+  };
+}
+$('#knownYes').addEventListener('click', function(){ logEvent('tap',false); if(R.known){ var f=R.known; R.known=null; f(true); } });
+$('#knownNo').addEventListener('click',  function(){ logEvent('tap',false); if(R.known){ var f=R.known; R.known=null; f(false); } });
+
+/* ── 8-4 공개 화면 ── */
+function stageLabel(){
+  var p = curP();
+  return p ? ('퍼즐 '+p.order_index+' / '+S.puzzles.length) : '';
+}
+function el(tag, cls, text){
+  var n = document.createElement(tag);
+  if(cls) n.className = cls;
+  if(text!=null) n.textContent = text;
+  return n;
+}
+function revealReset(){
+  $('#revBody').innerHTML = ''; $('#revBody2').innerHTML = '';
+  $('#revCvWrap').hidden = true; $('#revKnown').hidden = true;
+  txt($('#revStage'), stageLabel());
+  $('#revNext').hidden = false;
+  $('#revNext').disabled = false;
+}
+function verdict(icon, label){
+  var v = el('div','verdict');
+  v.appendChild(el('i',null,icon));
+  v.appendChild(el('span',null,label));
+  return v;
+}
+
+/* =========================================================================
+   §9 p1_rat — 세 낱말의 공통점
+   ========================================================================= */
+function enterP1(){
+  var p = curP(), item = ratItem();
+  p.extra = {prompt_id:item.id};
+  txt($('#p1Q'), item.prompt);
+  var box = $('#p1Cues'); box.innerHTML = '';
+  for(var i=0;i<item.cues.length;i++){
+    /* 제시어만 보여준다. '물○' 처럼 빈칸 위치를 그리면 힌트 ①·②가 미리 새어 나간다 */
+    var c = el('div','cue');
+    c.appendChild(el('b',null,item.cues[i]));
+    box.appendChild(c);
+  }
+  var inp = $('#p1In');
+  inp.value = ''; inp.disabled = false;
+  $('#p1Fb').hidden = true;
+  $('#p1Go').disabled = false;
+  $('#p1H1').disabled = true; $('#p1H2').disabled = true;
+  $('#p1Give').hidden = true;
+  $('#p1Hb').innerHTML = '';
+  R.box.bar = $('#tb1 i'); R.box.bar.style.transform = 'scaleX(1)';
+  show('p1', stepId('solve'));
+  try{ inp.focus({preventScroll:true}); }catch(e){ }
+}
+$('#p1In').addEventListener('input', function(){
+  if(R.screen!=='p1') return;
+  logEvent('key', true);
+});
+$('#p1In').addEventListener('keydown', function(e){
+  if(e.key==='Enter'){ e.preventDefault(); p1Submit(); }
+});
+$('#p1Go').addEventListener('click', p1Submit);
+
+function p1Submit(){
+  if(R.screen!=='p1') return;
+  var p = curP(), raw = $('#p1In').value;
+  if(!String(raw).trim()) return;
+  logEvent('submit', true);
+  /* 최초 제출 직전 확신도 1회 — 확신을 받고 나서 채점한다 */
+  if(!R.confPrompted[p.id]){
+    R.pendingSubmit = raw;
+    /* p1 만 t_solve_end 가 확신 화면 **뒤**(정답 판정 시점)에 찍히므로, 확신 체류가
+       stall 창 [t_start, t_solve_end] 안에 그대로 남는다. 스펙 §0-1·§5-1 이 요구하는
+       '확신 구간 전면 차감'을 지키려면 이 구간을 blocked_spans 로 빼야 한다. */
+    pauseBox(); beginBlock('puzzle');
+    R.queue = [function(){ endBlock(); resumeBox(); show('p1', stepId('solve')); p1Judge(R.pendingSubmit); R.pendingSubmit=null; }];
+    stepConf('submit')();
+    return;
+  }
+  p1Judge(raw);
+}
+function p1Judge(raw){
+  var p = curP(), item = ratItem();
+  p.attempts.push({t:now(), input:String(raw)});
+  var ok = ratCorrect(raw, item);
+  var fb = $('#p1Fb'); fb.hidden = false;
+  if(!ok){
+    fb.className = 'fb';
+    fb.textContent = CONFIG.m1_copy.p1.wrong;
+    /* 스펙 §4: solved 는 '확정 제출/완성(정오 무관)'이다. 오답 제출도 확정 제출이므로
+       여기서 solved 를 세운다 — 안 세우면 5회 제출하고 만료한 사용자와 아무것도 하지
+       않고 만료한 사용자가 같은 플래그 조합으로 남고, p3(제출 즉시 solved=true)와
+       같은 필드가 퍼즐마다 다른 뜻이 된다. correct 는 '재시도 중 하나라도 정답'이므로
+       여기서는 올리지 않는다. */
+    p.solved = true;
+    save();
+    return;                                   // 타임박스 내 재시도 무제한
+  }
+  /* 정답 — 확정 제출로 풀이 구간 종료 */
+  fb.className = 'fb good';
+  fb.textContent = CONFIG.m1_copy.p1.right;
+  p.solved = true; p.correct = true; p.t_solve_end = now();
+  stopBox();
+  $('#p1Go').disabled = true; $('#p1In').disabled = true;
+  save();
+  /* 짧은 연출 — 시스템 강제 대기이므로 blocked_spans 에 적재 */
+  beginBlock();
+  var tok = ++R.token, wait = reduceMotion() ? 350 : 800;
+  setTimeout(function(){
+    if(tok!==R.token) return;
+    endBlock();
+    R.queue = [ stepAha('self_solved'), stepRevealP1(true) ];
+    nextStep();
+  }, wait);
+}
+function p1End(kind){                            // kind: 'timeout' | 'giveup'
+  var p = curP();
+  if(p.t_solve_end!=null) return;
+  p.t_solve_end = now();
+  if(kind==='timeout') p.timeout = true; else p.gave_up = true;
+  p.revealed = true; p.correct = false;          // 풀이를 끝내기 전 해답 열람
+  stopBox();
+  $('#p1Go').disabled = true; $('#p1In').disabled = true;
+  save();
+  R.queue = [ stepConf('reveal'), stepRevealP1(false), stepAha('after_reveal'), stepKnown() ];
+  nextStep();
+}
+$('#p1Give').addEventListener('click', function(){ p1End('giveup'); });
+
+function stepRevealP1(knownInline){
+  return function(){
+    var p = curP(), item = ratItem();
+    if(p.revealed) logEvent('reveal', false);     // 풀이를 끝내기 전 해답 열람(스펙 §5-1 kind)
+    revealReset();
+    var b = $('#revBody');
+    b.appendChild(verdict(p.correct ? '✓' : '○',
+      p.correct ? CONFIG.m1_copy.p1.head_solved : CONFIG.m1_copy.p1.head_revealed));
+    /* 정답·예시 낱말은 **전부 config 에서** 만든다(스펙 §4 P1·§7-1: 문항·정답을 코드에
+       상수로 박지 않는다). rat_pool 을 갈아 끼우면 이 화면도 함께 바뀐다.
+       예시 낱말은 rat_pool[].examples[정답] 이 있으면 그것을, 없으면 cues+정답 조합을 쓴다. */
+    for(var ai=0; ai<item.accept.length; ai++){
+      var ans = item.accept[ai];
+      var ex = (item.examples && item.examples[ans]) ? item.examples[ans]
+             : item.cues.map(function(c){ return c+ans; });
+      var row = el('div','answer', ans);
+      row.appendChild(el('small', null, ex.join(' · ')));
+      b.appendChild(row);
+    }
+    b.appendChild(el('p','p',item.explain));
+    if(knownInline){
+      $('#revKnown').hidden = false;
+      txt($('#revKnownQ'), CONFIG.m1_copy.known.q);
+      R.knownPrompted[p.id] = true;
+      /* 응답을 받으면 '계속'을 켜 줄 뿐, 전진은 사용자가 직접 누른다(revNext 리스너).
+         여기서 곧장 nextStep() 하면 해답·해설이 한 프레임만 보이고 사라진다. */
+      $('#revNext').disabled = true;
+      R.known = function(yes){ p.known_before = !!yes; save(); $('#revNext').disabled = false; };
+      revKnownArm();
+    }
+    show('reveal', stepId('reveal'));
+  };
+}
+/* 공개 화면 하단 인라인 기지 확인 */
+function revKnownArm(){
+  var y = $('#revKnownYes'), n = $('#revKnownNo');
+  y.disabled = false; n.disabled = false;
+  y.className = ''; n.className = '';
+}
+function revKnownPick(yes){
+  if($('#revKnown').hidden || !R.known) return;   // 인라인 기지 확인이 안 떠 있으면 무시
+  logEvent('tap', false);
+  var y = $('#revKnownYes'), n = $('#revKnownNo');
+  y.disabled = true; n.disabled = true;
+  (yes ? y : n).className = 'sel';        // 고른 쪽을 남겨 둔다(응답이 접수됐다는 신호)
+  if(R.known){ var f = R.known; R.known = null; f(yes); }
+}
+$('#revKnownYes').addEventListener('click', function(){ revKnownPick(true); });
+$('#revKnownNo').addEventListener('click', function(){ revKnownPick(false); });
+$('#revNext').addEventListener('click', function(){ if(!$('#revNext').disabled) nextStep(); });
+
+/* 힌트 (p1·p4) — auto_offer_at_ratio 시점에 버튼이 '활성화'될 뿐 내용은 열리지 않는다 */
+function enableHint(pid, level){
+  var sel = (pid==='p1_rat') ? '#p1H' : '#p4H';
+  var btn = $(sel+level); if(btn) btn.disabled = false;
+}
+function showGiveButton(pid){
+  var b = (pid==='p1_rat') ? $('#p1Give') : (pid==='p3_trap') ? $('#p3Give') : $('#p4Give');
+  if(b) b.hidden = false;
+}
+function openHint(level){
+  var p = curP(); if(!p) return;
+  var texts = (p.id==='p1_rat') ? ratItem().hints : CONFIG.ninedot.hints;
+  var boxSel = (p.id==='p1_rat') ? '#p1Hb' : '#p4Hb';
+  var wrap = $(boxSel);
+  if(wrap.querySelector('[data-l="'+level+'"]')) return;    // 이미 연 힌트
+  var d = el('div','h'); d.setAttribute('data-l', String(level));
+  d.appendChild(el('b',null, level===1 ? '①' : '②'));
+  d.appendChild(document.createTextNode(texts[level-1]));
+  wrap.appendChild(d);
+  p.hints.push({level:level, t:now()});
+  logEvent('hint', false);
+  if(level === CONFIG.hints.decisive_level){ p.assisted = true; p.assist_level = CONFIG.hints.decisive_level; }
+  if(p.id==='p4_ninedot' && level===2){ R.nine.showHint = true; nineDraw(); }
+  save();
+}
+$('#p1H1').addEventListener('click', function(){ openHint(1); });
+$('#p1H2').addEventListener('click', function(){ openHint(2); });
+$('#p4H1').addEventListener('click', function(){ openHint(1); });
+$('#p4H2').addEventListener('click', function(){ openHint(2); });
+
+/* =========================================================================
+   §10 p3_trap — 함정 라운드
+   ========================================================================= */
+function trapItem(){
+  var p = curP(), id = p.extra.item_id, i;
+  for(i=0;i<CONFIG.trap_pool.length;i++) if(CONFIG.trap_pool[i].id===id) return CONFIG.trap_pool[i];
+  return CONFIG.trap_pool[0];
+}
+function trapPickUnseen(seenIds){
+  var pool = [], i;
+  for(i=0;i<CONFIG.trap_pool.length;i++){
+    if(seenIds.indexOf(CONFIG.trap_pool[i].id)<0) pool.push(CONFIG.trap_pool[i]);
+  }
+  return pool.length ? pickOne(pool) : null;
+}
+function enterP3(){
+  var p = curP();
+  if(!p.extra || !p.extra.item_id){
+    /* 첫 출제는 풀에서 균등 랜덤 (trap_first: "random") */
+    var first = (CONFIG.trap_first==='random') ? pickOne(CONFIG.trap_pool) : CONFIG.trap_pool[0];
+    p.extra = {item_id:first.id, swapped:false, swap_from:null, answer_raw:null, discarded:null};
+  }
+  var item = trapItem();
+  txt($('#p3Text'), item.text);
+  txt($('#p3Unit'), item.unit);
+  R.trapVal = '';
+  p3Paint();
+  buildKeypad();
+  $('#p3Give').hidden = true;
+  R.box.bar = $('#tb3 i'); R.box.bar.style.transform = 'scaleX(1)';
+  show('p3', stepId('solve'));
+}
+function p3Paint(){
+  var v = $('#p3Val');
+  if(R.trapVal===''){ v.textContent = '—'; v.className = 'empty'; }
+  else { v.textContent = R.trapVal; v.className = ''; }
+  $('#p3Go').disabled = (R.trapVal==='');
+}
+function buildKeypad(){
+  var kp = $('#p3Kp');
+  if(kp.childNodes.length) return;                 // 1회만 만든다
+  var keys = ['1','2','3','4','5','6','7','8','9','지움','0',''];
+  for(var i=0;i<keys.length;i++){
+    var k = keys[i], b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = k;
+    if(k==='지움') b.className = 'fn';
+    if(k===''){ b.className = 'void'; b.disabled = true; }
+    b.setAttribute('data-k', k);
+    kp.appendChild(b);
+  }
+  kp.addEventListener('click', function(e){
+    var t = e.target;
+    if(!t || t.tagName!=='BUTTON' || R.screen!=='p3') return;
+    var k = t.getAttribute('data-k');
+    if(k==='') return;
+    logEvent('key', true);
+    if(k==='지움') R.trapVal = R.trapVal.slice(0,-1);
+    else if(R.trapVal.length < 6) R.trapVal += k;
+    p3Paint();
+  });
+}
+$('#p3Go').addEventListener('click', function(){
+  if(R.screen!=='p3' || R.trapVal==='') return;
+  var p = curP();
+  logEvent('submit', true);
+  p.attempts.push({t:now(), input:String(R.trapVal)});
+  p.extra.answer_raw = String(R.trapVal);
+  p.solved = true;
+  p.correct = (Number(R.trapVal) === trapItem().answer);
+  p.t_solve_end = now();
+  stopBox();
+  save();
+  p3Flow('submit');
+});
+$('#p3Give').addEventListener('click', function(){ p3End('giveup'); });
+function p3End(kind){
+  var p = curP();
+  if(p.t_solve_end!=null) return;
+  p.t_solve_end = now();
+  if(kind==='timeout') p.timeout = true; else p.gave_up = true;
+  p.extra.answer_raw = null;
+  p.correct = false;
+  p.revealed = true;
+  stopBox();
+  save();
+  p3Flow('reveal');
+}
+/* 어떤 경로로도 확신도 → 기지 확인 → 아하 → 공개 순서를 반드시 통과한다 */
+function p3Flow(kind){
+  R.queue = [ stepConf(kind==='submit' ? 'submit' : 'reveal'),
+              stepKnownTrap(), stepAha('self_solved'), stepRevealP3() ];
+  nextStep();
+}
+function stepKnownTrap(){
+  return function(){
+    var p = curP();
+    txt($('#knownStage'), stageLabel());
+    txt($('#knownQ'), CONFIG.m1_copy.known.q_trap);
+    txt($('#knownSub'), CONFIG.m1_copy.known.sub);
+    R.known = function(yes){
+      if(!yes){ p.known_before = false; save(); nextStep(); return; }
+      var canSwap = !p.extra.swapped && (CONFIG.trap_max_swap>0);
+      var nextItem = canSwap ? trapPickUnseen([p.extra.item_id, p.extra.swap_from]) : null;
+      if(nextItem){ trapSwap(nextItem); return; }
+      /* 스왑 소진·교체본 없음 → 라운드를 건너뛰지 않고 그대로 진행 */
+      p.known_before = true; save(); nextStep();
+    };
+    show('known', stepId('known'));
+  };
+}
+function trapSwap(nextItem){
+  var p = curP(), t = now();
+  /* 폐기되는 1회차 라운드는 **원값을 통째로** extra.discarded 에 옮긴 뒤(스펙 §4 P3),
+     퍼즐의 타이밍 창을 새로 연다. t_start 를 그대로 두면 교체본의 pre_input_gap_ms 와
+     stall 창에 폐기 라운드 전체(문제 읽기·키패드·확신도·기지 확인)가 섞이고,
+     타임박스의 idle_grace 게이트도 이미 만족돼 카운트다운이 즉시 시작된다. */
+  p.extra.discarded = {
+    item_id: p.extra.item_id,
+    conf: {v:p.conf.v, touched:p.conf.touched, t:p.conf.t},
+    answer_raw: p.extra.answer_raw,
+    aha: null,
+    t_start: p.t_start, t_first_input: p.t_first_input, t_solve_end: p.t_solve_end,
+    pre_input_gap_ms: p.pre_input_gap_ms,
+    attempts: p.attempts, events: p.events,
+    hidden_ms: p.hidden_ms, hidden_spans: p.hidden_spans,
+    blocked_ms: p.blocked_ms, blocked_spans: p.blocked_spans
+  };
+  p.extra.swap_from = p.extra.item_id;
+  p.extra.swapped = true;
+  p.extra.item_id = nextItem.id;
+  p.extra.answer_raw = null;
+  p.conf = {v:null, touched:false, t:0};
+  p.solved = false; p.correct = false; p.revealed = false; p.timeout = false; p.gave_up = false;
+  p.known_before = null;
+  /* ── 교체본 기준으로 타이밍·시도 기록 초기화 (원값은 discarded 에 남아 있다) ── */
+  p.t_start = t;
+  p.t_first_input = null; p.pre_input_gap_ms = null; p.t_solve_end = null;
+  p.attempts = [];
+  p.events = [{t:t, kind:'enter'}];
+  p.hidden_ms = 0; p.hidden_spans = [];
+  p.blocked_ms = 0; p.blocked_spans = [];
+  p.hints = []; p.assisted = false; p.assist_level = 0;
+  R.confPrompted[p.id] = false;
+  R.queue = [];
+  R.trapVal = '';
+  startBox(p.id);
+  save();
+  enterP3();
+}
+function stepRevealP3(){
+  return function(){
+    var p = curP(), item = trapItem(), C = CONFIG.m1_copy.p3;
+    if(p.revealed) logEvent('reveal', false);     // 스펙 §5-1 kind — 만료·포기로 해답을 열람
+    revealReset();
+    var b = $('#revBody');
+    var touched = p.conf.touched, cv = p.conf.v;
+    function fill(s){ return String(s).replace('{conf}', String(cv)); }
+    /* 분기 우선순위: 기지자 > 무응답자 > 정답자/오답자 */
+    var branch;
+    if(p.known_before === true) branch = 'known';
+    else if(p.extra.answer_raw == null) branch = 'none';
+    else if(p.correct) branch = 'right';
+    else branch = 'wrong';
+
+    if(branch==='known'){
+      b.appendChild(verdict('◎','이미 아는 문제'));
+      b.appendChild(el('p','p', C.known));
+    } else if(branch==='none'){
+      b.appendChild(verdict('○','답을 정하지 않고 지나감'));
+      b.appendChild(el('p','p', touched ? fill(C.none) : C.none_untouched));
+    } else if(branch==='right'){
+      b.appendChild(verdict('✓','갈림을 그대로 지나옴'));
+      b.appendChild(el('p','p', touched ? fill(C.right) : C.right_untouched));
+    } else {
+      b.appendChild(verdict('◇','확신 vs 진실'));
+      if(touched) b.appendChild(el('p','p', fill(C.wrong1)));
+      else b.appendChild(el('p','p', C.wrong1_untouched));
+      b.appendChild(el('p','p', C.wrong2));
+    }
+    var b2 = $('#revBody2');
+    var ans = el('div','answer', String(item.answer)+item.unit);
+    if(p.extra.answer_raw!=null){
+      ans.appendChild(el('small',null,'적어 주신 답: '+p.extra.answer_raw+item.unit));
+    }
+    b2.appendChild(ans);
+    b2.appendChild(el('p','p', item.explain));
+    show('reveal', stepId('reveal'));
+  };
+}
+
+/* =========================================================================
+   §11 p4_ninedot — 아홉 개의 점
+   좌표: 격자 인덱스 (x,y ∈ {−1..3}, y 위쪽 +) ↔ units = 인덱스 × spacing_units.
+   판정은 units 공간에서만(스펙 §4 P4), 렌더는 units→px 스케일만 적용한다.
+   ========================================================================= */
+var MARGIN_U = 30;    // 앵커 격자 바깥 여백(units) — 판정에는 영향 없음
+/* 탭 히트 반경의 CSS px 하한(반지름). 지름 44px = 최소 터치 타깃.
+   **판정 반경(hit_radius_units 22)은 건드리지 않는다** — 이건 손가락으로 앵커를 집는
+   히트테스트에만 적용된다. 카드 폭이 460px 를 넘지 못해 22 units 를 px 로 환산하면
+   어떤 뷰포트에서도 44px 에 미달하기 때문(390px 화면에서 지름 31.4px). */
+var TAP_MIN_R_PX = 22;
+function makeNineView(cv){
+  return {
+    cv:cv, ctx:cv.getContext('2d'), size:0, dpr:1, scale:1, uMin:0, span:0,
+    fit:function(maxPx){
+      var wrapW = cv.parentNode.clientWidth || 320;
+      var size = Math.max(220, Math.min(wrapW, maxPx||400));
+      var step = CONFIG.ninedot.anchor_step_units;
+      var rings = CONFIG.ninedot.outer_anchor_rings;    // 바깥 앵커 링 수 — 뷰 범위도 따라간다
+      var lo = -rings*step - MARGIN_U, hi = (CONFIG.ninedot.grid.n-1+rings)*step + MARGIN_U;
+      this.uMin = lo; this.span = hi - lo;
+      this.size = size;
+      this.scale = size / this.span;
+      this.dpr = Math.min(window.devicePixelRatio||1, 3);
+      cv.style.width = size+'px'; cv.style.height = size+'px';
+      cv.width = Math.floor(size*this.dpr); cv.height = Math.floor(size*this.dpr);
+      this.ctx.setTransform(this.dpr,0,0,this.dpr,0,0);
+    },
+    ux:function(gx){ return (gx*CONFIG.ninedot.anchor_step_units - this.uMin)*this.scale; },
+    uy:function(gy){ return this.size - (gy*CONFIG.ninedot.anchor_step_units - this.uMin)*this.scale; },
+    px2u:function(x,y){
+      return { x:(x/this.scale + this.uMin)/CONFIG.ninedot.anchor_step_units,
+               y:((this.size - y)/this.scale + this.uMin)/CONFIG.ninedot.anchor_step_units };
+    }
+  };
+}
+function anchorList(){
+  var out = [], gx, gy;
+  var n = CONFIG.ninedot.grid.n, r = CONFIG.ninedot.outer_anchor_rings;  // 스펙 §7-1
+  for(gy=-r; gy<=n-1+r; gy++)
+    for(gx=-r; gx<=n-1+r; gx++)
+      out.push({x:gx, y:gy, real:(gx>=0 && gx<n && gy>=0 && gy<n)});
+  return out;
+}
+function enterP4(){
+  var p = curP();
+  p.extra = {strokes:[], vertices_tapped:0, out_of_box_first_t:null,
+             disconnected:false, hit_radius_px:0};
+  R.nine = {view:makeNineView($('#nine')), anchors:anchorList(), start:null,
+            strokes:[], preview:null, undoLeft:0, showHint:false, locked:false};
+  R.nine.view.fit(400);
+  recordHitRadius(p);
+  txt($('#p4Cnt'), '0 / '+CONFIG.ninedot.max_strokes+'획');
+  $('#p4Undo').disabled = true;
+  $('#p4H1').disabled = true; $('#p4H2').disabled = true;
+  $('#p4Give').hidden = true;
+  $('#p4Hb').innerHTML = '';
+  R.box.bar = $('#tb4 i'); R.box.bar.style.transform = 'scaleX(1)';
+  show('p4', stepId('solve'));
+  R.nine.view.fit(400);
+  recordHitRadius(p);
+  nineDraw();
+}
+/* 실제 탭 히트 반경 (units). 판정 반경(22 units)을 쓰되 화면상 반지름이 TAP_MIN_R_PX 아래로
+   내려가지 않게 올린다. 불변식 hit_radius < anchor_step/2 를 넘지 않도록 0.49×step 로 상한을 건다
+   (최소 캔버스 220px 에서도 46 units 이므로 실제로는 걸리지 않는 안전판). */
+function tapRadiusUnits(v){
+  var stepU = CONFIG.ninedot.anchor_step_units;
+  var minU = (v && v.scale>0) ? (TAP_MIN_R_PX / v.scale) : CONFIG.ninedot.hit_radius_units;
+  return Math.min(Math.max(CONFIG.ninedot.hit_radius_units, minU), stepU*0.49);
+}
+/* extra.hit_radius_px 는 스펙 §4 P4 "실제 사용된 px 반경" — 판정 상수의 환산값이 아니라 탭 히트에 쓴 값 */
+function recordHitRadius(p){
+  var v = R.nine && R.nine.view;
+  if(p && v && v.scale>0) p.extra.hit_radius_px = Math.round(tapRadiusUnits(v) * v.scale * 10) / 10;
+}
+function nineHit(px, py){
+  var v = R.nine.view, u = v.px2u(px,py), best=null, bd=1e9;
+  var stepU = CONFIG.ninedot.anchor_step_units;
+  var Ru = tapRadiusUnits(v) / stepU;   // 인덱스 단위
+  for(var i=0;i<R.nine.anchors.length;i++){
+    var a = R.nine.anchors[i];
+    var d = Math.sqrt((u.x-a.x)*(u.x-a.x) + (u.y-a.y)*(u.y-a.y));
+    if(d<bd){ bd=d; best=a; }
+  }
+  return (best && bd<=Ru) ? best : null;
+}
+function nineDraw(){
+  var N = R.nine; if(!N) return;
+  var v = N.view, ctx = v.ctx, i, j;
+  ctx.clearRect(0,0,v.size,v.size);
+  /* 배경 */
+  ctx.fillStyle = '#0b0f1c';
+  ctx.fillRect(0,0,v.size,v.size);
+  /* 3×3 상자(연출용 옅은 테두리) */
+  ctx.strokeStyle = 'rgba(255,255,255,.06)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(v.ux(0), v.uy(2), v.ux(2)-v.ux(0), v.uy(0)-v.uy(2));
+  /* 힌트 ② — 상자 밖으로 나간 예시 1획 */
+  if(N.showHint){
+    ctx.save();
+    ctx.strokeStyle = 'rgba(232,185,58,.28)';
+    ctx.lineWidth = 3; ctx.setLineDash([6,6]); ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(v.ux(-1), v.uy(-1)); ctx.lineTo(v.ux(2), v.uy(2)); ctx.stroke();
+    ctx.restore();
+  }
+  /* 확정된 획 */
+  ctx.strokeStyle = '#e8b93a'; ctx.lineWidth = 4; ctx.lineCap='round'; ctx.lineJoin='round';
+  for(i=0;i<N.strokes.length;i++){
+    var st = N.strokes[i];
+    ctx.beginPath();
+    ctx.moveTo(v.ux(st[0].x), v.uy(st[0].y));
+    for(j=1;j<st.length;j++) ctx.lineTo(v.ux(st[j].x), v.uy(st[j].y));
+    ctx.stroke();
+  }
+  /* 고무줄 미리보기 */
+  var last = nineLastAnchor();
+  if(last && N.preview && !N.locked && N.strokes.length < CONFIG.ninedot.max_strokes){
+    ctx.save();
+    ctx.strokeStyle = 'rgba(232,185,58,.45)'; ctx.lineWidth = 2; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(v.ux(last.x), v.uy(last.y));
+    ctx.lineTo(N.preview.x, N.preview.y); ctx.stroke();
+    ctx.restore();
+  }
+  /* 앵커 — 실점 9개는 선명, 바깥 16개는 옅게 */
+  for(i=0;i<N.anchors.length;i++){
+    var a = N.anchors[i], x=v.ux(a.x), y=v.uy(a.y);
+    ctx.beginPath();
+    ctx.arc(x, y, a.real ? 6.5 : 3.4, 0, Math.PI*2);
+    ctx.fillStyle = a.real ? '#e9ecf6' : 'rgba(233,236,246,.24)';
+    ctx.fill();
+  }
+  /* 현재 펜 끝 강조 */
+  if(last){
+    ctx.beginPath();
+    ctx.arc(v.ux(last.x), v.uy(last.y), 10, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(232,185,58,.75)'; ctx.lineWidth = 2; ctx.stroke();
+  }
+}
+function nineLastAnchor(){
+  var N = R.nine;
+  if(N.strokes.length) { var st = N.strokes[N.strokes.length-1]; return st[st.length-1]; }
+  return N.start;
+}
+function nineLocal(e){
+  var r = R.nine.view.cv.getBoundingClientRect();
+  return {x:e.clientX-r.left, y:e.clientY-r.top};
+}
+function nineConfirm(a){
+  var N = R.nine, p = curP();
+  var last = nineLastAnchor();
+  if(last && last.x===a.x && last.y===a.y) return;      // 같은 앵커 연속 탭은 무시
+  logEvent('tap', true);
+  p.extra.vertices_tapped++;
+  if(p.extra.out_of_box_first_t==null &&
+     (a.x<0 || a.y<0 || a.x>=CONFIG.ninedot.grid.n || a.y>=CONFIG.ninedot.grid.n)){
+    p.extra.out_of_box_first_t = now();
+  }
+  if(!last){ N.start = {x:a.x, y:a.y}; }
+  else {
+    if(N.strokes.length >= CONFIG.ninedot.max_strokes) return;
+    N.strokes.push([{x:last.x,y:last.y},{x:a.x,y:a.y}]);
+    p.extra.strokes = N.strokes.slice();
+    p.attempts.push({t:now(), input:'stroke:'+last.x+','+last.y+'->'+a.x+','+a.y});
+  }
+  /* undo 크레딧 — 탭 한 번마다 CONFIG.ninedot.undo_depth 만큼 되돌릴 수 있게 채운다.
+     depth 1 이면 종전(한 번 되돌리면 새 탭 전까지 비활성)과 완전히 같다. */
+  N.undoLeft = CONFIG.ninedot.undo_depth;
+  $('#p4Undo').disabled = !(N.undoLeft > 0);
+  txt($('#p4Cnt'), N.strokes.length+' / '+CONFIG.ninedot.max_strokes+'획');
+  save();
+  nineDraw();
+  if(N.strokes.length >= CONFIG.ninedot.max_strokes) p4Complete();
+}
+(function(){
+  var cv = $('#nine');
+  cv.addEventListener('pointerdown', function(e){
+    if(R.screen!=='p4' || R.nine.locked) return;
+    e.preventDefault();
+    try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+    R.nine.down = true;
+    R.nine.preview = nineLocal(e);
+    nineDraw();
+  });
+  cv.addEventListener('pointermove', function(e){
+    if(R.screen!=='p4' || !R.nine || R.nine.locked) return;
+    R.nine.preview = nineLocal(e);           // 마우스 hover 에서도 미리보기
+    nineDraw();
+  });
+  cv.addEventListener('pointerleave', function(){
+    if(!R.nine) return;
+    R.nine.preview = null; R.nine.down = false; nineDraw();
+  });
+  function up(e){
+    if(R.screen!=='p4' || !R.nine || R.nine.locked) return;
+    R.nine.down = false;
+    var pt = nineLocal(e), a = nineHit(pt.x, pt.y);
+    R.nine.preview = null;
+    if(a) nineConfirm(a); else nineDraw();
+  }
+  cv.addEventListener('pointerup', up);
+  cv.addEventListener('pointercancel', function(){ if(R.nine){ R.nine.down=false; R.nine.preview=null; nineDraw(); } });
+  cv.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+})();
+$('#p4Undo').addEventListener('click', function(){
+  var N = R.nine, p = curP();
+  if(!N || !(N.undoLeft > 0) || N.locked) return;
+  if(!N.strokes.length && N.start==null) return;
+  if(N.strokes.length) N.strokes.pop(); else N.start = null;
+  p.extra.strokes = N.strokes.slice();
+  N.undoLeft--;                               // 크레딧 소진 시 새 탭 전까지 비활성
+  $('#p4Undo').disabled = !(N.undoLeft > 0 && (N.strokes.length || N.start!=null));
+  txt($('#p4Cnt'), N.strokes.length+' / '+CONFIG.ninedot.max_strokes+'획');
+  save(); nineDraw();
+});
+$('#p4Give').addEventListener('click', function(){ p4End('giveup'); });
+
+function p4Complete(){
+  var p = curP();
+  if(p.t_solve_end!=null) return;
+  p.solved = true;                            // 4획 완성 = 확정
+  p.t_solve_end = now();
+  stopBox();
+  R.nine.locked = true;
+  save();
+  /* 판정 공개 전 확신도 1탭 */
+  R.queue = [ stepConf('nine'), stepJudgeP4(), stepAha(function(){
+                return curP().correct ? 'self_solved' : 'after_reveal'; }), stepKnown() ];
+  nextStep();
+}
+function p4End(kind){
+  var p = curP();
+  if(p.t_solve_end!=null) return;
+  p.t_solve_end = now();
+  if(kind==='timeout') p.timeout = true; else p.gave_up = true;
+  p.revealed = true; p.correct = false;
+  stopBox();
+  R.nine.locked = true;
+  save();
+  R.queue = [ stepConf('nine'), stepJudgeP4(), stepAha('after_reveal'), stepKnown() ];
+  nextStep();
+}
+function stepJudgeP4(){
+  return function(){
+    var p = curP(), C = CONFIG.m1_copy.p4;
+    if(p.revealed) logEvent('reveal', false);     // 스펙 §5-1 kind — 만료·포기로 해답을 열람
+    var jr = judgeNinedot(p.extra.strokes, CONFIG.ninedot);
+    p.extra.disconnected = jr.disconnected;
+    /* 불변식: revealed=true → correct=false. 확정 제출 이후의 자동 판정은 revealed 가 아니다 */
+    p.correct = p.revealed ? false : !!jr.correct;
+    save();
+    revealReset();
+    var b = $('#revBody');
+    if(p.correct){
+      b.appendChild(verdict('✓','아홉 점 모두 지남'));
+      b.appendChild(el('p','p', C.win));
+    } else {
+      b.appendChild(verdict('○', p.revealed ? (p.timeout ? '시간이 다 되어 해답을 봄' : '해답을 열어 봄')
+                                            : '지나지 못한 점이 남음'));
+      b.appendChild(el('p','p', C.lose));
+      /* 아무것도 긋지 않은 채 넘어간 경우엔 '떨어져 있었다'는 지적이 성립하지 않는다 */
+      if(jr.disconnected && jr.strokes>=2) b.appendChild(el('p','p dim', C.disconnected));
+    }
+    $('#revCvWrap').hidden = false;
+    /* '못 푸는 쪽이 기본'이라는 위로는 못 푼 사람에게만 필요하다 */
+    if(!p.correct) $('#revBody2').appendChild(el('p','p dim', C.note));
+    $('#revNext').disabled = true;
+    show('reveal', stepId('reveal'));
+    /* 캔버스 fit 은 화면이 **보이게 된 뒤에** — 섹션이 hidden 인 동안은 부모 clientWidth 가
+       0 이라 폴백 320px 로 고정되고, 좁은 화면에서 카드 밖으로 넘쳐 가로 스크롤이 생긴다. */
+    R.sol = makeNineView($('#nineSol'));
+    R.sol.fit(360);
+    runSolutionAnim(function(){ $('#revNext').disabled = false; });
+  };
+}
+/* 해답 애니메이션.
+   NOTE: 스펙 §4 P4 카피는 "마지막 획이 상자 밖으로"이지만, 스펙이 확정한 표준해
+   (0,0)→(3,0)→(0,3)→(0,0)→(2,2) 에서 펜이 **처음** 상자를 벗어나는 구간은 1획의
+   (2,0)→(3,0) 이다. 좌표열은 스펙 확정값이므로 임의로 바꾸지 않고,
+   0.8초 정지·강조만 그 구간에 둔다. */
+function runSolutionAnim(done){
+  var v = R.sol, sp = CONFIG.ninedot.anchor_step_units;
+  var pts = CONFIG.ninedot.solution.map(function(a){ return {x:a[0], y:a[1]}; });
+  var boxMax = (CONFIG.ninedot.grid.n-1);
+  var exit = findBoxExit(pts, boxMax);
+  var reduce = reduceMotion();
+  var SEG_MS = 700, PAUSE_MS = 800;
+  var t0 = now(), pausedUntil = 0, pausedDone = false;
+
+  function drawBase(){
+    var ctx = v.ctx, i, j;
+    ctx.clearRect(0,0,v.size,v.size);
+    ctx.fillStyle = '#0b0f1c'; ctx.fillRect(0,0,v.size,v.size);
+    ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1;
+    ctx.strokeRect(v.ux(0), v.uy(2), v.ux(2)-v.ux(0), v.uy(0)-v.uy(2));
+    /* 사용자가 그은 획을 옅게 */
+    var mine = curP().extra.strokes || [];
+    ctx.save(); ctx.strokeStyle = 'rgba(233,236,246,.18)'; ctx.lineWidth = 3; ctx.lineCap='round';
+    for(i=0;i<mine.length;i++){
+      ctx.beginPath(); ctx.moveTo(v.ux(mine[i][0].x), v.uy(mine[i][0].y));
+      for(j=1;j<mine[i].length;j++) ctx.lineTo(v.ux(mine[i][j].x), v.uy(mine[i][j].y));
+      ctx.stroke();
+    }
+    ctx.restore();
+    var A = anchorList();
+    for(i=0;i<A.length;i++){
+      ctx.beginPath(); ctx.arc(v.ux(A[i].x), v.uy(A[i].y), A[i].real?6.5:3.4, 0, Math.PI*2);
+      ctx.fillStyle = A[i].real ? '#e9ecf6' : 'rgba(233,236,246,.24)';
+      ctx.fill();
+    }
+  }
+  function drawUpto(seg, frac, highlight){
+    drawBase();
+    var ctx = v.ctx, i;
+    ctx.save();
+    ctx.strokeStyle = '#e8b93a'; ctx.lineWidth = 4; ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.beginPath(); ctx.moveTo(v.ux(pts[0].x), v.uy(pts[0].y));
+    for(i=1; i<=Math.min(seg, pts.length-1); i++) ctx.lineTo(v.ux(pts[i].x), v.uy(pts[i].y));
+    ctx.stroke();
+    if(seg < pts.length-1){
+      var a = pts[seg], b = pts[seg+1];
+      ctx.beginPath();
+      ctx.moveTo(v.ux(a.x), v.uy(a.y));
+      ctx.lineTo(v.ux(a.x + (b.x-a.x)*frac), v.uy(a.y + (b.y-a.y)*frac));
+      ctx.stroke();
+    }
+    ctx.restore();
+    if(highlight && exit){
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(v.ux(exit.gx), v.uy(exit.gy), 15, 0, Math.PI*2);
+      ctx.strokeStyle = '#f6dc93'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.restore();
+    }
+  }
+  /* 회전·창 크기 변경 후 다시 그릴 수 있게 마지막 프레임 그리기를 노출해 둔다 */
+  R.solRedraw = function(){ drawUpto(pts.length-1, 0, true); };
+  if(reduce){
+    drawUpto(pts.length-1, 0, true);
+    if(done) done();
+    return;
+  }
+  beginBlock();
+  var tok = ++R.token, finished = false, safety = 0;
+  /* 스케줄러는 setTimeout 기반. rAF 는 탭이 백그라운드로 가면 아예 멈추기 때문에,
+     그 사이 '계속' 버튼이 영영 잠기는 소프트락이 생긴다. setTimeout 은 스로틀링만
+     걸리므로 반드시 끝난다. 그래도 못 끝나면 safety 타이머가 마지막 프레임을 그린다. */
+  function schedule(){ setTimeout(frame, 16); }
+  function finish(){
+    if(finished || tok!==R.token) return;
+    finished = true;
+    clearTimeout(safety);
+    drawUpto(pts.length-1, 0, true);
+    endBlock();
+    if(done) done();
+  }
+  function frame(){
+    if(tok!==R.token || finished) return;
+    var t = now() - t0;
+    if(pausedUntil && t < pausedUntil){ drawUpto(exit.seg, exit.frac, true); schedule(); return; }
+    if(pausedUntil && t >= pausedUntil){ t0 += (pausedUntil - exit.tAt); pausedUntil = 0; t = now()-t0; }
+    var seg = Math.floor(t / SEG_MS), frac = (t % SEG_MS)/SEG_MS;
+    if(exit && !pausedDone && (seg > exit.seg || (seg===exit.seg && frac>=exit.frac))){
+      pausedDone = true;
+      exit.tAt = exit.seg*SEG_MS + exit.frac*SEG_MS;
+      pausedUntil = exit.tAt + PAUSE_MS;
+      drawUpto(exit.seg, exit.frac, true);
+      schedule(); return;
+    }
+    if(seg >= pts.length-1){ finish(); return; }
+    drawUpto(seg, frac, false);
+    schedule();
+  }
+  safety = setTimeout(finish, (pts.length-1)*SEG_MS + PAUSE_MS + 3000);
+  schedule();
+}
+/* 펜이 처음으로 3×3 상자를 벗어나는 지점(격자 인덱스 좌표) */
+function findBoxExit(pts, boxMax){
+  var eps = 1e-6;
+  for(var i=0;i<pts.length-1;i++){
+    var a=pts[i], b=pts[i+1];
+    for(var s=1;s<=240;s++){
+      var f = s/240, x = a.x+(b.x-a.x)*f, y = a.y+(b.y-a.y)*f;
+      if(x > boxMax+eps || x < -eps || y > boxMax+eps || y < -eps){
+        return {seg:i, frac:f, gx:x, gy:y, tAt:0};
+      }
+    }
+  }
+  return null;
+}
+
+/* 타임박스 만료 — 만료 동작은 전역 규칙이 아니라 **config.timeout_action[퍼즐 id]** 다.
+   퍼즐 id 로 분기를 하드코딩하면 config 를 고쳐도 동작이 안 바뀐다(스펙 §11).
+   여기서 id → 종료 함수만 등록하고, 어떤 종료 동작을 태울지는 config 가 정한다. */
+var TIMEOUT_END = {};   // 각 퍼즐 정의부 뒤에서 채운다(함수 선언은 호이스팅되지만 의도를 남긴다)
+TIMEOUT_END['p1_rat'] = function(){ p1End('timeout'); };
+TIMEOUT_END['p3_trap'] = function(){ p3End('timeout'); };
+TIMEOUT_END['p4_ninedot'] = function(){ p4End('timeout'); };
+function onTimeout(p){
+  /* 만료는 제출이 아니다. 가짜 submit 을 찍으면 attempts[] 에 없는 제출이 남고,
+     stall 창 맨 끝에 이벤트가 들어가 tail_cap_ms 절단이 무력화된다(스펙 §5-1). */
+  logEvent('timeout', false);
+  var act = CONFIG.timeout_action[p.id];
+  var end = TIMEOUT_END[p.id];
+  if(!end) return;
+  /* M1 에 있는 세 퍼즐의 만료 동작은 reveal · reveal_via_conf 뿐이다.
+     advance(p2) · skip(p5) 는 해당 퍼즐이 들어오는 M2 에서 각자의 종료 함수를 등록한다. */
+  if(act==='reveal' || act==='reveal_via_conf'){ end(); return; }
+  /* 알 수 없는 값(설정 오타 등)이라도 화면이 멎지 않게 종료는 시킨다 */
+  end();
+}
+
+/* =========================================================================
+   §12 결과 화면 (M1 간이) — 유형·시야각은 표기하지 않는다
+   ========================================================================= */
+function statusOf(p){
+  if(!p.presented) return {icon:'—', label:'미도달'};
+  if(p.id==='p3_trap'){
+    /* §9: 함정 오답을 '실패'로 표기하지 않는다 (§6-1 어휘를 그대로 쓴다) */
+    if(p.known_before===true) return {icon:'◎', label:'이미 아는 문제'};
+    if(p.extra.answer_raw==null) return {icon:'○', label:'답을 정하지 않고 지나감'};
+    return p.correct ? {icon:'✓', label:'통과'} : {icon:'◇', label:'배움'};
+  }
+  if(p.correct) return {icon:'✓', label:'정답에 도달'};
+  if(p.revealed) return {icon:'○', label: p.timeout ? '시간이 다 되어 해답을 봄' : '해답을 열어 봄'};
+  return {icon:'·', label:'기록만 남김'};
+}
+function nameOf(id){
+  return id==='p1_rat' ? '세 낱말의 공통점'
+       : id==='p3_trap' ? '확신 vs 진실'
+       : id==='p4_ninedot' ? '아홉 개의 점' : id;
+}
+/* 힌트 표기는 '몇 개 열었나'가 아니라 '몇 단계까지 갔나'다. ②만 연 경우
+   hints.length 는 1 이지만 사용자가 본 것은 2단계이므로 최대 level 로 말한다. */
+function hintLabel(p){
+  var mx = 0;
+  for(var i=0;i<p.hints.length;i++) mx = Math.max(mx, p.hints[i].level);
+  return mx ? (mx+'단계까지 열어 봄') : '사용 안 함';
+}
+function kv(box, k, v){
+  var r = el('div','kv');
+  r.appendChild(el('span',null,k));
+  r.appendChild(el('span',null,v));
+  box.appendChild(r);
+}
+function renderResult(){
+  txt($('#resBanner'), CONFIG.m1_copy.result.banner);
+  var list = $('#resList'); list.innerHTML = '';
+  for(var i=0;i<S.puzzles.length;i++){
+    var p = S.puzzles[i], st = statusOf(p);
+    var row = el('div','rrow');
+    var h = el('h3', null, p.order_index+'. '+nameOf(p.id));
+    h.appendChild(el('em', null, st.icon+' '+st.label));
+    row.appendChild(h);
+    if(p.presented){
+      kv(row,'확신도', p.conf.touched ? (p.conf.v+' / 100') : '건너뜀');
+      if(CONFIG.aha.collect_on.indexOf(p.id)>=0){
+        kv(row,'아하', p.aha.touched
+          ? ('갑작스러움 '+p.aha.sudden+' · 시원함 '+p.aha.pleasure)
+          : '건너뜀');
+      }
+      kv(row,'푸는 데 쓴 시간', fmtDur(puzzleActiveMs(p)));
+      kv(row,'힌트', hintLabel(p));
+      if(p.id==='p3_trap' && p.extra.swapped) kv(row,'문항','한 번 교체됨');
+    } else {
+      kv(row,'기록','제시되지 않았습니다');
+    }
+    list.appendChild(row);
+  }
+  var tail = el('p','p dim', CONFIG.m1_copy.result.tail);
+  tail.style.marginTop = '12px';
+  list.appendChild(tail);
+  txt($('#resDisc'), CONFIG.m1_copy.disclaimer);
+  buildDownload();
+}
+function buildDownload(){
+  var a = $('#resDl');
+  try{
+    if(R.dlUrl){ URL.revokeObjectURL(R.dlUrl); R.dlUrl = null; }
+    var blob = new Blob([JSON.stringify(S, null, 2)], {type:'application/json'});
+    R.dlUrl = URL.createObjectURL(blob);
+    a.href = R.dlUrl;
+    a.download = 'seeing-'+String(S.session_id).slice(0,8)+'.json';
+  }catch(e){
+    a.removeAttribute('href');
+    a.textContent = 'JSON 내려받기를 지원하지 않는 환경이에요';
+  }
+}
+function goResult(){
+  S.ts_end = now();
+  S.active_total_ms = (now() - S.ts_start) - S.hidden_ms - S.blocked_ms;
+  R.pidx = S.puzzles.length;      // 진행 표시 전부 완료
+  renderProg();
+  save();
+  renderResult();
+  show('result', 'result');
+  fireComplete();
+  /* 완주 세션은 archive 로 옮기고 진행 중 키는 비운다.
+     이후 pagehide·pushSpan 이 save() 를 불러도 진행 키가 되살아나지 않게 R.done 으로 막는다 */
+  archivePush(S);
+  LS.del(K_SESSION);
+  R.done = true;
+}
+$('#resAgain').addEventListener('click', function(){
+  try{ if(R.dlUrl) URL.revokeObjectURL(R.dlUrl); }catch(e){}
+  LS.del(K_SESSION);
+  try{ location.reload(); }catch(e){}
+});
+
+/* =========================================================================
+   §13 셀프테스트 (?selftest=1)
+   ========================================================================= */
+function runSelftest(){
+  var T = [];
+  function ok(name, pass, detail){ T.push({name:name, pass:!!pass, detail:detail||''}); }
+  function eq(name, got, want){ ok(name, got===want, 'got='+JSON.stringify(got)+' want='+JSON.stringify(want)); }
+
+  /* p1 정규화 */
+  eq('normRat("길") → "길"', normRat('길'), '길');
+  eq('normRat(" 길이요 ") → "길"', normRat(' 길이요 '), '길');
+  eq('normRat("빛") → "빛"', normRat('빛'), '빛');
+  ok('대체정답: "빛" 입력 → correct=true', ratCorrect('빛')===true);
+  ok('"길이요" 입력 → correct=true', ratCorrect(' 길이요 ')===true);
+  ok('"물" 입력 → correct=false', ratCorrect('물')===false);
+
+  /* RAT 어휘 규약 — cues ∪ accept 전 문항 교집합 = 0 */
+  (function(){
+    var pool = CONFIG.rat_pool, bad = [], i, j, k;
+    for(i=0;i<pool.length;i++){
+      var si = pool[i].cues.concat(pool[i].accept);
+      for(k=0;k<pool[i].cues.length;k++)
+        if(pool[i].accept.indexOf(pool[i].cues[k])>=0) bad.push(pool[i].id+':자기교집합 '+pool[i].cues[k]);
+      for(j=i+1;j<pool.length;j++){
+        var sj = pool[j].cues.concat(pool[j].accept);
+        for(k=0;k<si.length;k++) if(sj.indexOf(si[k])>=0) bad.push(pool[i].id+'∩'+pool[j].id+':'+si[k]);
+      }
+    }
+    ok('rat_pool cues ∪ accept 교집합 = 0', bad.length===0, bad.join(', '));
+  })();
+
+  /* 9점 — 표준해 */
+  var sol = solutionStrokes();
+  (function(){
+    var r = judgeNinedot(sol, CONFIG.ninedot);
+    ok('judgeNinedot(표준해) → correct', r.correct===true, 'covered='+r.covered+'/'+r.total);
+    ok('judgeNinedot(표준해) → disconnected=false', r.disconnected===false);
+  })();
+  /* 9점 — 끊어진 선분 4개 */
+  (function(){
+    var broken = [
+      [{x:0,y:0},{x:3,y:0}],
+      [{x:0,y:3},{x:2,y:1}],      // 시작점이 앞 획의 끝(3,0)과 다르다
+      [{x:0,y:3},{x:0,y:0}],
+      [{x:0,y:0},{x:2,y:2}]
+    ];
+    var r = judgeNinedot(broken, CONFIG.ninedot);
+    ok('judgeNinedot(끊어진 4선분) → disconnected=true', r.disconnected===true);
+    ok('judgeNinedot(끊어진 4선분) → correct=false', r.correct===false);
+  })();
+  /* 9점 — 빈 입력(한 획도 긋지 않고 만료) */
+  (function(){
+    var r = judgeNinedot([], CONFIG.ninedot);
+    ok('judgeNinedot([]) → disconnected=false', r.disconnected===false);
+    ok('judgeNinedot([]) → correct=false', r.correct===false, 'covered='+r.covered+'/'+r.total);
+  })();
+  /* 9점 — 3획 */
+  (function(){
+    var three = sol.slice(0,3);
+    var r = judgeNinedot(three, CONFIG.ninedot);
+    ok('judgeNinedot(3획) → correct=false', r.correct===false, 'covered='+r.covered+'/'+r.total);
+  })();
+  /* 9점 — 5획(최대 초과) */
+  (function(){
+    var five = sol.concat([[{x:2,y:2},{x:2,y:3}]]);
+    var r = judgeNinedot(five, CONFIG.ninedot);
+    ok('judgeNinedot(5획) → over_max → correct=false', r.correct===false && r.over_max===true);
+  })();
+  /* 불변식 · 히트 반경 경계 */
+  ok('hit_radius_units < anchor_step_units / 2',
+     CONFIG.ninedot.hit_radius_units < CONFIG.ninedot.anchor_step_units/2,
+     CONFIG.ninedot.hit_radius_units+' < '+(CONFIG.ninedot.anchor_step_units/2));
+  (function(){
+    var a={x:0,y:0}, b={x:200,y:0};
+    var d22 = segPointDist(a,b,{x:100,y:22}), d23 = segPointDist(a,b,{x:100,y:23});
+    ok('거리 22 → 히트 반경 안(통과)', d22 <= CONFIG.ninedot.hit_radius_units, 'd='+d22);
+    ok('거리 23 → 히트 반경 밖(미통과)', d23 > CONFIG.ninedot.hit_radius_units, 'd='+d23);
+  })();
+  (function(){
+    /* 판정 경계를 judgeNinedot 로도 확인한다. 표준해를 units 로 dU 만큼 **평행이동**하면
+       아래 줄(y=0)의 점들과 마지막 획 끝점(2,2)이 정확히 dU 만큼 떨어진다.
+       dU = R  → 아홉 점 전부 경계 위(≤R) 통과, dU = R+1 → 세 점을 놓친다.
+       (판정은 `<= R` 이므로 경계값이 통과 쪽에 들어가는지가 이 테스트의 요점) */
+    var sp = CONFIG.ninedot.grid.spacing_units, R = CONFIG.ninedot.hit_radius_units;
+    function shiftDown(dU){
+      var s = solutionStrokes(), out = [], i;
+      for(i=0;i<s.length;i++)
+        out.push([{x:s[i][0].x, y:s[i][0].y - dU/sp}, {x:s[i][1].x, y:s[i][1].y - dU/sp}]);
+      return out;
+    }
+    var rIn  = judgeNinedot(shiftDown(R), CONFIG.ninedot);
+    var rOut = judgeNinedot(shiftDown(R+1), CONFIG.ninedot);
+    ok('표준해를 '+R+' units 내려도 covered=9 (경계 포함)',
+       rIn.covered===9 && rIn.correct===true, 'covered='+rIn.covered);
+    ok('표준해를 '+(R+1)+' units 내리면 점을 놓친다',
+       rOut.covered<9 && rOut.correct===false,
+       'covered='+rOut.covered+' missing='+JSON.stringify(rOut.missing));
+  })();
+
+  /* 함정 풀 */
+  (function(){
+    var ids = {}, bad = [], i;
+    for(i=0;i<CONFIG.trap_pool.length;i++){
+      var it = CONFIG.trap_pool[i];
+      if(ids[it.id]) bad.push('중복 id '+it.id);
+      ids[it.id] = true;
+      if(it.answer === it.intuitive) bad.push(it.id+': answer === intuitive');
+      if(typeof it.explain !== 'string' || !it.explain) bad.push(it.id+': explain 없음');
+    }
+    ok('trap_pool 3문항', CONFIG.trap_pool.length===3, '길이='+CONFIG.trap_pool.length);
+    ok('trap_pool id 유일 · answer ≠ intuitive', bad.length===0, bad.join(', '));
+  })();
+
+  /* 설정 무결성 */
+  ok('config_version = 0.2.1-m1', CONFIG.config_version==='0.2.1-m1', CONFIG.config_version);
+  ok('M1 제시 순서 = p1_rat → p3_trap → p4_ninedot',
+     PUZZLE_ORDER.join(',')==='p1_rat,p3_trap,p4_ninedot', PUZZLE_ORDER.join(','));
+  (function(){
+    var r = shapeCheck();
+    ok('세션 루트 키 = 스펙 §7-2', r.session.ok, r.session.msg);
+    ok('puzzles[] 키 = 스펙 §7-2', r.puzzle.ok, r.puzzle.msg);
+  })();
+
+  var pass = 0, i;
+  for(i=0;i<T.length;i++) if(T[i].pass) pass++;
+  var list = $('#stList'); list.innerHTML = '';
+  for(i=0;i<T.length;i++){
+    var l = el('div','l');
+    var m = el('span','m '+(T[i].pass?'p':'f'), T[i].pass?'✓ PASS':'✗ FAIL');
+    var n = el('span','n', T[i].name);
+    if(T[i].detail){ n.appendChild(document.createElement('br')); n.appendChild(el('span','d', T[i].detail)); }
+    l.appendChild(m); l.appendChild(n);
+    list.appendChild(l);
+  }
+  txt($('#stSum'), pass+' / '+T.length+' 통과 · config_version '+CONFIG.config_version);
+  show('selftest', null);
+}
+function solutionStrokes(){
+  var s = CONFIG.ninedot.solution, out = [];
+  for(var i=1;i<s.length;i++) out.push([{x:s[i-1][0],y:s[i-1][1]},{x:s[i][0],y:s[i][1]}]);
+  return out;
+}
+/* 실제 생성기(blankSession/newPuzzle)의 키 집합이 스펙 §7-2 와 정확히 일치하는지(여분·누락 0) */
+function shapeCheck(){
+  var wantS = ['schema','config_version','session_id','ts_start','ts_last','ts_end','play_index',
+    'dropped_at','hidden_ms','hidden_spans','blocked_ms','blocked_spans','active_total_ms',
+    'skipped','cap_soft','cap_truncated','resumed_discard','pre','puzzles','result','consent'];
+  var wantP = ['id','order_index','config_version','presented','skipped',
+    't_start','t_first_input','t_solve_end','t_end','pre_input_gap_ms',
+    'solved','correct','revealed','timeout','gave_up','assisted','assist_level',
+    'hidden_ms','hidden_spans','blocked_ms','blocked_spans',
+    'events','stall_rule_version','stall_excluded_reason','attempts','hints',
+    'conf','aha','known_before','extra'];
+  function diff(obj, want){
+    var got = [], k, miss = [], extra = [];
+    for(k in obj) if(obj.hasOwnProperty(k)) got.push(k);
+    for(k=0;k<want.length;k++) if(got.indexOf(want[k])<0) miss.push(want[k]);
+    for(k=0;k<got.length;k++) if(want.indexOf(got[k])<0) extra.push(got[k]);
+    return {ok:(miss.length===0 && extra.length===0),
+            msg:(miss.length||extra.length) ? ('누락='+miss.join('|')+' 여분='+extra.join('|'))
+                                            : (got.length+'개 키 일치')};
+  }
+  return {session: diff(blankSession(), wantS), puzzle: diff(newPuzzle('p1_rat',1), wantP)};
+}
+
+/* =========================================================================
+   §14 부트 · 테스트 훅
+   ========================================================================= */
+function qparam(name){
+  try{
+    var m = new RegExp('[?&]'+name+'=([^&#]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : null;
+  }catch(e){ return null; }
+}
+/* ?tb=<초> — **테스트 전용**. 모든 타임박스를 그 값으로, 부속 대기시간을 비례로 줄인다. */
+function applyTestParams(){
+  var tb = qparam('tb');
+  if(tb==null) return;
+  var v = Number(tb);
+  if(!isFinite(v) || v<=0) return;
+  for(var k in CONFIG.timebox_s){
+    if(!CONFIG.timebox_s.hasOwnProperty(k)) continue;
+    CONFIG.timebox_s[k].s = v;
+    if(CONFIG.timebox_s[k].choice_s!=null) CONFIG.timebox_s[k].choice_s = v;
+  }
+  CONFIG.session.idle_grace_s        = Math.max(1, Math.round(v*20/60));
+  CONFIG.session.manual_reveal_after_s = Math.max(1, Math.round(v*15/60));
+  CONFIG.session.scale_idle_timeout_s  = Math.max(1, Math.round(v*25/60));
+}
+function fillIntro(){
+  var I = CONFIG.m1_copy.intro;
+  txt($('#inTitle'), I.title);
+  txt($('#inLead'), I.lead);
+  txt($('#inLead2'), I.lead2);
+  txt($('#inNote'), I.note);
+  txt($('#inGo'), I.go);
+  txt($('#inDisc'), CONFIG.m1_copy.disclaimer);
+}
+function goIntro(){
+  R.pidx = -1; renderProg();
+  show('intro', 'intro');
+}
+$('#inGo').addEventListener('click', function(){ startPuzzle(0); });
+
+/* 이어하기 — 퍼즐 경계에서만 재개, 퍼즐 도중이면 그 퍼즐은 폐기 후 재제시 */
+function resumeInto(sess){
+  S = sess;
+  /* 페이지가 닫혀 있던 구간은 **활성 시간이 아니다**(§8-1 "캡의 시계는 활성 시간").
+     pagehide~다음 boot 사이는 visibilitychange 가 잡지 못해 어디에도 남지 않으므로,
+     여기서 hidden 으로 적재한다. 이게 없으면 자리를 8분 이상 비운 모든 재개가
+     하드캡에 걸려 곧바로 결과 화면으로 튕긴다. */
+  var away = now() - (S.ts_last || now());
+  if(away > 0) pushSpanAt('hidden', S.ts_last, now());   // 스칼라는 span 에서 재계산된다
+  var i, p;
+  for(i=0;i<S.puzzles.length;i++){
+    p = S.puzzles[i];
+    if(p.presented && p.t_end==null){
+      S.resumed_discard = true;
+      S.puzzles[i] = newPuzzle(p.id, p.order_index);
+      save();
+      startPuzzle(i);
+      return;
+    }
+  }
+  for(i=0;i<S.puzzles.length;i++){
+    p = S.puzzles[i];
+    if(!p.presented && S.skipped.indexOf(p.id)<0){ startPuzzle(i); return; }
+  }
+  goResult();
+}
+function boot(){
+  applyTestParams();
+  fillIntro();
+  R.lastTick = now();
+  /* 배경 탭에서 로드된 경우(링크를 새 탭으로 열어 두고 나중에 보는 경로) visibilitychange 는
+     '변화'에만 발생하므로 hidden→visible 로 돌아와도 R.hiddenAt 이 0 이라 그 구간이 어디에도
+     안 남는다 → 안 보고 있던 시간이 통째로 활성 시간·타임박스에 들어간다. 초기 상태를 직접 읽어
+     둔다(§5 visibility). */
+  try{ if(document.hidden) R.hiddenAt = R.lastTick; }catch(e){}
+  R.timer = setInterval(tick, 100);
+
+  if(qparam('selftest')==='1'){ runSelftest(); return; }
+
+  var prev = LS.get(K_SESSION);
+  var prevOk = !!(prev && prev.schema===3 && !prev.ts_end && prev.puzzles && prev.puzzles.length);
+  /* 아직 한 퍼즐도 제시되지 않은 세션은 '이어하기' 대상이 아니다 — 인트로에서 새로고침한
+     사용자가 설명도 못 보고 p1 타임박스를 만나는 것을 막는다. 세션 자체는 그대로 이어 써서
+     play_index 가 중복으로 올라가지 않게 한다. */
+  var prevStarted = false;
+  if(prevOk){
+    for(var pi=0; pi<prev.puzzles.length; pi++) if(prev.puzzles[pi].presented) prevStarted = true;
+  }
+  if(prevOk && !prevStarted){
+    if((now() - (prev.ts_last||0))/1000 > CONFIG.session.resume_expire_s){
+      prev.dropped_at = now(); archivePush(prev); LS.del(K_SESSION);
+    } else {
+      S = prev; save(); goIntro(); return;
+    }
+  } else if(prevOk){
+    var gap = (now() - (prev.ts_last||0))/1000;
+    if(gap > CONFIG.session.resume_expire_s){
+      prev.dropped_at = now();
+      archivePush(prev);
+      LS.del(K_SESSION);
+    } else if(gap > CONFIG.session.resume_ask_after_s){
+      R.pendingResume = prev;
+      txt($('#rsInfo'), '마지막 기록이 '+fmtGap(gap*1000)+' 전이에요. 이어서 하거나, 새로 시작할 수 있습니다.');
+      show('resume', 'resume');
+      return;
+    } else {
+      resumeInto(prev);
+      return;
+    }
+  } else if(prev){
+    LS.del(K_SESSION);
+  }
+  S = newSession();
+  save();
+  goIntro();
+}
+$('#rsCont').addEventListener('click', function(){
+  var prev = R.pendingResume; R.pendingResume = null;
+  if(prev) resumeInto(prev); else { S = newSession(); save(); goIntro(); }
+});
+$('#rsNew').addEventListener('click', function(){
+  var prev = R.pendingResume; R.pendingResume = null;
+  if(prev){ prev.dropped_at = now(); archivePush(prev); }
+  LS.del(K_SESSION);
+  S = newSession(); save(); goIntro();
+});
+
+function refitCanvases(){
+  if(R.screen==='p4' && R.nine){
+    R.nine.view.fit(400);
+    recordHitRadius(curP());
+    nineDraw();
+  }
+  if(R.screen==='reveal' && R.sol && !$('#revCvWrap').hidden){
+    R.sol.fit(360);
+    if(R.solRedraw) R.solRedraw();
+  }
+}
+window.addEventListener('resize', refitCanvases);
+window.addEventListener('orientationchange', refitCanvases);
+
+/* 테스트 훅 */
+window.SEEING = {
+  config: CONFIG,
+  session: function(){ return S; },
+  runtime: function(){ return R; },
+  pure: { normRat:normRat, judgeNinedot:judgeNinedot, segPointDist:segPointDist,
+          ratCorrect:ratCorrect, solutionStrokes:solutionStrokes },
+  goto: function(id){
+    if(id==='intro') return goIntro();
+    if(id==='result') return goResult();
+    if(id==='selftest') return runSelftest();
+    if(id==='p1' || id==='p1_rat') return startPuzzle(0);
+    if(id==='p3' || id==='p3_trap') return startPuzzle(1);
+    if(id==='p4' || id==='p4_ninedot') return startPuzzle(2);
+    return show(id, null);
+  }
+};
+
+boot();
+})();
+</script>
+</body>
+</html>
