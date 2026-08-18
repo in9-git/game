@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#0b1233">
 <title>밤곤충 손전등 · 夜のむし探し · Night Bug Hunt</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔦</text></svg>">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body {
@@ -65,6 +67,37 @@
   #grassBack  { height:32%; }
   #grassMid   { height:24%; }
   #grassFront { height:15%; }
+  #water { display:none; }
+
+  /* ---- night 2: pond side ---- */
+  #stage.n2 { background:linear-gradient(180deg, #06101f 0%, #0a1c36 40%, #0d2a44 64%, #0a2236 100%); }
+  #stage.n2 .horizon-glow { bottom:20%; background:radial-gradient(ellipse 62% 100% at 58% 100%, rgba(80,150,170,.26), transparent 70%); }
+  #stage.n2 .moon { left:auto; right:12%; top:9%; width:66px; height:66px; }
+  #stage.n2 #foliage { right:auto; left:-4%; transform:scaleX(-1); }
+  #stage.n2 #foliage ellipse, #stage.n2 #foliage path { fill:#0a1428; }
+  #stage.n2 #hills { height:30%; }
+  #stage.n2 #hills path { fill:#0a1a2e; }
+  #stage.n2 #grassBack { height:36%; }
+  #stage.n2 #grassMid  { height:30%; }
+  #stage.n2 #grassFront{ height:17%; }
+  #stage.n2 #water {
+    display:block;
+    position:absolute; left:0; right:0; bottom:0; height:21%;
+    background:linear-gradient(180deg, rgba(24,74,110,.95), #0b2540 55%, #071a30);
+  }
+  #stage.n2 #water::before {
+    content:""; position:absolute; top:0; bottom:0; right:9%; width:78px;
+    background:repeating-linear-gradient(180deg, rgba(255,240,200,.15) 0 3px, transparent 3px 10px);
+    -webkit-mask-image:linear-gradient(180deg, rgba(0,0,0,.9), transparent);
+    mask-image:linear-gradient(180deg, rgba(0,0,0,.9), transparent);
+  }
+  #stage.n2 #water::after {
+    content:""; position:absolute; inset:0;
+    background:
+      radial-gradient(ellipse 34px 11px at 22% 46%, #0d3a3a 96%, transparent 100%),
+      radial-gradient(ellipse 27px 9px at 43% 74%, #0c3436 96%, transparent 100%),
+      radial-gradient(ellipse 30px 10px at 70% 58%, #0d3a3a 96%, transparent 100%);
+  }
 
   /* ============ BUGS ============ */
   #bugLayer { position:absolute; inset:0; }
@@ -90,6 +123,21 @@
   .f-snail    { filter:saturate(1.05); }
   .f-lady     { filter:saturate(1.2); }
   .f-spider   { filter:brightness(1.05); }
+  /* night 2 palette */
+  .f-bat      { filter:brightness(.9); }
+  .f-longhorn { filter:sepia(1) hue-rotate(-30deg) saturate(.7) brightness(.72); }
+  .f-crane    { filter:sepia(.7) brightness(1.08); }
+  .f-mayfly   { filter:sepia(1) hue-rotate(20deg) saturate(.7) brightness(1.18); }
+  .f-katydid  { filter:saturate(1.5) hue-rotate(-6deg) brightness(1.05); }
+  .f-bell     { filter:grayscale(.7) brightness(.55) contrast(1.25); }
+  .f-frog     { filter:saturate(1.3) brightness(1.05); }
+  .f-waterbug { filter:sepia(.6) hue-rotate(50deg) saturate(.8) brightness(.8); }
+  .f-diving   { filter:sepia(1) hue-rotate(150deg) saturate(1.4) brightness(.8); }
+  .f-whirligig{ filter:grayscale(1) brightness(.6) contrast(1.3); }
+
+  /* shy bugs (night 2): fade in only while the light rests on them */
+  .bug.shy { opacity:0; transition:filter .3s; }
+  .bug.shy.shown { filter:drop-shadow(0 0 6px rgba(255,230,160,.7)); }
 
   .spider-thread {
     position:absolute; bottom:92%; left:50%;
@@ -276,7 +324,10 @@
     opacity:0;
     transition:opacity .8s;
     pointer-events:none;
-    white-space:nowrap;
+    white-space:normal;
+    max-width:calc(100% - 32px);
+    text-align:center;
+    line-height:1.35;
   }
   #hintToast.show { opacity:1; }
 
@@ -301,6 +352,7 @@
     border-radius:26px;
     padding:30px 26px 26px;
     max-width:350px; width:100%;
+    max-height:calc(100% - 8px); overflow-y:auto; -webkit-overflow-scrolling:touch;
     text-align:center;
     box-shadow:0 24px 70px rgba(0,0,0,.55);
     backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
@@ -318,7 +370,47 @@
   .panel .sub2 { margin-top:3px; font-size:11.5px; color:rgba(255,236,190,.55); letter-spacing:.05em; }
   .intro-lines { margin:18px 0 6px; text-align:left; display:flex; flex-direction:column; gap:10px; }
   .intro-lines p { font-size:13.5px; color:#e8e2d2; line-height:1.5; }
+  .intro-lines p:empty { display:none; }
   .intro-note { margin-top:12px; font-size:12px; color:rgba(255,236,190,.6); }
+  #endMsg { white-space:pre-line; }
+
+  /* night picker */
+  .night-tabs { display:flex; gap:8px; justify-content:center; margin-top:14px; }
+  .ntab {
+    flex:1 1 0; min-width:0;
+    padding:9px 6px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.05);
+    color:#e8e2d2; font-size:12.5px; font-weight:700;
+    cursor:pointer;
+    transition:background .25s, border-color .25s, transform .15s;
+  }
+  .ntab.on { background:rgba(255,190,90,.16); border-color:rgba(255,210,110,.7); color:#ffe3a1; }
+  .ntab:disabled { opacity:.5; cursor:default; }
+  .ntab:active:not(:disabled) { transform:scale(.96); }
+  .lock-note { margin-top:8px; font-size:11.5px; color:rgba(255,236,190,.55); min-height:1em; }
+
+  /* field-notes collection */
+  .notes-toggle {
+    margin-top:14px;
+    padding:6px 12px;
+    border:1px solid rgba(255,255,255,.14); border-radius:999px;
+    background:transparent; color:rgba(255,236,190,.75);
+    font-size:12px; font-weight:600; cursor:pointer;
+  }
+  .notes-grid {
+    display:none; grid-template-columns:repeat(10, 1fr); gap:5px;
+    margin-top:10px; padding:10px 8px;
+    border-radius:14px; background:rgba(0,0,0,.22);
+  }
+  .notes-grid.open { display:grid; }
+  .ncell {
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    font-size:15px; line-height:1; border-radius:8px;
+    background:rgba(255,255,255,.04);
+  }
+  .ncell.unmet { color:rgba(255,236,190,.28); font-size:11px; }
 
   .btn-warm {
     margin-top:20px;
@@ -423,6 +515,7 @@
       <path d="M0 30 L0 17 Q10 11 22 15 Q31 18 40 14 Q52 9 63 14 Q75 19 85 13 Q93 9 100 14 L100 30 Z" fill="#0e1a3c"/>
     </svg>
     <svg id="grassBack" class="backdrop-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+    <div id="water"></div>
     <svg id="grassMid" class="backdrop-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
     <div id="bugLayer"></div>
     <svg id="grassFront" class="backdrop-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
@@ -465,13 +558,20 @@
       <div class="big-ico">🔦</div>
       <h2 id="introTitle"></h2>
       <div class="sub2" id="introSub"></div>
+      <div class="night-tabs" id="nightTabs"></div>
+      <div class="lock-note" id="lockNote"></div>
       <div class="intro-lines">
         <p id="introL1"></p>
         <p id="introL2"></p>
         <p id="introL3"></p>
+        <p id="introL4"></p>
       </div>
       <div class="intro-note" id="introNote"></div>
       <button class="btn-warm" id="startBtn"></button>
+      <div>
+        <button class="notes-toggle" id="notesBtn" aria-expanded="false"></button>
+        <div class="notes-grid" id="notesGrid"></div>
+      </div>
     </div>
   </div>
 
@@ -484,7 +584,9 @@
       </div>
       <div class="intro-note" id="endSub"></div>
       <div class="btn-row">
+        <button class="btn-warm" id="nextBtn"></button>
         <button class="btn-warm" id="replayBtn"></button>
+        <button class="btn-ghost" id="prevBtn"></button>
         <a class="btn-ghost" id="endHomeBtn" href="../../index.html"></a>
       </div>
     </div>
@@ -503,107 +605,189 @@
     ko: {
       home: '홈',
       introTitle: '밤곤충 손전등',
-      introSub: '고요한 여름밤, 풀숲 관찰 나들이',
-      introL1: '🔦 손전등을 움직여 어두운 풀숲을 비춰요',
-      introL2: '✨ 반짝임과 울음소리가 곤충의 힌트!',
-      introL3: '👆 빛 속에 든 곤충을 탭해서 관찰해요',
-      introNote: '곤충 10마리를 모두 만나면 오늘 밤 탐험 끝',
+      introL1: '🔦 손전등을 움직여 어두운 곳을 비춰요',
+      introL2: '✨ 반짝임과 울음소리가 생물의 힌트!',
+      introL3: '👆 빛 속에 든 생물을 탭해서 관찰해요',
       start: '탐험 시작',
-      toast: '🌾 풀숲 어딘가에서 무언가 반짝였어요…',
       cardLabel: '관찰 노트',
       cardBtn: '계속 찾기',
       cardBtnLast: '밤 관찰 마치기',
-      endTitle: '오늘 밤 관찰 끝!',
-      endMsg: '곤충 친구들은 모두\n숲으로 돌아갔어요.',
-      endSub: '또 만나요, 잘 자요 🌙',
       replay: '다시 하기',
       homeBtn: '홈으로',
+      nextNight: '다음 밤으로 →',
+      firstNight: '첫 번째 밤',
+      locked: '🔒 앞의 밤을 마치면 열려요',
+      notes: '📒 관찰 노트',
+      langLabel: '언어 바꾸기',
       soundOn: '소리 끄기', soundOff: '소리 켜기'
     },
     ja: {
       home: 'ホーム',
       introTitle: '夜のむし探し',
-      introSub: 'しずかな夏の夜、草むらかんさつ',
-      introL1: '🔦 かいちゅう電灯で暗い草むらを照らそう',
-      introL2: '✨ きらめきと鳴き声がむしのヒント!',
-      introL3: '👆 光の中のむしをタップしてかんさつ',
-      introNote: '10ぴきぜんぶ見つけたら今夜はおしまい',
+      introL1: '🔦 かいちゅう電灯で暗いところを照らそう',
+      introL2: '✨ きらめきと鳴き声が生きもののヒント!',
+      introL3: '👆 光の中の生きものをタップしてかんさつ',
       start: 'たんけんスタート',
-      toast: '🌾 草むらのどこかで何かが光った…',
       cardLabel: 'かんさつノート',
       cardBtn: 'つづけてさがす',
       cardBtnLast: 'かんさつをおえる',
-      endTitle: '今夜のかんさつ、おしまい!',
-      endMsg: 'むしたちはみんな\n森へかえっていきました。',
-      endSub: 'またね、おやすみ 🌙',
       replay: 'もういちど',
       homeBtn: 'ホームへ',
+      nextNight: 'つぎの夜へ →',
+      firstNight: '一番目の夜',
+      locked: '🔒 前の夜をおえるとひらくよ',
+      notes: '📒 かんさつノート',
+      langLabel: '言語をかえる',
       soundOn: '音を消す', soundOff: '音を出す'
     },
     en: {
       home: 'Home',
       introTitle: 'Night Bug Hunt',
-      introSub: 'A quiet summer-night meadow walk',
-      introL1: '🔦 Sweep your flashlight across the dark grass',
-      introL2: '✨ Glints and chirps hint where bugs hide',
-      introL3: '👆 Tap a bug caught in the light to observe it',
-      introNote: 'Meet all 10 bugs to finish tonight’s walk',
+      introL1: '🔦 Sweep your flashlight through the dark',
+      introL2: '✨ Glints and chirps hint where creatures hide',
+      introL3: '👆 Tap a creature caught in the light to observe it',
       start: 'Start Exploring',
-      toast: '🌾 Something glinted in the grass…',
       cardLabel: 'Field Notes',
       cardBtn: 'Keep Looking',
       cardBtnLast: 'Finish the Night',
-      endTitle: 'Tonight’s watch is done!',
-      endMsg: 'All the bug friends have\ngone home to the forest.',
-      endSub: 'See you again — good night 🌙',
       replay: 'Play Again',
       homeBtn: 'Home',
+      nextNight: 'Next Night →',
+      firstNight: 'First Night',
+      locked: '🔒 Finish the night before to unlock',
+      notes: '📒 Field Notes',
+      langLabel: 'Change language',
       soundOn: 'Mute sound', soundOff: 'Unmute sound'
     }
   };
 
-  /* ================= bugs ================= */
-  var BUGS = [
-    { id: 'spider',   emoji: '🕷️', cls: 'f-spider',   x: 84, y: 20, size: 32, snd: 'glint',
-      name: { ko: '거미', ja: 'クモ', en: 'Spider' },
-      fact: { ko: '다리가 8개! 곤충이 아니라 거미류예요.', ja: '足は8本!昆虫ではなくクモ類です。', en: 'Eight legs! An arachnid, not an insect.' } },
-    { id: 'moth',     emoji: '🦋', cls: 'f-moth',     x: 32, y: 22, size: 31, snd: 'flutter', avoid: true,
-      bounds: { x0: 6, x1: 94, y0: 7, y1: 46 },
-      name: { ko: '나방', ja: 'ガ', en: 'Moth' },
-      fact: { ko: '달빛을 나침반 삼아 밤하늘을 날아요.', ja: '月の光をたよりに夜空を飛びます。', en: 'It flies the night sky guided by moonlight.' } },
-    { id: 'butterfly',emoji: '🦋', cls: 'f-butterfly',x: 62, y: 38, size: 31, snd: 'glint',
-      name: { ko: '나비', ja: 'チョウ', en: 'Butterfly' },
-      fact: { ko: '발끝으로 꽃의 맛을 느낄 수 있어요.', ja: '足の先で花の味がわかります。', en: 'It tastes flowers with its feet.' } },
-    { id: 'firefly',  emoji: '🪲', cls: 'f-firefly',  x: 18, y: 44, size: 20, snd: 'shimmer', avoid: true, glow: true,
-      bounds: { x0: 5, x1: 95, y0: 20, y1: 76 },
-      name: { ko: '반딧불이', ja: 'ホタル', en: 'Firefly' },
-      fact: { ko: '배 끝의 빛으로 친구에게 신호를 보내요.', ja: 'おしりの光でなかまに合図を送ります。', en: 'It signals friends with its glowing tail.' } },
-    { id: 'mantis',   emoji: '🦗', cls: 'f-mantis',   x: 74, y: 56, size: 36, snd: 'glint',
-      name: { ko: '사마귀', ja: 'カマキリ', en: 'Mantis' },
-      fact: { ko: '고개를 휙 돌려 뒤도 볼 수 있어요.', ja: '首をくるっと回して後ろも見えます。', en: 'It can swivel its head to look behind.' } },
-    { id: 'lady',     emoji: '🐞', cls: 'f-lady',     x: 43, y: 60, size: 25, snd: 'glint',
-      name: { ko: '무당벌레', ja: 'テントウムシ', en: 'Ladybug' },
-      fact: { ko: '진딧물을 먹어 치우는 농부의 친구예요.', ja: 'アブラムシを食べる農家の味方です。', en: 'A farmer’s friend that gobbles up aphids.' } },
-    { id: 'cricket',  emoji: '🦗', cls: 'f-cricket',  x: 12, y: 72, size: 29, snd: 'chirp',
-      name: { ko: '귀뚜라미', ja: 'コオロギ', en: 'Cricket' },
-      fact: { ko: '날개를 비벼서 가을밤 노래를 불러요.', ja: '羽をこすって秋の夜に歌います。', en: 'It sings night songs by rubbing its wings.' } },
-    { id: 'stag',     emoji: '🪲', cls: 'f-stag',     x: 56, y: 76, size: 36, snd: 'buzz',
-      name: { ko: '사슴벌레', ja: 'クワガタムシ', en: 'Stag Beetle' },
-      fact: { ko: '큰 턱은 힘겨루기 씨름에 쓰는 뿔이에요.', ja: '大きなあごは力くらべに使う角です。', en: 'Its big jaws are horns for wrestling.' } },
-    { id: 'rhino',    emoji: '🪲', cls: 'f-rhino',    x: 87, y: 81, size: 40, snd: 'buzz',
-      name: { ko: '장수풍뎅이', ja: 'カブトムシ', en: 'Rhinoceros Beetle' },
-      fact: { ko: '자기 몸무게의 수십 배를 끄는 힘꾼이에요.', ja: '体重の何十倍も引っぱる力持ちです。', en: 'It can pull dozens of times its own weight.' } },
-    { id: 'snail',    emoji: '🐌', cls: 'f-snail',    x: 26, y: 87, size: 30, snd: 'glint',
-      name: { ko: '달팽이', ja: 'カタツムリ', en: 'Snail' },
-      fact: { ko: '혀에 작은 이빨이 1만 개나 있대요.', ja: '舌に小さな歯が1万本もあります。', en: 'Its tiny tongue holds over 10,000 teeth.' } }
+  /* ================= nights (data-driven) =================
+     Each night: id, stage class, grass palette, ambient-firefly spots,
+     per-language copy (tab / sub / rule / note / toast / end texts) and bugs.
+     Bug fields: id, emoji, cls (CSS filter), x/y (%), size (px), snd (hint sound),
+     avoid (+bounds) = flees the light, glow = own light dot,
+     shy = only shows while the beam rests on it (~1s). */
+  var NIGHTS = [
+    { id: 'night1', cls: '', total: 10,
+      grass: [['#111e44', 95, 42, 88, 1.3], ['#0a1434', 75, 40, 92, 1.5], ['#050b20', 55, 45, 95, 1.9]],
+      aflies: [[22, 36], [66, 30], [85, 52], [40, 47], [8, 58]],
+      copy: {
+        ko: { tab: '🌾 첫 번째 밤', sub: '고요한 여름밤, 풀숲 관찰 나들이', rule: '',
+              note: '곤충 10마리를 모두 만나면 오늘 밤 탐험 끝',
+              toast: '🌾 풀숲 어딘가에서 무언가 반짝였어요…',
+              endTitle: '오늘 밤 관찰 끝!', endMsg: '곤충 친구들은 모두\n숲으로 돌아갔어요.', endSub: '또 만나요, 잘 자요 🌙' },
+        ja: { tab: '🌾 一番目の夜', sub: 'しずかな夏の夜、草むらかんさつ', rule: '',
+              note: '10ぴきぜんぶ見つけたら今夜はおしまい',
+              toast: '🌾 草むらのどこかで何かが光った…',
+              endTitle: '今夜のかんさつ、おしまい!', endMsg: 'むしたちはみんな\n森へかえっていきました。', endSub: 'またね、おやすみ 🌙' },
+        en: { tab: '🌾 First Night', sub: 'A quiet summer-night meadow walk', rule: '',
+              note: 'Meet all 10 bugs to finish tonight’s walk',
+              toast: '🌾 Something glinted in the grass…',
+              endTitle: 'Tonight’s watch is done!', endMsg: 'All the bug friends have\ngone home to the forest.', endSub: 'See you again — good night 🌙' }
+      },
+      bugs: [
+        { id: 'spider',   emoji: '🕷️', cls: 'f-spider',   x: 84, y: 20, size: 32, snd: 'glint',
+          name: { ko: '거미', ja: 'クモ', en: 'Spider' },
+          fact: { ko: '다리가 8개! 곤충이 아니라 거미류예요.', ja: '足は8本!昆虫ではなくクモ類です。', en: 'Eight legs! An arachnid, not an insect.' } },
+        { id: 'moth',     emoji: '🦋', cls: 'f-moth',     x: 32, y: 22, size: 31, snd: 'flutter', avoid: true,
+          bounds: { x0: 6, x1: 94, y0: 7, y1: 46 },
+          name: { ko: '나방', ja: 'ガ', en: 'Moth' },
+          fact: { ko: '달빛을 나침반 삼아 밤하늘을 날아요.', ja: '月の光をたよりに夜空を飛びます。', en: 'It flies the night sky guided by moonlight.' } },
+        { id: 'butterfly',emoji: '🦋', cls: 'f-butterfly',x: 62, y: 38, size: 31, snd: 'glint',
+          name: { ko: '나비', ja: 'チョウ', en: 'Butterfly' },
+          fact: { ko: '발끝으로 꽃의 맛을 느낄 수 있어요.', ja: '足の先で花の味がわかります。', en: 'It tastes flowers with its feet.' } },
+        { id: 'firefly',  emoji: '🪲', cls: 'f-firefly',  x: 18, y: 44, size: 20, snd: 'shimmer', avoid: true, glow: true,
+          bounds: { x0: 5, x1: 95, y0: 20, y1: 76 },
+          name: { ko: '반딧불이', ja: 'ホタル', en: 'Firefly' },
+          fact: { ko: '배 끝의 빛으로 친구에게 신호를 보내요.', ja: 'おしりの光でなかまに合図を送ります。', en: 'It signals friends with its glowing tail.' } },
+        { id: 'mantis',   emoji: '🦗', cls: 'f-mantis',   x: 74, y: 56, size: 36, snd: 'glint',
+          name: { ko: '사마귀', ja: 'カマキリ', en: 'Mantis' },
+          fact: { ko: '고개를 휙 돌려 뒤도 볼 수 있어요.', ja: '首をくるっと回して後ろも見えます。', en: 'It can swivel its head to look behind.' } },
+        { id: 'lady',     emoji: '🐞', cls: 'f-lady',     x: 43, y: 60, size: 25, snd: 'glint',
+          name: { ko: '무당벌레', ja: 'テントウムシ', en: 'Ladybug' },
+          fact: { ko: '진딧물을 먹어 치우는 농부의 친구예요.', ja: 'アブラムシを食べる農家の味方です。', en: 'A farmer’s friend that gobbles up aphids.' } },
+        { id: 'cricket',  emoji: '🦗', cls: 'f-cricket',  x: 12, y: 72, size: 29, snd: 'chirp',
+          name: { ko: '귀뚜라미', ja: 'コオロギ', en: 'Cricket' },
+          fact: { ko: '날개를 비벼서 가을밤 노래를 불러요.', ja: '羽をこすって秋の夜に歌います。', en: 'It sings night songs by rubbing its wings.' } },
+        { id: 'stag',     emoji: '🪲', cls: 'f-stag',     x: 56, y: 76, size: 36, snd: 'buzz',
+          name: { ko: '사슴벌레', ja: 'クワガタムシ', en: 'Stag Beetle' },
+          fact: { ko: '큰 턱은 힘겨루기 씨름에 쓰는 뿔이에요.', ja: '大きなあごは力くらべに使う角です。', en: 'Its big jaws are horns for wrestling.' } },
+        { id: 'rhino',    emoji: '🪲', cls: 'f-rhino',    x: 87, y: 81, size: 40, snd: 'buzz',
+          name: { ko: '장수풍뎅이', ja: 'カブトムシ', en: 'Rhinoceros Beetle' },
+          fact: { ko: '자기 몸무게의 수십 배를 끄는 힘꾼이에요.', ja: '体重の何十倍も引っぱる力持ちです。', en: 'It can pull dozens of times its own weight.' } },
+        { id: 'snail',    emoji: '🐌', cls: 'f-snail',    x: 26, y: 87, size: 30, snd: 'glint',
+          name: { ko: '달팽이', ja: 'カタツムリ', en: 'Snail' },
+          fact: { ko: '혀에 작은 이빨이 1만 개나 있대요.', ja: '舌に小さな歯が1万本もあります。', en: 'Its tiny tongue holds over 10,000 teeth.' } }
+      ]
+    },
+    { id: 'night2', cls: 'n2', total: 10, amb: 'plop',   // occasional pond ripple in the ambience
+      grass: [['#0c2238', 60, 50, 95, 0.9], ['#081a2e', 34, 55, 98, 1.0], ['#040e1c', 42, 45, 95, 1.3]],
+      aflies: [[14, 40], [48, 34], [80, 46], [30, 60], [64, 66]],
+      copy: {
+        ko: { tab: '🪷 두 번째 밤', sub: '연못가의 밤, 물가 관찰 나들이',
+              lockedNote: '🔒 첫 번째 밤을 마치면 열려요',
+              rule: '🤫 몇몇 친구는 손전등을 가만히 비춰야 나와요',
+              note: '물가 생물 10마리를 모두 만나면 오늘 밤 탐험 끝',
+              toast: '🪷 연못 어딘가에서 물이 찰랑였어요…',
+              endTitle: '연못가의 밤 관찰 끝!', endMsg: '물가 친구들은 모두\n갈대 사이로 돌아갔어요.', endSub: '다음에 또 만나요, 잘 자요 🌙' },
+        ja: { tab: '🪷 二番目の夜', sub: '池のほとりの夜、水べかんさつ',
+              lockedNote: '🔒 一番目の夜をおえるとひらくよ',
+              rule: '🤫 じっと照らさないと出てこない子もいるよ',
+              note: '水べの生きもの10ぴきに会えたら今夜はおしまい',
+              toast: '🪷 池のどこかで水がゆれた…',
+              endTitle: '池のほとりのかんさつ、おしまい!', endMsg: '水べの友だちはみんな\nアシのあいだへかえっていきました。', endSub: 'またね、おやすみ 🌙' },
+        en: { tab: '🪷 Second Night', sub: 'A quiet night by the pond, a waterside walk',
+              lockedNote: '🔒 Finish the first night to unlock',
+              rule: '🤫 Some friends only appear if you hold the light still',
+              note: 'Meet all 10 pond creatures to finish tonight’s walk',
+              toast: '🪷 Something rippled the pond…',
+              endTitle: 'The pond watch is done!', endMsg: 'All the pond friends have\nslipped back into the reeds.', endSub: 'See you next time — good night 🌙' }
+      },
+      bugs: [
+        { id: 'bat',      emoji: '🦇', cls: 'f-bat',      x: 60, y: 16, size: 30, snd: 'flutter', avoid: true,
+          bounds: { x0: 6, x1: 94, y0: 6, y1: 38 },
+          name: { ko: '박쥐', ja: 'コウモリ', en: 'Bat' },
+          fact: { ko: '소리를 내고 메아리를 들어 어둠 속을 날아요.', ja: '声を出してひびきを聞き、暗やみを飛びます。', en: 'It calls out and listens to echoes to fly in the dark.' } },
+        { id: 'longhorn', emoji: '🪲', cls: 'f-longhorn', x: 11, y: 30, size: 34, snd: 'buzz',
+          name: { ko: '하늘소', ja: 'カミキリムシ', en: 'Longhorn Beetle' },
+          fact: { ko: '더듬이가 몸보다 긴 종류가 많아요.', ja: '体より長いひげをもつ仲間が多いです。', en: 'Many kinds have antennae longer than their body.' } },
+        { id: 'crane',    emoji: '🦟', cls: 'f-crane',    x: 88, y: 46, size: 28, snd: 'flutter',
+          name: { ko: '각다귀', ja: 'ガガンボ', en: 'Crane Fly' },
+          fact: { ko: '모기를 닮았지만 사람을 물지 않아요.', ja: '蚊に似ているけれど人をさしません。', en: 'It looks like a mosquito but does not bite.' } },
+        { id: 'mayfly',   emoji: '🦟', cls: 'f-mayfly',   x: 40, y: 62, size: 24, snd: 'flutter', avoid: true,
+          bounds: { x0: 15, x1: 90, y0: 52, y1: 74 },
+          name: { ko: '하루살이', ja: 'カゲロウ', en: 'Mayfly' },
+          fact: { ko: '어른이 된 뒤에는 하루 이틀만 살아요.', ja: 'おとなになると一日か二日しか生きません。', en: 'Once grown up it lives only a day or two.' } },
+        { id: 'katydid',  emoji: '🦗', cls: 'f-katydid',  x: 20, y: 57, size: 33, snd: 'chirp',
+          name: { ko: '여치', ja: 'キリギリス', en: 'Katydid' },
+          fact: { ko: '노래하는 건 수컷뿐이에요.', ja: '鳴くのはオスだけです。', en: 'Only the males sing.' } },
+        { id: 'bell',     emoji: '🦗', cls: 'f-bell',     x: 74, y: 66, size: 27, snd: 'chirp', shy: true,
+          name: { ko: '방울벌레', ja: 'スズムシ', en: 'Bell Cricket' },
+          fact: { ko: '방울 소리처럼 맑게 울어서 이런 이름이 붙었어요.', ja: '鈴のような声で鳴くのでこの名前になりました。', en: 'It got its name from its clear, bell-like song.' } },
+        { id: 'frog',     emoji: '🐸', cls: 'f-frog',     x: 33, y: 76, size: 34, snd: 'plop', shy: true,
+          name: { ko: '청개구리', ja: 'アマガエル', en: 'Tree Frog' },
+          fact: { ko: '발가락 끝 빨판으로 잎에 착 붙어요.', ja: '指先のきゅうばんで葉っぱにくっつきます。', en: 'Sticky toe pads let it cling to leaves.' } },
+        { id: 'waterbug', emoji: '🪳', cls: 'f-waterbug', x: 58, y: 82, size: 30, snd: 'plop', shy: true,
+          name: { ko: '물자라', ja: 'コオイムシ', en: 'Water Bug' },
+          fact: { ko: '수컷이 알을 등에 업고 다니며 돌봐요.', ja: 'オスが卵をせなかに乗せて守ります。', en: 'The father carries the eggs on his back.' } },
+        { id: 'diving',   emoji: '🪲', cls: 'f-diving',   x: 82, y: 84, size: 30, snd: 'plop',
+          name: { ko: '물방개', ja: 'ゲンゴロウ', en: 'Diving Beetle' },
+          fact: { ko: '뒷다리를 노처럼 저어 물속을 헤엄쳐요.', ja: '後ろ足をオールのように動かして泳ぎます。', en: 'It rows through the water with oar-like back legs.' } },
+        { id: 'whirligig',emoji: '🪲', cls: 'f-whirligig',x: 14, y: 84, size: 20, snd: 'plop',
+          name: { ko: '물맴이', ja: 'ミズスマシ', en: 'Whirligig Beetle' },
+          fact: { ko: '눈이 위아래로 나뉘어 물 위와 물속을 함께 봐요.', ja: '目が上下に分かれ、水の上と中を同時に見ます。', en: 'Its split eyes watch above and below the water at once.' } }
+      ]
+    }
   ];
+  var curNight = 0;            // index into NIGHTS
+  var BUGS = NIGHTS[0].bugs;   // current night's bugs (rebound in loadNight)
 
   /* ================= dom refs ================= */
   var $ = function (id) { return document.getElementById(id); };
   var stage = $('stage'), bugLayer = $('bugLayer'), fxLayer = $('fxLayer');
   var headerEl = document.querySelector('header');
   var starField = $('starField');
-  var pCount = $('pCount'), pSlots = $('pSlots');
+  var pCount = $('pCount'), pSlots = $('pSlots'), progressEl = $('progress');
   var hintToast = $('hintToast');
   var cardOverlay = $('cardOverlay'), introOverlay = $('introOverlay'), endOverlay = $('endOverlay');
   var endPanel = $('endPanel');
@@ -616,9 +800,78 @@
   var muted = false;
   var SW = 0, SH = 0, R = 140;
   var lx = 0, ly = 0, tx = 0, ty = 0;   // light pos (eased) & target
+  var plx = 0, ply = 0, lspd = 0;       // previous light pos & speed (px/s) for shy bugs
   var caughtCount = 0;
   var currentCard = null;
-  var glintTimer = null, ambTimer = null, toastTimer = null;
+  var glintTimer = null, ambTimer = null, toastTimer = null, cardTimer = null, endTimer = null;
+  var selNight = 0;              // night chosen on the intro panel
+  var toastKey = 'toast';        // which night-copy line the hint toast is showing (toast | rule)
+  var forceUnlock = false;       // ?night=2 test entry ignores the lock
+  var playStart = 0;
+
+  /* ================= progress (localStorage 'nb-progress') =================
+     {v:1, cleared:{night1:true,...}, met:['spider',...]}
+     Everything is best-effort: parse/quota errors are swallowed and the game
+     runs unchanged without storage. */
+  var progress = { v: 1, cleared: {}, met: [] };
+  function loadProgress() {
+    try {
+      var raw = localStorage.getItem('nb-progress');
+      if (!raw) return;
+      var o = JSON.parse(raw);
+      if (!o || typeof o !== 'object') return;
+      if (o.cleared && typeof o.cleared === 'object') progress.cleared = o.cleared;
+      if (Object.prototype.toString.call(o.met) === '[object Array]') progress.met = o.met.slice(0, 200);
+    } catch (e) {}
+  }
+  function saveProgress() {
+    try { localStorage.setItem('nb-progress', JSON.stringify(progress)); } catch (e) {}
+  }
+  function markMet(id) {
+    if (progress.met.indexOf(id) >= 0) return;
+    progress.met.push(id);
+    saveProgress();
+  }
+  function markCleared(nightId) {
+    progress.cleared[nightId] = true;
+    saveProgress();
+  }
+  function isUnlocked(idx) {
+    if (idx === 0 || forceUnlock) return true;
+    return !!progress.cleared[NIGHTS[idx - 1].id];
+  }
+  function allBugs() {
+    var out = [], i, j;
+    for (i = 0; i < NIGHTS.length; i++) for (j = 0; j < NIGHTS[i].bugs.length; j++) out.push(NIGHTS[i].bugs[j]);
+    return out;
+  }
+
+  /* ================= GA4 (best-effort, never blocks the game) =================
+     game_step: once per screen per page load. game_complete: once per night run
+     (a replay re-arms it). All calls triple-guarded. */
+  var stepSent = {};
+  var completeSent = false;
+  function gaStep(step) {
+    if (stepSent[step]) return;
+    stepSent[step] = true;
+    try {
+      if (typeof gtag === 'function') {
+        gtag('event', 'game_step', { game_id: 'night-bugs', step: step, lang: lang });
+      }
+    } catch (e) {}
+  }
+  function gaComplete(nightId) {
+    if (completeSent) return;
+    completeSent = true;
+    try {
+      if (typeof gtag === 'function') {
+        gtag('event', 'game_complete', {
+          game_id: 'night-bugs', scene: nightId, result: 'clear', lang: lang,
+          play_sec: Math.max(0, Math.round((Date.now() - playStart) / 1000)), bugs: BUGS.length
+        });
+      }
+    } catch (e) {}
+  }
 
   /* ================= language ================= */
   function detectLang() {
@@ -631,32 +884,85 @@
     return 'ko';
   }
   function T() { return I18N[lang]; }
+  function NC(idx) { return NIGHTS[idx == null ? curNight : idx].copy[lang]; }
   var NAMES = { ko:'밤곤충 손전등', ja:'夜のむし探し', en:'Night Bug Hunt' };
   function otherNames() {
     return ['ko','ja','en'].filter(function(l){ return l !== lang; })
       .map(function(l){ return NAMES[l]; }).join(' · ');
   }
+  function renderNightTabs() {
+    var wrap = $('nightTabs');
+    wrap.innerHTML = '';
+    var i;
+    for (i = 0; i < NIGHTS.length; i++) {
+      (function (idx) {
+        var b = document.createElement('button');
+        var open = isUnlocked(idx);
+        b.className = 'ntab' + (idx === selNight ? ' on' : '');
+        b.textContent = NIGHTS[idx].copy[lang].tab + (open ? '' : ' 🔒');
+        b.disabled = !open;
+        b.setAttribute('aria-pressed', idx === selNight ? 'true' : 'false');
+        b.addEventListener('click', function () {
+          if (selNight === idx) return;
+          selNight = idx;
+          sndPop();
+          applyI18n();
+        });
+        wrap.appendChild(b);
+      })(i);
+    }
+    var lockIdx = -1;
+    for (i = 0; i < NIGHTS.length; i++) if (!isUnlocked(i)) { lockIdx = i; break; }
+    $('lockNote').textContent = lockIdx >= 0 ? (NIGHTS[lockIdx].copy[lang].lockedNote || T().locked) : '';
+  }
+  function renderNotes() {
+    var all = allBugs(), grid = $('notesGrid'), n = 0, i, c;
+    grid.innerHTML = '';
+    for (i = 0; i < all.length; i++) {
+      c = document.createElement('div');
+      var met = progress.met.indexOf(all[i].id) >= 0;
+      if (met) {
+        n++;
+        c.className = 'ncell';
+        c.innerHTML = '<span class="' + all[i].cls + '">' + all[i].emoji + '</span>';
+        c.title = all[i].name[lang];
+      } else {
+        c.className = 'ncell unmet';
+        c.textContent = '?';
+      }
+      grid.appendChild(c);
+    }
+    $('notesBtn').textContent = T().notes + ' ' + n + '/' + all.length;
+  }
   function applyI18n() {
     var t = T();
+    var ic = NC(selNight);   // intro shows the selected night's copy
+    var pc = NC(curNight);   // in-game / end texts follow the running night
     document.documentElement.lang = lang;
     $('titleMain').textContent = NAMES[lang];
     $('titleSub').textContent = otherNames();
     $('homeLink').textContent = '← ' + t.home;
     $('langBtn').textContent = FLAGS[lang];
+    $('langBtn').setAttribute('aria-label', t.langLabel);
     $('introTitle').textContent = t.introTitle;
-    $('introSub').textContent = t.introSub;
+    $('introSub').textContent = ic.sub;
     $('introL1').textContent = t.introL1;
     $('introL2').textContent = t.introL2;
     $('introL3').textContent = t.introL3;
-    $('introNote').textContent = t.introNote;
+    $('introL4').textContent = ic.rule || '';
+    $('introNote').textContent = ic.note;
     $('startBtn').textContent = t.start;
-    hintToast.textContent = t.toast;
-    $('endTitle').textContent = t.endTitle;
-    $('endMsg').textContent = t.endMsg;
-    $('endSub').textContent = t.endSub;
+    hintToast.textContent = pc[toastKey] || pc.toast;
+    $('endTitle').textContent = pc.endTitle;
+    $('endMsg').textContent = pc.endMsg;
+    $('endSub').textContent = pc.endSub;
     $('replayBtn').textContent = t.replay;
+    $('nextBtn').textContent = t.nextNight;
+    $('prevBtn').textContent = t.firstNight;
     $('endHomeBtn').textContent = t.homeBtn;
     $('soundBtn').setAttribute('aria-label', muted ? t.soundOff : t.soundOn);
+    renderNightTabs();
+    renderNotes();
     if (currentCard) renderCard(currentCard);
     var i;
     for (i = 0; i < BUGS.length; i++) {
@@ -667,6 +973,13 @@
     lang = LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length];
     try { localStorage.setItem('in9-lang', lang); } catch (e) {}
     applyI18n();
+    sndPop();
+  });
+  $('notesBtn').addEventListener('click', function () {
+    var g = $('notesGrid');
+    var open = !g.classList.contains('open');
+    g.classList.toggle('open', open);
+    this.setAttribute('aria-expanded', open ? 'true' : 'false');
     sndPop();
   });
 
@@ -715,7 +1028,7 @@
   }
 
   function buildAmbientFireflies() {
-    var spots = [[22, 36], [66, 30], [85, 52], [40, 47], [8, 58]];
+    var spots = NIGHTS[curNight].aflies;
     var i;
     for (i = 0; i < spots.length; i++) {
       var a = document.createElement('div');
@@ -750,9 +1063,10 @@
       (function (b) {
         b.px = b.x; b.py = b.y;
         b.caught = false;
+        b.reveal = b.shy ? 0 : 1;
         b.wt = Math.random() * 6.28;
         var el = document.createElement('div');
-        el.className = 'bug';
+        el.className = 'bug' + (b.shy ? ' shy' : '');
         var inner = '';
         if (b.id === 'spider') inner += '<div class="spider-thread"></div>' + WEB_SVG;
         inner += '<span class="bug-emoji ' + b.cls + '" style="font-size:' + b.size +
@@ -763,6 +1077,7 @@
         el.style.top = b.py + '%';
         bugLayer.appendChild(el);
         b.el = el;
+        b.glowEl = null;
         if (b.glow) {
           var g = document.createElement('div');
           g.className = 'fglow';
@@ -775,6 +1090,39 @@
         b.slotEl = slot;
       })(BUGS[i]);
     }
+    pCount.textContent = '0/' + BUGS.length;
+  }
+
+  /* Swap the whole scene to NIGHTS[idx]: palette class, grass/reeds, ambient
+     fireflies, bugs, progress slots. Clears fx + timers so nothing from the
+     previous night leaks over. */
+  function loadNight(idx) {
+    curNight = idx;
+    BUGS = NIGHTS[idx].bugs;
+    caughtCount = 0;
+    currentCard = null;
+    completeSent = false;
+    if (cardTimer) { window.clearTimeout(cardTimer); cardTimer = null; }
+    if (endTimer) { window.clearTimeout(endTimer); endTimer = null; }
+    if (toastTimer) { window.clearTimeout(toastTimer); toastTimer = null; }
+    toastKey = 'toast';
+    hintToast.classList.remove('show');
+    cardOverlay.classList.remove('active');
+    fxLayer.innerHTML = '';
+    // released-bug emojis live on <body> (they float above the end panel) — clear
+    // any still in flight so they do not drift over the next night's scene
+    var rb = document.querySelectorAll('.release-bug');
+    var i, cls = NIGHTS[idx].cls;
+    for (i = 0; i < rb.length; i++) if (rb[i].parentNode) rb[i].parentNode.removeChild(rb[i]);
+    for (i = 0; i < NIGHTS.length; i++) if (NIGHTS[i].cls) stage.classList.remove(NIGHTS[i].cls);
+    if (cls) stage.classList.add(cls);
+    var g = NIGHTS[idx].grass;
+    buildGrass($('grassBack'),  g[0][0], g[0][1], g[0][2], g[0][3], g[0][4]);
+    buildGrass($('grassMid'),   g[1][0], g[1][1], g[1][2], g[1][3], g[1][4]);
+    buildGrass($('grassFront'), g[2][0], g[2][1], g[2][2], g[2][3], g[2][4]);
+    buildAmbientFireflies();
+    buildBugs();
+    measure();
   }
 
   /* ================= geometry ================= */
@@ -784,18 +1132,51 @@
   // near-constant pixel height while the stage height swings with orientation
   // (7% of a 390px-tall landscape viewport is well inside the header). So derive
   // the ceiling from the measured header height each time the viewport changes.
+  //
+  // The same applies at the bottom: the progress pill (#progress) floats over
+  // the stage above the safe-area inset, and it swallows pointer events. Any
+  // bug centred under it (roaming or fixed) would be hidden and untappable —
+  // shy bugs worst of all, since the beam must rest on them. So also derive a
+  // floor from the pill's measured rect: roaming bounds get their y1 lowered,
+  // fixed bugs that sit horizontally under the pill get lifted just above it.
   function clampRoamBounds() {
     var hh = headerEl ? headerEl.offsetHeight : 0;
-    var i, b, minY;
+    var i, b, half, minY, maxY, target, sr, pr;
+    var pillTop = 0, pillL = 0, pillR = 0, hasPill = false;
+    if (SW && SH && progressEl) {
+      sr = stage.getBoundingClientRect();
+      pr = progressEl.getBoundingClientRect();
+      if (pr.height > 0) {
+        hasPill = true;
+        pillTop = pr.top - sr.top; pillL = pr.left - sr.left; pillR = pr.right - sr.left;
+      }
+    }
     for (i = 0; i < BUGS.length; i++) {
       b = BUGS[i];
-      if (!b.bounds) continue;
-      if (b.bounds.baseY0 == null) b.bounds.baseY0 = b.bounds.y0;
-      // emoji is centred on (px,py), so clear half its height plus a margin
-      minY = SH ? (hh + b.size * 0.5 + 8) / SH * 100 : b.bounds.baseY0;
-      b.bounds.y0 = Math.min(b.bounds.y1 - 4, Math.max(b.bounds.baseY0, minY));
-      if (b.py < b.bounds.y0) {
-        b.py = b.bounds.y0;
+      half = b.size * 0.5;
+      if (b.bounds) {
+        if (b.bounds.baseY0 == null) b.bounds.baseY0 = b.bounds.y0;
+        if (b.bounds.baseY1 == null) b.bounds.baseY1 = b.bounds.y1;
+        // emoji is centred on (px,py), so clear half its height plus a margin
+        minY = SH ? (hh + half + 8) / SH * 100 : b.bounds.baseY0;
+        maxY = hasPill ? (pillTop - half - 8) / SH * 100 : b.bounds.baseY1;
+        b.bounds.y1 = Math.min(b.bounds.baseY1, maxY);
+        b.bounds.y0 = Math.min(b.bounds.y1 - 4, Math.max(b.bounds.baseY0, minY));
+        if (b.bounds.y1 < b.bounds.y0 + 4) b.bounds.y1 = b.bounds.y0 + 4;
+        target = Math.max(b.bounds.y0, Math.min(b.bounds.y1, b.py));
+      } else {
+        // fixed bug: start from its authored spot so a rotate back un-clamps it
+        target = b.y;
+        if (hasPill) {
+          var bx = b.x / 100 * SW;
+          if (bx + half + 8 > pillL && bx - half - 8 < pillR) {
+            maxY = (pillTop - half - 8) / SH * 100;
+            if (target > maxY) target = maxY;
+          }
+        }
+      }
+      if (target !== b.py) {
+        b.py = target;
         if (b.el) b.el.style.top = b.py.toFixed(2) + '%';
       }
     }
@@ -809,7 +1190,12 @@
     if (state === 'intro') {
       lx = tx = SW / 2;
       ly = ty = SH * 0.55;
+    } else {
+      // orientation change mid-play: keep the beam inside the (new) stage
+      tx = Math.max(0, Math.min(SW, tx)); ty = Math.max(0, Math.min(SH, ty));
+      lx = Math.max(0, Math.min(SW, lx)); ly = Math.max(0, Math.min(SH, ly));
     }
+    plx = lx; ply = ly;
   }
   function bugPx(b) { return { x: b.px / 100 * SW, y: b.py / 100 * SH }; }
   function dist(ax, ay, bx, by) { var dx = ax - bx, dy = ay - by; return Math.sqrt(dx * dx + dy * dy); }
@@ -824,6 +1210,9 @@
     var k = Math.min(1, dt * 11);
     lx += (tx - lx) * k;
     ly += (ty - ly) * k;
+    // beam speed (px/s) — shy bugs only surface while the light rests
+    lspd = dt > 0 ? dist(lx, ly, plx, ply) / dt : 0;
+    plx = lx; ply = ly;
 
     var r = R;
     if (!RM) {
@@ -835,7 +1224,8 @@
     stage.style.setProperty('--r', r.toFixed(1) + 'px');
 
     var i;
-    for (i = 0; i < BUGS.length; i++) {
+    if (!SW || !SH) measure();   // zero-size stage (hidden tab at boot) → wait for real metrics
+    for (i = 0; i < BUGS.length && SW && SH; i++) {
       var b = BUGS[i];
       if (b.caught) continue;
       if (b.avoid && state === 'play') {
@@ -858,6 +1248,18 @@
         if (b.py < bd.y0) b.py = bd.y0; if (b.py > bd.y1) b.py = bd.y1;
         b.el.style.left = b.px.toFixed(2) + '%';
         b.el.style.top = b.py.toFixed(2) + '%';
+      }
+      if (b.shy) {
+        var sq = bugPx(b);
+        var resting = state === 'play' && lspd < 70 && dist(sq.x, sq.y, lx, ly) < R * 0.95;
+        var rv = b.reveal + (resting ? dt / 1.0 : -dt * 1.6);
+        rv = rv < 0 ? 0 : (rv > 1 ? 1 : rv);
+        if (rv !== b.reveal) {
+          b.reveal = rv;
+          b.el.style.opacity = (rv * rv).toFixed(2);   // eased: stays faint until it is nearly out (tappable at 0.9)
+          if (rv >= 0.9) b.el.classList.add('shown');
+          else if (rv < 0.6) b.el.classList.remove('shown');
+        }
       }
       if (b.glowEl) {
         var gp = bugPx(b);
@@ -892,6 +1294,7 @@
     for (i = 0; i < BUGS.length; i++) {
       var b = BUGS[i];
       if (b.caught) continue;
+      if (b.shy && b.reveal < 0.9) continue;   // not surfaced yet — hold the light still
       var p = bugPx(b);
       var dLight = dist(p.x, p.y, lx, ly);
       var dTap = dist(p.x, p.y, x, y);
@@ -919,7 +1322,7 @@
         [{ transform: 'translate(-50%,-50%) scale(1)', opacity: 1 },
          { transform: 'translate(-50%,-58%) scale(1.55)', opacity: 0 }],
         { duration: 480, easing: 'cubic-bezier(.2,.8,.4,1)', fill: 'forwards' }
-      ).onfinish = function () { b.el.classList.add('caught'); };
+      ).onfinish = (function (el) { return function () { el.classList.add('caught'); }; })(b.el);
     } else {
       b.el.classList.add('caught');
     }
@@ -928,9 +1331,10 @@
     b.slotEl.classList.add('filled');
     b.slotEl.innerHTML = '<span class="' + b.cls + '" style="font-size:12px;">' + b.emoji + '</span>';
     b.slotEl.title = b.name[lang];
-    pCount.textContent = caughtCount + '/10';
+    pCount.textContent = caughtCount + '/' + BUGS.length;
+    markMet(b.id);
 
-    window.setTimeout(function () { showCard(b); }, 500);
+    cardTimer = window.setTimeout(function () { cardTimer = null; showCard(b); }, 500);
   }
 
   function burst(x, y) {
@@ -978,24 +1382,25 @@
   /* ================= observation card ================= */
   function renderCard(b) {
     var t = T();
-    $('cardLabel').textContent = t.cardLabel + ' · ' + caughtCount + '/10';
+    $('cardLabel').textContent = t.cardLabel + ' · ' + caughtCount + '/' + BUGS.length;
     $('cardEmoji').className = b.cls;
     $('cardEmoji').textContent = b.emoji;
     $('cardName').textContent = b.name[lang];
     $('cardFact').textContent = b.fact[lang];
-    $('cardBtn').textContent = (caughtCount >= 10) ? t.cardBtnLast : t.cardBtn;
+    $('cardBtn').textContent = (caughtCount >= BUGS.length) ? t.cardBtnLast : t.cardBtn;
   }
   function showCard(b) {
     renderCard(b);
     cardOverlay.classList.add('active');
   }
   function closeCard() {
+    if (state !== 'card') return;
     cardOverlay.classList.remove('active');
     currentCard = null;
     sndPop();
-    if (caughtCount >= 10) {
+    if (caughtCount >= BUGS.length) {
       state = 'end';
-      window.setTimeout(startEnding, 420);
+      endTimer = window.setTimeout(function () { endTimer = null; startEnding(); }, 420);
     } else {
       state = 'play';
     }
@@ -1007,12 +1412,22 @@
 
   /* ================= ending ================= */
   function startEnding() {
+    var night = NIGHTS[curNight];
+    markCleared(night.id);
+    gaComplete(night.id);
+    // end-panel buttons depend on which night just finished
+    var hasNext = curNight < NIGHTS.length - 1;
+    $('nextBtn').style.display = hasNext ? '' : 'none';
+    $('prevBtn').style.display = curNight > 0 ? '' : 'none';
+    $('replayBtn').className = hasNext ? 'btn-ghost' : 'btn-warm';
+    applyI18n();   // refresh tabs/lock note + notes count now that this night is cleared
     endOverlay.classList.add('active');
     endOverlay.classList.add('dimmed');
     sndEnding();
     var delay = RM ? 60 : 1650;
     if (!RM) releaseBugs();
-    window.setTimeout(function () {
+    endTimer = window.setTimeout(function () {
+      endTimer = null;
       endPanel.style.visibility = 'visible';
     }, delay);
   }
@@ -1046,34 +1461,58 @@
     }
   }
 
-  function reset() {
+  /* Begin (or restart) a night: full scene rebuild via loadNight, then play. */
+  function startNight(idx) {
     endOverlay.classList.remove('active');
     endOverlay.classList.remove('dimmed');
     endPanel.style.visibility = 'hidden';
-    caughtCount = 0;
-    currentCard = null;
-    pCount.textContent = '0/10';
-    var i;
-    for (i = 0; i < BUGS.length; i++) {
-      var b = BUGS[i];
-      b.caught = false;
-      b.px = b.x; b.py = b.y;
-      b.el.classList.remove('caught');
-      b.el.style.left = b.px + '%';
-      b.el.style.top = b.py + '%';
-      if (b.el.getAnimations) {
-        var anims = b.el.getAnimations();
-        for (var j = 0; j < anims.length; j++) anims[j].cancel();
-      }
-      if (b.glowEl) b.glowEl.style.display = '';
-      b.slotEl.classList.remove('filled');
-      b.slotEl.innerHTML = '';
-      b.slotEl.removeAttribute('title');
-    }
+    introOverlay.classList.remove('active');
+    loadNight(idx);
+    selNight = idx;
+    applyI18n();
     state = 'play';
+    playStart = Date.now();
+    gaStep(NIGHTS[idx].id);
     sndPop();
+    showNightToasts();
+    window.setTimeout(function () {
+      if (state === 'play' && curNight === idx) {
+        var alive = [];
+        for (var i = 0; i < BUGS.length; i++) if (!BUGS[i].caught) alive.push(BUGS[i]);
+        if (alive.length) doGlint(alive[Math.floor(Math.random() * alive.length)]);
+      }
+    }, 1400);
   }
+  /* Hint toast chain: the night's opening line, then (if the night has one) its
+     rule — e.g. "hold the light still" — so a child arriving via "Next Night"
+     without revisiting the intro panel still hears the rule once. Every step is
+     tracked in toastTimer, so loadNight() cancels the whole chain. */
+  function showNightToasts() {
+    var pc = NC(curNight);
+    toastKey = 'toast';
+    hintToast.textContent = pc.toast;
+    hintToast.classList.add('show');
+    toastTimer = window.setTimeout(function () {
+      hintToast.classList.remove('show');
+      if (!pc.rule) { toastTimer = null; return; }
+      toastTimer = window.setTimeout(function () {          // wait for the fade-out
+        toastKey = 'rule';
+        hintToast.textContent = NC(curNight).rule;
+        hintToast.classList.add('show');
+        toastTimer = window.setTimeout(function () {
+          toastTimer = null;
+          hintToast.classList.remove('show');
+        }, 4500);
+      }, 900);
+    }, 4200);
+  }
+
+  function reset() { startNight(curNight); }
   $('replayBtn').addEventListener('click', reset);
+  $('nextBtn').addEventListener('click', function () {
+    if (curNight < NIGHTS.length - 1) startNight(curNight + 1);
+  });
+  $('prevBtn').addEventListener('click', function () { startNight(0); });
 
   /* ================= hints (glints) ================= */
   function scheduleGlint() {
@@ -1192,6 +1631,11 @@
     } else if (kind === 'buzz') {
       noiseHit(160, 2.5, 0.16, 0.055, pan, 0, 'lowpass');
       ping(105, 92, 0.17, 0.05, pan, 'sawtooth', 0);
+    } else if (kind === 'plop') {
+      // water drop: quick downward blip + tiny splash
+      ping(880, 330, 0.11, 0.06, pan, 'sine', 0);
+      noiseHit(2400, 0.9, 0.09, 0.025, pan, 0.03, 'bandpass');
+      ping(1320, 990, 0.07, 0.022, pan, 'sine', 0.13);
     } else {
       ping(1550, 2300, 0.28, 0.05, pan, 'sine', 0);
       ping(2350, 3100, 0.2, 0.028, pan, 'sine', 0.07);
@@ -1220,7 +1664,12 @@
       if (!muted && !document.hidden && state !== 'intro') {
         var pan = Math.random() * 1.4 - 0.7;
         var vol = 0.45 + Math.random() * 0.5;
-        cricketChirp(pan, vol);
+        var extra = NIGHTS[curNight].amb;   // per-night extra ambience (e.g. pond ripple)
+        if (extra && Math.random() < 0.3) {
+          playHint(extra, pan);
+        } else {
+          cricketChirp(pan, vol);
+        }
         if (Math.random() < 0.4) {
           window.setTimeout(function () {
             if (!muted) cricketChirp(pan, vol * 0.8);
@@ -1250,18 +1699,7 @@
   $('startBtn').addEventListener('click', function () {
     initAudio();
     resumeAudio();
-    introOverlay.classList.remove('active');
-    state = 'play';
-    sndPop();
-    hintToast.classList.add('show');
-    toastTimer = window.setTimeout(function () { hintToast.classList.remove('show'); }, 4200);
-    window.setTimeout(function () {
-      if (state === 'play') {
-        var alive = [];
-        for (var i = 0; i < BUGS.length; i++) if (!BUGS[i].caught) alive.push(BUGS[i]);
-        if (alive.length) doGlint(alive[Math.floor(Math.random() * alive.length)]);
-      }
-    }, 1400);
+    startNight(selNight);
   });
 
   document.addEventListener('visibilitychange', function () {
@@ -1270,23 +1708,27 @@
     else if (!muted) { AC.resume().catch(function () {}); }
   });
 
-  window.addEventListener('resize', function () {
-    measure();
-    buildStars();
-  });
+  // Stars/bugs are positioned in %, so a resize only needs re-measuring —
+  // rebuilding the star field here made the sky visibly reshuffle on rotate.
+  window.addEventListener('resize', measure);
 
   /* boot */
   lang = detectLang();
+  loadProgress();
   try { if (localStorage.getItem('nb-sound') === 'off') muted = true; } catch (e) {}
   $('soundBtn').textContent = muted ? '🔇' : '🔊';
-  applyI18n();
+  // ?night=2 : direct test entry into a later night (lock ignored)
+  try {
+    var m = /[?&]night=(\d+)/.exec(window.location.search);
+    if (m) {
+      var qn = parseInt(m[1], 10) - 1;
+      if (qn > 0 && qn < NIGHTS.length) { selNight = qn; forceUnlock = true; }
+    }
+  } catch (e) {}
   buildStars();
-  buildGrass($('grassBack'), '#111e44', 95, 42, 88, 1.3);
-  buildGrass($('grassMid'), '#0a1434', 75, 40, 92, 1.5);
-  buildGrass($('grassFront'), '#050b20', 55, 45, 95, 1.9);
-  buildAmbientFireflies();
-  buildBugs();
-  measure();
+  loadNight(selNight);
+  applyI18n();
+  gaStep('intro');
   scheduleGlint();
   window.requestAnimationFrame(frame);
 })();
