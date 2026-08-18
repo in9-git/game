@@ -224,6 +224,22 @@ canvas{display:block;touch-action:none;cursor:pointer;border-radius:10px;max-wid
 .kv span:first-child{color:var(--ink3);flex:0 0 auto}
 .kv span:last-child{text-align:right}
 a.dl{display:block;text-decoration:none;text-align:center}
+a.dl.ghost{width:100%}
+
+/* ---------------- 공유 카드 (M1.5 §8-3) ---------------- */
+.cardwrap{margin-top:14px;display:flex;justify-content:center}
+/* 인앱 웹뷰의 '길게 눌러 저장'이 되도록 pointer-events / -webkit-touch-callout 을 걸지 않는다 */
+.cardimg{
+  display:block;width:100%;max-width:360px;height:auto;border-radius:14px;
+  border:1px solid var(--line3);box-shadow:0 12px 30px rgba(0,0,0,.36);
+}
+.sharehint{font-size:.8rem;color:var(--ink3);text-align:center;margin:8px 0 0;line-height:1.55}
+.fbpanel{
+  margin-top:10px;padding:12px 13px 13px;border:1px dashed var(--line2);border-radius:12px;
+  background:rgba(232,185,58,.06);
+}
+.fbpanel h4{margin:0 0 4px;font-size:.9rem;font-weight:700;color:var(--acc2)}
+.fbpanel p{margin:0 0 10px;font-size:.82rem;color:var(--ink2);line-height:1.6}
 
 /* ---------------- 셀프테스트 ---------------- */
 .st{font-size:.84rem}
@@ -409,9 +425,19 @@ a.dl{display:block;text-decoration:none;text-align:center}
       <div class="stage">기록</div>
       <div class="banner" id="resBanner"></div>
       <div class="card" id="resList"></div>
+      <!-- 공유 카드 (M1.5 §8-3) — 미리보기는 모든 모드에서 항상 표시 -->
+      <div class="cardwrap" id="resCard" hidden><img class="cardimg" id="resCardImg" alt=""></div>
+      <p class="sharehint" id="resShareHint" hidden></p>
+      <!-- 주 버튼 둘은 한 래퍼 안에 — 모드마다 하나만 보이므로 빈 .mt 블록이 남지 않는다 -->
+      <div class="mt"><button class="btn" id="resShare" disabled></button><a class="btn dl" id="resShareDl" download hidden></a></div>
+      <div class="fbpanel" id="resShareFb" hidden>
+        <h4 id="resShareFbTitle"></h4>
+        <p id="resShareFbHint"></p>
+        <a class="ghost dl" id="resShareFbDl" download></a>
+      </div>
       <p class="note" id="resDisc"></p>
-      <div class="mt"><a class="btn dl" id="resDl" download>내 데이터 JSON 내려받기</a></div>
-      <div class="mt8"><button class="ghost" id="resAgain" style="width:100%">처음부터 다시</button></div>
+      <div class="mt"><a class="btn dl" id="resDl" download></a></div>
+      <div class="mt8"><button class="ghost" id="resAgain" style="width:100%"></button></div>
       <div class="mt8"><a class="ghost" href="../../index.html" style="display:block;width:100%;text-align:center;text-decoration:none">← 게임 홈</a></div>
     </section>
 
@@ -444,8 +470,10 @@ a.dl{display:block;text-decoration:none;text-align:center}
    §10 p3_trap
    §11 p4_ninedot
    §12 결과 화면 (M1 간이)
+   §12-b 공유 카드 (M1.5, 스펙 §8-3 ①~⑤: 선렌더 File · 동기 navigator.share ·
+       a[download] 폴백 · 인앱 감지 · 카드 안 URL)
    §13 셀프테스트 (?selftest=1)
-   §14 부트 · 테스트 훅 (window.SEEING, ?tb=)
+   §14 부트 · 테스트 훅 (window.SEEING, ?tb=, ?share=inapp|download)
    ────────────────────────────────────────────────────────────────────────
 
    §0 타임스탬프 규약 (파일 전체 통일)
@@ -582,7 +610,51 @@ var CONFIG = {
   }],
   hints: {levels:2, auto_offer_at_ratio:[0.5,0.8], auto_show:false,
           enabled_on:["p1_rat","p4_ninedot"], decisive_level:2},
-  share: {inapp_ua:["KAKAOTALK","Instagram","FBAN","FBAV","Line"]},
+  /* 공유 카드 (스펙 §8-3). inapp_ua 는 스펙 §7-1 값 그대로. 나머지는 [M1.5+] —
+     파일명·URL 텍스트·카드 치수·색·문구 등 조정 가능한 것은 전부 여기에 둔다. */
+  share: {
+    inapp_ua:["KAKAOTALK","Instagram","FBAN","FBAV","Line"],
+    url:"game.in-9.com/puzzle/seeing/",              // 카드 이미지 안에 그리는 텍스트 (§8-3 ⑤)
+    share_url:"https://game.in-9.com/puzzle/seeing/", // 예약: 링크 공유용 정규 URL (M1.5 는 파일만 보낸다)
+    file_name:"seeing.png",
+    title:"시야각",
+    text:"퍼즐 셋으로 답에 도착하는 방식을 재 봤어요 — 시야각",
+    /* 인앱(④) 카드 <img>·a[download] 의 src 종류 — "data"(toDataURL, 웹뷰 길게 눌러 저장·DownloadListener 호환)
+       | "blob"(createObjectURL). share/download 모드는 항상 blob. 실기기 검증 결과에 따라 여기서만 바꾼다 */
+    inapp_img:"data",
+    prepare_timeout_ms:4000,                          // toBlob 콜백이 이 시간 안에 안 오면 '카드 없음' 분기로
+    retap_guard_ms:1500,                              // pr.finally 가 없는 환경에서 공유 버튼 재잠금 해제까지
+    ignore_errors:["AbortError","InvalidStateError"], // 폴백 패널을 열지 않는 navigator.share 거부 이름
+
+    card:{
+      w:540, h:675, dpr:2, pad:40,                    // 4:5 · DPR 2배 = 1080×1350 백킹
+      glow_from:0.55,                                 // 금색 글로우가 시작되는 세로 비율
+      font:'-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Noto Sans KR","Malgun Gothic",sans-serif',
+      brand:"SEEING · 통찰 스타일 테스트",
+      subtitle:"퍼즐 셋을 풀며 답에 어떻게 도착하는지, 그때의 확신이 어떻게 움직이는지를 기록했습니다.",
+      meta:"이번 판 활성 시간 {dur}",
+      fs:{brand:12, title:46, sub:16, row:18, status:15, meta:15, note:14, disc:12, url:16},
+      colors:{
+        bg0:"#0e1120", bg1:"#1a2039",
+        glow:"rgba(232,185,58,.22)", glow0:"rgba(232,185,58,0)",
+        frame:"rgba(232,185,58,.35)",
+        acc:"#e8b93a", acc2:"#f6dc93", acc3:"rgba(232,185,58,.14)",
+        ink:"#e9ecf6", ink2:"#a8afc6", dim:"#6f7794", line:"rgba(255,255,255,.1)",
+        notebg:"rgba(255,255,255,.04)"
+      }
+    },
+    copy:{
+      btn_share:"친구에게 보내기",
+      btn_download:"카드 이미지 저장",
+      preparing:"카드 준비 중…",
+      inapp_hint:"이미지를 길게 눌러 저장할 수 있어요",
+      fb_title:"공유 시트를 열지 못했어요",
+      fb_hint:"아래 버튼으로 이미지를 저장하거나, 위 카드를 길게 눌러 저장해 주세요.",
+      provisional:"잠정 판정 — 정식 결과 카드는 다음 버전에서",
+      unavailable:"이 환경에서는 카드 이미지를 만들 수 없어요",
+      img_alt:"시야각 결과 카드"
+    }
+  },
   forms: {b:{rat:"[M2-b 확정]",trap:"[M2-b 확정]",exclude:["p4_ninedot"]}},
 
   /* [M1+] 화면 카피. 스펙에 문구가 확정된 곳은 글자 그대로, 침묵 영역은 §8 톤(다정하고 담백)으로. */
@@ -643,7 +715,25 @@ var CONFIG = {
     },
     result:{
       banner:"M1 테스트 빌드 — 유형·시야각 판정은 다음 버전에서",
-      tail:"여기까지 잰 것만 더했어요."
+      tail:"여기까지 잰 것만 더했어요.",
+      /* 결과 화면·공유 카드가 함께 소비하는 문구 — 코드 상수 금지 규약(§8-3 ⑥) */
+      names:{p1_rat:"세 낱말의 공통점", p3_trap:"확신 vs 진실", p4_ninedot:"아홉 개의 점"},
+      /* 상태 라벨. p3 어휘(pass/learn/known)는 스펙 §6-1 ④ 고정 문구 — '실패' 금지 */
+      status:{
+        unreached:"미도달", known:"이미 아는 문제", none:"답을 정하지 않고 지나감",
+        pass:"통과", learn:"배움", correct:"정답에 도달",
+        revealed:"해답을 열어 봄", revealed_timeout:"시간이 다 되어 해답을 봄", logged:"기록만 남김"
+      },
+      dur:{sec:"초", min:"분"},
+      kv:{
+        conf:"확신도", conf_of:" / 100", skipped:"건너뜀",
+        aha:"아하", aha_sudden:"갑작스러움 ", aha_pleasure:" · 시원함 ",
+        time:"푸는 데 쓴 시간", hint:"힌트", hint_none:"사용 안 함", hint_upto:"단계까지 열어 봄",
+        item:"문항", swapped:"한 번 교체됨", record:"기록", not_presented:"제시되지 않았습니다"
+      },
+      btn_json:"내 데이터 JSON 내려받기",
+      json_unavailable:"JSON 내려받기를 지원하지 않는 환경이에요",
+      btn_again:"처음부터 다시"
     }
   }
 };
@@ -682,9 +772,9 @@ function uuid(){
 function pickOne(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 function fmtDur(ms){
   if(!isFinite(ms) || ms<0) ms=0;
-  var s = Math.round(ms/1000);
-  if(s<60) return s+'초';
-  return Math.floor(s/60)+'분 '+(s%60)+'초';
+  var s = Math.round(ms/1000), D = CONFIG.m1_copy.result.dur;
+  if(s<60) return s+D.sec;
+  return Math.floor(s/60)+D.min+' '+(s%60)+D.sec;
 }
 /* 경과 시간(이어하기 안내용). fmtDur 는 '푸는 데 쓴 시간'용 초단위 표기라
    반나절 자리에서 '431분 12초' 같은 문구가 된다. 여기서는 눈금을 올린다. */
@@ -804,7 +894,12 @@ var R = {                      // 런타임 상태. 절대 저장하지 않는�
   pendingSubmit:null, pendingResume:null,
   scale:null, conf:null, aha:null, known:null,
   gaSteps:{}, completeFired:false, nine:null, sol:null, solRedraw:null, dlUrl:null, token:0,
-  done:false                   // 결과 도달 → save() 차단
+  done:false,                  // 결과 도달 → save() 차단
+  /* 공유 카드 (M1.5) — 전부 런타임. 세션(S)에는 아무것도 쓰지 않는다 */
+  inApp:false, shareFile:null, shareUrl:null, shareMode:null, canShareFiles:false,
+  shareReady:false, shareToken:0, shareModel:null, shareLastErr:null,
+  shareData:null,              // 인앱(④) 전용 data: URL — CONFIG.share.inapp_img === "data" 일 때만
+  sharing:false                // navigator.share 프라미스 미해결 동안 재탭 잠금
 };
 
 function newPuzzle(id, orderIndex){
@@ -930,6 +1025,10 @@ function recalcSpanScalars(o, t0, t1){
    — 확신도 탭처럼 **사용자 입력을 기다리는** 구간은 스펙 §2-1 캡 예산에 포함돼 있다. */
 function pushSpanAt(kind, t0, t1, scope){
   if(!S) return;
+  /* 완료 세션(R.done)은 인메모리 S 도 더 이상 바꾸지 않는다 — 결과 화면에서의 앱 전환·
+     공유 시트(iOS 는 hidden 전환을 일으킨다)가 보관본(archive)과 어긋난 hidden_ms 를 만들지 않게.
+     save() 차단만으로는 SEEING.session() 이 보관본과 달라진다(§12-b 세션 불변 해석). */
+  if(R.done) return;
   if(!(t1>t0)) return;
   if(scope!=='puzzle'){
     if(kind==='hidden') S.hidden_spans.push({t0:t0, t1:t1});
@@ -1086,15 +1185,17 @@ function capTruncate(){
    §6 GA4 — 3중 가드(중복 플래그 + typeof gtag 검사 + try/catch).
    gtag 부재·예외가 흐름을 절대 막지 않는다.
    ========================================================================= */
-function gaStep(step){
+/* extra: 선택 — 추가 파라미터(예: 공유 탭의 method). 기존 호출부는 인자 하나로 그대로 동작한다 */
+function gaStep(step, extra){
   if(R.gaSteps[step]) return;          // 같은 화면 재진입(재시도 루프·스왑)은 1회만
   R.gaSteps[step] = true;
   try{
     if(typeof gtag === 'function'){
       /* 이어하기 화면은 S 로드 전에 뜬다 — 후보 세션(R.pendingResume)의 play_index 를 쓴다 */
       var src = S || R.pendingResume;
-      gtag('event','game_step',{game_id:'seeing', step:step,
-        play_index:(src?src.play_index:0), lang:LANG});
+      var params = {game_id:'seeing', step:step, play_index:(src?src.play_index:0), lang:LANG};
+      if(extra){ for(var k in extra){ if(extra.hasOwnProperty(k)) params[k] = extra[k]; } }
+      gtag('event','game_step',params);
     }
   }catch(e){}
 }
@@ -2150,29 +2251,30 @@ function onTimeout(p){
 /* =========================================================================
    §12 결과 화면 (M1 간이) — 유형·시야각은 표기하지 않는다
    ========================================================================= */
+/* 문구는 전부 CONFIG.m1_copy.result 에서 읽는다(결과 화면과 공유 카드가 같은 소스를 소비) */
 function statusOf(p){
-  if(!p.presented) return {icon:'—', label:'미도달'};
+  var ST = CONFIG.m1_copy.result.status;
+  if(!p.presented) return {icon:'—', label:ST.unreached};
   if(p.id==='p3_trap'){
     /* §9: 함정 오답을 '실패'로 표기하지 않는다 (§6-1 어휘를 그대로 쓴다) */
-    if(p.known_before===true) return {icon:'◎', label:'이미 아는 문제'};
-    if(p.extra.answer_raw==null) return {icon:'○', label:'답을 정하지 않고 지나감'};
-    return p.correct ? {icon:'✓', label:'통과'} : {icon:'◇', label:'배움'};
+    if(p.known_before===true) return {icon:'◎', label:ST.known};
+    if(p.extra.answer_raw==null) return {icon:'○', label:ST.none};
+    return p.correct ? {icon:'✓', label:ST.pass} : {icon:'◇', label:ST.learn};
   }
-  if(p.correct) return {icon:'✓', label:'정답에 도달'};
-  if(p.revealed) return {icon:'○', label: p.timeout ? '시간이 다 되어 해답을 봄' : '해답을 열어 봄'};
-  return {icon:'·', label:'기록만 남김'};
+  if(p.correct) return {icon:'✓', label:ST.correct};
+  if(p.revealed) return {icon:'○', label: p.timeout ? ST.revealed_timeout : ST.revealed};
+  return {icon:'·', label:ST.logged};
 }
 function nameOf(id){
-  return id==='p1_rat' ? '세 낱말의 공통점'
-       : id==='p3_trap' ? '확신 vs 진실'
-       : id==='p4_ninedot' ? '아홉 개의 점' : id;
+  var N = CONFIG.m1_copy.result.names;
+  return (N && N.hasOwnProperty(id) && N[id]) ? N[id] : id;
 }
 /* 힌트 표기는 '몇 개 열었나'가 아니라 '몇 단계까지 갔나'다. ②만 연 경우
    hints.length 는 1 이지만 사용자가 본 것은 2단계이므로 최대 level 로 말한다. */
 function hintLabel(p){
-  var mx = 0;
+  var mx = 0, KV = CONFIG.m1_copy.result.kv;
   for(var i=0;i<p.hints.length;i++) mx = Math.max(mx, p.hints[i].level);
-  return mx ? (mx+'단계까지 열어 봄') : '사용 안 함';
+  return mx ? (mx+KV.hint_upto) : KV.hint_none;
 }
 function kv(box, k, v){
   var r = el('div','kv');
@@ -2181,7 +2283,8 @@ function kv(box, k, v){
   box.appendChild(r);
 }
 function renderResult(){
-  txt($('#resBanner'), CONFIG.m1_copy.result.banner);
+  var RC = CONFIG.m1_copy.result, KV = RC.kv;
+  txt($('#resBanner'), RC.banner);
   var list = $('#resList'); list.innerHTML = '';
   for(var i=0;i<S.puzzles.length;i++){
     var p = S.puzzles[i], st = statusOf(p);
@@ -2190,25 +2293,30 @@ function renderResult(){
     h.appendChild(el('em', null, st.icon+' '+st.label));
     row.appendChild(h);
     if(p.presented){
-      kv(row,'확신도', p.conf.touched ? (p.conf.v+' / 100') : '건너뜀');
+      kv(row, KV.conf, p.conf.touched ? (p.conf.v+KV.conf_of) : KV.skipped);
       if(CONFIG.aha.collect_on.indexOf(p.id)>=0){
-        kv(row,'아하', p.aha.touched
-          ? ('갑작스러움 '+p.aha.sudden+' · 시원함 '+p.aha.pleasure)
-          : '건너뜀');
+        kv(row, KV.aha, p.aha.touched
+          ? (KV.aha_sudden+p.aha.sudden+KV.aha_pleasure+p.aha.pleasure)
+          : KV.skipped);
       }
-      kv(row,'푸는 데 쓴 시간', fmtDur(puzzleActiveMs(p)));
-      kv(row,'힌트', hintLabel(p));
-      if(p.id==='p3_trap' && p.extra.swapped) kv(row,'문항','한 번 교체됨');
+      kv(row, KV.time, fmtDur(puzzleActiveMs(p)));
+      kv(row, KV.hint, hintLabel(p));
+      if(p.id==='p3_trap' && p.extra.swapped) kv(row, KV.item, KV.swapped);
     } else {
-      kv(row,'기록','제시되지 않았습니다');
+      kv(row, KV.record, KV.not_presented);
     }
     list.appendChild(row);
   }
-  var tail = el('p','p dim', CONFIG.m1_copy.result.tail);
+  var tail = el('p','p dim', RC.tail);
   tail.style.marginTop = '12px';
   list.appendChild(tail);
   txt($('#resDisc'), CONFIG.m1_copy.disclaimer);
+  txt($('#resAgain'), RC.btn_again);
   buildDownload();
+  /* 스펙 §8-3 ①: 결과 진입 시 선렌더 + File 선생성. 공유 카드의 어떤 실패도 결과 화면
+     진입(goResult 의 show → fireComplete → archivePush → R.done)을 막으면 안 된다(§8-4 원칙과 동일) */
+  try{ prepareShareCard(); }
+  catch(e){ try{ shareFinalize(null, null); }catch(e2){} }
 }
 function buildDownload(){
   var a = $('#resDl');
@@ -2218,12 +2326,16 @@ function buildDownload(){
     R.dlUrl = URL.createObjectURL(blob);
     a.href = R.dlUrl;
     a.download = 'seeing-'+String(S.session_id).slice(0,8)+'.json';
+    txt(a, CONFIG.m1_copy.result.btn_json);
   }catch(e){
     a.removeAttribute('href');
-    a.textContent = 'JSON 내려받기를 지원하지 않는 환경이에요';
+    txt(a, CONFIG.m1_copy.result.json_unavailable);
   }
 }
 function goResult(){
+  /* 이미 완료된 세션(테스트 훅 goto('result') 재호출 등)은 S 를 건드리지 않고 화면만 다시 그린다 —
+     archive 에 같은 session_id 가 두 번 들어가지 않게 */
+  if(R.done){ renderResult(); show('result', 'result'); return; }
   S.ts_end = now();
   S.active_total_ms = (now() - S.ts_start) - S.hidden_ms - S.blocked_ms;
   R.pidx = S.puzzles.length;      // 진행 표시 전부 완료
@@ -2240,9 +2352,363 @@ function goResult(){
 }
 $('#resAgain').addEventListener('click', function(){
   try{ if(R.dlUrl) URL.revokeObjectURL(R.dlUrl); }catch(e){}
+  shareRelease();                                    // R.shareUrl revoke — dlUrl 과 같은 자리
   LS.del(K_SESSION);
   try{ location.reload(); }catch(e){}
 });
+
+/* =========================================================================
+   §12-b 공유 카드 (M1.5 스파이크) — 스펙 §8-3 ①~⑤
+   · ① 결과 진입 시 canvas 선렌더 + toBlob → File 을 R.shareFile 에 미리 둔다.
+       탭 시점에는 렌더도 인코딩도 하지 않는다.
+   · ② 탭 핸들러(onShareTap)는 canShare 동기 검사 → navigator.share 를 대기 없이 호출,
+       반환 프라미스는 catch 로만 처리한다(제스처 컨텍스트 보존).
+   · ③ 미지원·거부·예외 → 폴백 패널(카드 이미지 + a[download]). 프로그램적 클릭 X.
+   · ④ 인앱 웹뷰(CONFIG.share.inapp_ua) → ② 생략, 이미지 + '길게 눌러 저장' 안내.
+   · ⑤ 카드 이미지 안에 URL 텍스트(CONFIG.share.url).
+   세션 불변 해석: 공유는 goResult() 이후(archivePush → K_SESSION 삭제 → R.done)에만
+   일어난다. 세션은 이미 종료·보관됐으므로 S 를 변형하지 않고, 공유 시트·인코딩 대기를
+   blocked_spans 에도 적재하지 않는다(§8-1 의 blocked 는 진행 중 세션의 활성 시간 보정용).
+   저장본뿐 아니라 인메모리 S 도 불변이다 — pushSpanAt 이 R.done 이면 즉시 반환하므로 결과 화면
+   에서의 hidden 전환(iOS 공유 시트 포함)이 hidden_spans 를 더 쌓지 않는다.
+   GA4: 공유 탭은 game_step(step:'share', method) 로 남긴다. 스펙 §8-2 표에는 share 행·method
+   파라미터가 아직 없다 — M1.5 임시 확장이며 스펙 개정(§8-2 share 행 추가 또는 별도 이벤트명)
+   전까지의 잠정 표기다. 3중 가드는 gaStep 이 그대로 적용한다.
+   렌더러는 cardModel() 이 만든 데이터 객체만 그린다 — M2-a 에서 모델만 갈아 끼운다.
+   ========================================================================= */
+
+/* ── 순수 함수 ── */
+/* 인앱 웹뷰 감지 — UA 부분 문자열, 대소문자 구분(스펙 §7-1 inapp_ua 표기 그대로) */
+function detectInApp(ua, list){
+  var s = String(ua==null?'':ua), L = list || CONFIG.share.inapp_ua, i;
+  for(i=0;i<L.length;i++){ if(s.indexOf(L[i])>=0) return true; }
+  return false;
+}
+/* 공유 모드 결정 — 'inapp' | 'share' | 'download'. o.force('inapp'|'download')는 감지보다 우선(테스트 훅) */
+function shareMode(o){
+  o = o || {};
+  if(o.force==='inapp' || o.force==='download') return o.force;
+  if(o.inApp) return 'inapp';
+  if(o.hasFile && o.canShareFiles) return 'share';
+  return 'download';
+}
+/* measureText 기반 줄바꿈. 한국어는 공백이 드무니 글자 단위로 폭을 누적하고,
+   줄 안에 공백이 있으면 그 자리에서 먼저 끊는다. '\n' 은 강제 개행. 글자는 잃지 않는다.
+   글자 단위는 **코드포인트**다 — 서로게이트 쌍(이모지 등)을 charAt 로 반쪽씩 다루면 줄 경계에서
+   쪼개져 깨진 글리프가 찍힌다. config 문구는 편집 대상이므로 여기서 막는다. */
+function wrapText(ctx, text, maxW){
+  var s = String(text==null?'':text), out = [], line = '', i, ch, cu, cand, sp, head, tail;
+  for(i=0;i<s.length;i++){
+    cu = s.charCodeAt(i);
+    if(cu>=0xD800 && cu<=0xDBFF && i+1<s.length){ ch = s.substr(i,2); i++; }   // 상위+하위 서로게이트 = 한 글자
+    else ch = s.charAt(i);
+    if(ch==='\n'){ out.push(line); line=''; continue; }
+    cand = line + ch;
+    if(line==='' || ctx.measureText(cand).width <= maxW){ line = cand; continue; }
+    sp = line.lastIndexOf(' ');
+    if(sp>0){
+      head = line.slice(0,sp); tail = line.slice(sp+1) + ch;
+      if(ctx.measureText(tail).width <= maxW){ out.push(head); line = tail; continue; }
+    }
+    out.push(line);
+    line = (ch===' ') ? '' : ch;
+  }
+  if(line!=='') out.push(line);
+  return out;
+}
+/* 카드 모델 — 세션(sess)과 CONFIG(cfg)에서만 만든다. 렌더러는 이 객체만 그린다.
+   §6-1 일괄 규칙: 소스 값이 없으면 줄 단위 생략(null). presented=false 인 퍼즐 행은 넣지 않는다
+   (§6-1 ④ '미도달'은 문구를 쓰지 않고 줄 자체를 생략). */
+function cardModel(sess, cfg){
+  cfg = cfg || CONFIG;
+  var sh = cfg.share, cc = sh.card, rows = [], i, p, st;
+  var pz = (sess && sess.puzzles) ? sess.puzzles : [];
+  for(i=0;i<pz.length;i++){
+    p = pz[i];
+    if(!p || !p.presented) continue;
+    st = statusOf(p);
+    rows.push({icon:st.icon, name:p.order_index+'. '+nameOf(p.id), status:st.label});
+  }
+  var act = sess ? sess.active_total_ms : null;
+  var meta = (typeof act==='number' && isFinite(act) && act>0)
+           ? String(cc.meta).replace('{dur}', fmtDur(act)) : null;
+  return {
+    brand: cc.brand || null,
+    title: sh.title,
+    subtitle: cc.subtitle || null,
+    rows: rows,
+    meta: meta,
+    tail: cfg.m1_copy.result.tail || null,      // 스펙 §6-1: 어떤 폴백 카드에도 '여기까지 잰 것만 더했어요' 1줄
+    note: sh.copy.provisional || null,          // 스펙 §10: M2-b 이전 버전은 잠정 판정 각주
+    disclaimer: cfg.m1_copy.disclaimer,         // 스펙 §6-1 ⑥ 하단 고지 1줄
+    url: sh.url                                 // 스펙 §8-3 ⑤
+  };
+}
+
+/* ── 렌더러 — 모델만 그린다 ── */
+function rrect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath();
+}
+/* model → canvas (CSS px 좌표계, 백킹은 dpr 배). 실패 시 null. */
+function buildShareCard(model, cc){
+  cc = cc || CONFIG.share.card;
+  var W = cc.w, H = cc.h, dpr = cc.dpr || 1, pad = cc.pad, fs = cc.fs, col = cc.colors, fam = cc.font;
+  var cv = document.createElement('canvas');
+  cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr);
+  var ctx = cv.getContext('2d'); if(!ctx) return null;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  var cw = W - pad*2, i, j, lines, y;
+  function F(size, weight){ ctx.font = (weight||400)+' '+size+'px '+fam; }
+  function para(text, size, weight, color, lh, x, yy, maxW){
+    if(text==null || text==='') return yy;
+    F(size, weight); ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    var L = wrapText(ctx, text, maxW==null?cw:maxW);
+    for(var k=0;k<L.length;k++){ ctx.fillText(L[k], x==null?pad:x, yy); yy += size*lh; }
+    return yy;
+  }
+  /* 배경 — 짙은 남색 그라데이션 + 아래쪽 금색 글로우 + 얇은 금색 프레임.
+     그라데이션은 **세로 방향만** 쓴다(각 행이 균일 → PNG 필터가 잘 먹어 1.3MB → 0.2MB 대.
+     대각선·방사형 글로우는 같은 그림에서 파일이 6~7배 커진다) */
+  var g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0, col.bg0); g.addColorStop(1, col.bg1);
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  var g2 = ctx.createLinearGradient(0, H*(cc.glow_from==null?0.55:cc.glow_from), 0, H);
+  g2.addColorStop(0, col.glow0); g2.addColorStop(1, col.glow);
+  ctx.fillStyle = g2; ctx.fillRect(0,0,W,H);
+  rrect(ctx, 14, 14, W-28, H-28, 18);
+  ctx.strokeStyle = col.frame; ctx.lineWidth = 1.5; ctx.stroke();
+
+  /* 머리 — 금색 짧은 바 · 브랜드 · 제목 · 부제 */
+  y = pad;
+  ctx.fillStyle = col.acc; ctx.fillRect(pad, y, 44, 4);
+  y += 18;
+  y = para(model.brand, fs.brand, 600, col.dim, 1.4, pad, y);
+  y += 6;
+  y = para(model.title, fs.title, 700, col.acc2, 1.15, pad, y);
+  y += 8;
+  y = para(model.subtitle, fs.sub, 400, col.ink2, 1.55, pad, y);
+  y += 12;
+  ctx.fillStyle = col.line; ctx.fillRect(pad, y, cw, 1);
+  y += 20;
+
+  /* 바닥 블록은 아래에서 위로 고정 배치 — 행 수와 무관하게 URL·고지 위치가 흔들리지 않게 */
+  var bottomY = H - pad - fs.url*1.2;                       // URL 줄 상단
+  F(fs.disc, 400);
+  var discLines = model.disclaimer ? wrapText(ctx, model.disclaimer, cw) : [];
+  var discTop = bottomY - 10 - discLines.length*fs.disc*1.5;
+  var noteH = model.note ? (fs.note*1.5 + 20) : 0;
+  var noteTop = discTop - 14 - noteH;
+  var tailH = model.tail ? fs.meta*1.6 : 0;                 // §6-1 '여기까지 잰 것만 더했어요' — 각주 바로 위
+  var tailTop = noteTop - 10 - tailH;
+  var metaH = model.meta ? fs.meta*1.6 : 0;
+  var metaTop = tailTop - (model.tail ? 2 : 0) - metaH;
+
+  /* 퍼즐 행 — 아이콘(금색 원) · 이름 · 상태(오른쪽 정렬, 안 들어가면 다음 줄) */
+  var rows = model.rows || [], iconR = 15, nameX = pad + iconR*2 + 14, rowGap = 14;
+  var availH = metaTop - y - 8, rowsH = 0, plan = [];
+  for(i=0;i<rows.length;i++){
+    F(fs.row, 600); var nw = ctx.measureText(rows[i].name).width;
+    F(fs.status, 500); var sw = ctx.measureText(rows[i].status).width;
+    var inline = (nameX - pad) + nw + 16 + sw <= cw;
+    var h = fs.row*1.35 + (inline ? 0 : fs.status*1.5);
+    plan.push({inline:inline, h:h});
+    rowsH += h + (i<rows.length-1 ? rowGap : 0);
+  }
+  var scale = (rowsH > availH && rowsH>0) ? Math.max(0.6, availH/rowsH) : 1;   // 안전판: 넘치면 촘촘히
+  var slack = availH - rowsH;                                                     // 여유가 있으면 행 사이를 조금 벌린다
+  if(slack > 0 && rows.length){ var extra = Math.min(slack/(rows.length+1), fs.row*1.2); y += extra; rowGap += extra; }
+  for(i=0;i<rows.length;i++){
+    var r = rows[i], cy = y + fs.row*0.62;
+    ctx.beginPath(); ctx.arc(pad+iconR, cy, iconR, 0, Math.PI*2);
+    ctx.fillStyle = col.acc3; ctx.fill();
+    F(fs.row-2, 700); ctx.fillStyle = col.acc2; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(r.icon, pad+iconR, cy+1);
+    F(fs.row, 600); ctx.fillStyle = col.ink; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(r.name, nameX, y);
+    F(fs.status, 500); ctx.fillStyle = col.acc2;
+    if(plan[i].inline){ ctx.textAlign = 'right'; ctx.fillText(r.status, W-pad, y + (fs.row-fs.status)*0.6); }
+    else { ctx.textAlign = 'left'; ctx.fillText(r.status, nameX, y + fs.row*1.35); }
+    ctx.textAlign = 'left';
+    y += (plan[i].h + rowGap) * scale;
+  }
+
+  /* 메타(활성 시간) · 폴백 한 줄(§6-1) · 잠정 판정 각주 · 고지 · URL */
+  if(model.meta){ para(model.meta, fs.meta, 500, col.ink2, 1.6, pad, metaTop); }
+  if(model.tail){ para(model.tail, fs.meta, 400, col.ink2, 1.6, pad, tailTop); }
+  if(model.note){
+    rrect(ctx, pad, noteTop, cw, noteH, 10);
+    ctx.fillStyle = col.notebg; ctx.fill();
+    ctx.strokeStyle = col.line; ctx.lineWidth = 1; ctx.stroke();
+    para(model.note, fs.note, 500, col.dim, 1.5, pad+12, noteTop+10, cw-24);
+  }
+  F(fs.disc, 400); ctx.fillStyle = col.dim; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  for(j=0;j<discLines.length;j++){ ctx.fillText(discLines[j], pad, discTop + j*fs.disc*1.5); }
+  ctx.fillStyle = col.acc; ctx.fillRect(pad, bottomY-6, 22, 2);
+  F(fs.url, 700); ctx.fillStyle = col.acc; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(model.url || '', pad+30, bottomY);
+  return cv;
+}
+
+/* ── 준비 · UI ── */
+function shareRelease(){
+  R.shareToken++;                                     // 늦게 도착하는 toBlob 콜백·안전 타이머 무효화
+  try{ if(R.shareUrl) URL.revokeObjectURL(R.shareUrl); }catch(e){}
+  R.shareUrl = null; R.shareFile = null; R.canShareFiles = false; R.shareData = null;
+  R.shareReady = false; R.shareMode = null; R.shareLastErr = null; R.sharing = false;
+}
+function forcedShareMode(){
+  var f = qparam('share');
+  return (f==='inapp' || f==='download') ? f : null;
+}
+/* 인앱(④)이 될 것인지는 toBlob 전에 알 수 있다(UA 감지 또는 ?share=inapp) — canShare 와 무관 */
+function willBeInApp(){ return forcedShareMode()==='inapp' || (forcedShareMode()==null && R.inApp); }
+function prepareShareCard(){
+  shareRelease();
+  R.shareModel = cardModel(S, CONFIG);
+  renderShareUI();                                    // '카드 준비 중…' 상태
+  var cv = null;
+  try{ cv = buildShareCard(R.shareModel, CONFIG.share.card); }catch(e){ cv = null; }
+  if(!cv || typeof cv.toBlob!=='function' || !window.URL || typeof URL.createObjectURL!=='function'){
+    shareFinalize(null, null); return;
+  }
+  /* 인앱 전용 data: URL — 웹뷰의 '이미지 저장'·DownloadListener 는 blob: 을 앱 프로세스에서 열 수 없다.
+     동기 1회(≈0.5MB 문자열). share/download 모드는 blob 을 그대로 쓴다 */
+  if(CONFIG.share.inapp_img==='data' && willBeInApp()){
+    try{ R.shareData = cv.toDataURL('image/png'); }catch(e){ R.shareData = null; }
+    if(R.shareData && String(R.shareData).indexOf('data:image/png')!==0) R.shareData = null;
+  }
+  var tok = R.shareToken;
+  /* 안전 타이머 — toBlob 콜백이 영영 오지 않는 환경(구형 웹뷰)에서 '카드 준비 중…' 에 남지 않게.
+     시간 안에 못 오면 토큰을 올려 늦은 콜백을 버리고 '카드 없음' 분기로 확정한다 */
+  var to = CONFIG.share.prepare_timeout_ms;
+  if(to>0){
+    setTimeout(function(){
+      if(tok!==R.shareToken || R.shareReady) return;
+      R.shareToken++;
+      shareFinalize(null, null);
+    }, to);
+  }
+  try{
+    cv.toBlob(function(b){
+      if(tok!==R.shareToken) return;                  // 그 사이 다시 시작/재렌더됨 · 안전 타이머 경과
+      if(!b){ shareFinalize(null, null); return; }
+      var f = null;
+      try{ if(typeof File==='function') f = new File([b], CONFIG.share.file_name, {type:'image/png'}); }
+      catch(e){ f = null; }                           // File 생성자 없음 → 폴백 모드(다운로드만)
+      shareFinalize(f, b);
+    }, 'image/png');
+  }catch(e){ shareFinalize(null, null); }
+}
+/* 파일 준비 완료 콜백 — canShare 를 여기서 미리 계산해 둔다(탭 시점엔 동기 재확인만) */
+function shareFinalize(file, blob){
+  R.shareFile = file || null;
+  R.shareUrl = null;
+  if(blob){ try{ R.shareUrl = URL.createObjectURL(blob); }catch(e){ R.shareUrl = null; } }
+  R.canShareFiles = false;
+  if(file){
+    try{ R.canShareFiles = !!(navigator.share && navigator.canShare && navigator.canShare({files:[file]})); }
+    catch(e){ R.canShareFiles = false; }
+  }
+  R.shareReady = true;
+  R.shareMode = shareMode({inApp:R.inApp, hasFile:!!R.shareFile, canShareFiles:R.canShareFiles, force:forcedShareMode()});
+  renderShareUI();
+}
+function renderShareUI(){
+  var C = CONFIG.share.copy;
+  var wrap = $('#resCard'), img = $('#resCardImg'), btn = $('#resShare'), dl = $('#resShareDl');
+  var hint = $('#resShareHint'), fb = $('#resShareFb'), fbdl = $('#resShareFbDl');
+  fb.hidden = true;
+  img.alt = C.img_alt || '';
+  if(!R.shareReady){
+    wrap.hidden = true; dl.hidden = true; hint.hidden = true;
+    btn.hidden = false; btn.disabled = true; txt(btn, C.preparing);
+    return;
+  }
+  /* 인앱(④)은 data: URL 우선(CONFIG.share.inapp_img), 그 외는 blob: */
+  var inapp = (R.shareMode==='inapp');
+  var src = (inapp && R.shareData) ? R.shareData : R.shareUrl;
+  if(!src){                                           // 이미지 자체를 못 만든 환경
+    wrap.hidden = true; btn.hidden = true; dl.hidden = true;
+    hint.hidden = false; txt(hint, C.unavailable);
+    return;
+  }
+  img.src = src; wrap.hidden = false;
+  dl.href = src; dl.download = CONFIG.share.file_name; txt(dl, C.btn_download);
+  fbdl.href = R.shareUrl || src; fbdl.download = CONFIG.share.file_name; txt(fbdl, C.btn_download);
+  txt($('#resShareFbTitle'), C.fb_title); txt($('#resShareFbHint'), C.fb_hint);
+  /* 인앱 a[download] 는 새 컨텍스트로 — download 를 무시하는 웹뷰(iOS WKWebView)가 현재 문서를
+     이미지로 갈아치우면 K_SESSION 이 이미 비어 있어 복귀 시 인트로로 떨어진다 */
+  if(inapp){ dl.setAttribute('target','_blank'); dl.setAttribute('rel','noopener'); }
+  else { dl.removeAttribute('target'); dl.removeAttribute('rel'); }
+  if(R.shareMode==='share'){
+    btn.hidden = false; btn.disabled = !!R.sharing; txt(btn, C.btn_share);
+    dl.hidden = true; hint.hidden = true;
+  } else if(inapp){
+    /* ④ 인앱: 공유 시트를 시도하지 않는다. 이미지 + 길게 눌러 저장 + 보조 a[download] */
+    btn.hidden = true;
+    dl.hidden = false; dl.className = 'ghost dl';
+    hint.hidden = false; txt(hint, C.inapp_hint);
+  } else {
+    /* ③ download: 주 버튼 자체가 a[download] — 제스처 안에서 동기 다운로드.
+       blob: a[download] 는 파일 앱으로 가거나(iOS 13~14) 무시되기도(iOS 12↓) 하므로
+       미리보기를 길게 눌러 저장하는 경로도 함께 안내한다(문구는 inapp_hint 재사용) */
+    btn.hidden = true;
+    dl.hidden = false; dl.className = 'btn dl';
+    hint.hidden = false; txt(hint, C.inapp_hint);
+  }
+}
+function shareFallback(reason){
+  R.shareLastErr = reason || null;
+  if(!R.shareUrl) return;
+  $('#resShareFb').hidden = false;
+}
+/* navigator.share 거부 중 폴백 패널을 열지 않을 것 — 사용자 취소(AbortError)와, 시트가 이미 떠 있는
+   동안의 재호출(InvalidStateError: 시트는 정상 동작 중). 목록은 CONFIG.share.ignore_errors */
+function shareErrIgnored(name, list){
+  var L = list || CONFIG.share.ignore_errors || [];
+  return !!name && L.indexOf(name)>=0;
+}
+/* 재탭 잠금 — 프라미스 미해결 동안 두 번째 navigator.share 는 InvalidStateError 로 거부되므로
+   버튼 자체를 잠근다. 해제는 finally(있으면) / 없으면 retap_guard_ms 뒤 */
+function shareLock(on){
+  R.sharing = !!on;
+  var btn = $('#resShare');
+  if(btn && !btn.hidden) btn.disabled = !!on;
+}
+/* ② 탭 핸들러 — 동기 경로에 비동기 대기가 없다(DoD: 정적 검사는 셀프테스트).
+   canShare 동기 사전 검사 → navigator.share 즉시 호출 → 반환 프라미스는 catch 로만.
+   catch 시점은 제스처 밖이므로 a[download].click() 을 프로그램으로 부르지 않고 폴백 패널만 연다. */
+function onShareTap(){
+  var f = R.shareFile;
+  if(R.sharing) return;                               // 시트가 떠 있는 동안의 재탭 — 무시
+  gaStep('share', {method:R.shareMode});
+  if(!f){ shareFallback('nofile'); return; }
+  var can = false;
+  try{ can = !!(navigator.share && navigator.canShare && navigator.canShare({files:[f]})); }catch(e){ can = false; }
+  if(!can){ shareFallback('cannot_share'); return; }
+  var pr;
+  shareLock(true);
+  try{ pr = navigator.share({files:[f], title:CONFIG.share.title, text:CONFIG.share.text}); }
+  catch(e){ shareLock(false); shareFallback(e && e.name || 'throw'); return; }
+  var unlock = function(){ shareLock(false); }, p2 = null;
+  if(pr && typeof pr['catch']==='function'){
+    p2 = pr['catch'](function(err){
+      if(shareErrIgnored(err && err.name)) return;    // 사용자 취소 등 — 아무것도 하지 않는다
+      shareFallback((err && err.name) || 'rejected');
+    });
+  }
+  /* 잠금 해제는 catch 뒤에 이어 붙인다(원 프라미스에 직접 finally 를 걸면 거부가 처리되지 않은 채 남는다) */
+  if(p2 && typeof p2['finally']==='function') p2['finally'](unlock);
+  else setTimeout(unlock, CONFIG.share.retap_guard_ms || 0);
+}
+$('#resShare').addEventListener('click', function(){ if(!R.shareReady || R.sharing || $('#resShare').disabled) return; onShareTap(); });
+$('#resShareDl').addEventListener('click', function(){ gaStep('share', {method:R.shareMode}); });
 
 /* =========================================================================
    §13 셀프테스트 (?selftest=1)
@@ -2367,6 +2833,106 @@ function runSelftest(){
     ok('puzzles[] 키 = 스펙 §7-2', r.puzzle.ok, r.puzzle.msg);
   })();
 
+  /* ── 공유 카드 (M1.5, 스펙 §8-3) ── */
+  /* wrapText: 공백 없는 한국어 장문이 2줄 이상으로 나뉘고 각 줄이 maxW 이하, 글자 손실 0 */
+  (function(){
+    var cv = document.createElement('canvas'), ctx = cv.getContext('2d');
+    if(!ctx){ ok('wrapText(한국어 장문)', false, 'canvas 2d 없음'); return; }
+    ctx.font = '18px '+CONFIG.share.card.font;
+    var s = '', k; for(k=0;k<6;k++) s += '가나다라마바사아자차카타파하';
+    var maxW = 160, L = wrapText(ctx, s, maxW), over = 0, i;
+    for(i=0;i<L.length;i++) if(ctx.measureText(L[i]).width > maxW) over++;
+    ok('wrapText(한국어 장문, maxW='+maxW+') → 2줄 이상', L.length>=2, 'lines='+L.length);
+    ok('wrapText 각 줄 폭 ≤ maxW · 글자 손실 0', over===0 && L.join('')===s, 'over='+over);
+    var L2 = wrapText(ctx, '짧은 문장', 1000);
+    ok('wrapText(짧은 문장) → 1줄 그대로', L2.length===1 && L2[0]==='짧은 문장', JSON.stringify(L2));
+    var L3 = wrapText(ctx, '', 100);
+    ok('wrapText("") → []', L3.length===0);
+  })();
+  /* detectInApp */
+  (function(){
+    var kakao = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 KAKAOTALK 10.4.0';
+    var safari = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+    var insta = 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36 Instagram 300.0.0';
+    ok('detectInApp(KAKAOTALK UA) = true', detectInApp(kakao, CONFIG.share.inapp_ua)===true);
+    ok('detectInApp(Instagram UA) = true', detectInApp(insta, CONFIG.share.inapp_ua)===true);
+    ok('detectInApp(일반 Safari UA) = false', detectInApp(safari, CONFIG.share.inapp_ua)===false);
+  })();
+  /* shareMode 3분기 + 강제 */
+  (function(){
+    eq('shareMode(inApp) → inapp', shareMode({inApp:true, hasFile:true, canShareFiles:true}), 'inapp');
+    eq('shareMode(file+canShare) → share', shareMode({inApp:false, hasFile:true, canShareFiles:true}), 'share');
+    eq('shareMode(canShare=false) → download', shareMode({inApp:false, hasFile:true, canShareFiles:false}), 'download');
+    eq('shareMode(file 없음) → download', shareMode({inApp:false, hasFile:false, canShareFiles:true}), 'download');
+    eq('shareMode(force=download) 는 감지보다 우선', shareMode({inApp:true, hasFile:true, canShareFiles:true, force:'download'}), 'download');
+  })();
+  /* cardModel — 가짜 세션 픽스처 */
+  (function(){
+    var s = blankSession(), i, p;
+    for(i=0;i<PUZZLE_ORDER.length;i++){
+      p = newPuzzle(PUZZLE_ORDER[i], i+1); p.presented = true;
+      if(p.id==='p3_trap') p.extra = {item_id:'bat_ball', answer_raw:'50'};
+      s.puzzles.push(p);
+    }
+    s.puzzles[0].correct = true; s.puzzles[1].correct = true;
+    s.active_total_ms = 125000;
+    var m = cardModel(s, CONFIG);
+    ok('cardModel: url 텍스트 포함', m.url===CONFIG.share.url, String(m.url));
+    ok('cardModel: 하단 고지 포함', m.disclaimer===CONFIG.m1_copy.disclaimer);
+    ok('cardModel: 잠정 판정 각주 포함', m.note===CONFIG.share.copy.provisional);
+    ok('cardModel: 퍼즐 3행 (제시된 퍼즐만)', m.rows.length===3, 'rows='+m.rows.length);
+    ok('cardModel: 활성 시간 메타 1줄', typeof m.meta==='string' && m.meta.indexOf('2분 5초')>=0, String(m.meta));
+    /* 하드캡 절단 등으로 미제시된 퍼즐 → 줄 자체를 생략(§6-1) */
+    s.puzzles[2].presented = false;
+    var m2 = cardModel(s, CONFIG);
+    ok('cardModel: presented=false 행 생략', m2.rows.length===2, 'rows='+m2.rows.length);
+    /* 렌더러 스모크 — 백킹 크기 = w·h × dpr */
+    var cv = null; try{ cv = buildShareCard(m, CONFIG.share.card); }catch(e){ cv = null; }
+    var cc = CONFIG.share.card;
+    ok('buildShareCard → canvas '+(cc.w*cc.dpr)+'×'+(cc.h*cc.dpr),
+       !!cv && cv.width===cc.w*cc.dpr && cv.height===cc.h*cc.dpr, cv ? (cv.width+'×'+cv.height) : 'null');
+  })();
+  /* DoD ②: 탭 핸들러 동기 경로에 await 0개 · .then( 0개 (정적 검사) */
+  (function(){
+    var src = String(onShareTap);
+    ok('onShareTap 에 "await" 없음', src.indexOf('await')<0);
+    ok('onShareTap 에 ".then(" 없음', src.indexOf('.then(')<0);
+  })();
+  /* wrapText: 서로게이트 쌍(이모지)을 줄 경계에서 쪼개지 않는다 */
+  (function(){
+    var cv = document.createElement('canvas'), ctx = cv.getContext('2d');
+    if(!ctx){ ok('wrapText(이모지)', false, 'canvas 2d 없음'); return; }
+    ctx.font = '18px '+CONFIG.share.card.font;
+    var s = '가😀나😀다😀라😀마😀', L = wrapText(ctx, s, 40), lone = 0, i, a, b;
+    for(i=0;i<L.length;i++){
+      if(!L[i].length) continue;
+      a = L[i].charCodeAt(L[i].length-1); b = L[i].charCodeAt(0);
+      if(a>=0xD800 && a<=0xDBFF) lone++;             // 줄 끝 상위 서로게이트 홀로
+      if(b>=0xDC00 && b<=0xDFFF) lone++;             // 줄 앞 하위 서로게이트 홀로
+    }
+    ok('wrapText(이모지 포함, maxW=40) → 글자 손실 0', L.join('')===s, JSON.stringify(L));
+    ok('wrapText(이모지 포함) → 줄 경계 lone surrogate 0', L.length>=2 && lone===0, 'lines='+L.length+' lone='+lone);
+  })();
+  /* 결과 문구가 CONFIG 에서 나오는지 (§8-3 ⑥ 코드 상수 금지) */
+  (function(){
+    var RC = CONFIG.m1_copy.result;
+    ok('nameOf(p1_rat) = CONFIG.m1_copy.result.names.p1_rat', nameOf('p1_rat')===RC.names.p1_rat && !!RC.names.p1_rat);
+    ok('nameOf(미등록 id) = id 그대로', nameOf('p9_x')==='p9_x');
+    var p = newPuzzle('p3_trap', 2); p.presented = true; p.extra = {answer_raw:'50'}; p.correct = false;
+    ok('statusOf(함정 오답) = status.learn ("배움")', statusOf(p).label===RC.status.learn && RC.status.learn==='배움');
+    ok('fmtDur(125000) = "2"+dur.min+" 5"+dur.sec', fmtDur(125000)===('2'+RC.dur.min+' 5'+RC.dur.sec));
+    var m = cardModel(blankSession(), CONFIG);
+    ok('cardModel: §6-1 폴백 한 줄(tail) 포함', m.tail===RC.tail && !!RC.tail, String(m.tail));
+  })();
+  /* 공유 거부 무시 목록 · 인앱 img src 종류 */
+  (function(){
+    ok('shareErrIgnored(AbortError) = true', shareErrIgnored('AbortError', CONFIG.share.ignore_errors)===true);
+    ok('shareErrIgnored(InvalidStateError) = true', shareErrIgnored('InvalidStateError', CONFIG.share.ignore_errors)===true);
+    ok('shareErrIgnored(NotAllowedError) = false', shareErrIgnored('NotAllowedError', CONFIG.share.ignore_errors)===false);
+    ok('shareErrIgnored(undefined) = false', shareErrIgnored(undefined, CONFIG.share.ignore_errors)===false);
+    ok('CONFIG.share.inapp_img ∈ {data, blob}', CONFIG.share.inapp_img==='data' || CONFIG.share.inapp_img==='blob', String(CONFIG.share.inapp_img));
+  })();
+
   var pass = 0, i;
   for(i=0;i<T.length;i++) if(T[i].pass) pass++;
   var list = $('#stList'); list.innerHTML = '';
@@ -2477,6 +3043,7 @@ function resumeInto(sess){
 function boot(){
   applyTestParams();
   fillIntro();
+  try{ R.inApp = detectInApp(navigator.userAgent, CONFIG.share.inapp_ua); }catch(e){ R.inApp = false; }
   R.lastTick = now();
   /* 배경 탭에서 로드된 경우(링크를 새 탭으로 열어 두고 나중에 보는 경로) visibilitychange 는
      '변화'에만 발생하므로 hidden→visible 로 돌아와도 R.hiddenAt 이 0 이라 그 구간이 어디에도
@@ -2555,7 +3122,15 @@ window.SEEING = {
   session: function(){ return S; },
   runtime: function(){ return R; },
   pure: { normRat:normRat, judgeNinedot:judgeNinedot, segPointDist:segPointDist,
-          ratCorrect:ratCorrect, solutionStrokes:solutionStrokes },
+          ratCorrect:ratCorrect, solutionStrokes:solutionStrokes,
+          wrapText:wrapText, detectInApp:detectInApp, shareMode:shareMode, cardModel:cardModel,
+          buildShareCard:buildShareCard, shareErrIgnored:shareErrIgnored },
+  /* 공유 상태 조회 (M1.5) */
+  share: function(){
+    return {mode:R.shareMode, hasFile:!!R.shareFile, inApp:R.inApp, ready:R.shareReady,
+            canShareFiles:R.canShareFiles, url:R.shareUrl, hasData:!!R.shareData, sharing:R.sharing,
+            lastErr:R.shareLastErr, forced:forcedShareMode()};
+  },
   goto: function(id){
     if(id==='intro') return goIntro();
     if(id==='result') return goResult();
