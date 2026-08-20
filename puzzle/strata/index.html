@@ -276,6 +276,12 @@ header .pill{pointer-events:auto}
 @media (prefers-reduced-motion:reduce){
   *{transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
+/* 「또 할래?」 한 줄 — 보상도 재시작도 아니고, 그냥 물어보고 끝난다 */
+.ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0 2px;font-size:14px;line-height:1.2;color:var(--ink2);opacity:.92}
+.ga-vote[hidden]{display:none}
+.ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+.ga-vote-btn:active{opacity:1}
+.ga-vote.done .ga-vote-btn{display:none}
 </style>
 </head>
 <body>
@@ -393,6 +399,11 @@ header .pill{pointer-events:auto}
       <div class="stat"><b id="dTime">0:00</b><span data-i="time">걸린 시간</span></div>
     </div>
     <p class="rec" id="dRec"></p>
+    <div class="ga-vote" id="gaVote" hidden>
+      <span class="ga-vote-q">또 할래?</span>
+      <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+      <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
+    </div>
     <div class="btns">
       <button class="btn primary" id="dAgain" type="button" data-i="dAgain">다시 쌓기</button>
       <button class="btn ghost" id="dBook" type="button"><span data-i="book">화석 도감</span> <span id="dBookN"></span></button>
@@ -1708,15 +1719,60 @@ function finish(){
 function fireComplete(){
   if (S.fired) return;                             // 한 런에 한 번만 — 재시작할 때 되돌린다
   S.fired = true;
+  gaS.completed = true;                            // 다음 판은 replay 로 센다
   try{
     if (typeof gtag === 'function'){               // 차단돼도 게임은 계속 돈다
       gtag('event','game_complete',{
         game_id:SLUG, scene:'journey', result:'clear', lang:lang,
+        play_sec:Math.round((S.elapsed || 0)/1000),
         score:S.score, best_lines:S.bestLines, fossils:foundCount()
       });
     }
   }catch(e){}
+  gaVoteShow('journey');
 }
+
+/* ---- GA4 portal standard v1 (2026-08-19) — 기존 game_complete 위에 start/replay·투표만 얹는다 ---- */
+var gaS = { started:false, completed:false, voted:false, voteScene:'journey' };
+function gaLang(){ try{ return lang || 'ko'; }catch(e){ return 'ko'; } }
+function gaSend(name, p){
+  try{
+    if (typeof gtag !== 'function') return;
+    p = p || {}; p.game_id = SLUG; if (!p.lang) p.lang = gaLang();
+    gtag('event', name, p);
+  }catch(e){}
+}
+function gaRoundStart(scene){                      // 판 시작마다 — 첫 판은 start, 완결 뒤 새 판은 replay
+  if (gaS.completed){ gaS.completed = false; gaSend('game_step',{ step:'replay', scene:scene||'journey' }); return; }
+  if (gaS.started) return;
+  gaS.started = true; gaSend('game_step',{ step:'start', scene:scene||'journey' });
+}
+var GA_VOTE_COPY = {
+  ko:{ q:'또 할래?', yes:'응', no:'글쎄', thx:'고마워요!' },
+  ja:{ q:'また あそぶ？', yes:'うん', no:'うーん', thx:'ありがとう！' },
+  en:{ q:'Want another go?', yes:'Yes', no:'Not sure', thx:'Thanks!' }
+};
+function gaVoteShow(scene){
+  var el = document.getElementById('gaVote'); if (!el || gaS.voted) return;
+  var c = GA_VOTE_COPY[gaLang()] || GA_VOTE_COPY.ko;
+  el.querySelector('.ga-vote-q').textContent = c.q;
+  el.querySelector('[data-choice="yes"]').textContent = c.yes;
+  el.querySelector('[data-choice="unsure"]').textContent = c.no;
+  gaS.voteScene = scene || 'journey'; el.hidden = false; el.classList.remove('done');
+}
+(function(){
+  var el = document.getElementById('gaVote'); if (!el) return;
+  el.addEventListener('click', function(e){
+    var b = e.target;
+    while (b && b !== el && !(b.getAttribute && b.getAttribute('data-choice'))) b = b.parentNode;
+    if (!b || b === el || gaS.voted) return;
+    gaS.voted = true;
+    gaSend('game_vote',{ scene:gaS.voteScene, choice:b.getAttribute('data-choice') });
+    var c = GA_VOTE_COPY[gaLang()] || GA_VOTE_COPY.ko;
+    el.classList.add('done'); el.querySelector('.ga-vote-q').textContent = c.thx;
+    setTimeout(function(){ el.hidden = true; }, 1200);
+  });
+})();
 function gameOver(){
   S.phase = 'idle'; S.running = false;
   SFX.over();
@@ -1853,6 +1909,7 @@ function startGame(mode){
   applySky();
   updateHUD();
   S.running = true; last = 0;
+  gaRoundStart(mode);
   spawn();
 }
 function retryStage(){
@@ -2194,6 +2251,7 @@ function applyI18n(){
   if ($('#ovDone').classList.contains('on')){
     $('#dRec').textContent = L('fnBest')(save[bestKey()]);
     $('#dBookN').textContent = L('fnBookCount')(foundCount());
+    if (!$('#gaVote').hidden) gaVoteShow(gaS.voteScene);   // 떠 있는 투표 행도 같이 갈아끼운다
   }
   if ($('#ovBook').classList.contains('on')) renderBook();
   updateHUD();

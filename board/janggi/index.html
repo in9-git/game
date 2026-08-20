@@ -2,6 +2,9 @@
 <html lang="ko" translate="no">
 <head>
 <meta charset="UTF-8">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="google" content="notranslate">
 <title>베이비장기 - Baby Janggi</title>
@@ -589,6 +592,12 @@ select {
   background: #1e1610; border: 2px dashed #c99a3e; border-radius: 12px;
   padding: 14px 8px 14px 18px; margin: 8px 0 14px; cursor: pointer; user-select: all;
 }
+/* GA 투표 행 */
+.ga-vote { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 0 14px; font-size: 14px; line-height: 1.2; opacity: .92; color: #ab9c82; }
+.ga-vote[hidden] { display: none; }
+.ga-vote .ga-vote-btn { font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 999px; border: 1px solid currentColor; background: transparent; color: inherit; cursor: pointer; opacity: .85; -webkit-tap-highlight-color: transparent; }
+.ga-vote .ga-vote-btn:active { opacity: 1; }
+.ga-vote.done .ga-vote-btn { display: none; }
 </style>
 </head>
 <body>
@@ -1659,6 +1668,7 @@ function resetGame() {
   if (noticeTimer) { clearTimeout(noticeTimer); noticeTimer = null; }
   repeatCache = { sig: null, set: null };
   undoStack = [];
+  gaRoundActive = false;
   bgmStarted = false;
   // BGM이 이미 재생 중이면 idle로 (첫 수 두면 battle로 전환됨)
   if (bgmAudio) switchBGM('idle');
@@ -1835,6 +1845,8 @@ function executeMove(fromC, fromR, toC, toR) {
     flashNotice(LANG[state.lang].repeatBlocked);
     return;
   }
+  // GA: 실제로 첫 수가 놓이는 순간이 판 시작
+  if (!gaRoundActive) { gaRoundActive = true; gaRoundStart(gaScene()); }
   // 적 왕(장수)을 잡는 수 — 왕을 사라지게 두지 말고 즉시 둔 쪽 승리로 종료(장기: 장수 잡으면 승).
   if (endIfKingCapture(state.board, toC, toR, state.turn)) return;
   const isCapture = state.board[toR][toC] !== null;
@@ -1971,6 +1983,9 @@ function executeMove(fromC, fromR, toC, toR) {
 function render() {
   const app = document.getElementById('app');
   // 셀 크기는 모듈 스코프 헬퍼가 사용
+
+  // GA: 판 완결(장군/기권 등 모든 종료 경로가 render 를 거친다) — 내부에서 판당 1회 보장
+  if (state.gameOver && gaRoundActive) gaRoundComplete(gaScene(), gaResult());
 
   // Status text
   const L = LANG[state.lang];
@@ -2145,6 +2160,7 @@ function render() {
     overlayHtml = `<div class="modal-overlay"><div class="modal" onclick="event.stopPropagation()">`
       + `<h2>${iWon ? O.win : O.lose}</h2>`
       + (state.onlineMsg ? `<p>${state.onlineMsg}</p>` : '')
+      + gaVoteHtml()
       + `<button onclick="onlineRematch()">${O.rematch}</button>`
       + `<button onclick="onlineLeave(false)" style="background:#555;margin-left:8px;">${O.leave}</button>`
       + `</div></div>`;
@@ -2152,6 +2168,7 @@ function render() {
     overlayHtml = `<div class="modal-overlay" onclick="resetGame()"><div class="modal" onclick="event.stopPropagation()">`
       + `<h2>${L.win(state.winner === CHO ? L.cho : L.han)}</h2>`
       + `<p>${state.winner === CHO ? (state.mode === 'ai' ? L.winAI : L.winP(L.cho)) : (state.mode === 'ai' ? L.loseAI : L.winP(L.han))}</p>`
+      + gaVoteHtml()
       + `<button onclick="resetGame()">${L.retry}</button>`
       + `<button onclick="quitGame()" style="background:#555;margin-left:8px;">${L.quit}</button>`
       + `</div></div>`;
@@ -2335,6 +2352,7 @@ function clearOnlineBoard() {
   repeatCache = { sig: null, set: null };
   wasmMoveHistory = [];
   undoStack = [];
+  gaRoundActive = false;
 }
 
 function openOnlineLobby() {
@@ -2599,6 +2617,8 @@ function canUndo() {
 }
 function undoMove() {
   if (!canUndo()) return;
+  // GA: 끝난 판을 되감으면 다음 수가 새 판의 시작(replay)으로 잡히게 한다
+  if (state.gameOver) gaRoundActive = false;
   // 내 차례(초)로 돌아갈 때까지 되감는다 — 보통 [AI 한 수 + 내 한 수] 2 ply
   let snap = undoStack.pop();
   while (undoStack.length > 0 && snap.turn !== CHO) snap = undoStack.pop();
@@ -2618,6 +2638,55 @@ function undoMove() {
   state.lastMoveGhost = null;
   render();
   if (state.showRecommend) scheduleRecommend(state.turn);
+}
+
+/* ---- GA4 portal standard v1 (2026-08-19) ---- */
+var GA_GAME='janggi';
+var gaS={started:false,completed:false,voted:false,voteShown:false,voteScene:'main',t0:0};
+var gaRoundActive=false;
+function gaLang(){ try{ return state.lang || 'ko'; }catch(e){ return 'ko'; } }
+function gaScene(){ try{ return state.mode==='online' ? 'online' : 'practice'; }catch(e){ return 'main'; } }
+function gaResult(){
+  try{
+    if(state.mode==='online') return state.winner===state.mySide ? 'clear' : 'fail';
+    return state.winner===CHO ? 'clear' : 'fail';
+  }catch(e){ return 'clear'; }
+}
+function gaSend(name,p){ try{ if(typeof gtag!=='function')return; p=p||{}; p.game_id=GA_GAME; if(!p.lang)p.lang=gaLang(); gtag('event',name,p);}catch(e){} }
+function gaRoundStart(scene){
+  gaS.t0=Date.now();
+  if(gaS.completed){ gaS.completed=false; gaSend('game_step',{step:'replay',scene:scene||'main'}); return; }
+  if(gaS.started)return; gaS.started=true; gaSend('game_step',{step:'start',scene:scene||'main'});
+}
+function gaRoundComplete(scene,result,extra){
+  if(gaS.completed)return; gaS.completed=true;
+  var p={scene:scene||'main',result:result||'clear',play_sec:gaS.t0?Math.round((Date.now()-gaS.t0)/1000):0};
+  if(extra){ for(var k in extra){ if(extra.hasOwnProperty(k))p[k]=extra[k]; } }
+  gaSend('game_complete',p);
+  gaVoteShow(p.scene);
+}
+var GA_VOTE_COPY={ko:{q:'또 할래?',yes:'응',no:'글쎄',thx:'고마워요!'},ja:{q:'また あそぶ？',yes:'うん',no:'うーん',thx:'ありがとう！'},en:{q:'Want another go?',yes:'Yes',no:'Not sure',thx:'Thanks!'}};
+function gaVoteShow(scene){
+  if(gaS.voted)return;
+  gaS.voteScene=scene||'main'; gaS.voteShown=true;
+}
+/* 엔딩 오버레이는 매 render 마다 innerHTML 로 다시 그려지므로 마크업도 그때 함께 만든다 */
+function gaVoteHtml(){
+  if(!gaS.voteShown||gaS.voted)return '';
+  var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+  return '<div class="ga-vote" id="gaVote">'
+    + '<span class="ga-vote-q">'+c.q+'</span>'
+    + '<button type="button" class="ga-vote-btn" data-choice="yes" onclick="gaVote(\'yes\')">'+c.yes+'</button>'
+    + '<button type="button" class="ga-vote-btn" data-choice="unsure" onclick="gaVote(\'unsure\')">'+c.no+'</button>'
+    + '</div>';
+}
+function gaVote(choice){
+  if(gaS.voted)return; gaS.voted=true;
+  gaSend('game_vote',{scene:gaS.voteScene,choice:choice});
+  var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+  var el=document.getElementById('gaVote');
+  if(el){ el.classList.add('done'); var q=el.querySelector('.ga-vote-q'); if(q)q.textContent=c.thx; }
+  setTimeout(function(){ var e2=document.getElementById('gaVote'); if(e2)e2.hidden=true; },1200);
 }
 
 // Initialize

@@ -496,6 +496,12 @@
     }
     .fglow, .afly-dot { opacity:.85 !important; }
   }
+  /* ---- GA4 portal standard v1 (2026-08-19) : ending vote row ---- */
+  .ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 2px;font-size:14px;line-height:1.2;opacity:.92;color:rgba(255,236,190,.78)}
+  .ga-vote[hidden]{display:none}
+  .ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+  .ga-vote-btn:active{opacity:1}
+  .ga-vote.done .ga-vote-btn{display:none}
 </style>
 </head>
 <body>
@@ -583,6 +589,11 @@
         <p id="endMsg" style="text-align:center;"></p>
       </div>
       <div class="intro-note" id="endSub"></div>
+      <div class="ga-vote" id="gaVote" hidden>
+        <span class="ga-vote-q">또 할래?</span>
+        <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+        <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
+      </div>
       <div class="btn-row">
         <button class="btn-warm" id="nextBtn"></button>
         <button class="btn-warm" id="replayBtn"></button>
@@ -871,7 +882,66 @@
         });
       }
     } catch (e) {}
+    gaS.completed = true;
+    gaVoteShow(nightId);
   }
+
+  /* ---- GA4 portal standard v1 (2026-08-19) ----
+     Adds step:'start'/'replay' and the ending 「또 할래?」 vote on top of the
+     night-scoped gaStep/gaComplete above. Same 3-guard rules. */
+  var gaS = { started:false, completed:false, voted:false, voteShown:false, voteScene:'main' };
+  function gaLang() { try { return lang || 'ko'; } catch (e) { return 'ko'; } }
+  function gaSend(name, p) {
+    try {
+      if (typeof gtag !== 'function') return;
+      p = p || {};
+      p.game_id = 'night-bugs';
+      if (!p.lang) p.lang = gaLang();
+      gtag('event', name, p);
+    } catch (e) {}
+  }
+  function gaRoundStart(scene) {
+    if (gaS.completed) {
+      gaS.completed = false;
+      gaSend('game_step', { step:'replay', scene: scene || 'main' });
+      return;
+    }
+    if (gaS.started) return;
+    gaS.started = true;
+    gaSend('game_step', { step:'start', scene: scene || 'main' });
+  }
+  var GA_VOTE_COPY = {
+    ko: { q:'또 할래?', yes:'응', no:'글쎄', thx:'고마워요!' },
+    ja: { q:'また あそぶ？', yes:'うん', no:'うーん', thx:'ありがとう！' },
+    en: { q:'Want another go?', yes:'Yes', no:'Not sure', thx:'Thanks!' }
+  };
+  function gaVoteShow(scene) {
+    var el = document.getElementById('gaVote');
+    if (!el || gaS.voted) return;
+    var c = GA_VOTE_COPY[gaLang()] || GA_VOTE_COPY.ko;
+    el.querySelector('.ga-vote-q').textContent = c.q;
+    el.querySelector('[data-choice="yes"]').textContent = c.yes;
+    el.querySelector('[data-choice="unsure"]').textContent = c.no;
+    gaS.voteScene = scene || 'main';
+    gaS.voteShown = true;
+    el.hidden = false;
+    el.classList.remove('done');
+  }
+  (function () {
+    var el = document.getElementById('gaVote');
+    if (!el) return;
+    el.addEventListener('click', function (e) {
+      var b = e.target;
+      while (b && b !== el && !(b.getAttribute && b.getAttribute('data-choice'))) b = b.parentNode;
+      if (!b || b === el || gaS.voted) return;
+      gaS.voted = true;
+      gaSend('game_vote', { scene: gaS.voteScene, choice: b.getAttribute('data-choice') });
+      var c = GA_VOTE_COPY[gaLang()] || GA_VOTE_COPY.ko;
+      el.classList.add('done');
+      el.querySelector('.ga-vote-q').textContent = c.thx;
+      window.setTimeout(function () { el.hidden = true; }, 1200);
+    });
+  })();
 
   /* ================= language ================= */
   function detectLang() {
@@ -943,6 +1013,7 @@
     $('titleSub').textContent = otherNames();
     $('homeLink').textContent = '← ' + t.home;
     $('langBtn').textContent = FLAGS[lang];
+    if (gaS.voteShown && !gaS.voted) gaVoteShow(gaS.voteScene);
     $('langBtn').setAttribute('aria-label', t.langLabel);
     $('introTitle').textContent = t.introTitle;
     $('introSub').textContent = ic.sub;
@@ -1473,6 +1544,7 @@
     state = 'play';
     playStart = Date.now();
     gaStep(NIGHTS[idx].id);
+    gaRoundStart(NIGHTS[idx].id);
     sndPop();
     showNightToasts();
     window.setTimeout(function () {

@@ -2,6 +2,9 @@
 <html lang="ko" translate="no">
 <head>
 <meta charset="UTF-8">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="google" content="notranslate">
 <meta name="theme-color" content="#19120d">
@@ -231,6 +234,12 @@ canvas{
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
 }
+/* ---------- GA vote row ---------- */
+.ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 2px;font-size:14px;line-height:1.2;opacity:.92;color:#c9b797;}
+.ga-vote[hidden]{display:none}
+.ga-vote .ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+.ga-vote .ga-vote-btn:active{opacity:1}
+.ga-vote.done .ga-vote-btn{display:none}
 </style>
 </head>
 <body>
@@ -300,6 +309,11 @@ canvas{
     <h2 id="resTitle">이겼어요!</h2>
     <p id="resBody"></p>
     <p class="lead" id="resAgain" style="margin-top:10px">재밌었어요! 한 판 더?</p>
+    <div class="ga-vote" id="gaVote" hidden>
+      <span class="ga-vote-q">또 할래?</span>
+      <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+      <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
+    </div>
     <div class="card-btns">
       <button class="btn gold" id="resNew">다시 하기</button>
       <button class="btn" id="resHome">홈으로</button>
@@ -987,6 +1001,7 @@ function newGame() {
   S.last = -1; S.over = false; S.passes = 0;
   S.undoLeft = 1; S.snap = null; S.busy = false;
   anims = []; parts = []; preview = -1;
+  gaRoundActive = false;
   document.getElementById('resOverlay').classList.remove('show');
   setStatus('turnYou', 'you');
   syncUI();
@@ -1075,6 +1090,7 @@ function humanPlay(i) {
     else if (probe.reason === 'occupied') toast('errOccupied');
     return;
   }
+  if (!gaRoundActive) { gaRoundActive = true; gaRoundStart('main'); }
   S.snap = snapshot();
   var r = applyMove(i, HUMAN);
   preview = -1;
@@ -1157,6 +1173,7 @@ function finish(kind) {
   document.getElementById('resNew').textContent = L.resNew;
   document.getElementById('resHome').textContent = L.resHome;
   S._endKind = kind;
+  gaRoundComplete('main', kind === 'win' ? 'clear' : kind === 'lose' ? 'fail' : 'draw', { caps_you: S.capHuman, caps_ai: S.capAi });
   setTimeout(function () { document.getElementById('resOverlay').classList.add('show'); }, 780);
 }
 
@@ -1316,6 +1333,7 @@ function applyLang() {
     setStatus(st.dataset.key, st.dataset.cls, rp);
   }
   if (document.getElementById('tutOverlay').classList.contains('show')) renderTut();
+  if (typeof gaS !== 'undefined' && gaS.voteShown && !gaS.voted) gaVoteShow(gaS.voteScene);
   syncUI();
 }
 document.getElementById('langBtn').addEventListener('click', function () {
@@ -1345,6 +1363,44 @@ document.getElementById('resHome').addEventListener('click', function () { locat
 
 window.addEventListener('resize', function () { layout(); });
 window.addEventListener('orientationchange', function () { setTimeout(layout, 260); });
+
+/* ---- GA4 portal standard v1 (2026-08-19) ---- */
+var GA_GAME='baduk';
+var gaS={started:false,completed:false,voted:false,voteShown:false,voteScene:'main',t0:0};
+var gaRoundActive=false;
+function gaLang(){ try{ return lang || 'ko'; }catch(e){ return 'ko'; } }
+function gaSend(name,p){ try{ if(typeof gtag!=='function')return; p=p||{}; p.game_id=GA_GAME; if(!p.lang)p.lang=gaLang(); gtag('event',name,p);}catch(e){} }
+function gaRoundStart(scene){
+  gaS.t0=Date.now();
+  if(gaS.completed){ gaS.completed=false; gaSend('game_step',{step:'replay',scene:scene||'main'}); return; }
+  if(gaS.started)return; gaS.started=true; gaSend('game_step',{step:'start',scene:scene||'main'});
+}
+function gaRoundComplete(scene,result,extra){
+  if(gaS.completed)return; gaS.completed=true;
+  var p={scene:scene||'main',result:result||'clear',play_sec:gaS.t0?Math.round((Date.now()-gaS.t0)/1000):0};
+  if(extra){ for(var k in extra){ if(extra.hasOwnProperty(k))p[k]=extra[k]; } }
+  gaSend('game_complete',p);
+  gaVoteShow(p.scene);
+}
+var GA_VOTE_COPY={ko:{q:'또 할래?',yes:'응',no:'글쎄',thx:'고마워요!'},ja:{q:'また あそぶ？',yes:'うん',no:'うーん',thx:'ありがとう！'},en:{q:'Want another go?',yes:'Yes',no:'Not sure',thx:'Thanks!'}};
+function gaVoteShow(scene){
+  var el=document.getElementById('gaVote'); if(!el||gaS.voted)return;
+  var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+  el.querySelector('.ga-vote-q').textContent=c.q;
+  el.querySelector('[data-choice="yes"]').textContent=c.yes;
+  el.querySelector('[data-choice="unsure"]').textContent=c.no;
+  gaS.voteScene=scene||'main'; gaS.voteShown=true; el.hidden=false; el.classList.remove('done');
+}
+(function(){ var el=document.getElementById('gaVote'); if(!el)return;
+  el.addEventListener('click',function(e){
+    var b=e.target; while(b&&b!==el&&!(b.getAttribute&&b.getAttribute('data-choice')))b=b.parentNode;
+    if(!b||b===el||gaS.voted)return; gaS.voted=true;
+    gaSend('game_vote',{scene:gaS.voteScene,choice:b.getAttribute('data-choice')});
+    var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+    el.classList.add('done'); el.querySelector('.ga-vote-q').textContent=c.thx;
+    setTimeout(function(){ el.hidden=true; },1200);
+  });
+})();
 
 /* ==================================================================
    부팅

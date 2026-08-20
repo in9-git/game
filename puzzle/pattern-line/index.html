@@ -191,6 +191,12 @@ header .pill{pointer-events:auto}
   .card{padding:14px 14px}
   .rules{margin:8px 0;padding:9px 11px}
 }
+/* 엔딩의 「또 할래?」 한 줄 — 재시작 CTA 가 아니라 계측용 작은 물음 */
+.ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0 2px;font-size:14px;line-height:1.2;opacity:.92;color:var(--ink2)}
+.ga-vote[hidden]{display:none}
+.ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+.ga-vote-btn:active{opacity:1}
+.ga-vote.done .ga-vote-btn{display:none}
 @media (prefers-reduced-motion:reduce){
   *{transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
@@ -291,6 +297,11 @@ header .pill{pointer-events:auto}
       <button class="btn ghost" id="dEndless" type="button" data-i="dEndless">끝없이 모드로</button>
       <a class="btn ghost" href="../../index.html"><span data-i="goHome">홈으로</span></a>
     </div>
+    <div class="ga-vote" hidden>
+      <span class="ga-vote-q">또 할래?</span>
+      <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+      <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
+    </div>
   </div></div>
 
   <div class="ov" id="ovOver"><div class="card">
@@ -305,6 +316,11 @@ header .pill{pointer-events:auto}
       <button class="btn primary" id="oRetry" type="button" data-i="oRetry">다시 해보기</button>
       <button class="btn ghost" id="oStart" type="button" data-i="oStart">처음 화면</button>
       <a class="btn ghost" href="../../index.html"><span data-i="goHome">홈으로</span></a>
+    </div>
+    <div class="ga-vote" hidden>
+      <span class="ga-vote-q">또 할래?</span>
+      <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+      <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
     </div>
   </div></div>
 
@@ -954,15 +970,74 @@ function finish(){
 function fireComplete(){
   if (S.fired) return;
   S.fired = true;
+  gaS.completed = true;
   try{
     if (typeof gtag === 'function'){
       gtag('event','game_complete',{
         game_id:SLUG, scene:'journey', result:'clear', lang:lang,
-        score:S.score, best_chain:S.bestChain
+        score:S.score, best_chain:S.bestChain, play_sec:gaPlaySec()
       });
     }
   }catch(e){}
+  gaVoteShow('journey');
 }
+/* ---- GA4 portal standard v1 (2026-08-19) ---- */
+var gaS = { started:false, completed:false, voted:false, voteShown:false, voteScene:'main', t0:0 };
+function gaLang(){ try{ return lang || 'ko'; }catch(e){ return 'ko'; } }
+function gaSend(name, p){ try{ if (typeof gtag !== 'function') return; p = p || {}; p.game_id = SLUG; if (!p.lang) p.lang = gaLang(); gtag('event', name, p); }catch(e){} }
+function gaPlaySec(){ return gaS.t0 ? Math.round((Date.now() - gaS.t0)/1000) : 0; }
+function gaRoundStart(scene){
+  if (gaS.completed){ gaS.completed = false; gaS.t0 = Date.now(); gaSend('game_step', {step:'replay', scene:scene||'main'}); return; }
+  /* 안 끝난 판의 재시도(일시정지 → 이 단계 다시)는 그 판의 시작 시각을 그대로 둔다 */
+  if (gaS.started) return;
+  gaS.started = true; gaS.t0 = Date.now(); gaSend('game_step', {step:'start', scene:scene||'main'});
+}
+/* 가득 차서 끝난 판도 한 판의 끝이다 — 끝없이 모드는 이 길로만 끝난다 */
+function gaOver(){
+  if (gaS.completed) return;
+  gaS.completed = true;
+  var sc = (S.mode === 'endless') ? 'endless' : 'journey';
+  gaSend('game_complete', {scene:sc, result:'fail', play_sec:gaPlaySec(), score:S.score, best_chain:S.bestChain});
+  gaVoteShow(sc);
+}
+var GA_VOTE_COPY = {ko:{q:'또 할래?',yes:'응',no:'글쎄',thx:'고마워요!'},ja:{q:'また あそぶ？',yes:'うん',no:'うーん',thx:'ありがとう！'},en:{q:'Want another go?',yes:'Yes',no:'Not sure',thx:'Thanks!'}};
+function gaVoteCopy(){ return GA_VOTE_COPY[gaLang()] || GA_VOTE_COPY.ko; }
+/* 엔딩 패널이 둘(#ovDone·#ovOver)이라 투표 행도 둘이다. 상태는 하나뿐이니
+   한쪽만 손대면 다른 쪽이 눌러도 안 되는 죽은 버튼으로 남는다 — 늘 둘 다 다룬다 */
+function gaVoteEls(){ return $$('.ga-vote'); }
+function gaVoteShow(scene){
+  if (gaS.voted) return;
+  var els = gaVoteEls(); if (!els.length) return;
+  var c = gaVoteCopy();
+  els.forEach(function(el){
+    el.querySelector('.ga-vote-q').textContent = c.q;
+    el.querySelector('[data-choice="yes"]').textContent = c.yes;
+    el.querySelector('[data-choice="unsure"]').textContent = c.no;
+    el.hidden = false; el.classList.remove('done');
+  });
+  gaS.voteScene = scene || 'main'; gaS.voteShown = true;
+}
+/* 언어를 바꿔도 떠 있는 물음은 따라간다 */
+function gaVoteLang(){
+  if (!gaS.voteShown || gaS.voted) return;
+  gaVoteShow(gaS.voteScene);
+}
+document.addEventListener('click', function(e){
+  var b = e.target;
+  while (b && b.getAttribute && !b.getAttribute('data-choice')) b = b.parentNode;
+  if (!b || !b.getAttribute) return;
+  var el = b.parentNode;
+  if (!el || !el.classList || !el.classList.contains('ga-vote')) return;
+  if (gaS.voted) return;
+  gaS.voted = true;
+  gaSend('game_vote', {scene:gaS.voteScene, choice:b.getAttribute('data-choice')});
+  var c = gaVoteCopy();
+  gaVoteEls().forEach(function(v){
+    v.classList.add('done');
+    v.querySelector('.ga-vote-q').textContent = c.thx;
+  });
+  setTimeout(function(){ gaVoteEls().forEach(function(v){ v.hidden = true; }); }, 1200);
+});
 function gameOver(){
   S.phase = 'idle'; S.running = false;
   SFX.over();
@@ -974,6 +1049,7 @@ function gameOver(){
   $('#oChain').textContent = S.bestChain;
   $('#oBest').textContent = (S.mode === 'endless') ? save.endlessBest : save.best;
   show('#ovOver');
+  gaOver();
 }
 function fmtTime(ms){
   var s = Math.round(ms/1000);
@@ -1079,6 +1155,7 @@ function startGame(mode){
   S.running = true;
   last = 0;
   spawn();
+  gaRoundStart(mode);
 }
 function retryStage(){
   resetRun();
@@ -1087,6 +1164,7 @@ function retryStage(){
   S.running = true;
   last = 0;
   spawn();
+  gaRoundStart(S.mode);
 }
 function pause(on){
   if (!S.running) return;
@@ -1285,6 +1363,7 @@ function applyI18n(){
   if ($('#ovOver').classList.contains('on')){
     $('#oSub').textContent = (S.mode === 'endless') ? L('overE') : L('fnOverJ')(S.stage+1);
   }
+  gaVoteLang();
   updateHUD();
   drawHow();
 }

@@ -2,6 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0a1c33">
 <title>빗방울 실로폰 · Rain Xylophone</title>
@@ -205,6 +208,12 @@ header{
 @media (prefers-reduced-motion: reduce){
   *{transition-duration:.01ms !important; animation-duration:.01ms !important}
 }
+
+.ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 2px;font-size:14px;line-height:1.2;opacity:.92;color:var(--ink-soft)}
+.ga-vote[hidden]{display:none}
+.ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+.ga-vote-btn:active{opacity:1}
+.ga-vote.done .ga-vote-btn{display:none}
 </style>
 </head>
 <body>
@@ -248,6 +257,11 @@ header{
         <div class="rainbow">🌈</div>
         <h2 id="fTitle">참 잘했어요</h2>
         <div class="lead" id="fLead">오늘은 여기까지.<br>빗방울이 모두 내려앉았어요.</div>
+        <div class="ga-vote" id="gaVote" hidden>
+          <span class="ga-vote-q">또 할래?</span>
+          <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+          <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
+        </div>
         <div class="btnrow">
           <button class="btn" id="fAgain">다시 하기</button>
           <button class="btn ghost" id="fList">곡 고르기</button>
@@ -695,6 +709,8 @@ function strike(lane, power, byPlayer, when){
 function playerHit(lane){
   resumeAudio();
   if(mode === MODE.MENU || mode === MODE.FINALE) return;
+  /* 계측: 자유 연주 라운드는 첫 음을 칠 때 열린다 */
+  if(mode === MODE.FREE && !gaFreeHit){ gaFreeHit = true; try{ gaRoundStart('free'); }catch(e){} }
   strike(lane, 0.92, true, ac ? ac.currentTime : 0);
 }
 
@@ -764,6 +780,9 @@ function applyStageBar(){
 }
 
 function toMenu(){
+  /* 자유 연주는 '그만하기'(또는 Esc)로 한 라운드가 끝난다 — 한 음이라도 친 라운드만 완결.
+     들어가자마자 나가는 0초 라운드는 시작도 완결도 보내지 않는다. */
+  if(mode === MODE.FREE && gaFreeHit) gaRoundComplete('free', 'clear');
   mode = MODE.MENU;
   curSong = null; timeline = [];
   freeDrops = []; ripples = []; splashes = []; sparkles = [];
@@ -794,6 +813,7 @@ function startSong(id){
   freebar.classList.add('on');
   progEl.classList.add('on'); progEl.style.width = '0%';
   showHint(T().hintPlay, 5200);
+  gaRoundStart(gaScene());
 }
 
 function startFree(){
@@ -811,6 +831,7 @@ function startFree(){
   applyStageBar();
   freebar.classList.add('on');
   showHint(T().hintFree, 4600);
+  gaFreeHit = false;   /* 라운드는 첫 음에서 연다 (playerHit) */
 }
 
 function endSong(){
@@ -840,6 +861,7 @@ function endSong(){
       w: Math.random()*Math.PI*2, a: 0.18 + Math.random()*0.4
     });
   }
+  gaRoundComplete(gaScene(), 'clear');
   setTimeout(function(){
     showOverlay(finaleEl, true);
     if(wasNew && allDone()) showToast(T().unlocked);
@@ -1494,6 +1516,48 @@ document.getElementById('fAgain').addEventListener('click', function(){
 });
 document.getElementById('fList').addEventListener('click', toMenu);
 document.getElementById('freeExit').addEventListener('click', toMenu);
+
+/* ---- GA4 portal standard v1 (2026-08-19) ---- */
+var GA_GAME='rain-xylophone';
+var GA_SCENES=['twinkle','butterfly','arirang'];
+var gaS={started:false,completed:false,voted:false,voteShown:false,voteScene:'main',t0:0};
+var gaFreeHit=false;   /* 자유 연주에서 한 음이라도 쳤는지 */
+function gaLang(){ try{ return lang||'ko'; }catch(e){ return 'ko'; } }
+function gaSend(name,p){ try{ if(typeof gtag!=='function')return; p=p||{}; p.game_id=GA_GAME; if(!p.lang)p.lang=gaLang(); gtag('event',name,p);}catch(e){} }
+function gaRoundStart(scene){
+  gaS.t0=Date.now();
+  if(gaS.completed){ gaS.completed=false; gaSend('game_step',{step:'replay',scene:scene||'main'}); return; }
+  if(gaS.started)return; gaS.started=true; gaSend('game_step',{step:'start',scene:scene||'main'});
+}
+function gaRoundComplete(scene,result,extra){
+  if(gaS.completed)return; gaS.completed=true;
+  var p={scene:scene||'main',result:result||'clear',play_sec:gaS.t0?Math.round((Date.now()-gaS.t0)/1000):0};
+  if(extra){ for(var k in extra){ if(extra.hasOwnProperty(k))p[k]=extra[k]; } }
+  gaSend('game_complete',p);
+  /* 투표 행은 곡 완주 패널(#finale) 안에 있다 — 자유 연주 완결에서는 그 패널이 열리지 않으므로
+     보이지도 눌리지도 않는 채 '노출됨' 상태만 소비하게 된다. 투표 수집은 곡 라운드 한정. */
+  if(p.scene!=='free') gaVoteShow(p.scene);
+}
+var GA_VOTE_COPY={ko:{q:'또 할래?',yes:'응',no:'글쎄',thx:'고마워요!'},ja:{q:'また あそぶ？',yes:'うん',no:'うーん',thx:'ありがとう！'},en:{q:'Want another go?',yes:'Yes',no:'Not sure',thx:'Thanks!'}};
+function gaVoteShow(scene){
+  var el=document.getElementById('gaVote'); if(!el||gaS.voted)return;
+  var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+  el.querySelector('.ga-vote-q').textContent=c.q;
+  el.querySelector('[data-choice="yes"]').textContent=c.yes;
+  el.querySelector('[data-choice="unsure"]').textContent=c.no;
+  gaS.voteScene=scene||'main'; gaS.voteShown=true; el.hidden=false; el.classList.remove('done');
+}
+(function(){ var el=document.getElementById('gaVote'); if(!el)return;
+  el.addEventListener('click',function(e){
+    var b=e.target; while(b&&b!==el&&!(b.getAttribute&&b.getAttribute('data-choice')))b=b.parentNode;
+    if(!b||b===el||gaS.voted)return; gaS.voted=true;
+    gaSend('game_vote',{scene:gaS.voteScene,choice:b.getAttribute('data-choice')});
+    var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+    el.classList.add('done'); el.querySelector('.ga-vote-q').textContent=c.thx;
+    setTimeout(function(){ el.hidden=true; },1200);
+  });
+})();
+function gaScene(){ return (curSong && GA_SCENES[curSong.id]) ? GA_SCENES[curSong.id] : 'free'; }
 
 // unlock audio on the very first gesture anywhere
 ['pointerdown','keydown','touchstart'].forEach(function(ev){

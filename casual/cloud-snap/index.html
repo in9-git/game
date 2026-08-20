@@ -2,6 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#9fd4f2">
 <title>구름 사진관 · くも写真館 · Cloud Snap</title>
@@ -252,6 +255,12 @@
     100%{transform:translateX(var(--fx)) rotate(var(--fr)) scale(1);opacity:1;}}
   #doneStats{font-size:.78rem;font-weight:700;color:#a08d76;margin-bottom:18px;}
   #doneMsg{color:#8a7460;}
+  /* GA vote row */
+  .ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 2px;font-size:14px;line-height:1.2;opacity:.92;color:var(--ink-soft)}
+  .ga-vote[hidden]{display:none}
+  .ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+  .ga-vote-btn:active{opacity:1}
+  .ga-vote.done .ga-vote-btn{display:none}
   @media (prefers-reduced-motion:reduce){
     *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important;}
   }
@@ -298,6 +307,11 @@
       <div id="doneFan"></div>
       <p class="desc" id="doneMsg"></p>
       <div id="doneStats"></div>
+      <div class="ga-vote" id="gaVote" hidden>
+        <span class="ga-vote-q">또 할래?</span>
+        <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+        <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
+      </div>
       <div class="btn-row">
         <button class="btn" id="againBtn"></button>
         <a class="btn ghost" id="doneHomeBtn" href="../../index.html"></a>
@@ -888,6 +902,7 @@
     }
     doneOv.classList.add('show');
     AudioSys.fanfare();
+    gaRoundComplete('main','clear',{shots:session.shots});
   }
 
   /* ============================== update / draw ============================== */
@@ -1176,6 +1191,7 @@
       $('doneStats').textContent=t.shots.replace('{n}',session.shots);
       $('againBtn').textContent='📷 '+t.again;
       $('doneHomeBtn').textContent=t.goHome;
+      if(gaS.voteShown&&!gaS.voted) gaVoteShow(gaS.voteScene);
     }
   }
   $('langBtn').addEventListener('click',function(){
@@ -1195,6 +1211,43 @@
     renderSoundBtn();
   });
 
+  /* ---- GA4 portal standard v1 (2026-08-19) ---- */
+  var GA_GAME='cloud-snap';
+  var gaS={started:false,completed:false,voted:false,voteShown:false,voteScene:'main',t0:0};
+  function gaLang(){ try{ return lang||'ko'; }catch(e){ return 'ko'; } }
+  function gaSend(name,p){ try{ if(typeof gtag!=='function')return; p=p||{}; p.game_id=GA_GAME; if(!p.lang)p.lang=gaLang(); gtag('event',name,p);}catch(e){} }
+  function gaRoundStart(scene){ /* 판 시작마다 호출 */
+    gaS.t0=Date.now();
+    if(gaS.completed){ gaS.completed=false; gaSend('game_step',{step:'replay',scene:scene||'main'}); return; }
+    if(gaS.started)return; gaS.started=true; gaSend('game_step',{step:'start',scene:scene||'main'});
+  }
+  function gaRoundComplete(scene,result,extra){ /* 판 완결마다 호출 (내부에서 판당 1회 보장) */
+    if(gaS.completed)return; gaS.completed=true;
+    var p={scene:scene||'main',result:result||'clear',play_sec:gaS.t0?Math.round((Date.now()-gaS.t0)/1000):0};
+    if(extra){ for(var k in extra){ if(extra.hasOwnProperty(k))p[k]=extra[k]; } }
+    gaSend('game_complete',p);
+    gaVoteShow(p.scene);
+  }
+  var GA_VOTE_COPY={ko:{q:'또 할래?',yes:'응',no:'글쎄',thx:'고마워요!'},ja:{q:'また あそぶ？',yes:'うん',no:'うーん',thx:'ありがとう！'},en:{q:'Want another go?',yes:'Yes',no:'Not sure',thx:'Thanks!'}};
+  function gaVoteShow(scene){
+    var el=document.getElementById('gaVote'); if(!el||gaS.voted)return;
+    var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+    el.querySelector('.ga-vote-q').textContent=c.q;
+    el.querySelector('[data-choice="yes"]').textContent=c.yes;
+    el.querySelector('[data-choice="unsure"]').textContent=c.no;
+    gaS.voteScene=scene||'main'; gaS.voteShown=true; el.hidden=false; el.classList.remove('done');
+  }
+  (function(){ var el=document.getElementById('gaVote'); if(!el)return;
+    el.addEventListener('click',function(e){
+      var b=e.target; while(b&&b!==el&&!(b.getAttribute&&b.getAttribute('data-choice')))b=b.parentNode;
+      if(!b||b===el||gaS.voted)return; gaS.voted=true;
+      gaSend('game_vote',{scene:gaS.voteScene,choice:b.getAttribute('data-choice')});
+      var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+      el.classList.add('done'); el.querySelector('.ga-vote-q').textContent=c.thx;
+      setTimeout(function(){ el.hidden=true; },1200);
+    });
+  })();
+
   /* ============================== intro / restart ============================== */
   function showIntro(){
     var row=$('todayRow');
@@ -1212,6 +1265,7 @@
     introOv.classList.remove('show');
     session.active=true;
     lastFindOrHint=now;
+    gaRoundStart('main');
     showToast('🔍 '+T().aim,3200);
   });
   $('againBtn').addEventListener('click',function(){

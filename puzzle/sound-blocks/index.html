@@ -2,6 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>소리 블록 · 音ブロック · Sound Blocks</title>
 <meta name="description" content="음표 블록을 끌어 맞춰 동요를 완성하는 음악 장난감 퍼즐">
@@ -327,6 +330,12 @@ body::after{
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.06s!important}
 }
+
+.ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 2px;font-size:14px;line-height:1.2;opacity:.92;color:var(--ink-soft)}
+.ga-vote[hidden]{display:none}
+.ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+.ga-vote-btn:active{opacity:1}
+.ga-vote.done .ga-vote-btn{display:none}
 </style>
 </head>
 <body>
@@ -382,6 +391,11 @@ body::after{
     <h2 data-i="clearTitle">한 곡 완성!</h2>
     <p id="clearSong"></p>
     <p class="quiet" data-i="clearSub">멜로디가 제자리를 찾았어요.</p>
+    <div class="ga-vote" id="gaVote" hidden>
+      <span class="ga-vote-q">또 할래?</span>
+      <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+      <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
+    </div>
     <div class="acts">
       <button class="btn primary" id="clearNext" type="button"></button>
       <div class="row">
@@ -675,6 +689,50 @@ var playing = false;
    보상 화면(그리고 앙코르 경로)이 영구히 사라지지 않게 한다. */
 var pendingClear = null;
 
+/* ---- GA4 portal standard v1 (2026-08-19) ---- */
+var GA_GAME='sound-blocks';
+var gaS={started:false,completed:false,voted:false,voteShown:false,voteScene:'main',t0:0,tEnd:0};
+var gaRoundBegun=false;
+function gaLang(){ try{ return lang || 'ko'; }catch(e){ return 'ko'; } }
+function gaScene(){ try{ return (SONGS[songIdx] && SONGS[songIdx].id) || 'main'; }catch(e){ return 'main'; } }
+function gaSend(name,p){ try{ if(typeof gtag!=='function')return; p=p||{}; p.game_id=GA_GAME; if(!p.lang)p.lang=gaLang(); gtag('event',name,p);}catch(e){} }
+function gaRoundStart(scene){
+  gaS.t0=Date.now(); gaS.tEnd=0;
+  if(gaS.completed){ gaS.completed=false; gaSend('game_step',{step:'replay',scene:scene||'main'}); return; }
+  if(gaS.started)return; gaS.started=true; gaSend('game_step',{step:'start',scene:scene||'main'});
+}
+/* 한 곡(= 한 판)에 처음 손을 대는 순간에만 start/replay */
+function gaTouch(){ if(gaRoundBegun)return; gaRoundBegun=true; gaRoundStart(gaScene()); }
+/* 마지막 블록이 제자리에 놓인 순간을 판의 끝으로 본다 (승리 연출 ~7초를 빼기 위해) */
+function gaMarkEnd(){ gaS.tEnd=Date.now(); }
+function gaRoundComplete(scene,result,extra){
+  if(gaS.completed)return; gaS.completed=true;
+  var end=gaS.tEnd||Date.now();
+  var p={scene:scene||'main',result:result||'clear',play_sec:gaS.t0?Math.round((end-gaS.t0)/1000):0};
+  if(extra){ for(var k in extra){ if(extra.hasOwnProperty(k))p[k]=extra[k]; } }
+  gaSend('game_complete',p);
+  gaVoteShow(p.scene);
+}
+var GA_VOTE_COPY={ko:{q:'또 할래?',yes:'응',no:'글쎄',thx:'고마워요!'},ja:{q:'また あそぶ？',yes:'うん',no:'うーん',thx:'ありがとう！'},en:{q:'Want another go?',yes:'Yes',no:'Not sure',thx:'Thanks!'}};
+function gaVoteShow(scene){
+  var el=document.getElementById('gaVote'); if(!el||gaS.voted)return;
+  var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+  el.querySelector('.ga-vote-q').textContent=c.q;
+  el.querySelector('[data-choice="yes"]').textContent=c.yes;
+  el.querySelector('[data-choice="unsure"]').textContent=c.no;
+  gaS.voteScene=scene||'main'; gaS.voteShown=true; el.hidden=false; el.classList.remove('done');
+}
+(function(){ var el=document.getElementById('gaVote'); if(!el)return;
+  el.addEventListener('click',function(e){
+    var b=e.target; while(b&&b!==el&&!(b.getAttribute&&b.getAttribute('data-choice')))b=b.parentNode;
+    if(!b||b===el||gaS.voted)return; gaS.voted=true;
+    gaSend('game_vote',{scene:gaS.voteScene,choice:b.getAttribute('data-choice')});
+    var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+    el.classList.add('done'); el.querySelector('.ga-vote-q').textContent=c.thx;
+    setTimeout(function(){ el.hidden=true; },1200);
+  });
+})();
+
 (function loadDone(){
   var raw = store.get('sb-done') || '';
   raw.split(',').forEach(function(id){ if (id) doneSet[id] = true; });
@@ -704,6 +762,7 @@ function loadSong(i, keepSolved){
   finishClear(true);
   clearTimers(); playing = false;
   songIdx = i;
+  gaRoundBegun = false;   /* 새 곡 = 새 판. 실제 조작 순간에 start/replay */
   var s = song();
   var order = shuffled(s.notes);
   /* avoid handing the answer away pre-arranged */
@@ -841,6 +900,7 @@ function applyI18n(){
   setGuide(cur, $('#guide').classList.contains('warm'));
   updateClearBtn();
   $('#clearSong').textContent = L('songs')[songIdx];
+  if (gaS.voteShown && !gaS.voted) gaVoteShow(gaS.voteScene);
 }
 function updateClearBtn(){
   var allDone = doneCount() >= SONGS.length;
@@ -864,6 +924,7 @@ function onPointerDown(e){
   if (playing) stopPlayback();
   var id = parseInt(el.getAttribute('data-id'), 10);
   if (isNaN(id) || !blocks[id]) return;
+  gaTouch();
   var r = el.getBoundingClientRect();
   drag = {
     id: id, el: el, moved: false,
@@ -1052,6 +1113,7 @@ function showClearOv(){
   $('#clearEm').textContent = song().em;
   updateClearBtn();
   showOv('#ovClear');
+  gaRoundComplete(gaScene(), 'clear', { songs_done: doneCount() });
 }
 /* 예약된 보상 화면을 소비한다. instant면 남은 연출을 건너뛰고 즉시 표시.
    pendingClear는 항상 여기서만 비워지므로 화면이 유실될 수 없다. */
@@ -1062,6 +1124,7 @@ function finishClear(instant){
   fn(instant);
 }
 function celebrate(){
+  gaMarkEnd();
   var s = song();
   doneSet[s.id] = true;
   saveDone();
@@ -1213,6 +1276,7 @@ document.addEventListener('pointercancel', function(e){
 
 $('#listenBtn').addEventListener('click', function(){
   Snd.ensure();
+  gaTouch();
   setGuide('guideListen');
   playArrangement(function(){ checkSolvedSoft(); });
 });

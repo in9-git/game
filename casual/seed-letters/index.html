@@ -2,6 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="씨앗을 심고 물을 주면 꽃과 함께 따뜻한 편지가 피어나는 작은 온실 게임">
 <title>씨앗 편지 — たね手紙 · Seed Letters</title>
@@ -403,6 +406,12 @@ button.seed-cell:active { transform:scale(.93); }
   .flower-card, .end-card, .album, .sheet { animation:none; }
   .plant-svg .bloomT.pop { animation:none; }
 }
+
+.ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 2px;font-size:14px;line-height:1.2;opacity:.92;color:#8a7565}
+.ga-vote[hidden]{display:none}
+.ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+.ga-vote-btn:active{opacity:1}
+.ga-vote.done .ga-vote-btn{display:none}
 </style>
 </head>
 <body>
@@ -844,6 +853,9 @@ function startWater(i){
   if(W.i>=0) stopWater(W.i);
   var pot=state.pots[i];
   if(!pot||pot.bloomed) return;
+  /* 한 판에 화분 셋을 번갈아 만질 수 있어 '처음 만진 꽃'은 완결한 꽃과 다를 수 있다.
+     시작/재시작은 정원 단위로만 세고, 꽃 이름은 완결·투표에서만 쓴다. */
+  gaRoundBegin('garden');
   W.i=i; W.last=performance.now(); W.drop=0;
   slots[i].el.classList.add('watering');
   SFX.waterStart();
@@ -908,6 +920,10 @@ function bloom(i){
   }
   SFX.bloomChime();
   save();
+  /* 완결 플래그는 개화 즉시 세운다 — 카드가 뜨는 720ms 사이에 다른 화분을 만져도
+     라운드 짝(replay/complete)이 어긋나지 않게. 투표 행은 openCard가 띄운다.
+     개화 연출(720ms 뒤 카드)이 계측 때문에 멈추지 않도록 호출부까지 감싼다. */
+  try{ gaRoundComplete(pot.id,'clear',{collected:state.collected.length}); }catch(e){}
   setTimeout(function(){ openCard(pot.id,i,true); },720);
 }
 
@@ -982,6 +998,7 @@ function openSeedSheet(potIdx){
 
 function plantSeed(potIdx,id){
   if(potIdx<0||potIdx>2||state.pots[potIdx]||!byId(id)) return;
+  gaRoundBegin('garden');
   state.pots[potIdx]={id:id,progress:0,bloomed:false};
   closeOv(sheetOv);
   renderSlot(potIdx); updateIntro();
@@ -1002,10 +1019,18 @@ function openCard(id,potIdx,isNew){
     +'<div class="fc-div">❧</div>'
     +'<p class="fc-letter">'+f.letter[lang]+'</p>'
     +'<p class="fc-sign">'+t.sign+'</p>'
+    +'<div class="ga-vote" id="gaVote" hidden>'
+    +'<span class="ga-vote-q">또 할래?</span>'
+    +'<button type="button" class="ga-vote-btn" data-choice="yes">응</button>'
+    +'<button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>'
+    +'</div>'
     +'<div class="fc-actions">'
     +'<button class="btn btn-primary" data-act="close-ov">'+t.keep+'</button>'
     +(hasPot?('<button class="btn btn-ghost" data-act="empty-pot" data-pot="'+potIdx+'">'+t.emptyPot+'</button>'):'')
     +'</div>';
+  /* 카드는 열 때마다 다시 그려진다 — 방금 핀 카드에서만 투표 행을 되살린다.
+     앨범에서 옛 카드를 다시 열 때 띄우면 화면의 꽃과 scene 이 어긋난다. */
+  try{ if(isNew&&gaS&&gaS.voteShown&&!gaS.voted) gaVoteShow(id); }catch(e){}
   show(cardOv);
 }
 
@@ -1056,6 +1081,9 @@ function openEnd(){
     +'</div>';
   spawnPetals();
   greenhouse.classList.add('full');
+  /* 여기서는 계측하지 않는다: openEnd 는 부팅 복구 경로(마지막 줄의 maybeEnd)로도 실행되므로
+     판 이벤트를 보내면 '페이지 로드만으로는 발화하지 않는다'가 깨진다.
+     12/12 도달은 마지막 개화의 game_complete{collected:12} 로 이미 잡힌다. */
   state.endingShown=true;
   save();
   show(endOv);
@@ -1097,6 +1125,49 @@ function doReset(){
   renderAll();
   SFX.tick();
 }
+
+/* ---- GA4 portal standard v1 (2026-08-19) ---- */
+var GA_GAME='seed-letters';
+var gaS={started:false,completed:false,voted:false,voteShown:false,voteScene:'main',t0:0};
+function gaLang(){ try{ return lang||'ko'; }catch(e){ return 'ko'; } }
+function gaSend(name,p){ try{ if(typeof gtag!=='function')return; p=p||{}; p.game_id=GA_GAME; if(!p.lang)p.lang=gaLang(); gtag('event',name,p);}catch(e){} }
+function gaRoundStart(scene){
+  gaS.t0=Date.now();
+  if(gaS.completed){ gaS.completed=false; gaSend('game_step',{step:'replay',scene:scene||'main'}); return; }
+  if(gaS.started)return; gaS.started=true; gaSend('game_step',{step:'start',scene:scene||'main'});
+}
+/* 화분이 셋이라 한 판 도중에도 물주기·심기가 여러 번 일어난다.
+   판이 아직 안 끝났으면 t0를 다시 잡지 않도록 감싼다. */
+function gaRoundBegin(scene){ if(!gaS.started||gaS.completed) gaRoundStart(scene); }
+function gaRoundComplete(scene,result,extra){
+  if(gaS.completed)return; gaS.completed=true;
+  var p={scene:scene||'main',result:result||'clear',play_sec:gaS.t0?Math.round((Date.now()-gaS.t0)/1000):0};
+  if(extra){ for(var k in extra){ if(extra.hasOwnProperty(k))p[k]=extra[k]; } }
+  gaSend('game_complete',p);
+  gaVoteShow(p.scene);
+}
+var GA_VOTE_COPY={ko:{q:'또 할래?',yes:'응',no:'글쎄',thx:'고마워요!'},ja:{q:'また あそぶ？',yes:'うん',no:'うーん',thx:'ありがとう！'},en:{q:'Want another go?',yes:'Yes',no:'Not sure',thx:'Thanks!'}};
+function gaVoteShow(scene){
+  /* 투표 행은 편지 카드 안에 있어 아직 안 그려졌을 수 있다 —
+     표시 상태는 DOM 유무와 무관하게 먼저 기록하고, 실제 행은 openCard가 되살린다. */
+  gaS.voteScene=scene||'main'; gaS.voteShown=true;
+  var el=document.getElementById('gaVote'); if(!el||gaS.voted)return;
+  var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+  el.querySelector('.ga-vote-q').textContent=c.q;
+  el.querySelector('[data-choice="yes"]').textContent=c.yes;
+  el.querySelector('[data-choice="unsure"]').textContent=c.no;
+  el.hidden=false; el.classList.remove('done');
+}
+/* 편지 카드는 열 때마다 innerHTML로 다시 그려지므로 컨테이너에 위임 바인딩 */
+cardBox.addEventListener('click',function(e){
+  var el=document.getElementById('gaVote'); if(!el)return;
+  var b=e.target; while(b&&b!==el&&!(b.getAttribute&&b.getAttribute('data-choice')))b=b.parentNode;
+  if(!b||b===el||gaS.voted)return; gaS.voted=true;
+  gaSend('game_vote',{scene:gaS.voteScene,choice:b.getAttribute('data-choice')});
+  var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+  el.classList.add('done'); el.querySelector('.ga-vote-q').textContent=c.thx;
+  setTimeout(function(){ el.hidden=true; },1200);
+});
 
 /* ================= actions (delegated) ================= */
 document.addEventListener('click',function(e){

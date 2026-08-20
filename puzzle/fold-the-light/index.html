@@ -2,6 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="거울을 돌려 빛을 접고 모든 등불을 켜는 30스테이지 광선 퍼즐">
 <meta name="theme-color" content="#0a0d28">
@@ -160,6 +163,13 @@ canvas{display:block;width:100%;height:auto;touch-action:manipulation}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}
 }
+
+/* ---------- GA vote row ---------- */
+.ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 2px;font-size:14px;line-height:1.2;opacity:.92;color:var(--ink-soft)}
+.ga-vote[hidden]{display:none}
+.ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+.ga-vote-btn:active{opacity:1}
+.ga-vote.done .ga-vote-btn{display:none}
 </style>
 </head>
 <body>
@@ -233,6 +243,11 @@ canvas{display:block;width:100%;height:auto;touch-action:manipulation}
     <div class="btns">
       <button class="btn pri" id="nextBtn" data-i18n="nextStage">다음 스테이지</button>
       <button class="btn" id="backBtn" data-i18n="toList">스테이지 선택</button>
+    </div>
+    <div class="ga-vote" id="gaVote" hidden>
+      <span class="ga-vote-q">또 할래?</span>
+      <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+      <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
     </div>
   </div>
 </div>
@@ -1050,6 +1065,7 @@ function buildGrid() {
         if (!open) { toast(t("tLocked")); return; }
         SFX.click();
         loadLevel(i); show("scGame");
+        gaRoundStart("stage-" + (i + 1));
       });
       g.appendChild(b);
     })(i);
@@ -1060,10 +1076,53 @@ function buildGrid() {
   document.getElementById("festivalBtn").style.display = allDone() ? "" : "none";
 }
 
+/* ---- GA4 portal standard v1 (2026-08-19) ---- */
+var GA_GAME = "fold-the-light";
+var gaS = { started: false, completed: false, voted: false, voteShown: false, voteScene: "main", t0: 0 };
+function gaLang() { try { return lang || "ko"; } catch (e) { return "ko"; } }
+function gaSend(name, p) { try { if (typeof gtag !== "function") return; p = p || {}; p.game_id = GA_GAME; if (!p.lang) p.lang = gaLang(); gtag("event", name, p); } catch (e) {} }
+function gaRoundStart(scene) {
+  gaS.t0 = Date.now();
+  if (gaS.completed) { gaS.completed = false; gaSend("game_step", { step: "replay", scene: scene || "main" }); return; }
+  if (gaS.started) return; gaS.started = true; gaSend("game_step", { step: "start", scene: scene || "main" });
+}
+function gaRoundComplete(scene, result, extra) {
+  if (gaS.completed) return; gaS.completed = true;
+  var p = { scene: scene || "main", result: result || "clear", play_sec: gaS.t0 ? Math.round((Date.now() - gaS.t0) / 1000) : 0 };
+  if (extra) { for (var k in extra) { if (extra.hasOwnProperty(k)) p[k] = extra[k]; } }
+  gaSend("game_complete", p);
+  gaVoteShow(p.scene);
+}
+var GA_VOTE_COPY = { ko: { q: "또 할래?", yes: "응", no: "글쎄", thx: "고마워요!" }, ja: { q: "また あそぶ？", yes: "うん", no: "うーん", thx: "ありがとう！" }, en: { q: "Want another go?", yes: "Yes", no: "Not sure", thx: "Thanks!" } };
+function gaVoteHost(host) {
+  try { var el = document.getElementById("gaVote"); if (el && host && el.parentNode !== host) host.appendChild(el); } catch (e) {}
+}
+function gaVoteShow(scene) {
+  var el = document.getElementById("gaVote"); if (!el || gaS.voted) return;
+  var c = GA_VOTE_COPY[gaLang()] || GA_VOTE_COPY.ko;
+  el.querySelector(".ga-vote-q").textContent = c.q;
+  el.querySelector('[data-choice="yes"]').textContent = c.yes;
+  el.querySelector('[data-choice="unsure"]').textContent = c.no;
+  gaS.voteScene = scene || "main"; gaS.voteShown = true; el.hidden = false; el.classList.remove("done");
+}
+(function () { var el = document.getElementById("gaVote"); if (!el) return;
+  el.addEventListener("click", function (e) {
+    var b = e.target; while (b && b !== el && !(b.getAttribute && b.getAttribute("data-choice"))) b = b.parentNode;
+    if (!b || b === el || gaS.voted) return; gaS.voted = true;
+    gaSend("game_vote", { scene: gaS.voteScene, choice: b.getAttribute("data-choice") });
+    var c = GA_VOTE_COPY[gaLang()] || GA_VOTE_COPY.ko;
+    el.classList.add("done"); el.querySelector(".ga-vote-q").textContent = c.thx;
+    setTimeout(function () { el.hidden = true; }, 1200);
+  });
+})();
+
 function onCleared() {
   var first = !isCleared(idx);
   markCleared(idx);
   buildGrid();
+  var gaEnd = allDone() && (first || idx >= TOTAL - 1);
+  gaVoteHost(gaEnd ? document.querySelector("#scEnd .end-txt .card") : document.querySelector("#ovClear .card"));
+  gaRoundComplete("stage-" + (idx + 1), "clear", { stage: idx + 1 });
   if (allDone() && first) { startEnding(); return; }
   if (idx >= TOTAL - 1 && allDone()) { startEnding(); return; }
   document.getElementById("clearMsg").textContent = t("clearMsg", { n: idx + 1 });
@@ -1075,7 +1134,7 @@ function closeClear() { document.getElementById("ovClear").classList.remove("on"
 
 document.getElementById("nextBtn").addEventListener("click", function () {
   closeClear(); SFX.click();
-  if (idx < TOTAL - 1) { loadLevel(idx + 1); show("scGame"); }
+  if (idx < TOTAL - 1) { loadLevel(idx + 1); show("scGame"); gaRoundStart("stage-" + (idx + 1)); }
   else { buildGrid(); show("scMenu"); }
 });
 document.getElementById("backBtn").addEventListener("click", function () {
@@ -1091,7 +1150,7 @@ document.getElementById("skipBtn").addEventListener("click", function () {
   audio(); SFX.skip();
   unlockTo(idx + 1); buildGrid();
   toast(t("tSkipped"));
-  if (idx < TOTAL - 1) loadLevel(idx + 1);
+  if (idx < TOTAL - 1) { loadLevel(idx + 1); gaRoundStart("stage-" + (idx + 1)); }
   else show("scMenu");
 });
 document.getElementById("festivalBtn").addEventListener("click", function () { audio(); startEnding(); });
@@ -1241,6 +1300,7 @@ function applyLang() {
   document.getElementById("clearMsg").textContent = t("clearMsg", { n: idx + 1 });
   buildRules();
   buildGrid();
+  if (gaS && gaS.voteShown && !gaS.voted) gaVoteShow(gaS.voteScene);
 }
 document.getElementById("langBtn").addEventListener("click", function () {
   audio(); SFX.click();

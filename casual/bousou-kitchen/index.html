@@ -2,6 +2,9 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>暴走キッチン🌸</title>
 <style>
@@ -269,6 +272,13 @@ header h1{
 /* コンボアニメ */
 @keyframes popIn{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.2);opacity:1}100%{transform:scale(1)}}
 .combo-pop{animation:popIn .3s ease-out;}
+
+/* GA vote row */
+.ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 14px;font-size:14px;line-height:1.2;opacity:.92;color:#8a5070}
+.ga-vote[hidden]{display:none}
+.ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+.ga-vote-btn:active{opacity:1}
+.ga-vote.done .ga-vote-btn{display:none}
 </style>
 </head>
 <body>
@@ -356,6 +366,11 @@ header h1{
   <div class="result-dish"   id="result-dish"></div>
   <div class="result-desc"   id="result-desc"></div>
   <div class="result-score"  id="result-score"></div>
+  <div class="ga-vote" id="gaVote" hidden>
+    <span class="ga-vote-q">また あそぶ？</span>
+    <button type="button" class="ga-vote-btn" data-choice="yes">うん</button>
+    <button type="button" class="ga-vote-btn" data-choice="unsure">うーん</button>
+  </div>
   <button class="result-btn" onclick="nextOrder()">次の注文へ 🌸</button>
 </div>
 
@@ -951,6 +966,7 @@ function startGame(){
   updateHUD();
   gameState='playing';
   clearSlots();
+  gaRoundStart(gaScene());
   nextOrderInternal();
   if(bgmOn){stopBGM();startBGM();}
 }
@@ -973,6 +989,7 @@ function nextOrderInternal(){
   selectedIngredients=new Array(5).fill(null);
   clearSlots();
   updateCookBtn();
+  gaRoundStart(gaScene());
 }
 
 function nextOrder(){
@@ -1083,6 +1100,7 @@ function cook(){
       `+${pts}点${oldCombo>1?' 　コンボ×'+oldCombo+'！':''}`;
     addToZukan({emoji:recipe.emoji,name:recipe.name,desc:'正解料理！',combo:oldCombo,isSuccess:true,
       ingredients:used.map(s=>s.emoji)});
+    gaRoundComplete(gaScene(),'clear',{score:pts,score_total:score,combo:oldCombo});
   } else {
     combo=1; updateHUD();
     const mystery=getRandomMystery();
@@ -1094,6 +1112,7 @@ function cook(){
     document.getElementById('result-score').textContent='コンボがリセット…';
     addToZukan({emoji:mystery.emoji,name:mystery.name,desc:mystery.desc,combo:0,isSuccess:false,
       ingredients:used.map(s=>s.emoji)});
+    gaRoundComplete(gaScene(),'fail',{score:0,score_total:score,combo:0});
   }
   overlay.classList.add('show');
 }
@@ -1163,6 +1182,44 @@ function showToast(msg){
   t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),1500);
 }
+
+/* ---- GA4 portal standard v1 (2026-08-19) ---- */
+var GA_GAME='bousou-kitchen';
+var gaS={started:false,completed:false,voted:false,voteShown:false,voteScene:'main',t0:0};
+function gaLang(){ try{ return 'ja'; }catch(e){ return 'ko'; } }
+function gaScene(){ try{ return 'ing'+ingCount; }catch(e){ return 'main'; } }
+function gaSend(name,p){ try{ if(typeof gtag!=='function')return; p=p||{}; p.game_id=GA_GAME; if(!p.lang)p.lang=gaLang(); gtag('event',name,p);}catch(e){} }
+function gaRoundStart(scene){ /* 판 시작마다 호출 */
+  gaS.t0=Date.now();
+  if(gaS.completed){ gaS.completed=false; gaSend('game_step',{step:'replay',scene:scene||'main'}); return; }
+  if(gaS.started)return; gaS.started=true; gaSend('game_step',{step:'start',scene:scene||'main'});
+}
+function gaRoundComplete(scene,result,extra){ /* 판 완결마다 호출 (내부에서 판당 1회 보장) */
+  if(gaS.completed)return; gaS.completed=true;
+  var p={scene:scene||'main',result:result||'clear',play_sec:gaS.t0?Math.round((Date.now()-gaS.t0)/1000):0};
+  if(extra){ for(var k in extra){ if(extra.hasOwnProperty(k))p[k]=extra[k]; } }
+  gaSend('game_complete',p);
+  gaVoteShow(p.scene);
+}
+var GA_VOTE_COPY={ko:{q:'또 할래?',yes:'응',no:'글쎄',thx:'고마워요!'},ja:{q:'また あそぶ？',yes:'うん',no:'うーん',thx:'ありがとう！'},en:{q:'Want another go?',yes:'Yes',no:'Not sure',thx:'Thanks!'}};
+function gaVoteShow(scene){
+  var el=document.getElementById('gaVote'); if(!el||gaS.voted)return;
+  var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+  el.querySelector('.ga-vote-q').textContent=c.q;
+  el.querySelector('[data-choice="yes"]').textContent=c.yes;
+  el.querySelector('[data-choice="unsure"]').textContent=c.no;
+  gaS.voteScene=scene||'main'; gaS.voteShown=true; el.hidden=false; el.classList.remove('done');
+}
+(function(){ var el=document.getElementById('gaVote'); if(!el)return;
+  el.addEventListener('click',function(e){
+    var b=e.target; while(b&&b!==el&&!(b.getAttribute&&b.getAttribute('data-choice')))b=b.parentNode;
+    if(!b||b===el||gaS.voted)return; gaS.voted=true;
+    gaSend('game_vote',{scene:gaS.voteScene,choice:b.getAttribute('data-choice')});
+    var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+    el.classList.add('done'); el.querySelector('.ga-vote-q').textContent=c.thx;
+    setTimeout(function(){ el.hidden=true; },1200);
+  });
+})();
 
 // ================================================================
 //  起動

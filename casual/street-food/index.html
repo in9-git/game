@@ -2,6 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1a0f12">
 <title>미니 분식집 · Tiny Street Food</title>
@@ -234,6 +237,13 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
   *{transition-duration:.01s!important;animation:none!important}
   #shutter{transition-duration:.35s!important}
 }
+
+/* ---- GA4 portal standard v1 — vote row ---- */
+.ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 2px;font-size:14px;line-height:1.2;opacity:.92;color:var(--ink-dim)}
+.ga-vote[hidden]{display:none}
+.ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid rgba(255,200,150,.34);background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+.ga-vote-btn:active{opacity:1}
+.ga-vote.done .ga-vote-btn{display:none}
 </style>
 </head>
 <body>
@@ -284,6 +294,11 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
     <p id="endSub">수고했어요. 불 끄고 천천히 정리해요.</p>
     <div id="endList"></div>
     <div id="endNote"></div>
+    <div class="ga-vote" id="gaVote" hidden>
+      <span class="ga-vote-q">또 할래?</span>
+      <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+      <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
+    </div>
     <div id="endBtns">
       <button id="againBtn">다시 하기</button>
       <button id="homeBtn2">홈으로</button>
@@ -1854,6 +1869,7 @@ function advanceCustomer(dt){
 function endDay(){
   G.over=true; G.phase='end';
   updateDots(); updateTabs();
+  gaRoundComplete('day','clear',{made_total:G.made.tteok+G.made.bung+G.made.odeng,crispy:G.crispy});
   SFX.stirStop();
   setTimeout(function(){
     $('#shutter').classList.add('down');
@@ -1885,6 +1901,8 @@ function buildEnd(){
   $('#endNote').textContent = G.crispy>0 ? t('endNoteCrispy') : t('endNotePlain');
 }
 function restart(){
+  /* ↺ can be tapped before any play starts; only log a round that actually ran */
+  if(gaS.started||gaS.completed) gaRoundStart('day');
   $('#endWrap').classList.remove('show');
   setTimeout(function(){ $('#shutter').classList.remove('down'); },260);
   G.customers=makeCustomers(); G.ci=0; G.phase='in'; G.pt=0;
@@ -1918,7 +1936,7 @@ function applyLang(){
   $('#rotSub').textContent=t('rotSub');
   $('#rotBtn').textContent=t('rotGo');
   updateTabs(); updateHint(); renderTray();
-  if(G.over) buildEnd();
+  if(G.over){ buildEnd(); gaVoteRelabel(); }
   else{
     $('#againBtn').textContent=t('again');
     $('#homeBtn2').textContent=t('home2');
@@ -1945,6 +1963,55 @@ function frame(now){
   drawStation(dt);
   requestAnimationFrame(frame);
 }
+
+/* ---- GA4 portal standard v1 (2026-08-19) ---- */
+var GA_GAME='street-food';
+var gaS={started:false,completed:false,voted:false,voteShown:false,voteScene:'main',t0:0};
+function gaLang(){ try{ return lang||'ko'; }catch(e){ return 'ko'; } }
+function gaSend(name,p){ try{ if(typeof gtag!=='function')return; p=p||{}; p.game_id=GA_GAME; if(!p.lang)p.lang=gaLang(); gtag('event',name,p);}catch(e){} }
+function gaRoundStart(scene){
+  gaS.t0=Date.now();
+  if(gaS.completed){ gaS.completed=false; gaSend('game_step',{step:'replay',scene:scene||'main'}); return; }
+  if(gaS.started)return; gaS.started=true; gaSend('game_step',{step:'start',scene:scene||'main'});
+}
+function gaRoundComplete(scene,result,extra){
+  if(gaS.completed)return; gaS.completed=true;
+  var p={scene:scene||'main',result:result||'clear',play_sec:gaS.t0?Math.round((Date.now()-gaS.t0)/1000):0};
+  if(extra){ for(var k in extra){ if(extra.hasOwnProperty(k))p[k]=extra[k]; } }
+  gaSend('game_complete',p);
+  gaVoteShow(p.scene);
+}
+var GA_VOTE_COPY={ko:{q:'또 할래?',yes:'응',no:'글쎄',thx:'고마워요!'},ja:{q:'また あそぶ？',yes:'うん',no:'うーん',thx:'ありがとう！'},en:{q:'Want another go?',yes:'Yes',no:'Not sure',thx:'Thanks!'}};
+function gaVoteShow(scene){
+  var el=document.getElementById('gaVote'); if(!el||gaS.voted)return;
+  var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+  el.querySelector('.ga-vote-q').textContent=c.q;
+  el.querySelector('[data-choice="yes"]').textContent=c.yes;
+  el.querySelector('[data-choice="unsure"]').textContent=c.no;
+  gaS.voteScene=scene||'main'; gaS.voteShown=true; el.hidden=false; el.classList.remove('done');
+}
+function gaVoteRelabel(){ if(gaS.voteShown&&!gaS.voted) gaVoteShow(gaS.voteScene); }
+(function(){ var el=document.getElementById('gaVote'); if(!el)return;
+  el.addEventListener('click',function(e){
+    var b=e.target; while(b&&b!==el&&!(b.getAttribute&&b.getAttribute('data-choice')))b=b.parentNode;
+    if(!b||b===el||gaS.voted)return; gaS.voted=true;
+    gaSend('game_vote',{scene:gaS.voteScene,choice:b.getAttribute('data-choice')});
+    var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+    el.classList.add('done'); el.querySelector('.ga-vote-q').textContent=c.thx;
+    setTimeout(function(){ el.hidden=true; },1200);
+  });
+})();
+/* first real play action of the page load = round start */
+(function(){
+  var zones=['stationWrap','trayBar','tabs'], i, n;
+  function unbind(){
+    for(var k=0;k<zones.length;k++){ var z=document.getElementById(zones[k]); if(!z)continue;
+      z.removeEventListener('pointerdown',onFirst,true); z.removeEventListener('click',onFirst,true); }
+  }
+  function onFirst(){ if(!gaS.started) gaRoundStart('day'); unbind(); }
+  for(i=0;i<zones.length;i++){ n=document.getElementById(zones[i]); if(!n){continue;}
+    n.addEventListener('pointerdown',onFirst,true); n.addEventListener('click',onFirst,true); }
+})();
 
 /* ---------------- boot ---------------- */
 G.customers=makeCustomers();

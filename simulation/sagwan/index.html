@@ -338,6 +338,13 @@ canvas.guideCv{width:140px;height:140px;display:block}
   .choice{font-size:.94rem;padding:13px 14px 13px 42px}
   canvas.guideCv{width:118px;height:118px}
 }
+/* 「또 할래?」 한 줄 — 보상도 재시작도 아니고, 그냥 물어보고 끝난다 */
+.ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:15px 0 2px;font-size:14px;line-height:1.2;color:var(--ink2);opacity:.92}
+.ga-vote[hidden]{display:none}
+.ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+.ga-vote-btn:active{opacity:1}
+.ga-vote.done .ga-vote-btn{display:none}
+
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important}
   .scrollBody{transition-duration:.14s!important}
@@ -499,6 +506,11 @@ canvas.guideCv{width:140px;height:140px;display:block}
         <div class="lesson" id="lessonBox">
           <div class="lh"><span data-i="lessonHead">배움</span></div>
           <div id="lessonText"></div>
+        </div>
+        <div class="ga-vote" id="gaVote" hidden>
+          <span class="ga-vote-q">또 할래?</span>
+          <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+          <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
         </div>
         <div class="btnRow">
           <button class="btn" id="finTlBtn" type="button"><span data-i="toTimeline">연표로</span></button>
@@ -1116,6 +1128,7 @@ function startScene(idx){
   S.exploreRead = {};
   S.fired = false;
   S.order = shuffled(S.scene.choices.length);
+  gaRoundStart(S.scene.id);
   showScreen('scene');
   renderSceneTag();
   goBrief();
@@ -1366,6 +1379,7 @@ function renderFinale(quiet){
   var lsn = tr(S.scene.lesson);
   $('#lessonBox').hidden = !lsn;
   if (lsn) paraFill($('#lessonText'), lsn, !quiet);
+  if (!$('#gaVote').hidden) gaVoteShow(gaS.voteScene);   /* 떠 있는 투표 행도 언어를 따라간다 */
 
   /* 정사 클리어면 다음 갈림길로, 상상의 역사면 이 갈림길 재도전 */
   var nb = $('#finNextBtn'), lbl = $('#finNextLbl');
@@ -1389,17 +1403,64 @@ function renderFinale(quiet){
 function fireComplete(){
   if (S.fired || !S.scene) return;
   S.fired = true;
+  gaS.completed = true;                            /* 다음 갈림길은 replay 로 센다 */
   try{
     if (typeof gtag === 'function'){
       gtag('event','game_complete',{
         game_id:'sagwan',
         scene:S.scene.id,
         result:(S.picked && S.picked.isHistory) ? 'history' : 'if',
-        lang:lang
+        lang:lang,
+        play_sec:gaS.t0 ? Math.round((Date.now() - gaS.t0)/1000) : 0
       });
     }
   }catch(e){}
+  gaVoteShow(S.scene.id);
 }
+
+/* ---- GA4 portal standard v1 (2026-08-19) — 기존 game_complete 위에 start/replay·투표만 얹는다 ---- */
+var GA_GAME = 'sagwan';
+var gaS = { started:false, completed:false, voted:false, voteScene:'main', t0:0 };
+function gaLang(){ try{ return lang || 'ko'; }catch(e){ return 'ko'; } }
+function gaSend(name, p){
+  try{
+    if (typeof gtag !== 'function') return;
+    p = p || {}; p.game_id = GA_GAME; if (!p.lang) p.lang = gaLang();
+    gtag('event', name, p);
+  }catch(e){}
+}
+function gaRoundStart(scene){                      /* 갈림길에 들어설 때마다 — 첫 판은 start, 완결 뒤는 replay */
+  gaS.t0 = Date.now();
+  if (gaS.completed){ gaS.completed = false; gaSend('game_step',{ step:'replay', scene:scene||'main' }); return; }
+  if (gaS.started) return;
+  gaS.started = true; gaSend('game_step',{ step:'start', scene:scene||'main' });
+}
+var GA_VOTE_COPY = {
+  ko:{ q:'또 할래?', yes:'응', no:'글쎄', thx:'고마워요!' },
+  ja:{ q:'また あそぶ？', yes:'うん', no:'うーん', thx:'ありがとう！' },
+  en:{ q:'Want another go?', yes:'Yes', no:'Not sure', thx:'Thanks!' }
+};
+function gaVoteShow(scene){
+  var el = document.getElementById('gaVote'); if (!el || gaS.voted) return;
+  var c = GA_VOTE_COPY[gaLang()] || GA_VOTE_COPY.ko;
+  el.querySelector('.ga-vote-q').textContent = c.q;
+  el.querySelector('[data-choice="yes"]').textContent = c.yes;
+  el.querySelector('[data-choice="unsure"]').textContent = c.no;
+  gaS.voteScene = scene || 'main'; el.hidden = false; el.classList.remove('done');
+}
+(function(){
+  var el = document.getElementById('gaVote'); if (!el) return;
+  el.addEventListener('click', function(e){
+    var b = e.target;
+    while (b && b !== el && !(b.getAttribute && b.getAttribute('data-choice'))) b = b.parentNode;
+    if (!b || b === el || gaS.voted) return;
+    gaS.voted = true;
+    gaSend('game_vote',{ scene:gaS.voteScene, choice:b.getAttribute('data-choice') });
+    var c = GA_VOTE_COPY[gaLang()] || GA_VOTE_COPY.ko;
+    el.classList.add('done'); el.querySelector('.ga-vote-q').textContent = c.thx;
+    setTimeout(function(){ el.hidden = true; }, 1200);
+  });
+})();
 
 /* ================= i18n 적용 ================= */
 var NAMES = { ko:'사관이 보고 있다', ja:'史官が見ている', en:'The Historian Is Watching' };

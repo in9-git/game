@@ -2,6 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2b2117">
 <title>모래정원 빗질 · Zen Rake Garden</title>
@@ -191,6 +194,22 @@ header{
   *{transition-duration:.01s !important;animation:none !important}
   #veil{transition-duration:.01s}
 }
+/* ---------- ga vote ---------- */
+/* #stage 안쪽 상단에 띄운다. 하단(힌트·트레이·갈퀴/모래·사진저장)은 빈 자리가 없고
+   힌트를 덮으면 게임 안내 문구가 가려지므로 모래 위쪽 여백을 쓴다.
+   래퍼는 pointer-events:none — 버튼 두 개만 입력을 받고 나머지는 캔버스로 통과. */
+.ga-vote{
+  position:absolute;left:50%;top:10px;transform:translateX(-50%);
+  display:flex;align-items:center;justify-content:center;gap:8px;z-index:6;max-width:calc(100% - 16px);
+  background:rgba(38,30,20,.92);border:1px solid rgba(255,240,210,.2);color:var(--paper);
+  padding:7px 9px 7px 15px;border-radius:999px;font-size:14px;line-height:1.2;white-space:nowrap;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none;
+}
+.ga-vote[hidden]{display:none}
+.ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent;pointer-events:auto}
+.ga-vote-btn:active{opacity:1}
+.ga-vote.done .ga-vote-btn{display:none}
+.ga-vote.done{padding:7px 15px}
 </style>
 </head>
 <body>
@@ -211,6 +230,11 @@ header{
     <div id="stage">
       <canvas id="garden"></canvas>
       <div id="veil"></div>
+      <div class="ga-vote" id="gaVote" hidden>
+        <span class="ga-vote-q">또 할래?</span>
+        <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+        <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
+      </div>
     </div>
   </div>
 
@@ -340,6 +364,7 @@ function applyLang(){
   /* 라벨 길이가 바뀌면 #row2 줄 수·#hint 줄바꿈이 달라져 #stage 높이가 즉시 변한다.
      window resize 는 발생하지 않으므로 여기서 직접 재계산 (같은 크기면 조기 return). */
   resize();
+  gaVoteRelang();
 }
 $('#langBtn').addEventListener('click', ()=>{
   lang = LANGS[(LANGS.indexOf(lang)+1)%LANGS.length];
@@ -1029,6 +1054,7 @@ canvas.addEventListener('pointerdown',e=>{
   pid=e.pointerId;
   try{ canvas.setPointerCapture(pid); }catch(err){}
   SFX.ensure();
+  gaRoundStart('main');
   const p=posOf(e);
   downPt=p; lastMv=p; lastMvT=performance.now();
   moved=false; consumed=false; stroke=null; lastAp=null;
@@ -1081,6 +1107,7 @@ function endPointer(e){
     if(stroke.pts.length>=4){
       marks.push(stroke);
       if(marks.length>260) marks.splice(0, marks.length-260);
+      gaStroke();
       scheduleSave();
     }
   }else if(!consumed && e.type==='pointerup'){
@@ -1090,6 +1117,7 @@ function endPointer(e){
         const dab={k:'s',n:tines,pts:[p.x,p.y]};
         rakeSeg(p.x,p.y,p.x+2,p.y+1,tines);
         marks.push(dab);
+        gaStroke();
         scheduleSave();
       }
     }else if(!findObjectAt(p.x,p.y)){
@@ -1217,6 +1245,10 @@ $('#saveBtn').addEventListener('click',()=>{
     a.remove();
     SFX.chime();
     toast(t('savedToast'));
+    try{
+      if(!gaS.started) gaRoundStart('main');   /* 획 없이 저장만 한 경우에도 start 선행 보장 */
+      gaRoundComplete('main','clear',{strokes:gaS.strokes||0,objects:objects.length});
+    }catch(gaErr){}
   }catch(err){
     toast(t('saveFail'));
   }
@@ -1226,6 +1258,55 @@ window.addEventListener('pagehide',saveState);
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden') saveState();
 });
+
+/* ---- GA4 portal standard v1 (2026-08-19) ---- */
+var GA_GAME='zen-garden';
+var gaS={started:false,completed:false,voted:false,voteShown:false,voteScene:'main',t0:0,strokes:0};
+function gaLang(){ try{ return lang||'ko'; }catch(e){ return 'ko'; } }
+function gaStroke(){ try{ gaS.strokes++; }catch(e){} }   /* 판 단위 획 수 — 판 경계(gaRoundStart)에서만 리셋 */
+function gaVoteHide(){ try{ var el=document.getElementById('gaVote'); if(el) el.hidden=true; }catch(e){} }
+function gaSend(name,p){ try{ if(typeof gtag!=='function')return; p=p||{}; p.game_id=GA_GAME; if(!p.lang)p.lang=gaLang(); gtag('event',name,p);}catch(e){} }
+function gaRoundStart(scene){
+  if(gaS.completed){ gaS.t0=Date.now(); gaS.strokes=0; gaS.completed=false; gaVoteHide(); gaSend('game_step',{step:'replay',scene:scene||'main'}); return; }
+  if(gaS.started)return; gaS.started=true; gaS.t0=Date.now(); gaS.strokes=0; gaSend('game_step',{step:'start',scene:scene||'main'});
+}
+function gaRoundComplete(scene,result,extra){
+  if(gaS.completed)return; gaS.completed=true;
+  var p={scene:scene||'main',result:result||'clear',play_sec:gaS.t0?Math.round((Date.now()-gaS.t0)/1000):0};
+  if(extra){ for(var k in extra){ if(extra.hasOwnProperty(k))p[k]=extra[k]; } }
+  gaSend('game_complete',p);
+  gaVoteShow(p.scene);
+}
+var GA_VOTE_COPY={ko:{q:'또 할래?',yes:'응',no:'글쎄',thx:'고마워요!'},ja:{q:'また あそぶ？',yes:'うん',no:'うーん',thx:'ありがとう！'},en:{q:'Want another go?',yes:'Yes',no:'Not sure',thx:'Thanks!'}};
+function gaVoteShow(scene){
+  var el=document.getElementById('gaVote'); if(!el||gaS.voted)return;
+  var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+  el.querySelector('.ga-vote-q').textContent=c.q;
+  el.querySelector('[data-choice="yes"]').textContent=c.yes;
+  el.querySelector('[data-choice="unsure"]').textContent=c.no;
+  gaS.voteScene=scene||'main'; gaS.voteShown=true; el.hidden=false; el.classList.remove('done');
+}
+function gaVoteRelang(){
+  try{
+    var el=document.getElementById('gaVote'); if(!el||el.hidden)return;
+    var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+    if(el.classList.contains('done')){ el.querySelector('.ga-vote-q').textContent=c.thx; return; }
+    if(gaS.voted)return;
+    el.querySelector('.ga-vote-q').textContent=c.q;
+    el.querySelector('[data-choice="yes"]').textContent=c.yes;
+    el.querySelector('[data-choice="unsure"]').textContent=c.no;
+  }catch(e){}
+}
+(function(){ var el=document.getElementById('gaVote'); if(!el)return;
+  el.addEventListener('click',function(e){
+    var b=e.target; while(b&&b!==el&&!(b.getAttribute&&b.getAttribute('data-choice')))b=b.parentNode;
+    if(!b||b===el||gaS.voted)return; gaS.voted=true;
+    gaSend('game_vote',{scene:gaS.voteScene,choice:b.getAttribute('data-choice')});
+    var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+    el.classList.add('done'); el.querySelector('.ga-vote-q').textContent=c.thx;
+    setTimeout(function(){ el.hidden=true; },1200);
+  });
+})();
 
 /* ---------------- boot ---------------- */
 applyLang();

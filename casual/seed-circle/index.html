@@ -182,6 +182,12 @@ canvas:focus-visible{outline:2px solid var(--water);outline-offset:-3px}
 @media (prefers-reduced-motion:reduce){
   #gFill,#gBand,#tip{transition:none}
 }
+/* ---- GA4 portal standard v1 (2026-08-19) : 엔딩 투표 행 ---- */
+.ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 2px;font-size:14px;line-height:1.2;opacity:.92;color:var(--ink2)}
+.ga-vote[hidden]{display:none}
+.ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+.ga-vote-btn:active{opacity:1}
+.ga-vote.done .ga-vote-btn{display:none}
 </style>
 
 <div id="app">
@@ -267,6 +273,11 @@ canvas:focus-visible{outline:2px solid var(--water);outline-offset:-3px}
   <div class="sheet" role="dialog" aria-modal="true">
     <h2 data-i="dnTitle">여섯 바퀴, 전부 닫혔어요</h2>
     <p id="doneBody"></p>
+    <div class="ga-vote" id="gaVote" hidden>
+      <span class="ga-vote-q">또 할래?</span>
+      <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+      <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
+    </div>
     <div class="acts">
       <button class="btn pri" id="doneDex" type="button" data-i="dexBtn">📖 도감</button>
       <button class="btn" id="doneGreen" type="button" data-i="tiGreen">🪴 온실</button>
@@ -2245,6 +2256,7 @@ function setBand(best){
 
 function startJourney(){
   S.mode='journey'; S.si=0; S.fired=false; S.playMs=0; S.guessOK=0; S.guessTry=0;
+  gaRoundStart('journey');
   hideAll(); setupStage();
 }
 function setupStage(){
@@ -2418,6 +2430,7 @@ function showDex(fromTitle){
 function showDone(){
   $('#doneBody').textContent = L('fnDone')(DEX.length);
   show('#ovDone');
+  gaVoteShow('journey');   /* 언어를 바꿔 이 화면을 다시 그릴 때 투표 카피도 따라온다 */
 }
 
 /* GA4 — 한 판에 한 번만. startJourney() 가 S.fired 를 되돌리므로
@@ -2434,7 +2447,59 @@ function fireComplete(){
       });
     }
   }catch(e){}
+  gaS.completed=true;
 }
+
+/* ---- GA4 포탈 표준 v1 (2026-08-19) ----
+   위의 fireComplete 는 그대로 두고 step:'start'/'replay' 와 엔딩의 「또 할래?」
+   투표만 얹는다. 3중 가드(중복 플래그 · typeof gtag · try/catch)는 동일. */
+var gaS={started:false,completed:false,voted:false,voteShown:false,voteScene:'journey'};
+function gaLang(){ try{ return lang||'ko'; }catch(e){ return 'ko'; } }
+function gaSend(name,p){
+  try{
+    if(typeof gtag!=='function') return;
+    p=p||{};
+    p.game_id=SLUG;
+    if(!p.lang) p.lang=gaLang();
+    gtag('event',name,p);
+  }catch(e){}
+}
+function gaRoundStart(scene){
+  if(gaS.completed){ gaS.completed=false; gaSend('game_step',{step:'replay',scene:scene||'main'}); return; }
+  if(gaS.started) return;
+  gaS.started=true; gaSend('game_step',{step:'start',scene:scene||'main'});
+}
+var GA_VOTE_COPY={
+  ko:{q:'또 할래?',yes:'응',no:'글쎄',thx:'고마워요!'},
+  ja:{q:'また あそぶ？',yes:'うん',no:'うーん',thx:'ありがとう！'},
+  en:{q:'Want another go?',yes:'Yes',no:'Not sure',thx:'Thanks!'}
+};
+function gaVoteShow(scene){
+  var el=document.getElementById('gaVote');
+  if(!el||gaS.voted) return;
+  var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+  el.querySelector('.ga-vote-q').textContent=c.q;
+  el.querySelector('[data-choice="yes"]').textContent=c.yes;
+  el.querySelector('[data-choice="unsure"]').textContent=c.no;
+  gaS.voteScene=scene||'main'; gaS.voteShown=true;
+  el.hidden=false; el.classList.remove('done');
+}
+function gaVoteBind(){
+  var el=document.getElementById('gaVote');
+  if(!el) return;
+  el.addEventListener('click',function(e){
+    var b=e.target;
+    while(b&&b!==el&&!(b.getAttribute&&b.getAttribute('data-choice'))) b=b.parentNode;
+    if(!b||b===el||gaS.voted) return;
+    gaS.voted=true;
+    gaSend('game_vote',{scene:gaS.voteScene,choice:b.getAttribute('data-choice')});
+    var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+    el.classList.add('done');
+    el.querySelector('.ga-vote-q').textContent=c.thx;
+    setTimeout(function(){ el.hidden=true; },1200);
+  });
+}
+gaVoteBind();
 
 /* ── 입력 ────────────────────────────────────────────────────
    홀드가 안 풀리면 물이 계속 나오고 습도가 100 에 붙어버린다.

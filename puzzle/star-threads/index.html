@@ -2,6 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#05061a">
 <title>별자리 잇기 · 星つなぎ · Star Threads</title>
@@ -192,6 +195,12 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
   *{transition-duration:.01ms !important;animation-duration:.01ms !important}
   .card{transform:none;opacity:1}
 }
+
+.ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 2px;font-size:14px;line-height:1.2;opacity:.92;color:var(--ink-dim)}
+.ga-vote[hidden]{display:none}
+.ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+.ga-vote-btn:active{opacity:1}
+.ga-vote.done .ga-vote-btn{display:none}
 </style>
 </head>
 <body>
@@ -227,6 +236,11 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
     <div id="finish">
       <div id="finTitle">오늘 밤하늘이 가득 찼어요</div>
       <div id="finBody"></div>
+      <div class="ga-vote" id="gaVote" hidden>
+        <span class="ga-vote-q">또 할래?</span>
+        <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+        <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
+      </div>
       <div id="finActs">
         <button class="btn gold" id="finSave">사진 저장</button>
         <button class="btn" id="finAgain">다시 하기</button>
@@ -338,6 +352,46 @@ try{
   }
 }catch(e){}
 function t(k){ return (I18N[lang]&&I18N[lang][k]) || I18N.ko[k] || k; }
+
+/* ---- GA4 portal standard v1 (2026-08-19) ---- */
+var GA_GAME='star-threads';
+var gaS={started:false,completed:false,voted:false,voteShown:false,voteScene:'main',t0:0};
+var gaRoundBegun=false;
+function gaLang(){ try{ return lang || 'ko'; }catch(e){ return 'ko'; } }
+function gaSend(name,p){ try{ if(typeof gtag!=='function')return; p=p||{}; p.game_id=GA_GAME; if(!p.lang)p.lang=gaLang(); gtag('event',name,p);}catch(e){} }
+function gaRoundStart(scene){
+  gaS.t0=Date.now();
+  if(gaS.completed){ gaS.completed=false; gaSend('game_step',{step:'replay',scene:scene||'main'}); return; }
+  if(gaS.started)return; gaS.started=true; gaSend('game_step',{step:'start',scene:scene||'main'});
+}
+/* 하룻밤(별자리 3개) = 한 판. 첫 별을 고르는 순간에만 start/replay */
+function gaTouch(){ if(gaRoundBegun)return; gaRoundBegun=true; gaRoundStart('main'); }
+function gaRoundComplete(scene,result,extra){
+  if(gaS.completed)return; gaS.completed=true;
+  var p={scene:scene||'main',result:result||'clear',play_sec:gaS.t0?Math.round((Date.now()-gaS.t0)/1000):0};
+  if(extra){ for(var k in extra){ if(extra.hasOwnProperty(k))p[k]=extra[k]; } }
+  gaSend('game_complete',p);
+  gaVoteShow(p.scene);
+}
+var GA_VOTE_COPY={ko:{q:'또 할래?',yes:'응',no:'글쎄',thx:'고마워요!'},ja:{q:'また あそぶ？',yes:'うん',no:'うーん',thx:'ありがとう！'},en:{q:'Want another go?',yes:'Yes',no:'Not sure',thx:'Thanks!'}};
+function gaVoteShow(scene){
+  var el=document.getElementById('gaVote'); if(!el||gaS.voted)return;
+  var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+  el.querySelector('.ga-vote-q').textContent=c.q;
+  el.querySelector('[data-choice="yes"]').textContent=c.yes;
+  el.querySelector('[data-choice="unsure"]').textContent=c.no;
+  gaS.voteScene=scene||'main'; gaS.voteShown=true; el.hidden=false; el.classList.remove('done');
+}
+(function(){ var el=document.getElementById('gaVote'); if(!el)return;
+  el.addEventListener('click',function(e){
+    var b=e.target; while(b&&b!==el&&!(b.getAttribute&&b.getAttribute('data-choice')))b=b.parentNode;
+    if(!b||b===el||gaS.voted)return; gaS.voted=true;
+    gaSend('game_vote',{scene:gaS.voteScene,choice:b.getAttribute('data-choice')});
+    var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+    el.classList.add('done'); el.querySelector('.ga-vote-q').textContent=c.thx;
+    setTimeout(function(){ el.hidden=true; },1200);
+  });
+})();
 
 /* ------------------------------------------------------------------
    2. 이름 워드뱅크 — 언어별로 따로 (번역이 아니라 각 언어에서 자연스럽게)
@@ -1034,6 +1088,7 @@ function nearestStar(p){
 }
 function tryConnect(idx){
   if(idx<0) return;
+  gaTouch();
   const s=S.stars[idx];
   const ci=S.chain.indexOf(s);
   if(S.chain.length===0){
@@ -1142,7 +1197,11 @@ function toGallery(){
   relayout();
   SFX.gallery();
   if(!RM) for(let i=0;i<26;i++) setTimeout(()=>spark(rng()*W, H*0.25+rng()*H*0.6, 2, 20, '210,200,255'), i*45);
-  setTimeout(()=>{ $('#finish').classList.add('show'); }, RM?100:900);
+  setTimeout(()=>{
+    $('#finish').classList.add('show');
+    gaRoundComplete('main','clear',{constellations:S.cons.length});
+    relayout();   /* 투표 행이 켜지며 시트 높이가 바뀌므로 갤러리 배치를 다시 잡는다 */
+  }, RM?100:900);
   updateHud();
 }
 
@@ -1213,6 +1272,7 @@ function applyLang(){
   $('#finAgain').textContent=t('again');
   $('#finHome').textContent=t('toHome');
   paintReveal();
+  if(gaS.voteShown && !gaS.voted) gaVoteShow(gaS.voteScene);
   relayout();   /* 시트 높이가 언어마다 달라지므로 갤러리 배치를 다시 잡는다 */
   updateHud();
 }
@@ -1243,6 +1303,7 @@ $('#finAgain').addEventListener('click', ()=>{
   setTimeout(()=>{
     S.cons.length=0; S.parts.length=0; S.chain.length=0;
     S.mode='play'; S.pending=null;
+    gaRoundBegun=false;   /* 새 밤하늘 = 새 판. 첫 별을 고르는 순간에 replay */
     rng=mulberry32((Math.random()*1e9)|0);
     seedStars(25);
     S.stars.forEach(s=>{ s.fade=0; });
