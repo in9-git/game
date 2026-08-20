@@ -858,19 +858,12 @@
   }
 
   /* ================= GA4 (best-effort, never blocks the game) =================
-     game_step: once per screen per page load. game_complete: once per night run
-     (a replay re-arms it). All calls triple-guarded. */
-  var stepSent = {};
+     game_complete: once per night run (a replay re-arms it). All calls triple-guarded.
+     화면 추적용 옛 gaStep() 은 걷어냈다 — 포탈 계측 표준 v1 이 game_step 의 step 값을
+     'start'|'replay' 로 못 박았는데 그 함수는 'intro'·밤 id 를 같은 이벤트에 섞어
+     step 차원을 오염시켰다. 인트로 노출은 page_view 가, 밤 구분은 표준 쪽
+     game_step 의 scene 이 이미 담는다. */
   var completeSent = false;
-  function gaStep(step) {
-    if (stepSent[step]) return;
-    stepSent[step] = true;
-    try {
-      if (typeof gtag === 'function') {
-        gtag('event', 'game_step', { game_id: 'night-bugs', step: step, lang: lang });
-      }
-    } catch (e) {}
-  }
   function gaComplete(nightId) {
     if (completeSent) return;
     completeSent = true;
@@ -888,7 +881,7 @@
 
   /* ---- GA4 portal standard v1 (2026-08-19) ----
      Adds step:'start'/'replay' and the ending 「또 할래?」 vote on top of the
-     night-scoped gaStep/gaComplete above. Same 3-guard rules. */
+     night-scoped gaComplete above. Same 3-guard rules. */
   var gaS = { started:false, completed:false, voted:false, voteShown:false, voteScene:'main' };
   function gaLang() { try { return lang || 'ko'; } catch (e) { return 'ko'; } }
   function gaSend(name, p) {
@@ -1543,7 +1536,6 @@
     applyI18n();
     state = 'play';
     playStart = Date.now();
-    gaStep(NIGHTS[idx].id);
     gaRoundStart(NIGHTS[idx].id);
     sndPop();
     showNightToasts();
@@ -1800,7 +1792,6 @@
   buildStars();
   loadNight(selNight);
   applyI18n();
-  gaStep('intro');
   scheduleGlint();
   window.requestAnimationFrame(frame);
 })();

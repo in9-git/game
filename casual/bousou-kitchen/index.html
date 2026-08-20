@@ -9,11 +9,19 @@
 <title>暴走キッチン🌸</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
+html{height:100%;}
 body{
   font-family:'Segoe UI','Helvetica Neue',Hiragino Kaku Gothic Pro,sans-serif;
   background:linear-gradient(160deg,#ffe0f0 0%,#fff4f9 40%,#f0f8ff 100%);
-  color:#5a2d4a;min-height:100vh;overflow-x:hidden;
+  color:#5a2d4a;
+  height:100vh;height:100dvh;
+  display:flex;flex-direction:column;
+  overflow:hidden;
 }
+#petals{flex:0 0 auto;height:0;}
+
+/* キーボード操作のフォーカス表示 */
+:focus-visible{outline:3px solid #e8507a;outline-offset:2px;border-radius:6px;}
 
 /* ── 花びら ── */
 .petal{position:fixed;top:-30px;opacity:.7;animation:fallPetal linear infinite;pointer-events:none;z-index:0;user-select:none;}
@@ -23,14 +31,29 @@ body{
   100%{transform:translateY(110vh) rotate(360deg) translateX(-20px);opacity:0}
 }
 
+/* 動きを減らす設定を尊重 */
+@media (prefers-reduced-motion: reduce){
+  .petal{animation:none !important;display:none !important;}
+  .combo-pop{animation:none !important;}
+  *,*::before,*::after{
+    animation-duration:.001ms !important;animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;scroll-behavior:auto !important;
+  }
+  /* 同じ詳細度の後続ルール(:hover の transform)に負けるので !important が要る */
+  .icon-btn:hover,.cook-btn:hover:not(:disabled),.ingredient-btn:hover{transform:none !important;}
+}
+
 /* ── 固定UI ── */
 .top-bar{
-  position:fixed;top:0;left:0;right:0;z-index:50;
-  display:flex;justify-content:flex-end;gap:8px;padding:8px 12px;
+  position:relative;z-index:50;flex:0 0 auto;
+  display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:5px 12px;
+  background:rgba(255,228,242,.94);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(249,168,201,.55);
 }
 .icon-btn{
   background:rgba(255,255,255,.88);border:2px solid #f9a8c9;
-  border-radius:50%;width:38px;height:38px;font-size:1rem;
+  border-radius:50%;width:34px;height:34px;font-size:.95rem;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   box-shadow:0 2px 8px rgba(220,130,180,.3);transition:transform .15s;
 }
@@ -38,49 +61,63 @@ body{
 .home-btn{margin-right:auto;text-decoration:none;color:#c2557f;font-weight:800;}
 
 /* ── メインコンテナ ── */
-.container{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:12px;padding-top:54px;}
+.container{
+  position:relative;z-index:1;flex:1 1 auto;min-height:0;
+  width:100%;max-width:520px;margin:0 auto;padding:0 12px 18px;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+}
+
+/* ── 操作デッキ（常時表示：注文・スロット・料理ボタン） ── */
+.deck{
+  position:sticky;top:0;z-index:20;
+  margin:0 -12px;padding:5px 12px 6px;
+  background:rgba(255,243,249,.95);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  border-bottom:1px solid rgba(249,168,201,.45);
+  box-shadow:0 4px 12px rgba(220,130,180,.13);
+}
 
 /* ── ヘッダー ── */
-header{text-align:center;padding:12px 0 6px;}
+header{text-align:center;padding:6px 0 2px;}
 header h1{
-  font-size:1.9rem;font-weight:900;
+  font-size:1.4rem;font-weight:900;
   background:linear-gradient(135deg,#e8507a,#f9a8c9,#a78bda);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   letter-spacing:2px;
 }
-.subtitle{color:#c06080;font-size:.8rem;margin-top:3px;}
+.subtitle{color:#c06080;font-size:.68rem;margin-top:1px;}
 
 /* ── HUD ── */
 .hud{
   display:flex;justify-content:space-around;align-items:center;
   background:rgba(255,255,255,.75);border:2px solid #f9a8c9;
-  border-radius:16px;padding:8px 10px;margin:8px 0;
+  border-radius:14px;padding:4px 10px;margin:0;
   backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(220,130,180,.15);
 }
 .hud-item{text-align:center;}
-.hud-label{font-size:.65rem;color:#c06080;letter-spacing:1px;}
-.hud-value{font-size:1.3rem;font-weight:700;color:#e8507a;}
+.hud-label{font-size:.58rem;color:#c06080;letter-spacing:1px;}
+.hud-value{font-size:1.05rem;font-weight:700;color:#e8507a;line-height:1.25;}
 
 /* ── 注文パネル ── */
 .order-panel{
   background:rgba(255,255,255,.82);border:2px solid #f9a8c9;
-  border-radius:16px;padding:10px 14px;margin:6px 0;text-align:center;
+  border-radius:14px;padding:5px 12px;margin:5px 0 0;text-align:center;
   box-shadow:0 2px 10px rgba(220,130,180,.12);
 }
-.order-label{font-size:.7rem;color:#c06080;letter-spacing:1px;margin-bottom:3px;}
-.order-text{font-size:1.3rem;font-weight:700;color:#5a2d4a;}
-.order-hint{font-size:.76rem;color:#b07890;margin-top:2px;}
+.order-label{font-size:.62rem;color:#c06080;letter-spacing:1px;margin-bottom:1px;}
+.order-text{font-size:1.05rem;font-weight:700;color:#5a2d4a;line-height:1.25;}
+.order-hint{font-size:.68rem;color:#b07890;margin-top:1px;line-height:1.25;}
 
 /* ── 個数セレクター ── */
 .count-selector{
   display:flex;justify-content:center;align-items:center;
-  gap:6px;margin:6px 0;
+  gap:6px;margin:5px 0 0;
 }
-.count-selector label{font-size:.75rem;color:#c06080;font-weight:600;}
+.count-selector label{font-size:.7rem;color:#c06080;font-weight:600;}
 .count-btn{
-  width:34px;height:34px;border-radius:50%;border:2px solid #f9a8c9;
-  background:rgba(255,255,255,.7);color:#e8507a;font-weight:700;font-size:.9rem;
-  cursor:pointer;transition:all .15s;
+  width:30px;height:30px;border-radius:50%;border:2px solid #f9a8c9;
+  background:rgba(255,255,255,.7);color:#e8507a;font-weight:700;font-size:.85rem;
+  font-family:inherit;cursor:pointer;transition:all .15s;
 }
 .count-btn.active{background:linear-gradient(135deg,#e8507a,#f9a8c9);color:#fff;border-color:#e8507a;box-shadow:0 2px 8px rgba(232,80,122,.35);}
 .count-btn:hover:not(.active){background:rgba(255,220,235,.7);}
@@ -88,23 +125,26 @@ header h1{
 /* ── スロット ── */
 .selected-area{
   display:flex;gap:4px;justify-content:center;align-items:center;
-  margin:6px 0;flex-wrap:wrap;
+  margin:5px 0 0;flex-wrap:wrap;
 }
 .slot{
-  width:56px;height:60px;border:2px dashed #f9a8c9;border-radius:14px;
+  width:48px;height:50px;border:2px dashed #f9a8c9;border-radius:12px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-size:1.45rem;background:rgba(255,255,255,.65);
+  font-size:1.25rem;background:rgba(255,255,255,.65);
+  font-family:inherit;color:inherit;padding:0;
+  -webkit-appearance:none;appearance:none;
   transition:all .2s;cursor:pointer;
 }
+.slot:disabled{cursor:default;}
 .slot.filled{border-style:solid;border-color:#e8507a;background:rgba(255,220,235,.65);}
 .slot.hidden{display:none;}
-.slot .slot-label{font-size:.52rem;color:#b07890;margin-top:1px;}
-.plus-icon{font-size:1.3rem;color:#f9a8c9;}
-.op-sign{font-size:.95rem;color:#e8507a;font-weight:700;}
+.slot .slot-label{font-size:.5rem;color:#b07890;margin-top:1px;}
+.plus-icon{font-size:1.15rem;color:#f9a8c9;}
+.op-sign{font-size:.9rem;color:#e8507a;font-weight:700;}
 
 /* ── ボタン群 ── */
 .cook-btn{
-  padding:11px 16px;font-size:.9rem;font-weight:700;
+  padding:9px 14px;font-size:.85rem;font-weight:700;font-family:inherit;
   background:linear-gradient(135deg,#e8507a,#f9a8c9);color:#fff;
   border:none;border-radius:50px;cursor:pointer;
   transition:all .15s;box-shadow:0 4px 14px rgba(232,80,122,.4);
@@ -113,23 +153,25 @@ header h1{
 .cook-btn:hover:not(:disabled){transform:scale(1.06);}
 .cook-btn:disabled{opacity:.35;cursor:not-allowed;}
 .reset-btn{
-  display:block;width:100%;padding:8px;
+  display:block;width:100%;padding:5px;
   background:rgba(255,255,255,.7);border:1.5px solid #f9a8c9;
-  border-radius:12px;color:#c06080;font-size:.8rem;
-  cursor:pointer;margin:5px 0;transition:all .15s;
+  border-radius:10px;color:#c06080;font-size:.74rem;font-family:inherit;
+  cursor:pointer;margin:5px 0 0;transition:all .15s;
 }
 .reset-btn:hover{background:rgba(255,220,235,.8);border-color:#e8507a;}
 
 /* ── 食事制限パネル ── */
 .diet-panel{
   background:rgba(255,255,255,.75);border:1.5px solid #d0c0e8;
-  border-radius:14px;padding:10px 12px;margin:6px 0;
+  border-radius:14px;padding:10px 12px;margin:8px 0 6px;
 }
 .diet-title{font-size:.72rem;color:#8060b0;font-weight:700;letter-spacing:1px;margin-bottom:7px;}
 .diet-grid{display:flex;flex-wrap:wrap;gap:6px;}
 .diet-chip{
   padding:5px 12px;border-radius:20px;border:1.5px solid #d0c0e8;
   background:rgba(255,255,255,.8);color:#8060b0;font-size:.76rem;
+  font-family:inherit;line-height:1.35;
+  -webkit-appearance:none;appearance:none;
   cursor:pointer;transition:all .15s;user-select:none;
 }
 .diet-chip.active{background:linear-gradient(135deg,#a78bda,#d0a8f0);color:#fff;border-color:#a78bda;box-shadow:0 2px 8px rgba(150,100,220,.3);}
@@ -146,6 +188,8 @@ header h1{
 .allergy-chip{
   padding:4px 10px;border-radius:20px;border:1.5px solid #e8d0f8;
   background:rgba(255,255,255,.8);color:#a060c0;font-size:.72rem;
+  font-family:inherit;line-height:1.35;
+  -webkit-appearance:none;appearance:none;
   cursor:pointer;transition:all .15s;user-select:none;
 }
 .allergy-chip.active{background:linear-gradient(135deg,#e8507a,#f9a8c9);color:#fff;border-color:#e8507a;}
@@ -166,7 +210,7 @@ header h1{
   display:grid;grid-template-columns:repeat(5,1fr);gap:7px;
 }
 .ingredient-btn{
-  border-radius:14px;border:2px solid #f0d0e0;
+  border-radius:14px;border:2px solid #f0d0e0;font-family:inherit;
   background:rgba(255,255,255,.75);
   cursor:pointer;transition:all .15s;
   display:flex;flex-direction:column;align-items:center;
@@ -191,7 +235,7 @@ header h1{
 .zukan-btn{
   display:block;width:100%;padding:8px;
   background:rgba(255,255,255,.65);border:1.5px solid #d0c0e8;
-  border-radius:12px;color:#8060b0;font-size:.8rem;
+  border-radius:12px;color:#8060b0;font-size:.8rem;font-family:inherit;
   cursor:pointer;margin:5px 0;text-align:center;transition:all .2s;
 }
 .zukan-btn:hover{border-color:#a78bda;background:rgba(220,200,255,.4);}
@@ -200,7 +244,7 @@ header h1{
 .overlay{
   display:none;position:fixed;inset:0;z-index:100;
   align-items:center;justify-content:center;flex-direction:column;
-  text-align:center;padding:24px;
+  text-align:center;padding:24px;overflow-y:auto;
   background:rgba(255,230,240,.93);backdrop-filter:blur(8px);
 }
 .overlay.show{display:flex;}
@@ -212,7 +256,7 @@ header h1{
 .result-desc{font-size:.86rem;color:#8a5070;margin-bottom:14px;max-width:300px;line-height:1.5;}
 .result-score{font-size:1rem;color:#a060c0;margin-bottom:16px;font-weight:600;}
 .result-btn{
-  padding:12px 30px;font-size:1rem;font-weight:700;
+  padding:12px 30px;font-size:1rem;font-weight:700;font-family:inherit;
   border:none;border-radius:50px;cursor:pointer;
   background:linear-gradient(135deg,#e8507a,#a78bda);color:#fff;
   box-shadow:0 4px 14px rgba(200,100,180,.35);
@@ -234,7 +278,7 @@ header h1{
 .close-btn{
   padding:6px 14px;border:1.5px solid #f9a8c9;
   background:rgba(255,255,255,.8);color:#c06080;
-  border-radius:20px;cursor:pointer;font-size:.82rem;
+  border-radius:20px;cursor:pointer;font-size:.82rem;font-family:inherit;
 }
 .zukan-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;}
 .zukan-card{
@@ -249,15 +293,6 @@ header h1{
 .zukan-badge{font-size:.6rem;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:3px;}
 .zukan-badge.s{background:#f9a8c9;color:#7a1040;}
 .zukan-badge.f{background:#d0c0e8;color:#5030a0;}
-
-/* ゲームオーバー */
-.go-title{font-size:2.1rem;font-weight:900;color:#e8507a;margin-bottom:8px;}
-.go-score{font-size:1.35rem;color:#5a2d4a;margin-bottom:5px;}
-.go-zukan{font-size:.92rem;color:#a060c0;margin-bottom:20px;}
-.go-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
-.go-btn{padding:10px 24px;font-size:.93rem;font-weight:700;border:none;border-radius:50px;cursor:pointer;}
-.go-btn.primary{background:linear-gradient(135deg,#e8507a,#a78bda);color:#fff;box-shadow:0 4px 12px rgba(200,100,180,.35);}
-.go-btn.secondary{background:rgba(255,255,255,.85);color:#8060b0;border:1.5px solid #d0c0e8;}
 
 /* トースト */
 .toast{
@@ -285,9 +320,9 @@ header h1{
 <div id="petals"></div>
 
 <div class="top-bar">
-  <a class="icon-btn home-btn" href="../../index.html" title="ホーム">←</a>
-  <button class="icon-btn" id="music-btn" onclick="toggleMusic()" title="BGM">🎵</button>
-  <button class="icon-btn" onclick="openZukan()" title="図鑑">📖</button>
+  <a class="icon-btn home-btn" href="../../index.html" title="ホーム" aria-label="ホームに戻る">←</a>
+  <button type="button" class="icon-btn" id="music-btn" onclick="toggleMusic()" title="BGM" aria-label="BGMを切り替える" aria-pressed="false">🎵</button>
+  <button type="button" class="icon-btn" onclick="openZukan()" title="図鑑" aria-label="謎料理図鑑を開く">📖</button>
 </div>
 
 <div class="container">
@@ -304,47 +339,50 @@ header h1{
     <div class="hud-item"><div class="hud-label">発見</div><div class="hud-value" id="zukan-hud">0</div></div>
   </div>
 
-  <!-- 注文 -->
-  <div class="order-panel">
-    <div class="order-label">📋 注文</div>
-    <div class="order-text" id="order-text">🌸 はじめよう！</div>
-    <div class="order-hint" id="order-hint">食材をタップするとスタート</div>
-  </div>
+  <!-- 操作デッキ（常時表示） -->
+  <div class="deck">
+    <!-- 注文 -->
+    <div class="order-panel">
+      <div class="order-label">📋 注文</div>
+      <div class="order-text" id="order-text">🌸 はじめよう！</div>
+      <div class="order-hint" id="order-hint">食材をタップするとスタート</div>
+    </div>
 
-  <!-- 食材個数選択 -->
-  <div class="count-selector">
-    <label>食材数：</label>
-    <button class="count-btn" data-n="2" onclick="setIngCount(2)">2</button>
-    <button class="count-btn" data-n="3" onclick="setIngCount(3)">3</button>
-    <button class="count-btn" data-n="4" onclick="setIngCount(4)">4</button>
-    <button class="count-btn active" data-n="5" onclick="setIngCount(5)">5</button>
-  </div>
+    <!-- 食材個数選択 -->
+    <div class="count-selector">
+      <label>食材数：</label>
+      <button type="button" class="count-btn" data-n="2" onclick="setIngCount(2)" aria-label="食材数を2つにする" aria-pressed="false">2</button>
+      <button type="button" class="count-btn active" data-n="3" onclick="setIngCount(3)" aria-label="食材数を3つにする" aria-pressed="true">3</button>
+      <button type="button" class="count-btn" data-n="4" onclick="setIngCount(4)" aria-label="食材数を4つにする" aria-pressed="false">4</button>
+      <button type="button" class="count-btn" data-n="5" onclick="setIngCount(5)" aria-label="食材数を5つにする" aria-pressed="false">5</button>
+    </div>
 
-  <!-- スロット -->
-  <div class="selected-area" id="slots-area">
-    <div class="slot" id="slot1" onclick="clearSlot(0)"><span class="plus-icon">＋</span><span class="slot-label">食材1</span></div>
-    <div class="op-sign" id="op1">＋</div>
-    <div class="slot" id="slot2" onclick="clearSlot(1)"><span class="plus-icon">＋</span><span class="slot-label">食材2</span></div>
-    <div class="op-sign" id="op2">＋</div>
-    <div class="slot" id="slot3" onclick="clearSlot(2)"><span class="plus-icon">＋</span><span class="slot-label">食材3</span></div>
-    <div class="op-sign" id="op3">＋</div>
-    <div class="slot" id="slot4" onclick="clearSlot(3)"><span class="plus-icon">＋</span><span class="slot-label">食材4</span></div>
-    <div class="op-sign" id="op4">＋</div>
-    <div class="slot" id="slot5" onclick="clearSlot(4)"><span class="plus-icon">＋</span><span class="slot-label">食材5</span></div>
-    <div class="op-sign">＝</div>
-    <button class="cook-btn" id="cook-btn" onclick="cook()" disabled>料理！</button>
-  </div>
+    <!-- スロット -->
+    <div class="selected-area" id="slots-area">
+      <button type="button" class="slot" id="slot1" onclick="clearSlot(0)" aria-label="スロット1：空き"><span class="plus-icon">＋</span><span class="slot-label">食材1</span></button>
+      <div class="op-sign" id="op1" aria-hidden="true">＋</div>
+      <button type="button" class="slot" id="slot2" onclick="clearSlot(1)" aria-label="スロット2：空き"><span class="plus-icon">＋</span><span class="slot-label">食材2</span></button>
+      <div class="op-sign" id="op2" aria-hidden="true">＋</div>
+      <button type="button" class="slot" id="slot3" onclick="clearSlot(2)" aria-label="スロット3：空き"><span class="plus-icon">＋</span><span class="slot-label">食材3</span></button>
+      <div class="op-sign" id="op3" aria-hidden="true">＋</div>
+      <button type="button" class="slot" id="slot4" onclick="clearSlot(3)" aria-label="スロット4：空き"><span class="plus-icon">＋</span><span class="slot-label">食材4</span></button>
+      <div class="op-sign" id="op4" aria-hidden="true">＋</div>
+      <button type="button" class="slot" id="slot5" onclick="clearSlot(4)" aria-label="スロット5：空き"><span class="plus-icon">＋</span><span class="slot-label">食材5</span></button>
+      <div class="op-sign" aria-hidden="true">＝</div>
+      <button type="button" class="cook-btn" id="cook-btn" onclick="cook()" aria-label="選んだ食材で料理する" disabled>料理！</button>
+    </div>
 
-  <button class="reset-btn" onclick="resetSlots()">🔄 選択をリセット</button>
+    <button type="button" class="reset-btn" onclick="resetSlots()" aria-label="選んだ食材をすべて取り消す">🔄 選択をリセット</button>
+  </div>
 
   <!-- 食事制限パネル -->
   <div class="diet-panel">
     <div class="diet-title">🥗 食事制限モード</div>
     <div class="diet-grid">
-      <div class="diet-chip" data-mode="vegetarian" onclick="toggleDiet('vegetarian')">🌱 ベジタリアン</div>
-      <div class="diet-chip" data-mode="vegan"      onclick="toggleDiet('vegan')">🌿 ヴィーガン</div>
-      <div class="diet-chip" data-mode="gluten"     onclick="toggleDiet('gluten')">🌾 グルテンフリー</div>
-      <div class="diet-chip" data-mode="allergy"    onclick="toggleDiet('allergy')">⚠️ アレルギー除外</div>
+      <button type="button" class="diet-chip" data-mode="vegetarian" onclick="toggleDiet('vegetarian')" aria-pressed="false" aria-label="ベジタリアンモード">🌱 ベジタリアン</button>
+      <button type="button" class="diet-chip" data-mode="vegan"      onclick="toggleDiet('vegan')" aria-pressed="false" aria-label="ヴィーガンモード">🌿 ヴィーガン</button>
+      <button type="button" class="diet-chip" data-mode="gluten"     onclick="toggleDiet('gluten')" aria-pressed="false" aria-label="グルテンフリーモード">🌾 グルテンフリー</button>
+      <button type="button" class="diet-chip" data-mode="allergy"    onclick="toggleDiet('allergy')" aria-pressed="false" aria-label="アレルギー除外モード" aria-expanded="false" aria-controls="allergy-panel">⚠️ アレルギー除外</button>
     </div>
     <!-- アレルギー個別選択 -->
     <div class="allergy-panel" id="allergy-panel">
@@ -356,7 +394,7 @@ header h1{
   <!-- 食材グリッド -->
   <div class="ingredients-section" id="ingredients-section"></div>
 
-  <button class="zukan-btn" onclick="openZukan()">📖 謎料理図鑑（<span id="zukan-count">0</span>種 発見！）</button>
+  <button type="button" class="zukan-btn" onclick="openZukan()" aria-label="謎料理図鑑を開く">📖 謎料理図鑑（<span id="zukan-count">0</span>種 発見！）</button>
 </div>
 
 <!-- 結果オーバーレイ -->
@@ -383,19 +421,7 @@ header h1{
   <div class="zukan-grid" id="zukan-grid"></div>
 </div>
 
-<!-- ゲームオーバー -->
-<div class="overlay" id="gameover-overlay">
-  <div style="font-size:2.8rem;">🌸</div>
-  <div class="go-title">お疲れ様！</div>
-  <div class="go-score">スコア: <span id="final-score">0</span>点</div>
-  <div class="go-zukan">謎料理を <span id="final-zukan">0</span> 種類発見！</div>
-  <div class="go-btns">
-    <button class="go-btn primary"   onclick="startGame()">もう一回！</button>
-    <button class="go-btn secondary" onclick="openZukanFromGameover()">図鑑を見る</button>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 // ================================================================
@@ -572,7 +598,9 @@ function scheduleBGM(){
 function toggleMusic(){
   unlockAudio();
   bgmOn=!bgmOn;
-  document.getElementById('music-btn').textContent=bgmOn?'🔊':'🔇';
+  const mb=document.getElementById('music-btn');
+  mb.textContent=bgmOn?'🔊':'🔇';
+  mb.setAttribute('aria-pressed', bgmOn?'true':'false');
   if(bgmOn){ getCtx(); ac_resume_then_bgm(); } else stopBGM();
 }
 function ac_resume_then_bgm(){
@@ -780,7 +808,7 @@ const MYSTERY_FOODS=[
 // ================================================================
 let gameState='idle';
 let score=0, combo=1, successCount=0;
-let ingCount=5; // 現在の食材個数
+let ingCount=3; // 現在の食材個数（初期値：まず1皿成功できる本数）
 let selectedIngredients=new Array(5).fill(null);
 let currentOrder=null;
 let zukanEntries=[], usedMysteries=[];
@@ -796,24 +824,29 @@ function toggleDiet(mode){
   dietModes[mode]=!dietModes[mode];
   const chip=document.querySelector(`.diet-chip[data-mode="${mode}"]`);
   chip.classList.toggle('active', dietModes[mode]);
+  chip.setAttribute('aria-pressed', dietModes[mode]?'true':'false');
   sfxDiet();
   if(mode==='allergy'){
     document.getElementById('allergy-panel').classList.toggle('show', dietModes.allergy);
+    chip.setAttribute('aria-expanded', dietModes.allergy?'true':'false');
   }
   applyDietFilter();
 }
 
 function renderAllergyGrid(){
   const grid=document.getElementById('allergy-grid');
+  // 配慮: label 先頭の絵文字は読み上げから外す(「たまごを除外」であって「にわとりの卵を除外」ではない)
   grid.innerHTML=ALLERGEN_LIST.map(a=>`
-    <div class="allergy-chip" data-a="${a.id}" onclick="toggleAllergen('${a.id}')">${a.label}</div>
+    <button type="button" class="allergy-chip" data-a="${a.id}" onclick="toggleAllergen('${a.id}')" aria-pressed="false" aria-label="${a.label.replace(/^\S+\s*/, '')}を除外">${a.label}</button>
   `).join('');
 }
 
 function toggleAllergen(id){
   if(activeAllergens.has(id)) activeAllergens.delete(id);
   else activeAllergens.add(id);
-  document.querySelector(`.allergy-chip[data-a="${id}"]`).classList.toggle('active', activeAllergens.has(id));
+  const chip=document.querySelector(`.allergy-chip[data-a="${id}"]`);
+  chip.classList.toggle('active', activeAllergens.has(id));
+  chip.setAttribute('aria-pressed', activeAllergens.has(id)?'true':'false');
   sfxDiet();
   applyDietFilter();
 }
@@ -850,13 +883,16 @@ function applyDietFilter(){
 }
 
 function updateOrderForDiet(){
-  if(!currentOrder) return;
-  // 注文の食材が制限に引っかかっている場合はスキップして次へ
+  // 注文が作れなくなったら必ず作り直す。
+  // 作れる注文が1つも無ければ nextOrderInternal() が「注文なし」の案内を出す。
+  // 注文が消えている状態（currentOrder=null）でも、制限をゆるめたら復活させる。
   const availableOrders=getAvailableOrders();
-  if(availableOrders.length===0) return;
+  if(!currentOrder){
+    if(availableOrders.length>0) nextOrderInternal();
+    return;
+  }
   const orderKey=currentOrder.key;
-  const keySafe=availableOrders.find(o=>o.key===orderKey);
-  if(!keySafe){
+  if(!availableOrders.some(o=>o.key===orderKey)){
     nextOrderInternal();
   }
 }
@@ -882,7 +918,9 @@ function setIngCount(n){
   ingCount=n;
   sfxCountChange();
   document.querySelectorAll('.count-btn').forEach(btn=>{
-    btn.classList.toggle('active', parseInt(btn.dataset.n)===n);
+    const on=parseInt(btn.dataset.n)===n;
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-pressed', on?'true':'false');
   });
   updateSlotVisibility();
   selectedIngredients=new Array(5).fill(null);
@@ -897,12 +935,10 @@ function updateSlotVisibility(){
     const slot=document.getElementById('slot'+(i+1));
     const op=document.getElementById('op'+(i+1));
     const show=(i<ingCount);
-    if(slot) slot.classList.toggle('hidden', !show);
-    if(op) op.style.display=(i===0||i>=ingCount)?'none':'';
+    if(slot){ slot.classList.toggle('hidden', !show); slot.disabled=!show; }
+    // op(i+1) は slot(i+1) と slot(i+2) の間の記号。両方出ている時だけ表示
+    if(op) op.style.display=(ingCount>=i+2)?'':'none';
   }
-  // op1は常に表示
-  const op1=document.getElementById('op1');
-  if(op1) op1.style.display= ingCount>=2 ? '' : 'none';
 }
 
 // ================================================================
@@ -945,9 +981,12 @@ function renderCategoryIngredients(){
     grid.className='ingredients-grid';
     cat.items.forEach(ing=>{
       const btn=document.createElement('button');
+      btn.type='button';
       btn.className='ingredient-btn';
       btn.id='ing-'+ing.id;
-      btn.innerHTML=`<span class="i-emoji">${ing.emoji}</span><span class="i-name">${ing.name}</span>`;
+      btn.setAttribute('aria-label',ing.name+'を選ぶ');
+      btn.setAttribute('aria-pressed','false');
+      btn.innerHTML=`<span class="i-emoji" aria-hidden="true">${ing.emoji}</span><span class="i-name">${ing.name}</span>`;
       btn.onclick=()=>selectIngredient(ing);
       grid.appendChild(btn);
     });
@@ -960,7 +999,6 @@ function renderCategoryIngredients(){
 //  ゲーム開始
 // ================================================================
 function startGame(){
-  document.getElementById('gameover-overlay').classList.remove('show');
   score=0; combo=1; successCount=0;
   selectedIngredients=new Array(5).fill(null);
   updateHUD();
@@ -981,6 +1019,7 @@ function nextOrderInternal(){
     document.getElementById('order-text').textContent='注文なし…食事制限を見直して！';
     document.getElementById('order-hint').textContent='制限解除するか食材数を変えてね';
     currentOrder=null;
+    clearSlots(); // 注文が無い状態で「料理！」を押せないように
     return;
   }
   currentOrder=available[Math.floor(Math.random()*available.length)];
@@ -994,7 +1033,20 @@ function nextOrderInternal(){
 
 function nextOrder(){
   document.getElementById('result-overlay').classList.remove('show');
+  syncBackgroundInert();
   if(gameState==='playing') nextOrderInternal();
+}
+
+// 配慮: オーバーレイ表示中は背面(トップバー・調理台)をタブ順から外す。
+//       ポインタはオーバーレイが塞ぐが、キーボードとスクリーンリーダーは背面に抜けて
+//       進行中の一皿(スロット・食事制限チップ)を書き換えてしまう。
+function syncBackgroundInert(){
+  const r=document.getElementById('result-overlay'), z=document.getElementById('zukan-overlay');
+  const open=(r&&r.classList.contains('show'))||(z&&z.classList.contains('show'));
+  ['.top-bar','.container'].forEach(function(sel){
+    const el=document.querySelector(sel); if(!el) return;
+    if(open) el.setAttribute('inert',''); else el.removeAttribute('inert');
+  });
 }
 
 // ================================================================
@@ -1051,9 +1103,11 @@ function updateSlotDisplay(){
     if(ing){
       slot.innerHTML=`<span class="i-emoji" style="font-size:1.4rem">${ing.emoji}</span><span class="slot-label">${ing.name}</span>`;
       slot.classList.add('filled');
+      slot.setAttribute('aria-label',`スロット${i+1}：${ing.name}　タップで取り消し`);
     } else {
       slot.innerHTML=`<span class="plus-icon">＋</span><span class="slot-label">食材${i+1}</span>`;
       slot.classList.remove('filled');
+      slot.setAttribute('aria-label',`スロット${i+1}：空き`);
     }
   }
 }
@@ -1062,13 +1116,28 @@ function updateIngredientBtns(){
   INGREDIENTS.forEach(ing=>{
     const btn=document.getElementById('ing-'+ing.id);
     if(!btn) return;
-    btn.classList.toggle('selected', selectedIngredients.includes(ing));
+    const on=selectedIngredients.includes(ing);
+    btn.classList.toggle('selected', on);
+    btn.setAttribute('aria-pressed', on?'true':'false');
   });
 }
 
 function updateCookBtn(){
   const filled=selectedIngredients.slice(0,ingCount).filter(s=>s!==null).length;
   document.getElementById('cook-btn').disabled=(filled<ingCount);
+}
+
+// 失敗時のヒント：注文の食材と何個一致したかだけ返す（正解そのものは見せない）
+function countOrderMatch(used){
+  if(!currentOrder) return null;
+  const want=currentOrder.key.split('+');
+  let hit=0;
+  used.forEach(ing=>{
+    if(!ing) return;
+    const at=want.indexOf(ing.id);
+    if(at!==-1){ want.splice(at,1); hit++; }
+  });
+  return hit;
 }
 
 // ================================================================
@@ -1109,12 +1178,15 @@ function cook(){
     document.getElementById('result-title').textContent='謎料理完成…！';
     document.getElementById('result-dish').textContent=mystery.name;
     document.getElementById('result-desc').textContent=mystery.desc;
-    document.getElementById('result-score').textContent='コンボがリセット…';
+    const hit=countOrderMatch(used);
+    document.getElementById('result-score').textContent=
+      (hit===null?'':`注文の食材と ${hit}/${ingCount} 一致　`)+'コンボがリセット…';
     addToZukan({emoji:mystery.emoji,name:mystery.name,desc:mystery.desc,combo:0,isSuccess:false,
       ingredients:used.map(s=>s.emoji)});
     gaRoundComplete(gaScene(),'fail',{score:0,score_total:score,combo:0});
   }
   overlay.classList.add('show');
+  syncBackgroundInert();
 }
 
 function getRandomMystery(){
@@ -1155,9 +1227,8 @@ function updateZukanCount(){
 // ================================================================
 //  図鑑
 // ================================================================
-function openZukan(){renderZukan();document.getElementById('zukan-overlay').classList.add('show');}
-function openZukanFromGameover(){document.getElementById('gameover-overlay').classList.remove('show');openZukan();}
-function closeZukan(){document.getElementById('zukan-overlay').classList.remove('show');}
+function openZukan(){renderZukan();document.getElementById('zukan-overlay').classList.add('show');syncBackgroundInert();}
+function closeZukan(){document.getElementById('zukan-overlay').classList.remove('show');syncBackgroundInert();}
 function renderZukan(){
   const grid=document.getElementById('zukan-grid');
   if(!zukanEntries.length){

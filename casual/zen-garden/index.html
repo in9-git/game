@@ -27,6 +27,7 @@ body{
   user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
 }
 #app{
+  min-height:100vh;      /* dvh 미지원(iOS 15.3 이하) 폴백 */
   min-height:100dvh;
   display:flex;flex-direction:column;
   max-width:720px;margin:0 auto;
@@ -67,6 +68,10 @@ header{
 /* ---------- garden frame ---------- */
 #frame{
   position:relative;flex:1;min-height:300px;
+  /* #app 은 min-height 만 있어 높이가 '불확정' — 그래서 예전 #stage{height:100%} 가
+     해소되지 않고 캔버스가 기본 300×150 비율로 무너져 트레이에 죽은 나무판이 생겼다.
+     프레임→스테이지→캔버스를 전부 flex stretch 로 이어 백분율 의존을 없앤다. */
+  display:flex;
   border-radius:22px;padding:13px;
   background:
     linear-gradient(160deg, rgba(255,235,200,.10), rgba(0,0,0,.22)),
@@ -77,8 +82,8 @@ header{
     inset 0 1px 0 rgba(255,240,210,.18),
     inset 0 -3px 8px rgba(0,0,0,.35);
 }
-#stage{position:relative;width:100%;height:100%;border-radius:12px;overflow:hidden;background:var(--sand)}
-#garden{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#stage{position:relative;display:flex;flex:1 1 0;min-width:0;border-radius:12px;overflow:hidden;background:var(--sand)}
+#garden{display:block;flex:1 1 0;min-width:0;height:auto;touch-action:none;cursor:crosshair}
 #stage::after{
   content:'';position:absolute;inset:0;border-radius:12px;pointer-events:none;
   box-shadow:inset 0 6px 20px rgba(92,64,32,.38), inset 0 -3px 10px rgba(92,64,32,.18), inset 0 0 2px rgba(60,40,20,.5);
@@ -90,6 +95,14 @@ header{
 }
 #veil.show{opacity:1}
 /* ---------- hint ---------- */
+/* 투표 알약이 이 줄 위에 겹쳐 뜬다. 알약 높이(실측 46.8px)에서 위아래 flex gap(8+8)을 뺀
+   만큼 최소 높이를 미리 잡아 두면, 알약이 나타나도 트레이 높이가 변하지 않는다
+   (= 리플로우로 그린 그림이 다시 스케일되는 일이 없다).
+   38px = 46.8 − 16 + 위아래 여유 3.6px씩. */
+#hintRow{
+  position:relative;min-height:38px;
+  display:flex;align-items:center;justify-content:center;
+}
 #hint{
   text-align:center;font-size:.7rem;color:var(--ink-dim);letter-spacing:.03em;
   line-height:1.5;padding:0 6px;
@@ -195,17 +208,19 @@ header{
   #veil{transition-duration:.01s}
 }
 /* ---------- ga vote ---------- */
-/* #stage 안쪽 상단에 띄운다. 하단(힌트·트레이·갈퀴/모래·사진저장)은 빈 자리가 없고
-   힌트를 덮으면 게임 안내 문구가 가려지므로 모래 위쪽 여백을 쓴다.
-   래퍼는 pointer-events:none — 버튼 두 개만 입력을 받고 나머지는 캔버스로 통과. */
+/* 트레이(#frame) 바깥, 도구줄 바로 위 힌트 줄에 겹쳐 띄운다.
+   모래 위에 두면 방금 「사진 저장」으로 담은 정원을 정확히 덮는다(실측 46.8px 전부 겹침).
+   알약이 떠 있는 동안에는 힌트 문구를 숨겨(아래 형제 선택자) 글자가 옆으로 삐져나오지 않게 한다.
+   래퍼는 pointer-events:none — 버튼 두 개만 입력을 받는다. */
 .ga-vote{
-  position:absolute;left:50%;top:10px;transform:translateX(-50%);
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   display:flex;align-items:center;justify-content:center;gap:8px;z-index:6;max-width:calc(100% - 16px);
   background:rgba(38,30,20,.92);border:1px solid rgba(255,240,210,.2);color:var(--paper);
   padding:7px 9px 7px 15px;border-radius:999px;font-size:14px;line-height:1.2;white-space:nowrap;
   box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none;
 }
 .ga-vote[hidden]{display:none}
+.ga-vote:not([hidden]) ~ #hint{visibility:hidden}
 .ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent;pointer-events:auto}
 .ga-vote-btn:active{opacity:1}
 .ga-vote.done .ga-vote-btn{display:none}
@@ -230,15 +245,17 @@ header{
     <div id="stage">
       <canvas id="garden"></canvas>
       <div id="veil"></div>
-      <div class="ga-vote" id="gaVote" hidden>
-        <span class="ga-vote-q">또 할래?</span>
-        <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
-        <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
-      </div>
     </div>
   </div>
 
-  <div id="hint"></div>
+  <div id="hintRow">
+    <div class="ga-vote" id="gaVote" hidden>
+      <span class="ga-vote-q">또 할래?</span>
+      <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+      <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
+    </div>
+    <div id="hint"></div>
+  </div>
 
   <div id="controls">
     <div id="tray">
@@ -993,10 +1010,18 @@ function ringRadiusFor(o){
   return 34*(o.s||1);
 }
 
+/* 석등은 drawLantern 기준점 위로 지붕(-72)·보주(-80.9)까지 솟는다.
+   다른 소품용 상단 여백 26 으로는 지붕이 트레이 밖으로 잘리므로 배율만큼 더 내려 놓는다. */
+const LANTERN_TOP=84;
+
 function placeObject(toolName,x,y){
   x=clamp(x,18,W-18); y=clamp(y,26,H-14);
   const o=makeObject(toolName,x,y);
   if(!o) return;
+  if(o.t==='lantern'){
+    const top=Math.min(LANTERN_TOP*(o.s||1), Math.max(26,H-14));
+    if(o.y<top){ o.y=top; y=top; }
+  }
   o.born=performance.now();
   const rings={k:'r',x,y,r0:ringRadiusFor(o),c:o.t==='leaf'?2:3};
   marks.push(rings);

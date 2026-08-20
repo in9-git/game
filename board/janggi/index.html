@@ -598,6 +598,24 @@ select {
 .ga-vote .ga-vote-btn { font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 999px; border: 1px solid currentColor; background: transparent; color: inherit; cursor: pointer; opacity: .85; -webkit-tap-highlight-color: transparent; }
 .ga-vote .ga-vote-btn:active { opacity: 1; }
 .ga-vote.done .ga-vote-btn { display: none; }
+/* 배려: 무한 펄스(recommendPulse·ghostPulse·trophyPulseHan/Cho·pulse) 정지 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+/* 배려: 키보드 착수 — 포커스 링은 키보드 조작에서만 보이게 (포인터 착수는 그대로) */
+.cell:focus { outline: none; }
+.cell:focus-visible {
+  outline: 2px solid #f3cf5e;
+  outline-offset: -2px;
+  border-radius: 6px;
+  box-shadow: 0 0 8px rgba(243,207,94,0.65);
+}
+/* J1: 미구현 모드 탭 숨김 (HIDDEN_MODES 참조) */
+.mode-tab[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -663,6 +681,11 @@ const DIFFICULTIES = [
   { name: '대전', depth: 3, random: 0.02, wasmDepth: 12, skillLevel: 20, limitStrength: false, elo: 2400 },
   { name: '도전', depth: 4, random: 0,    wasmDepth: 15, skillLevel: 20, limitStrength: false, elo: 2800 }
 ];
+
+// J1: 첫 화면 모드 탭 중 '도전 모드'는 아직 미구현이라 화면에서 내린다(alert 스텁 제거).
+// 탭 마크업·gameModes 번역·AI 프로필은 그대로 두었으니, 구현되면 이 배열에서 'challenge' 만
+// 빼면 탭과 진입이 함께 돌아온다. 스텁 전용 문구였던 LANG.comingSoon 은 함께 지웠다.
+const HIDDEN_MODES = ['challenge'];
 
 // Palace boundaries
 function inPalace(col, row, team) {
@@ -1419,7 +1442,9 @@ const LANG = {
     diff: ['하','중','상'],
     capEmpty: t => `${t} 포획 없음`,
     gameModes: { practice: '연습 모드', match: '대전 모드', challenge: '도전 모드' },
-    comingSoon: '준비 중입니다 🚧',
+    htmlLang: 'ko', docTitle: '베이비장기 - Baby Janggi',
+    ariaEmpty: '빈 칸', ariaSide: { cho: '초', han: '한' },
+    ariaPieces: { king: '궁', guard: '사', horse: '마', elephant: '상', chariot: '차', cannon: '포', soldier: '졸' },
     repeatBlocked: '같은 자리를 세 번은 반복할 수 없어요 · 다른 수를 두세요',
     online: {
       title: '온라인 대전', desc: '방 코드로 친구와 1:1 대국',
@@ -1451,7 +1476,9 @@ const LANG = {
     diff: ['弱','中','強'],
     capEmpty: t => `${t}の捕獲なし`,
     gameModes: { practice: '練習モード', match: '対戦モード', challenge: '挑戦モード' },
-    comingSoon: '準備中です 🚧',
+    htmlLang: 'ja', docTitle: 'ベビー将棋 - Baby Janggi',
+    ariaEmpty: '空きマス', ariaSide: { cho: '楚', han: '漢' },
+    ariaPieces: { king: '王', guard: '士', horse: '馬', elephant: '象', chariot: '車', cannon: '包', soldier: '兵' },
     repeatBlocked: '同じ局面を3回はくり返せません · 別の手を指してね',
     online: {
       title: 'オンライン対戦', desc: 'ルームコードで友達と1:1対局',
@@ -1483,7 +1510,9 @@ const LANG = {
     diff: ['Easy','Mid','Hard'],
     capEmpty: t => `${t} no captures`,
     gameModes: { practice: 'Practice', match: 'Match', challenge: 'Challenge' },
-    comingSoon: 'Coming soon 🚧',
+    htmlLang: 'en', docTitle: 'Baby Janggi',
+    ariaEmpty: 'empty', ariaSide: { cho: 'Cho', han: 'Han' },
+    ariaPieces: { king: 'King', guard: 'Guard', horse: 'Horse', elephant: 'Elephant', chariot: 'Chariot', cannon: 'Cannon', soldier: 'Soldier' },
     repeatBlocked: 'You can\'t repeat the same position three times · try another move',
     online: {
       title: 'Online Match', desc: 'Play a friend 1:1 with a room code',
@@ -1520,7 +1549,7 @@ let state = {
   recommended: [],
   lastMove: null,
   moveHistory: [],
-  lang: (function(){ const s=localStorage.getItem('in9-lang'); if(s&&LANG[s])return s; const n=(navigator.language||'').toLowerCase(); if(n.startsWith('ja'))return 'ja'; if(n.startsWith('ko'))return 'ko'; return 'en'; })(),
+  lang: (function(){ let s=null; try{ s=localStorage.getItem('in9-lang'); }catch(e){} if(s&&LANG[s])return s; const n=(navigator.language||'').toLowerCase(); if(n.startsWith('ja'))return 'ja'; if(n.startsWith('ko'))return 'ko'; return 'en'; })(),
   inCheck: null,
   lastMoveGhost: null,
   // 온라인 대전 (mode==='online')
@@ -1764,6 +1793,8 @@ function applySelectionDOM() {
   // Clear previous selection visuals
   document.querySelectorAll('.piece.selected').forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('.cell .move-dot, .cell .recommend-ghost').forEach(el => el.remove());
+  // 배려: 부분 갱신 경로에서도 aria-pressed 를 render() 와 같은 상태로 맞춘다
+  document.querySelectorAll('.cell[aria-pressed]').forEach(el => el.removeAttribute('aria-pressed'));
 
   if (!state.selected) return;
   const [sc, sr] = state.selected;
@@ -1773,6 +1804,7 @@ function applySelectionDOM() {
   // Highlight selected piece
   const selCell = document.querySelector(`.cell[data-col="${sc}"][data-row="${sr}"]`);
   selCell?.querySelector('.piece')?.classList.add('selected');
+  selCell?.setAttribute('aria-pressed', 'true');
 
   // Build recommended-to lookup for ghost rendering
   const recToMap = {};
@@ -1989,6 +2021,10 @@ function render() {
 
   // Status text
   const L = LANG[state.lang];
+  applyDocLang(); // J2: documentElement.lang / document.title 을 항상 현재 언어에 맞춘다
+  // 배려: 모달(로비·대기·종료)이 떠 있는 동안 반상은 탭 순서에서 빠진다.
+  //       아래 overlayHtml 분기와 같은 조건이라 한쪽만 바꾸면 안 된다.
+  const hasOverlay = (state.mode === 'online' && state.onlinePhase !== 'playing') || state.gameOver;
   let statusText, statusClass;
   if (state.gameOver) {
     const winnerName = state.winner === CHO ? L.cho : L.han;
@@ -2068,7 +2104,12 @@ function render() {
       }
 
       const lastCls = isLastFrom ? ' last-from' : (isLastTo ? ' last-to' : '');
-      boardCells += `<div class="cell${lastCls}" data-col="${c}" data-row="${r}">${cellContent}</div>`;
+      // 배려: 스크린리더용 라벨 = "열-행, 진영 기물" / 빈 칸은 "열-행, 빈 칸". 언어 전환 시 render 로 따라간다.
+      const ariaLabel = `${c + 1}-${r + 1}, ` + (piece ? `${L.ariaSide[piece.team]} ${L.ariaPieces[piece.type]}` : L.ariaEmpty);
+      // 배려: roving tabindex — 반상 전체가 90개 탭 정거장이 되면 아래 버튼들이 파묻힌다.
+      //       Tab 한 번으로 반상에 들어오고, 그 안에서는 화살표로 옮긴다.
+      const isKbStop = !hasOverlay && (kbFocus ? (kbFocus[0] === c && kbFocus[1] === r) : (c === 0 && r === 0));
+      boardCells += `<div class="cell${lastCls}" data-col="${c}" data-row="${r}" tabindex="${isKbStop ? 0 : -1}" role="button" aria-label="${ariaLabel}"${isSelected ? ' aria-pressed="true"' : ''}>${cellContent}</div>`;
     }
   }
 
@@ -2174,6 +2215,7 @@ function render() {
       + `</div></div>`;
   }
 
+  const kbSnap = captureFocus(app); // 교체 직전의 포커스 — 아래 restoreKbFocus 가 같은 자리로 되돌린다
   app.innerHTML = `
     <div class="nav-bar">
       <a href="../../index.html" class="home-btn">${L.home}</a>
@@ -2182,7 +2224,8 @@ function render() {
     </div>
     <div class="mode-tabs">
       ${['practice','match','challenge'].map(m =>
-        `<button class="mode-tab ${state.gameMode === m ? 'active' : ''}" onclick="changeGameMode('${m}')">${L.gameModes[m]}</button>`
+        // J1: HIDDEN_MODES 에 든 모드는 hidden 으로 내린다 (마크업·번역은 그대로 보존)
+        `<button class="mode-tab ${state.gameMode === m ? 'active' : ''}"${HIDDEN_MODES.indexOf(m) >= 0 ? ' hidden' : ''} onclick="changeGameMode('${m}')">${L.gameModes[m]}</button>`
       ).join('')}
     </div>
     ${onlineBar}
@@ -2231,9 +2274,61 @@ function render() {
     ${onlineToast}
   `;
 
+  restoreKbFocus(kbSnap, hasOverlay); // 배려: innerHTML 교체로 날아간 포커스를 같은 자리로 되돌린다
 }
 
 // 셀 클릭은 #app에 위임된 pointerdown 한 번만 부착해 매 렌더마다 재부착 비용 제거 + 터치 지연 제거
+// 배려: 키보드 포커스 상태. render()가 innerHTML을 통째로 갈아끼우므로 직접 복원해야 한다.
+let kbFocus = null;   // [col, row] — 키보드로 마지막에 짚은 칸
+let kbActive = false; // 키보드로 조작 중일 때만 렌더 후 포커스를 되돌린다
+function focusCell(c, r, quiet) {
+  const el = document.querySelector(`.cell[data-col="${c}"][data-row="${r}"]`);
+  if (!el) return;
+  // roving tabindex 를 이 칸으로 옮긴다 (다음 렌더 전에 Tab 으로 돌아와도 같은 칸)
+  document.querySelectorAll('.cell[tabindex="0"]').forEach(x => { if (x !== el) x.setAttribute('tabindex', '-1'); });
+  el.setAttribute('tabindex', '0');
+  // 복원(quiet)은 스크롤을 건드리지 않는다 — 렌더마다 화면이 튀지 않게
+  try { el.focus(quiet ? { preventScroll: true } : undefined); } catch (e) { el.focus(); }
+}
+// 배려: render() 는 #app 을 통째로 갈아끼우므로 포커스가 매번 날아간다.
+//       "키보드로 조작 중이면 무조건 반상으로" 는 틀렸다 — 그러면 AI 응수·알림 렌더마다
+//       반상 밖 버튼(새 게임·무르기…)에서 포커스를 빼앗아 키보드 사용자가 버튼을 못 누른다.
+//       교체 직전에 어디에 있었는지를 찍어 두고, 그 자리로만 되돌린다.
+function captureFocus(app) {
+  const el = document.activeElement;
+  if (!el || !app || !app.contains(el)) return null;
+  const cell = el.closest && el.closest('.cell');
+  if (cell) return { kind: 'cell', col: +cell.dataset.col, row: +cell.dataset.row };
+  const oc = el.getAttribute && el.getAttribute('onclick');
+  if (oc) return { kind: 'click', oc: oc }; // 컨트롤 버튼은 인라인 onclick 문자열이 서로 다르다
+  if (el.id) return { kind: 'id', id: el.id };
+  return null;
+}
+function focusEl(el) {
+  if (!el || el.disabled) return false;
+  try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+  return document.activeElement === el;
+}
+function restoreKbFocus(snap, hasOverlay) {
+  if (hasOverlay) {
+    // 모달이 새로 떴다 — 반상 뒤가 아니라 모달 안으로 데려간다(엔딩의 투표·다시하기가 여기 있다)
+    if (snap) focusEl(document.querySelector('.modal button, .modal input'));
+    return;
+  }
+  if (!snap) return;
+  if (snap.kind === 'cell') {
+    if (!kbActive) return; // 포인터로 짚은 칸에는 포커스 링을 따라붙이지 않는다
+    kbFocus = [snap.col, snap.row];
+    focusCell(snap.col, snap.row, true);
+    return;
+  }
+  if (snap.kind === 'id') { focusEl(document.getElementById(snap.id)); return; }
+  const all = document.querySelectorAll('#app [onclick]');
+  for (let i = 0; i < all.length; i++) {
+    if (all[i].getAttribute('onclick') === snap.oc) { focusEl(all[i]); return; }
+  }
+}
+
 (function attachCellDelegate() {
   const app = document.getElementById('app');
   if (!app || app.dataset.cellDelegate) return;
@@ -2244,20 +2339,63 @@ function render() {
     const col = parseInt(cell.dataset.col);
     const row = parseInt(cell.dataset.row);
     if (Number.isNaN(col) || Number.isNaN(row)) return;
+    kbActive = false; // 포인터로 짚었으면 렌더 후 포커스를 되돌리지 않는다
     selectPiece(col, row);
   });
+  // 배려: 키보드 착수 — Tab/화살표로 칸을 옮기고 Enter/Space 로 둔다. 착수는 포인터와 같은 selectPiece.
+  app.addEventListener('keydown', (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const cell = e.target.closest && e.target.closest('.cell');
+    if (!cell) return;
+    const col = parseInt(cell.dataset.col);
+    const row = parseInt(cell.dataset.row);
+    if (Number.isNaN(col) || Number.isNaN(row)) return;
+    const k = e.key;
+    if (k === 'Enter' || k === ' ' || k === 'Spacebar') {
+      e.preventDefault();
+      kbActive = true; kbFocus = [col, row];
+      selectPiece(col, row);
+      return;
+    }
+    let dc = 0, dr = 0;
+    if (k === 'ArrowLeft') dc = -1;
+    else if (k === 'ArrowRight') dc = 1;
+    else if (k === 'ArrowUp') dr = -1;
+    else if (k === 'ArrowDown') dr = 1;
+    else return;
+    e.preventDefault();
+    // 온라인 한(漢) 시점은 반상이 180° 뒤집혀 보이므로 화살표 방향도 뒤집는다
+    if (state.mode === 'online' && state.mySide === HAN) { dc = -dc; dr = -dr; }
+    kbActive = true;
+    kbFocus = [Math.max(0, Math.min(COLS - 1, col + dc)), Math.max(0, Math.min(ROWS - 1, row + dr))];
+    focusCell(kbFocus[0], kbFocus[1]);
+  });
 })();
+
+// J2: 언어 계약 — 문서 속성(lang/title)을 현재 언어에 맞춘다. render() 첫머리와 부팅에서 호출.
+function applyDocLang() {
+  const L = LANG[state.lang];
+  document.documentElement.lang = L.htmlLang;
+  document.title = L.docTitle;
+}
+
+// J2: 전환한 언어를 in9-lang 에 기록한다(포탈 24종 공통 계약). 저장 실패는 무시하고 화면만 바꾼다.
+function setLang(lang) {
+  if (!LANG[lang]) return;
+  state.lang = lang;
+  try { localStorage.setItem('in9-lang', lang); } catch (e) {}
+  applyDocLang();
+  render();
+}
 
 function cycleLang() {
   const langs = ['ko', 'ja', 'en'];
   const currentIndex = langs.indexOf(state.lang);
-  state.lang = langs[(currentIndex + 1) % langs.length];
-  render();
+  setLang(langs[(currentIndex + 1) % langs.length]);
 }
 
 function changeLang(lang) {
-  state.lang = lang;
-  render();
+  setLang(lang);
 }
 
 function toggleBgm() {
@@ -2281,10 +2419,9 @@ function changeMode(mode) {
 }
 
 function changeGameMode(newMode) {
-  if (newMode === 'challenge') {
-    alert(LANG[state.lang].comingSoon);
-    return;
-  }
+  // J1: 숨긴 모드('도전')는 탭이 없으므로 평소엔 도달하지 않지만, 직접 호출도 조용히 무시한다.
+  //     구현되면 HIDDEN_MODES 에서 빼는 것만으로 탭·진입이 함께 돌아온다.
+  if (HIDDEN_MODES.indexOf(newMode) >= 0) return;
   if (newMode === 'match') {
     openOnlineLobby();
     return;
@@ -2693,7 +2830,10 @@ function gaVote(choice){
 state.recommended = [];
 render();
 if (state.showRecommend) scheduleRecommend(state.turn);
-initWasmEngine();
+// J5: 첫 방문의 최초 로드는 아직 crossOriginIsolated 가 아니다(coi-serviceworker 가 곧 새로고침한다).
+// 그 버려질 로드에서 엔진을 열면 'SharedArrayBuffer is not defined' 경고와 stockfish.js 헛짐만 남으므로
+// 격리된 다음 로드에서만 연다. 격리가 끝내 안 되는 환경(SW 불가)에서는 기존대로 내장 AI 로 간다.
+if (window.crossOriginIsolated) initWasmEngine();
 </script>
 </body>
 </html>
