@@ -253,7 +253,10 @@
   #doneFan .fan-p .fcap{text-align:center;font-size:.85rem;padding:3px 0 2px;}
   @keyframes fanIn{0%{transform:translateX(var(--fx)) rotate(var(--fr)) scale(.3);opacity:0;}
     100%{transform:translateX(var(--fx)) rotate(var(--fr)) scale(1);opacity:1;}}
-  #doneStats{font-size:.78rem;font-weight:700;color:#a08d76;margin-bottom:18px;}
+  #doneStats{font-size:.78rem;font-weight:700;color:#a08d76;margin-bottom:5px;}
+  #doneDex{font-size:.82rem;font-weight:800;color:var(--ink);letter-spacing:.02em;line-height:1.4;margin-bottom:14px;}
+  #doneNext{font-size:.78rem;font-weight:700;color:var(--ink);opacity:.7;line-height:1.4;margin:-10px 0 14px;}
+  #doneNext[hidden]{display:none;}
   #doneMsg{color:#8a7460;}
   /* GA vote row */
   .ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 2px;font-size:14px;line-height:1.2;opacity:.92;color:var(--ink-soft)}
@@ -307,6 +310,8 @@
       <div id="doneFan"></div>
       <p class="desc" id="doneMsg"></p>
       <div id="doneStats"></div>
+      <div id="doneDex"></div>
+      <div id="doneNext" hidden></div>
       <div class="ga-vote" id="gaVote" hidden>
         <span class="ga-vote-q">또 할래?</span>
         <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
@@ -337,6 +342,9 @@
       doneTitle:'오늘의 하늘을 다 담았어요',
       doneMsg:'내일 하늘에서 만나요 ☁️',
       shots:'오늘 찍은 사진 {n}장',
+      dex:'구름 도감 {t}칸 중 {n}칸 🌤',
+      dexAll:'구름 도감 {t}칸을 모두 채웠어요 🌈',
+      dexNext:'새 모양은 내일 하늘에서 🌙',
       again:'다시 하기',
       goHome:'홈으로',
       shapes:{rabbit:'토끼',whale:'고래',icecream:'아이스크림',turtle:'거북이',balloon:'풍선',cat:'고양이',dino:'공룡',star:'별',tulip:'튤립',fish:'물고기'}
@@ -353,6 +361,9 @@
       doneTitle:'きょうの空を全部おさめました',
       doneMsg:'また明日の空で会いましょう ☁️',
       shots:'きょう撮った写真 {n}枚',
+      dex:'くもずかん {t}コマ中 {n}コマ 🌤',
+      dexAll:'くもずかん {t}コマ そろいました 🌈',
+      dexNext:'あたらしいかたちは あしたの空で 🌙',
       again:'もう一度',
       goHome:'ホームへ',
       shapes:{rabbit:'うさぎ',whale:'くじら',icecream:'ソフトクリーム',turtle:'かめ',balloon:'ふうせん',cat:'ねこ',dino:'きょうりゅう',star:'ほし',tulip:'チューリップ',fish:'さかな'}
@@ -369,6 +380,9 @@
       doneTitle:'You captured today’s sky',
       doneMsg:'See you in tomorrow’s sky ☁️',
       shots:'{n} photos taken today',
+      dex:'Cloud album — {n} of {t} 🌤',
+      dexAll:'All {t} shapes collected 🌈',
+      dexNext:'New shapes in tomorrow’s sky 🌙',
       again:'Play again',
       goHome:'Home',
       shapes:{rabbit:'Bunny',whale:'Whale',icecream:'Ice cream',turtle:'Turtle',balloon:'Balloon',cat:'Cat',dino:'Dino',star:'Star',tulip:'Tulip',fish:'Fish'}
@@ -446,6 +460,107 @@
     ]}
   };
   var POOL=Object.keys(SHAPES);
+
+  /* ============================== dex (progress save) ==============================
+     저장은 원값만: 발견한 모양 id 목록 + 마지막 플레이 날짜(로컬 YYYY-MM-DD)
+     + 그 날짜에 새로 연 도감 칸 수. 화면 문구·비율 같은 파생값은 저장하지 않고
+     매번 다시 계산한다. */
+  var DEX_KEY='cloudsnap-dex', DEX_VER=1;
+  var FRESH_PER_DAY=2;   /* 하루에 새로 열리는 도감 칸 상한 — 도감은 여러 날에 걸쳐 채운다 */
+  var dex={found:[],last:'',newN:0};
+  function todayStr(){
+    var d=new Date(), m=d.getMonth()+1, dy=d.getDate();
+    return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(dy<10?'0':'')+dy;
+  }
+  function isArr(v){return Object.prototype.toString.call(v)==='[object Array]';}
+  function loadDex(){
+    /* 깨진 값·구버전·사람이 손댄 값이 와도 예외 없이 기본값으로 복구된다. */
+    var out={found:[],last:'',newN:0};
+    try{
+      var raw=localStorage.getItem(DEX_KEY);
+      if(typeof raw!=='string'||!raw) return out;
+      var o=JSON.parse(raw);
+      if(!o||typeof o!=='object'||isArr(o)) return {found:[],last:'',newN:0};
+      if(o.v!==DEX_VER) return {found:[],last:'',newN:0};  /* 모르는 스키마 버전은 읽지 않는다 */
+      if(isArr(o.found)){
+        var seen={};
+        for(var i=0;i<o.found.length&&out.found.length<POOL.length;i++){
+          var id=o.found[i];
+          if(typeof id==='string'&&SHAPES.hasOwnProperty(id)&&!seen[id]){
+            seen[id]=true; out.found.push(id);
+          }
+        }
+      }
+      if(typeof o.last==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(o.last)) out.last=o.last;
+      if(typeof o.newN==='number'&&isFinite(o.newN)&&o.newN>0) out.newN=Math.min(POOL.length,Math.floor(o.newN));
+    }catch(e){ return {found:[],last:'',newN:0}; }
+    return out;
+  }
+  function saveDex(){
+    try{
+      /* 탭을 여러 개 열어둬도 도감이 줄지 않도록, 쓰기 직전에 저장값을 다시 읽어
+         발견 목록을 합집합으로 합친다(오래된 탭이 새 진행을 덮어쓰지 않게). */
+      var cur=loadDex(), merged=[], seen={}, i, id;
+      for(i=0;i<cur.found.length;i++){ id=cur.found[i]; if(!seen[id]){seen[id]=true;merged.push(id);} }
+      for(i=0;i<dex.found.length;i++){ id=dex.found[i]; if(!seen[id]){seen[id]=true;merged.push(id);} }
+      if(merged.length>POOL.length) merged.length=POOL.length;
+      dex.found=merged;
+      if(cur.last===dex.last && cur.newN>dex.newN) dex.newN=cur.newN;
+      localStorage.setItem(DEX_KEY,JSON.stringify({v:DEX_VER,found:dex.found,last:dex.last,newN:dex.newN}));
+    }catch(e){}
+  }
+  function rollDay(){
+    /* 날짜가 바뀌면 '오늘 새로 연 칸' 카운트를 리셋한다 — last 를 읽는 곳. */
+    var td=todayStr();
+    if(dex.last!==td){ dex.last=td; dex.newN=0; }
+  }
+  function freshLeft(){
+    /* 오늘 도감에 더 넣을 수 있는 칸 수 — 날짜가 바뀌면 FRESH_PER_DAY 로 되돌아온다. */
+    return (dex.last===todayStr())?Math.max(0,FRESH_PER_DAY-dex.newN):FRESH_PER_DAY;
+  }
+  function dexAdd(id){
+    if(!SHAPES.hasOwnProperty(id)) return;
+    var has=false;
+    for(var i=0;i<dex.found.length;i++){ if(dex.found[i]===id){has=true;break;} }
+    rollDay();
+    /* 하루 상한은 '도감에 기록되는 칸 수'에만 건다 — 목표 뽑기는 건드리지 않는다. */
+    if(!has&&dex.found.length<POOL.length&&dex.newN<FRESH_PER_DAY){ dex.found.push(id); dex.newN++; }
+    saveDex();
+  }
+  function dexTouch(){ rollDay(); saveDex(); }
+  /* 날짜 시드 — 같은 날이면 같은 하늘. 시계를 되돌려도 도감은 지우지 않는다. */
+  function seedOf(str){
+    var h=2166136261;
+    for(var i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=(h*16777619)>>>0; }
+    return h>>>0||1;
+  }
+  function seededShuffle(arr,seed){
+    var a=arr.slice(), s=seed>>>0||1;
+    function r(){ s^=(s<<13); s>>>=0; s^=(s>>>17); s^=(s<<5); s>>>=0; return s/4294967296; }
+    for(var i=a.length-1;i>0;i--){
+      var j=Math.floor(r()*(i+1)); if(j>i) j=i;
+      var t=a[i]; a[i]=a[j]; a[j]=t;
+    }
+    return a;
+  }
+  function pickTargets(){
+    /* 목표 5종은 매 판 새로 섞는다 — 도감 진행도와 무관하게, 같은 날 이어서 해도
+       같은 목록이 나오지 않는다. 하루 상한은 dexAdd(기록)에서만 건다. */
+    return shuffle(POOL).slice(0,5);
+  }
+  function dexLine(){
+    var t=T(), n=dex.found.length, tot=POOL.length;
+    var s=(n>=tot)?t.dexAll:t.dex;
+    return s.replace('{n}',n).replace('{t}',tot);
+  }
+  function renderDexNext(){
+    /* 오늘 예산을 다 썼는데 도감이 아직 안 찼으면, 왜 칸이 안 늘었는지 한 줄로 알린다. */
+    var el=$('doneNext'); if(!el) return;
+    var show=(freshLeft()<=0 && dex.found.length<POOL.length);
+    el.textContent=show?T().dexNext:'';
+    el.hidden=!show;
+  }
+  dex=loadDex();
 
   /* ============================== helpers ============================== */
   var RM=false;
@@ -701,7 +816,7 @@
   /* ============================== session ============================== */
   function startSession(){
     clouds=[]; effects=[];
-    session.targets=shuffle(POOL).slice(0,5);
+    session.targets=pickTargets();
     session.foundSet={}; session.foundCount=0;
     session.shots=0; session.album=[]; session.skyPhase=0; session.complete=false;
     session.active=false;
@@ -818,6 +933,7 @@
     c.found=true; c.foundAt=now;
     session.foundSet[c.shape]=true;
     session.foundCount++;
+    dexAdd(c.shape);
     session.album.push({id:c.shape,url:url});
     lastFindOrHint=now;
     nextSpecialAt=now+rnd(2.5,4.5);
@@ -884,6 +1000,8 @@
     $('doneTitle').textContent=t.doneTitle;
     $('doneMsg').textContent=t.doneMsg;
     $('doneStats').textContent=t.shots.replace('{n}',session.shots);
+    $('doneDex').textContent=dexLine();
+    renderDexNext();
     $('againBtn').textContent='📷 '+t.again;
     $('doneHomeBtn').textContent=t.goHome;
     var fan=$('doneFan');
@@ -1189,6 +1307,8 @@
       $('doneTitle').textContent=t.doneTitle;
       $('doneMsg').textContent=t.doneMsg;
       $('doneStats').textContent=t.shots.replace('{n}',session.shots);
+      $('doneDex').textContent=dexLine();
+      renderDexNext();
       $('againBtn').textContent='📷 '+t.again;
       $('doneHomeBtn').textContent=t.goHome;
       if(gaS.voteShown&&!gaS.voted) gaVoteShow(gaS.voteScene);
@@ -1265,6 +1385,7 @@
     introOv.classList.remove('show');
     session.active=true;
     lastFindOrHint=now;
+    dexTouch();
     gaRoundStart('main');
     showToast('🔍 '+T().aim,3200);
   });

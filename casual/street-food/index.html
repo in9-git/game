@@ -181,6 +181,12 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
 .endItem canvas{width:46px;height:46px;display:block}
 .endItem b{font-size:.8rem;color:var(--bulb);font-weight:700}
 #endNote{font-size:.68rem;color:var(--ink-soft);margin-top:8px;min-height:1.2em}
+#endBest{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:1px 10px;
+  margin-top:5px;font-size:.69rem;line-height:1.45;color:var(--ink-soft);
+}
+#endBest[hidden]{display:none}
+#endBest .up{color:var(--bulb);font-weight:700}
 #endBtns{display:flex;gap:8px;margin-top:16px}
 #endBtns button{
   flex:1;padding:11px 8px;border-radius:14px;font-size:.85rem;font-family:inherit;cursor:pointer;
@@ -294,6 +300,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
     <p id="endSub">수고했어요. 불 끄고 천천히 정리해요.</p>
     <div id="endList"></div>
     <div id="endNote"></div>
+    <div id="endBest" hidden></div>
     <div class="ga-vote" id="gaVote" hidden>
       <span class="ga-vote-q">또 할래?</span>
       <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
@@ -340,6 +347,8 @@ const I18N = {
     endSub:'수고했어요. 불 끄고 천천히 정리해요.',
     endNoteCrispy:'바삭하게 구운 붕어빵도 인기였어요',
     endNotePlain:'여덟 분 모두 웃으며 돌아갔어요',
+    bestCrispy:'최고 바삭 {a}개 → 오늘 {b}개',
+    newBest:'새 기록!',
     again:'다시 하기', home2:'홈으로',
     guest:'손님',
     thanks:['잘 먹을게요!','따끈하네요, 고마워요','이 맛이야…','밤엔 이게 최고죠'],
@@ -371,6 +380,8 @@ const I18N = {
     endSub:'おつかれさま。灯りを消して、ゆっくり片づけましょう。',
     endNoteCrispy:'カリッと焼けたたい焼きも人気でした',
     endNotePlain:'八人みんな笑顔で帰りました',
+    bestCrispy:'最高 カリッと{a}個 → 今日 {b}個',
+    newBest:'新記録！',
     again:'もう一度', home2:'ホームへ',
     guest:'お客さん',
     thanks:['いただきます！','あったかい、ありがとう','この味だね…','夜はこれが一番'],
@@ -402,6 +413,8 @@ const I18N = {
     endSub:'Nice work. Lights off, tidy up slowly.',
     endNoteCrispy:'The extra-crispy fish buns were a hit too',
     endNotePlain:'All eight guests left with a smile',
+    bestCrispy:'Best {a} crispy → today {b}',
+    newBest:'New best!',
     again:'Play again', home2:'Home',
     guest:'Guest',
     thanks:['Thank you!','So warm, thanks','This is the taste…','Perfect for a night like this'],
@@ -730,8 +743,41 @@ const SKIN=['#f3cfae','#eec19b','#dfa87c','#f7dcc0'];
 const G={
   customers:[], ci:0, phase:'in', pt:0,
   tray:[], made:{tteok:0,bung:0,odeng:0}, crispy:0,
-  station:'tteok', over:false, time:0, thanksLine:''
+  station:'tteok', over:false, time:0, thanksLine:'', prevBest:null
 };
+
+/* ---------------- 자기 최고 기록 ----------------
+   원값(접시 수·바삭 개수)만 저장한다. 문구·등급 같은 파생값은 만들지 않는다.
+   저장이 막혔거나 값이 깨져 있어도 그냥 '기록 없음'으로 조용히 넘어간다. */
+const BEST_KEY='street-food-best';
+const BEST_CAP=999;
+function bestNum(v){
+  if(typeof v!=='number'||!isFinite(v)) return null;
+  v=Math.floor(v);
+  if(v<0) return null;
+  /* 캡을 넘는 값은 손댄 값이다. 잘라서 쓰면 그 숫자가 그대로 다시 저장돼
+     영영 못 깨는 기록으로 굳으니, 신뢰할 수 없는 값으로 보고 버린다. */
+  if(v>BEST_CAP) return null;
+  return v;
+}
+function loadBest(){
+  let raw=null;
+  try{ raw=localStorage.getItem(BEST_KEY); }catch(e){ return null; }
+  if(typeof raw!=='string'||!raw) return null;
+  let o=null;
+  try{ o=JSON.parse(raw); }catch(e){ return null; }
+  if(!o||typeof o!=='object'||Array.isArray(o)) return null;
+  const made=bestNum(o.made), crispy=bestNum(o.crispy);
+  if(made===null&&crispy===null) return null;
+  return {made:made===null?0:made, crispy:crispy===null?0:crispy};
+}
+function saveBest(prev,made,crispy){
+  const m=bestNum(made), c=bestNum(crispy);
+  const b={v:1,
+    made:Math.max(prev?prev.made:0, m===null?0:m),
+    crispy:Math.max(prev?prev.crispy:0, c===null?0:c)};
+  try{ localStorage.setItem(BEST_KEY,JSON.stringify(b)); }catch(e){}
+}
 
 function makeCustomers(){
   const list=[];
@@ -1866,16 +1912,20 @@ function advanceCustomer(dt){
     }
   }
 }
+let endT1=0, endT2=0;   /* 셔터·엔딩카드 예약 — 새 판이 시작되면 restart() 가 취소한다 */
 function endDay(){
   G.over=true; G.phase='end';
   updateDots(); updateTabs();
-  gaRoundComplete('day','clear',{made_total:G.made.tteok+G.made.bung+G.made.odeng,crispy:G.crispy});
+  const madeTotal=G.made.tteok+G.made.bung+G.made.odeng;
+  G.prevBest=loadBest();              /* 오늘 값으로 덮기 전의 기록 = 비교 대상 */
+  saveBest(G.prevBest,madeTotal,G.crispy);
+  gaRoundComplete('day','clear',{made_total:madeTotal,crispy:G.crispy});
   SFX.stirStop();
-  setTimeout(function(){
+  endT1=setTimeout(function(){
     $('#shutter').classList.add('down');
     SFX.shutter();
   },250);
-  setTimeout(function(){
+  endT2=setTimeout(function(){
     buildEnd();
     $('#endWrap').classList.add('show');
     SFX.happy();
@@ -1899,14 +1949,45 @@ function buildEnd(){
     paintIcon(cv,ty,ty==='bung'?.55:.5);
   });
   $('#endNote').textContent = G.crispy>0 ? t('endNoteCrispy') : t('endNotePlain');
+  buildBestRow();
+}
+/* 첫 판이면 아무것도 띄우지 않는다 — 빈 칸을 강조하지 않기 위해서.
+   기록을 깬 항목만 띄운다. 하루 접시 수는 기록에서 뺐다: 손님 여덟 명의 주문을
+   전부 내줘야 하루가 끝나므로 오늘의 접시 수는 판이 시작될 때 뽑힌 주문 개수와
+   늘 같고(플레이가 못 바꾼다), 그걸로 '새 기록!'을 띄우면 난수를 칭찬하는 셈이 된다.
+   남긴 바삭 개수는 굽는 타이밍이 정하는 값이다.
+   '최고 0 → 오늘 0' 같은 0끼리의 줄도 이 조건에 걸려 자연히 빠진다. */
+function buildBestRow(){
+  const el=$('#endBest');
+  el.innerHTML='';
+  const pb=G.prevBest;
+  if(!pb){ el.hidden=true; return; }
+  const rows=[[t('bestCrispy'),pb.crispy,G.crispy]]
+    .filter(function(r){ return r[2]>r[1]; });
+  if(!rows.length){ el.hidden=true; return; }
+  rows.forEach(function(r){
+    const s=document.createElement('span');
+    s.className='up';
+    s.textContent=String(r[0]).replace('{a}',r[1]).replace('{b}',r[2]);
+    el.appendChild(s);
+  });
+  const nb=document.createElement('span');
+  nb.className='up'; nb.textContent=t('newBest');
+  el.appendChild(nb);
+  el.hidden=false;
 }
 function restart(){
-  /* ↺ can be tapped before any play starts; only log a round that actually ran */
-  if(gaS.started||gaS.completed) gaRoundStart('day');
+  /* 셔터가 내려가는 중에 ↺ 로 새 판을 열면, endDay 가 예약해 둔 카드가
+     진행 중인 판 위로 덮여 조작이 막힌다 — 예약부터 취소한다 */
+  clearTimeout(endT1); clearTimeout(endT2); endT1=0; endT2=0;
+  /* 새 판의 start/replay 는 여기(CTA)가 아니라 첫 조작에서 나간다 —
+     엔딩 카드를 읽는 시간이 play_sec 에 섞이지 않게 */
+  gaBindFirst();
   $('#endWrap').classList.remove('show');
   setTimeout(function(){ $('#shutter').classList.remove('down'); },260);
   G.customers=makeCustomers(); G.ci=0; G.phase='in'; G.pt=0;
   G.tray.length=0; G.made={tteok:0,bung:0,odeng:0}; G.crispy=0; G.over=false;
+  G.prevBest=null;
   sceneP.length=0; stP.length=0;
   resetStations();
   renderTray(); updateDots(); updateTabs(); updateHint();
@@ -2001,16 +2082,20 @@ function gaVoteRelabel(){ if(gaS.voteShown&&!gaS.voted) gaVoteShow(gaS.voteScene
     setTimeout(function(){ el.hidden=true; },1200);
   });
 })();
-/* first real play action of the page load = round start */
-(function(){
-  var zones=['stationWrap','trayBar','tabs'], i, n;
+/* first real play action of a round = round start (replay for every round after the first) */
+var gaBindFirst=(function(){
+  var zones=['stationWrap','trayBar','tabs'];
   function unbind(){
     for(var k=0;k<zones.length;k++){ var z=document.getElementById(zones[k]); if(!z)continue;
       z.removeEventListener('pointerdown',onFirst,true); z.removeEventListener('click',onFirst,true); }
   }
-  function onFirst(){ if(!gaS.started) gaRoundStart('day'); unbind(); }
-  for(i=0;i<zones.length;i++){ n=document.getElementById(zones[i]); if(!n){continue;}
-    n.addEventListener('pointerdown',onFirst,true); n.addEventListener('click',onFirst,true); }
+  function onFirst(){ unbind(); gaRoundStart('day'); }
+  function bind(){
+    for(var i=0;i<zones.length;i++){ var n=document.getElementById(zones[i]); if(!n){continue;}
+      n.addEventListener('pointerdown',onFirst,true); n.addEventListener('click',onFirst,true); }
+  }
+  bind();
+  return bind;
 })();
 
 /* ---------------- boot ---------------- */

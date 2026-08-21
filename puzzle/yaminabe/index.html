@@ -212,12 +212,12 @@
     font-size:11px; font-weight:800;
     background:rgba(255,255,255,.09); color:var(--muted);
   }
-  .badge.b1, .badge.b2 { background:linear-gradient(180deg,#ffd9a0,var(--warm)); color:#3a2005; }
-  .badge.b3 { background:linear-gradient(180deg,#e0ffcd,#8ed877); color:#123006; }
+  .badge.bpart { background:linear-gradient(180deg,#ffd9a0,var(--warm)); color:#3a2005; }
+  .badge.bfull { background:linear-gradient(180deg,#e0ffcd,#8ed877); color:#123006; }
 
   /* tray */
   #tray {
-    display:grid; grid-template-columns:repeat(5,1fr); gap:6px;
+    display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px;
   }
   .chip {
     position:relative;
@@ -229,8 +229,12 @@
     transition:transform .2s var(--ease), border-color .2s, background .25s, box-shadow .25s;
   }
   .chip .em { font-size:23px; line-height:1.1; filter:drop-shadow(0 2px 5px rgba(0,0,0,.45)); }
-  .chip .nm { font-size:9px; font-weight:600; color:var(--muted); letter-spacing:-.02em;
+  .chip .nm { font-size:9px; font-weight:600; color:#b6a9d4; letter-spacing:-.02em;
               max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* 12칩(어려움)은 4열×3행 — 칩이 77px 로 넓어 이름을 11px 로 온전히 보여 준다 */
+  #tray.dense .chip { padding:6px 2px 5px; }
+  #tray.dense .chip .em { font-size:20px; }
+  #tray.dense .chip .nm { font-size:11px; white-space:normal; line-height:1.2; overflow-wrap:anywhere; }
   .chip:active { transform:scale(.92); }
   .chip.on {
     background:linear-gradient(180deg, rgba(255,183,101,.28), rgba(255,140,66,.12));
@@ -261,6 +265,39 @@
     background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.06));
     color:var(--muted); box-shadow:none;
   }
+
+  /* ================= difficulty ================= */
+  .diffPick { margin-top:12px; text-align:left; }
+  .diffRow { display:flex; gap:6px; }
+  .dbtn {
+    flex:1 1 0; min-width:0;
+    padding:9px 4px; border-radius:13px;
+    font-size:12.5px; font-weight:700; color:var(--cream);
+    background:rgba(255,255,255,.06);
+    border:1.5px solid rgba(255,255,255,.1);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    transition:transform .18s var(--ease), background .2s, border-color .2s;
+  }
+  .dbtn:active { transform:scale(.96); }
+  .dbtn.on {
+    background:linear-gradient(180deg, rgba(255,183,101,.28), rgba(255,140,66,.12));
+    border-color:var(--gold);
+    box-shadow:0 0 0 3px rgba(243,198,126,.13);
+  }
+  .diffMeta { margin-top:7px; font-size:11px; line-height:1.45; color:var(--muted); }
+  .bestLine { margin-top:4px; font-size:11px; font-weight:700; line-height:1.45; color:var(--gold); }
+  .bestLine[hidden] { display:none; }
+  #endBest { margin-top:9px; font-size:12.5px; font-weight:700; color:var(--gold); }
+  #endBest[hidden] { display:none; }
+  #endDiffBtn {
+    display:block; margin:9px auto 0;
+    padding:8px 15px; border-radius:12px;
+    font-size:12px; font-weight:700; color:var(--muted);
+    background:transparent;
+    border:1.5px solid rgba(255,255,255,.14);
+    transition:transform .18s var(--ease), border-color .2s, color .2s;
+  }
+  #endDiffBtn:active { transform:scale(.96); }
 
   /* ================= overlays ================= */
   .ov {
@@ -308,6 +345,14 @@
   .rules li b { flex:0 0 auto; color:var(--warm); font-weight:800; font-size:11px; padding-top:2px; }
 
   .btnrow { display:flex; gap:9px; margin-top:18px; }
+  /* 인트로는 규칙 5줄 + 난이도 + 기록까지 얹혀 375x667 에서 시트가 스크롤된다.
+     시작 CTA 는 시트 바닥에 붙여 두어 스크롤 위치와 무관하게 늘 보이게 한다. */
+  #introOv .sheet { padding-bottom:0; }   /* 아래 여백은 sticky 한 .btnrow 가 대신 낸다 */
+  #introOv .btnrow {
+    position:sticky; bottom:0; z-index:2;
+    margin-top:6px; padding:12px 0 20px;
+    background:linear-gradient(180deg, rgba(21,14,43,0), #170f2d 46%, #160f2c);
+  }
   .pbtn {
     flex:1 1 0;
     padding:14px 10px; border-radius:15px;
@@ -340,6 +385,8 @@
   .ansCard .n { font-size:10px; font-weight:700; color:var(--cream); margin-top:3px; }
   .ansCard:nth-child(2) { animation-delay:.11s; }
   .ansCard:nth-child(3) { animation-delay:.22s; }
+  .ansCard:nth-child(4) { animation-delay:.33s; }
+  .answerRow.n4 .ansCard { width:66px; }
   @keyframes popIn { from { opacity:0; transform:translateY(10px) scale(.85); } to { opacity:1; transform:none; } }
 
   #bowlSvg { width:158px; height:112px; margin:12px auto 0; display:block; }
@@ -362,6 +409,8 @@
     #tray { gap:8px; }
     .chip .em { font-size:27px; }
     .chip .nm { font-size:10px; }
+    #tray.dense .chip .em { font-size:25px; }
+    #tray.dense .chip .nm { font-size:11px; }
   }
   @media (max-height:620px) {
     #scene { height:clamp(150px, 26vh, 200px); }
@@ -461,6 +510,7 @@
           <text id="rv0" x="112" y="104" font-size="27" text-anchor="middle"></text>
           <text id="rv1" x="160" y="98"  font-size="30" text-anchor="middle"></text>
           <text id="rv2" x="208" y="105" font-size="27" text-anchor="middle"></text>
+          <text id="rv3" x="219" y="98"  font-size="30" text-anchor="middle"></text>
         </g>
 
         <g id="lidG">
@@ -523,6 +573,16 @@
       <p id="iWhatB"></p>
     </div>
 
+    <div class="diffPick">
+      <div class="diffRow" id="diffRow" role="group">
+        <button class="dbtn" type="button" data-diff="easy"></button>
+        <button class="dbtn" type="button" data-diff="normal"></button>
+        <button class="dbtn" type="button" data-diff="hard"></button>
+      </div>
+      <div class="diffMeta" id="iDiffMeta"></div>
+      <div class="bestLine" id="iBest" hidden></div>
+    </div>
+
     <div class="rules">
       <h3 id="iRulesT">놀이 방법</h3>
       <ul>
@@ -570,6 +630,7 @@
     <div class="bigemo" id="endEmo">🍜</div>
     <h2 id="endTitle"></h2>
     <div class="sub" id="endMsg"></div>
+    <div class="bestLine" id="endBest" hidden></div>
     <div class="answerRow" id="answerRow"></div>
     <svg id="bowlSvg" viewBox="0 0 200 140" aria-hidden="true">
       <defs>
@@ -594,6 +655,7 @@
       <text id="bw0" x="74" y="76" font-size="20" text-anchor="middle"></text>
       <text id="bw1" x="100" y="71" font-size="22" text-anchor="middle"></text>
       <text id="bw2" x="126" y="77" font-size="20" text-anchor="middle"></text>
+      <text id="bw3" x="136" y="71" font-size="22" text-anchor="middle"></text>
       <path d="M30 74 q4 46 70 46 q66 0 70 -46 q-16 16 -70 16 q-54 0 -70 -16z" fill="url(#gBowl)"/>
       <path d="M30 74 q4 46 70 46 q66 0 70 -46" fill="none" stroke="rgba(255,240,215,.28)" stroke-width="2"/>
     </svg>
@@ -607,6 +669,7 @@
       <button class="pbtn" id="againBtn">한 그릇 더</button>
       <button class="sbtn" id="endHomeBtn">홈으로</button>
     </div>
+    <button type="button" id="endDiffBtn">난이도 바꾸기</button>
   </div>
 </div>
 
@@ -633,17 +696,20 @@
   try { RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
 
   /* ===================== data ===================== */
+  /* tier = 이 재료가 처음 등장하는 재료 수(=난이도 pool). 8:쉬움부터 / 10:보통부터 / 12:어려움만 */
   var INGREDIENTS = [
-    { id:'mushroom', emo:'🍄',  taste:'mild',  texture:'chewy',  sound:'bubble',  name:{ ko:'버섯',     ja:'きのこ',       en:'Mushroom' } },
-    { id:'octopus',  emo:'🐙',  taste:'mild',  texture:'chewy',  sound:'slurp',   name:{ ko:'문어다리', ja:'たこ足',       en:'Octopus'  } },
-    { id:'mochi',    emo:'🍡',  taste:'sweet', texture:'chewy',  sound:'bubble',  name:{ ko:'떡',       ja:'おもち',       en:'Rice Cake'} },
-    { id:'potato',   emo:'🍠',  taste:'sweet', texture:'fluffy', sound:'crackle', name:{ ko:'고구마',   ja:'さつまいも',   en:'Sweet Potato'} },
-    { id:'tofu',     emo:'⬜',  taste:'mild',  texture:'fluffy', sound:'bubble',  name:{ ko:'두부',     ja:'とうふ',       en:'Tofu'     } },
-    { id:'ramen',    emo:'🍜',  taste:'spicy', texture:'chewy',  sound:'slurp',   name:{ ko:'라면사리', ja:'ラーメン',     en:'Ramen'    } },
-    { id:'corn',     emo:'🌽',  taste:'sweet', texture:'crisp',  sound:'crackle', name:{ ko:'옥수수',   ja:'とうもろこし', en:'Corn'     } },
-    { id:'dumpling', emo:'🥟',  taste:'mild',  texture:'fluffy', sound:'slurp',   name:{ ko:'만두',     ja:'餃子',         en:'Dumpling' } },
-    { id:'chili',    emo:'🌶️', taste:'spicy', texture:'crisp',  sound:'crackle', name:{ ko:'고추',     ja:'とうがらし',   en:'Chili'    } },
-    { id:'cabbage',  emo:'🥬',  taste:'mild',  texture:'crisp',  sound:'bubble',  name:{ ko:'배추',     ja:'白菜',         en:'Napa'     } }
+    { id:'mushroom', tier:8,  emo:'🍄',  taste:'mild',  texture:'chewy',  sound:'bubble',  name:{ ko:'버섯',     ja:'きのこ',       en:'Mushroom' } },
+    { id:'octopus',  tier:8,  emo:'🐙',  taste:'mild',  texture:'chewy',  sound:'slurp',   name:{ ko:'문어다리', ja:'たこ足',       en:'Octopus'  } },
+    { id:'mochi',    tier:8,  emo:'🍡',  taste:'sweet', texture:'chewy',  sound:'bubble',  name:{ ko:'떡',       ja:'おもち',       en:'Rice Cake'} },
+    { id:'potato',   tier:8,  emo:'🍠',  taste:'sweet', texture:'fluffy', sound:'crackle', name:{ ko:'고구마',   ja:'さつまいも',   en:'Sweet Potato'} },
+    { id:'tofu',     tier:8,  emo:'⬜',  taste:'mild',  texture:'fluffy', sound:'bubble',  name:{ ko:'두부',     ja:'とうふ',       en:'Tofu'     } },
+    { id:'ramen',    tier:8,  emo:'🍜',  taste:'spicy', texture:'chewy',  sound:'slurp',   name:{ ko:'라면사리', ja:'ラーメン',     en:'Ramen'    } },
+    { id:'corn',     tier:8,  emo:'🌽',  taste:'sweet', texture:'crisp',  sound:'crackle', name:{ ko:'옥수수',   ja:'とうもろこし', en:'Corn'     } },
+    { id:'chili',    tier:8,  emo:'🌶️', taste:'spicy', texture:'crisp',  sound:'crackle', name:{ ko:'고추',     ja:'とうがらし',   en:'Chili'    } },
+    { id:'dumpling', tier:10, emo:'🥟',  taste:'mild',  texture:'fluffy', sound:'slurp',   name:{ ko:'만두',     ja:'餃子',         en:'Dumpling' } },
+    { id:'cabbage',  tier:10, emo:'🥬',  taste:'mild',  texture:'crisp',  sound:'bubble',  name:{ ko:'배추',     ja:'白菜',         en:'Napa'     } },
+    { id:'garlic',   tier:12, emo:'🧄',  taste:'spicy', texture:'fluffy', sound:'bubble',  name:{ ko:'마늘',     ja:'にんにく',     en:'Garlic'   } },
+    { id:'shrimp',   tier:12, emo:'🍤',  taste:'sweet', texture:'chewy',  sound:'slurp',   name:{ ko:'새우',     ja:'えび',         en:'Shrimp'   } }
   ];
   var AXES = [
     { key:'taste',   icon:'👃', values:['spicy','sweet','mild'] },
@@ -655,8 +721,20 @@
                   bubble:'sound', crackle:'sound', slurp:'sound' };
   var ICON_OF = { taste:'👃', texture:'🥢', sound:'👂' };
 
-  var MAX_ROUNDS = 6;
-  var SECRET_N = 3;
+  /* 난이도 — 보통은 종전 상수(재료 10 · 숨김 3 · 6번)와 같다 */
+  var DIFFS = [
+    { id:'easy',   pool:8,  secret:3, rounds:7 },
+    { id:'normal', pool:10, secret:3, rounds:6 },
+    { id:'hard',   pool:12, secret:4, rounds:6 }
+  ];
+  var DIFF = DIFFS[1];
+  var POOL = [];
+  var MAX_ROUNDS = DIFF.rounds;
+  var SECRET_N = DIFF.secret;
+
+  /* 냄비/그릇 속 재료가 놓이는 자리 (숨김 개수별) */
+  var REV_POS  = { 3:[[112,104],[160,98],[208,105]], 4:[[102,104],[141,97],[180,105],[219,98]] };
+  var BOWL_POS = { 3:[[74,76],[100,71],[126,77]],    4:[[64,77],[88,71],[112,77],[136,71]] };
 
   /* ===================== i18n ===================== */
   var LANGS = ['ko', 'ja', 'en'];
@@ -669,12 +747,20 @@
       whatT:'야미나베(闇鍋)란?',
       whatB:'일본의 놀이예요. 불 꺼진 깜깜한 방에서 각자 가져온 재료를 몰래 냄비에 넣고 끓여, 무엇이 걸릴지 모른 채 나눠 먹어요. 이 게임에서는 힌트를 모아 냄비 속 재료를 추리해요!',
       rulesT:'놀이 방법',
-      r1:'뚜껑 덮인 냄비 속에 재료 3개가 숨어 있어요.',
-      r2:'재료 3개를 골라 국자로 떠보세요.',
+      r1:'뚜껑 덮인 냄비 속에 재료 {s}개가 숨어 있어요.',
+      r2:'재료 {s}개를 골라 국자로 떠보세요.',
       r3:'“몇 개가 냄비에 있는지”와 감각 힌트 하나를 알려드려요. 순서는 상관없어요, 개수만!',
-      r4:'6번 안에 3개를 다 맞히면 뚜껑이 활짝 열려요.',
+      r4:'{m}번 안에 {s}개를 다 맞히면 뚜껑이 활짝 열려요.',
       r5:'못 맞혀도 괜찮아요. 마지막엔 꼭 열어 드릴게요.',
       start:'냄비에 불 켜기',
+      diffT:'난이도',
+      diffName:{ easy:'쉬움', normal:'보통', hard:'어려움' },
+      diffMeta:'재료 {p}개 중 숨은 것 {s}개 · {m}번 안에',
+      bestGoal:'최고 기록 {n}번 — 더 줄여 볼까요?',
+      bestPerfect:'최고 기록 {n}번 — 완벽한 기록이에요',
+      bestNew:'새 최고 기록! {n}번',
+      bestKeep:'최고 기록 {n}번',
+      diffChange:'난이도 바꾸기',
       trayTitle:'재료 고르기',
       hintsTitle:'모은 힌트',
       histTitle:'떠본 기록',
@@ -688,7 +774,7 @@
       firstSniff:'뚜껑 틈으로 첫 김이 새어 나와요…',
       resHit:'{n}개가 냄비에 있어요!',
       resZero:'하나도 안 걸렸어요…',
-      resAll:'세 개 다 맞았어요!',
+      resAll:'{n}개 다 맞았어요!',
       winTitle:'뚜껑이 열렸어요!',
       winMsg:'{n}번 만에 냄비 속을 알아맞혔어요',
       loseTitle:'아깝다! 정답은…',
@@ -728,12 +814,20 @@
       whatT:'闇鍋（やみなべ）とは？',
       whatB:'日本の遊びです。灯りを消した真っ暗な部屋で、それぞれが持ち寄った具材をこっそり鍋に入れて煮込み、何が当たるか分からないまま分け合って食べます。このゲームでは、ヒントを集めて鍋の中の具材を推理します！',
       rulesT:'遊びかた',
-      r1:'ふたをした鍋の中に、具材が3つ隠れています。',
-      r2:'具材を3つ選んで、おたまですくってみましょう。',
+      r1:'ふたをした鍋の中に、具材が{s}つ隠れています。',
+      r2:'具材を{s}つ選んで、おたまですくってみましょう。',
       r3:'「何個が鍋に入っているか」と、感覚のヒントを1つお知らせします。順番は関係なく、個数だけ！',
-      r4:'6回以内に3つとも当てられたら、ふたが開きます。',
+      r4:'{m}回以内に{s}つとも当てられたら、ふたが開きます。',
       r5:'当てられなくても大丈夫。最後には必ず開けてあげます。',
       start:'鍋に火をつける',
+      diffT:'むずかしさ',
+      diffName:{ easy:'やさしい', normal:'ふつう', hard:'むずかしい' },
+      diffMeta:'具材{p}個のうち かくれ{s}個 · {m}回以内',
+      bestGoal:'最高記録 {n}回 — もっと減らせるかな？',
+      bestPerfect:'最高記録 {n}回 — 完璧な記録です',
+      bestNew:'自己ベスト更新！{n}回',
+      bestKeep:'最高記録 {n}回',
+      diffChange:'むずかしさを変える',
       trayTitle:'具材をえらぶ',
       hintsTitle:'集めたヒント',
       histTitle:'すくった記録',
@@ -747,7 +841,7 @@
       firstSniff:'ふたのすき間から、最初の湯気がもれています…',
       resHit:'{n}個が鍋に入っています！',
       resZero:'ひとつも当たりませんでした…',
-      resAll:'3つとも当たりました！',
+      resAll:'{n}つとも当たりました！',
       winTitle:'ふたが開きました！',
       winMsg:'{n}回で鍋の中を当てました',
       loseTitle:'おしい！正解は…',
@@ -787,12 +881,20 @@
       whatT:'What is Yaminabe (闇鍋)?',
       whatB:"It's a Japanese party game. In a pitch-dark room with the lights out, everyone secretly drops an ingredient they brought into one pot, boils it, and shares it without knowing what they'll fish out. In this game, you gather hints to deduce what is hiding in the pot!",
       rulesT:'How to play',
-      r1:'Three ingredients are hidden under the lid.',
-      r2:'Pick three ingredients and scoop with the ladle.',
+      r1:'{s} ingredients are hidden under the lid.',
+      r2:'Pick {s} ingredients and scoop with the ladle.',
       r3:'You learn how many of them are in the pot, plus one sensory hint. Order never matters — only the count!',
-      r4:'Get all three right within 6 scoops and the lid opens.',
+      r4:'Get all {s} right within {m} scoops and the lid opens.',
       r5:'No worries if you miss. The lid always opens in the end.',
       start:'Light the stove',
+      diffT:'Difficulty',
+      diffName:{ easy:'Easy', normal:'Normal', hard:'Hard' },
+      diffMeta:'{s} hidden among {p} · within {m} scoops',
+      bestGoal:'Best so far: {n} scoop{es} — can you beat it?',
+      bestPerfect:'Best so far: {n} scoop{es} — a perfect read',
+      bestNew:'New best — {n} scoop{es}!',
+      bestKeep:'Best so far: {n} scoop{es}',
+      diffChange:'Change difficulty',
       trayTitle:'Pick ingredients',
       hintsTitle:'Hints gathered',
       histTitle:'Scoop log',
@@ -806,9 +908,9 @@
       firstSniff:'The first wisp of steam escapes the lid…',
       resHit:'{n} of them are in the pot!',
       resZero:'Not a single one…',
-      resAll:'All three, exactly right!',
+      resAll:'All {n}, exactly right!',
       winTitle:'The lid is open!',
-      winMsg:'You read the pot in {n} scoops',
+      winMsg:'You read the pot in {n} scoop{es}',
       loseTitle:'So close! The answer was…',
       loseMsg:'The lid opens for you anyway',
       bowlT:'Yaminabe, served',
@@ -853,6 +955,51 @@
     if (n.indexOf('ja') === 0) return 'ja';
     if (n.indexOf('en') === 0) return 'en';
     return 'ko';
+  }
+
+  /* ===================== 저장 (원값만) =====================
+     in9-yaminabe = {"v":1,"diff":"normal","best":{"normal":4,...}}
+     best[난이도] = 클리어에 쓴 최소 라운드 수. 문구·등급은 저장하지 않는다. */
+  var SAVE_KEY = 'in9-yaminabe';
+  var save = { diff:'normal', best:{} };
+
+  function diffById(id) {
+    var i;
+    for (i = 0; i < DIFFS.length; i++) if (DIFFS[i].id === id) return DIFFS[i];
+    return null;
+  }
+  function loadSave() {
+    var raw = null, o = null, i, d, n, b;
+    try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { return; }
+    if (typeof raw !== 'string' || !raw) return;
+    try { o = JSON.parse(raw); } catch (e) { return; }
+    if (Object.prototype.toString.call(o) !== '[object Object]') return;
+    if (diffById(o.diff)) save.diff = o.diff;
+    b = o.best;
+    if (Object.prototype.toString.call(b) !== '[object Object]') return;
+    for (i = 0; i < DIFFS.length; i++) {
+      d = DIFFS[i]; n = b[d.id];
+      // 원값 검증: 1 이상 그 난이도의 라운드 수 이하인 정수만 살린다
+      if (typeof n === 'number' && isFinite(n) && Math.floor(n) === n && n >= 1 && n <= d.rounds) {
+        save.best[d.id] = n;
+      }
+    }
+  }
+  function persist() {
+    var out = { v:1, diff:save.diff, best:{} }, i, d;
+    for (i = 0; i < DIFFS.length; i++) {
+      d = DIFFS[i];
+      if (typeof save.best[d.id] === 'number') out.best[d.id] = save.best[d.id];
+    }
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(out)); } catch (e) {}
+  }
+  function setDiff(id) {
+    var d = diffById(id) || DIFFS[1];
+    DIFF = d;
+    save.diff = d.id;
+    SECRET_N = d.secret;
+    MAX_ROUNDS = d.rounds;
+    POOL = INGREDIENTS.filter(function (x) { return x.tier <= d.pool; });
   }
 
   /* ===================== audio ===================== */
@@ -908,7 +1055,7 @@
   function sndBubble() { tone(300 + Math.random() * 200, 520, 0.1, 0.028, 0, 'sine'); }
   function sndResult(n) {
     if (n === 0) { tone(150, 108, 0.3, 0.06, 0, 'sine'); return; }
-    if (n === 3) { tone(523, 523, 0.2, 0.05, 0, 'triangle'); tone(659, 659, 0.22, 0.045, 0.09, 'triangle'); tone(784, 784, 0.4, 0.05, 0.18, 'triangle'); return; }
+    if (n === SECRET_N) { tone(523, 523, 0.2, 0.05, 0, 'triangle'); tone(659, 659, 0.22, 0.045, 0.09, 'triangle'); tone(784, 784, 0.4, 0.05, 0.18, 'triangle'); return; }
     tone(392, 480, 0.14, 0.05, 0, 'triangle');
     if (n === 2) tone(523, 600, 0.16, 0.045, 0.1, 'triangle');
   }
@@ -1054,6 +1201,7 @@
   var history = [];
   var busy = false;
   var lastWin = false;
+  var lastBestNew = false;
 
   function buildHintQueue() {
     var counts = {}, k, v, i, ing;
@@ -1101,9 +1249,12 @@
   function buildTray() {
     trayEl.innerHTML = '';
     chipEls = {};
+    // 8:4열 2줄 / 10:5열 2줄(종전 그대로) / 12:4열 3줄 — 12칩은 6열로 좁히면 이름이 안 읽힌다
+    trayEl.style.gridTemplateColumns = 'repeat(' + (POOL.length >= 12 ? 4 : Math.round(POOL.length / 2)) + ',minmax(0,1fr))';
+    trayEl.className = POOL.length >= 12 ? 'dense' : '';
     var i, ing, b;
-    for (i = 0; i < INGREDIENTS.length; i++) {
-      ing = INGREDIENTS[i];
+    for (i = 0; i < POOL.length; i++) {
+      ing = POOL[i];
       b = document.createElement('button');
       b.className = 'chip';
       b.type = 'button';
@@ -1119,8 +1270,8 @@
   }
   function renderTrayNames() {
     var i, ing;
-    for (i = 0; i < INGREDIENTS.length; i++) {
-      ing = INGREDIENTS[i];
+    for (i = 0; i < POOL.length; i++) {
+      ing = POOL[i];
       var el = chipEls[ing.id];
       if (el) {
         el.querySelector('.nm').textContent = ing.name[lang];
@@ -1144,11 +1295,11 @@
   function renderPick() {
     var i, id, on;
     var full = picked.length >= SECRET_N;
-    for (i = 0; i < INGREDIENTS.length; i++) {
-      id = INGREDIENTS[i].id;
+    for (i = 0; i < POOL.length; i++) {
+      id = POOL[i].id;
       on = picked.indexOf(id) >= 0;
       var el = chipEls[id];
-      el.className = 'chip' + (on ? ' on' : (full ? ' dim' : ''));
+      if (el) el.className = 'chip' + (on ? ' on' : (full ? ' dim' : ''));
     }
     ladleBtn.disabled = !full || busy;
     var t = T();
@@ -1209,8 +1360,8 @@
       row.querySelector('.rn').textContent = h.round;
       row.querySelector('.items').textContent = emo;
       var bd = row.querySelector('.badge');
-      bd.textContent = h.hit + ' / 3';
-      bd.className = 'badge b' + h.hit;
+      bd.textContent = h.hit + ' / ' + (h.n || SECRET_N);
+      bd.className = 'badge' + (h.hit === 0 ? '' : (h.hit >= (h.n || SECRET_N) ? ' bfull' : ' bpart'));
       histListEl.appendChild(row);
     }
   }
@@ -1224,7 +1375,7 @@
 
   /* ===================== flow ===================== */
   function newGame() {
-    var pool = INGREDIENTS.map(function (x) { return x.id; });
+    var pool = POOL.map(function (x) { return x.id; });
     shuffle(pool);
     secret = pool.slice(0, SECRET_N);
     round = 1;
@@ -1250,15 +1401,23 @@
 
     renderPick(); renderDots(); renderHints(); renderHistory();
     startAmbient();
-    gaRoundStart('main');
+    /* 이 판의 start/replay 는 시작·다시하기 버튼이 아니라 첫 조작(재료 고르기·국자)에서 나간다 —
+       인트로나 엔딩 카드를 읽고 머뭇거린 시간이 play_sec 에 섞이지 않게 */
+    gaBindFirst(DIFF.id);
   }
 
   function setRevealEmoji(mode) {
-    var i;
-    for (i = 0; i < 3; i++) {
-      var v = (mode === 'show' && secret[i]) ? byId(secret[i]).emo : '';
-      $('rv' + i).textContent = v;
-      $('bw' + i).textContent = v;
+    var n = secret.length || SECRET_N;
+    var rp = REV_POS[n] || REV_POS[3], bp = BOWL_POS[n] || BOWL_POS[3];
+    var i, r, w, ing;
+    for (i = 0; i < 4; i++) {
+      r = $('rv' + i); w = $('bw' + i);
+      if (!r || !w) continue;
+      if (rp[i]) { r.setAttribute('x', rp[i][0]); r.setAttribute('y', rp[i][1]); }
+      if (bp[i]) { w.setAttribute('x', bp[i][0]); w.setAttribute('y', bp[i][1]); }
+      ing = (mode === 'show' && i < n && secret[i]) ? byId(secret[i]) : null;
+      r.textContent = ing ? ing.emo : '';
+      w.textContent = ing ? ing.emo : '';
     }
   }
 
@@ -1273,14 +1432,14 @@
     var hit = 0, i;
     for (i = 0; i < ids.length; i++) if (secret.indexOf(ids[i]) >= 0) hit++;
 
-    history.unshift({ round: round, ids: ids, hit: hit });
+    history.unshift({ round: round, ids: ids, hit: hit, n: SECRET_N });
     renderHistory();
 
     setTimeout(function () {
       var t = T();
       sndResult(hit);
       if (hit === SECRET_N) {
-        showToast(t.resAll, 'all');
+        showToast(fmt(t.resAll, { n: SECRET_N }), 'all');
         setTimeout(function () { finish(true); }, 900);
         return;
       }
@@ -1334,15 +1493,28 @@
     state = 'end';
     running = false;
     lastWin = !!win;
+    lastBestNew = false;
+    if (win) {
+      var prev = save.best[DIFF.id];
+      if (typeof prev !== 'number' || round < prev) {
+        save.best[DIFF.id] = round;   // 원값: 클리어에 쓴 라운드 수
+        lastBestNew = true;
+      }
+      persist();
+    }
     var t = T();
     $('endEmo').textContent = win ? '🍲' : '🥢';
     $('endTitle').textContent = win ? t.winTitle : t.loseTitle;
-    $('endMsg').textContent = win ? fmt(t.winMsg, { n: round }) : t.loseMsg;
+    $('endMsg').textContent = win ? fmt(t.winMsg, { n: round, es: (round === 1 ? '' : 's') }) : t.loseMsg;
     $('endClosing').textContent = t.closing;
     $('againBtn').textContent = t.again;
     $('endHomeBtn').textContent = t.homeBtn;
+    $('endDiffBtn').textContent = t.diffChange;
+
+    renderEndBest();
 
     var row = $('answerRow');
+    row.className = 'answerRow' + (secret.length > 3 ? ' n4' : '');
     row.innerHTML = '';
     var i;
     for (i = 0; i < secret.length; i++) {
@@ -1357,7 +1529,37 @@
     setRevealEmoji('show');
     $('endOv').classList.add('show');
     sndFinale(win);
-    gaRoundComplete('main', win ? 'clear' : 'fail', { rounds_used: round });
+    gaRoundComplete(DIFF.id, win ? 'clear' : 'fail', { rounds_used: round });
+  }
+
+  /* ===================== 기록 표기 ===================== */
+  function renderEndBest() {
+    var el = $('endBest'), t = T(), b = save.best[DIFF.id];
+    if (typeof b !== 'number') { el.textContent = ''; el.hidden = true; return; }
+    el.textContent = fmt(lastBestNew ? t.bestNew : t.bestKeep, { n: b, es: (b === 1 ? '' : 's') });
+    el.hidden = false;
+  }
+  function renderDiffPick() {
+    var t = T(), btns = $('diffRow').children, i, b, id;
+    $('diffRow').setAttribute('aria-label', t.diffT);
+    for (i = 0; i < btns.length; i++) {
+      b = btns[i]; id = b.getAttribute('data-diff');
+      b.textContent = t.diffName[id] || id;
+      b.className = 'dbtn' + (id === DIFF.id ? ' on' : '');
+      b.setAttribute('aria-pressed', id === DIFF.id ? 'true' : 'false');
+    }
+    $('iDiffMeta').textContent = fmt(t.diffMeta, { p: DIFF.pool, s: DIFF.secret, m: DIFF.rounds });
+    var best = save.best[DIFF.id];
+    if (typeof best === 'number') {
+      // 1번은 최소값 — 더 줄이라고 권하면 깰 수 없는 목표가 된다
+      $('iBest').textContent = fmt(best === 1 ? t.bestPerfect : t.bestGoal,
+                                   { n: best, es: (best === 1 ? '' : 's') });
+      $('iBest').hidden = false;
+    } else {
+      // 기록이 없으면 조용히 — 빈 줄을 강조하지 않는다
+      $('iBest').textContent = '';
+      $('iBest').hidden = true;
+    }
   }
 
   /* ===================== i18n apply ===================== */
@@ -1384,17 +1586,20 @@
     $('iRulesT').textContent = t.rulesT;
     $('fWhatT').textContent = t.whatT;  $('fWhatB').textContent = t.whatB;
     $('fRulesT').textContent = t.rulesT;
-    var i;
+    var i, rtxt;
     for (i = 1; i <= 5; i++) {
-      $('iR' + i).textContent = t['r' + i];
-      $('fR' + i).textContent = t['r' + i];
+      rtxt = fmt(t['r' + i], { s: SECRET_N, m: MAX_ROUNDS });
+      $('iR' + i).textContent = rtxt;
+      $('fR' + i).textContent = rtxt;
     }
     $('startBtn').textContent = t.start;
     $('infoCloseBtn').textContent = t.close;
     $('againBtn').textContent = t.again;
     $('endHomeBtn').textContent = t.homeBtn;
+    $('endDiffBtn').textContent = t.diffChange;
 
     renderTrayNames();
+    renderDiffPick();
     renderPick();
     renderDots();
     renderHints();
@@ -1402,8 +1607,9 @@
 
     if (state === 'end') {
       $('endTitle').textContent = lastWin ? t.winTitle : t.loseTitle;
-      $('endMsg').textContent = lastWin ? fmt(t.winMsg, { n: round }) : t.loseMsg;
+      $('endMsg').textContent = lastWin ? fmt(t.winMsg, { n: round, es: (round === 1 ? '' : 's') }) : t.loseMsg;
       $('endClosing').textContent = t.closing;
+      renderEndBest();
       var cards = $('answerRow').children;
       for (i = 0; i < cards.length && i < secret.length; i++) {
         cards[i].querySelector('.n').textContent = byId(secret[i]).name[lang];
@@ -1447,6 +1653,21 @@
       setTimeout(function(){ el.hidden=true; },1200);
     });
   })();
+  /* first real play action of a round = round start (replay for every round after the first) */
+  var gaBindFirst=(function(){
+    var zones=['tray','ladleBtn'], pendingScene='main';
+    function unbind(){
+      for(var k=0;k<zones.length;k++){ var z=document.getElementById(zones[k]); if(!z)continue;
+        z.removeEventListener('pointerdown',onFirst,true); z.removeEventListener('click',onFirst,true); }
+    }
+    function onFirst(){ unbind(); gaRoundStart(pendingScene); }
+    return function(scene){
+      /* scene 은 판이 열릴 때의 난이도로 못 박는다 — 판 도중에는 난이도를 바꿀 수 없다 */
+      pendingScene=scene||'main';
+      for(var i=0;i<zones.length;i++){ var n=document.getElementById(zones[i]); if(!n){continue;}
+        n.addEventListener('pointerdown',onFirst,true); n.addEventListener('click',onFirst,true); }
+    };
+  })();
 
   /* ===================== wiring ===================== */
   $('langBtn').addEventListener('click', function () {
@@ -1475,6 +1696,19 @@
     if (e.target === $('infoOv')) $('infoOv').classList.remove('show');
   });
 
+  $('diffRow').addEventListener('click', function (e) {
+    var b = e.target, id;
+    while (b && b !== this && !(b.getAttribute && b.getAttribute('data-diff'))) b = b.parentNode;
+    if (!b || b === this || state !== 'intro') return;
+    id = b.getAttribute('data-diff');
+    if (id === DIFF.id) return;
+    unlock(); sndTap();
+    setDiff(id);
+    persist();
+    buildTray();
+    applyI18n();
+  });
+
   $('startBtn').addEventListener('click', function () {
     unlock(); sndTap();
     $('introOv').classList.remove('show');
@@ -1487,6 +1721,20 @@
     unlock(); sndTap();
     $('endOv').classList.remove('show');
     newGame();
+  });
+  $('endDiffBtn').addEventListener('click', function () {
+    unlock(); sndTap();
+    // 엔딩 -> 인트로. 난이도 피커는 state === 'intro' 에서만 먹는다.
+    $('endOv').classList.remove('show');
+    state = 'intro';
+    running = true;          // 부팅 때와 같은 대기 김
+    picked = [];             // 직전 판의 선택/흐린 칩이 트레이에 남지 않게
+    renderPick();
+    renderDiffPick();
+    $('introOv').classList.add('show');
+    // 난이도를 바꾸러 온 사람이니 난이도 행이 보이는 위치에서 연다
+    var isheet = $('introOv').querySelector('.sheet');
+    if (isheet) isheet.scrollTop = 0;
   });
   $('endHomeBtn').addEventListener('click', function () {
     window.location.href = '../../index.html';
@@ -1506,6 +1754,8 @@
 
   /* ===================== boot ===================== */
   lang = detectLang();
+  loadSave();
+  setDiff(save.diff);
   buildTray();
   applyI18n();
   resizeCanvas();

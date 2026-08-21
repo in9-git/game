@@ -120,6 +120,13 @@ header{
   scrollbar-width:none;
 }
 .card::-webkit-scrollbar{display:none}
+/* 카드가 넘칠 때만 뜨는 '아래 더 있어요' 표시 — 마지막 줄이 아무 단서 없이 잘리지 않게 */
+.card.more::after{
+  content:'⌄'; display:block; position:sticky; bottom:0; z-index:3;
+  margin-top:-20px; padding-top:17px; pointer-events:none;
+  font-size:1.05rem; line-height:1; color:var(--ink-soft);
+  background:linear-gradient(180deg, rgba(10,28,52,0), rgba(10,28,52,.9) 62%);
+}
 .overlay.on .card{transform:translateY(0) scale(1)}
 .card h2{
   font-size:1.16rem; font-weight:800; letter-spacing:.03em; margin-bottom:3px;
@@ -205,9 +212,35 @@ header{
   .song{padding:10px 11px;gap:10px}
   .song .orb{width:37px;height:37px;font-size:1rem}
 }
+/* 낮은 화면 — 빠른 비 줄까지 다 열려도 카드 안내문이 잘리지 않게 */
+@media (max-height:700px){
+  .card{padding:14px 12px 12px}
+  .card .lead{margin-bottom:10px}
+  .songs{gap:7px;margin-bottom:10px}
+  .song{padding:8px 11px}
+  .song .orb{width:34px;height:34px;font-size:.95rem}
+}
+/* 더 낮은 화면 — 7행이 다 열려도 '자유 연주' 줄까지 카드 안에 들어오게 */
+@media (max-height:620px){
+  .card{padding:11px 11px 9px;border-radius:20px}
+  .card h2{font-size:1.05rem;margin-bottom:2px}
+  .card .lead{margin-bottom:7px;line-height:1.5}
+  .songs{gap:5px;margin-bottom:7px}
+  .song{padding:5px 10px;border-radius:15px}
+  .song .orb{width:30px;height:30px;font-size:.85rem}
+  .song .dsc{margin-top:1px}
+}
 @media (prefers-reduced-motion: reduce){
   *{transition-duration:.01ms !important; animation-duration:.01ms !important}
 }
+
+/* ending record line */
+.stat{
+  font-size:.73rem; color:var(--ink-soft); letter-spacing:.03em; line-height:1.55;
+  margin:-8px 0 12px;
+}
+.stat[hidden]{display:none}
+.song.fastrow .orb{background:radial-gradient(circle at 34% 28%, rgba(255,255,255,.85), rgba(150,205,255,.45) 38%, rgba(52,116,190,.35) 72%)}
 
 .ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 2px;font-size:14px;line-height:1.2;opacity:.92;color:var(--ink-soft)}
 .ga-vote[hidden]{display:none}
@@ -257,6 +290,7 @@ header{
         <div class="rainbow">🌈</div>
         <h2 id="fTitle">참 잘했어요</h2>
         <div class="lead" id="fLead">오늘은 여기까지.<br>빗방울이 모두 내려앉았어요.</div>
+        <div class="stat" id="fStat" hidden></div>
         <div class="ga-vote" id="gaVote" hidden>
           <span class="ga-vote-q">또 할래?</span>
           <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
@@ -283,6 +317,8 @@ const I18N = {
   ko:{
     flag:'🇰🇷', home:'← 홈',
     title:'빗방울 실로폰', sub:'雨だれシロフォン · Rain Xylophone',
+    /* 탭 제목은 언어별로 — en 에서 'Rain Xylophone · Rain Xylophone' 이 되던 자리 */
+    docTitle:'빗방울 실로폰 · Rain Xylophone',
     mTitle:'곡을 골라 보세요',
     mLead:'타이밍이 어긋나도 괜찮아요.<br>곡은 절대 끊기지 않아요.',
     mFoot:'탭하거나 드래그 · 데스크톱은 1~8 키',
@@ -292,6 +328,9 @@ const I18N = {
     freeLocked:'세 곡을 모두 연주하면 열려요',
     freeTag:'자유 연주', freeExit:'그만하기', stop:'그만하기',
     unlocked:'자유 연주가 열렸어요 🌈',
+    fast:'빠른 비', fastDesc:'조금 빠른 템포',
+    fastOpen:'빠른 비가 열렸어요 🌧️',
+    statTogether:'같이 친 음', statBest:'최고', statNew:'최고 기록!',
     hintPlay:'빗방울이 닿을 때 함께 두드려 보세요',
     hintFree:'마음 가는 대로 연주해요',
     ready:'곧 시작해요…',
@@ -305,6 +344,7 @@ const I18N = {
   ja:{
     flag:'🇯🇵', home:'← ホーム',
     title:'雨だれシロフォン', sub:'빗방울 실로폰 · Rain Xylophone',
+    docTitle:'雨だれシロフォン · Rain Xylophone',
     mTitle:'きょくを えらんでね',
     mLead:'タイミングが ずれても だいじょうぶ。<br>きょくは とまりません。',
     mFoot:'タップ・ドラッグ / パソコンは 1〜8 キー',
@@ -314,6 +354,9 @@ const I18N = {
     freeLocked:'3きょく ぜんぶ ひくと ひらきます',
     freeTag:'じゆう えんそう', freeExit:'おわる', stop:'やめる',
     unlocked:'じゆう えんそうが ひらきました 🌈',
+    fast:'はやい あめ', fastDesc:'すこし はやい テンポ',
+    fastOpen:'はやい あめが ひらきました 🌧️',
+    statTogether:'いっしょの おと', statBest:'さいこう', statNew:'さいこう きろく！',
     hintPlay:'あまつぶが とどいたら いっしょに たたこう',
     hintFree:'こころの ままに えんそうしよう',
     ready:'まもなく はじまります…',
@@ -327,6 +370,7 @@ const I18N = {
   en:{
     flag:'🇬🇧', home:'← Home',
     title:'Rain Xylophone', sub:'빗방울 실로폰 · 雨だれシロフォン',
+    docTitle:'Rain Xylophone · 빗방울 실로폰',
     mTitle:'Pick a song',
     mLead:'Off-beat is perfectly fine.<br>The song never breaks.',
     mFoot:'Tap or drag · keys 1–8 on desktop',
@@ -336,6 +380,9 @@ const I18N = {
     freeLocked:'Opens after all three songs',
     freeTag:'Free play', freeExit:'Finish', stop:'Stop',
     unlocked:'Free play is open 🌈',
+    fast:'Faster rain', fastDesc:'A little quicker',
+    fastOpen:'Faster rain is open 🌧️',
+    statTogether:'Played together', statBest:'Best', statNew:'New best!',
     hintPlay:'Tap along as the drops land',
     hintFree:'Play whatever feels good',
     ready:'Starting soon…',
@@ -443,8 +490,8 @@ const SONGS = [
   { id:2, icon:'🏔️', bpm:84, loop:48, gap:3, reps:2, notes:ARIRANG }
 ];
 
-function buildTimeline(song){
-  const spb = 60 / song.bpm;
+function buildTimeline(song, rate){
+  const spb = 60 / (song.bpm * (rate > 0 ? rate : 1));
   const out = [];
   for(let r=0;r<song.reps;r++){
     const off = r * (song.loop + song.gap);
@@ -455,6 +502,42 @@ function buildTimeline(song){
   }
   out.sort((a,b)=>a.t-b.t);
   return out;
+}
+
+/* ==========================================================
+   곡별 기록 — 저장하는 것은 '같이 친 음의 최고 개수'라는 원값 하나뿐.
+   비율·해금 여부·문구 같은 파생값은 저장하지 않고 그때그때 다시 센다.
+   ========================================================== */
+const BEST_KEY  = 'rainxylo-best';
+const FAST_RATE = 1.15;   // '빠른 비'의 템포 배수
+const FAST_GATE = 0.6;    // 이 비율만큼 함께 치면 빠른 비가 열린다 (보상, 관문 아님)
+
+function songTotal(i){ const s = SONGS[i]; return s ? s.notes.length * s.reps : 0; }
+
+function readBest(){
+  const b = { n:[0,0,0], f:[0,0,0] };
+  let raw = null;
+  try{ raw = localStorage.getItem(BEST_KEY); }catch(e){ return b; }
+  if(typeof raw !== 'string' || raw === '') return b;
+  let o = null;
+  try{ o = JSON.parse(raw); }catch(e){ return b; }
+  if(!o || typeof o !== 'object' || Array.isArray(o)) return b;
+  const take = function(src, dst){
+    if(!Array.isArray(src)) return;
+    for(let i=0;i<3;i++){
+      const v = src[i];
+      if(typeof v !== 'number' || !isFinite(v) || v < 0) continue;
+      dst[i] = Math.min(Math.floor(v), songTotal(i));   // 상한은 그 곡의 음 수
+    }
+  };
+  take(o.n, b.n); take(o.f, b.f);
+  return b;
+}
+let best = readBest();
+function saveBest(){ lsSet(BEST_KEY, JSON.stringify({ v:1, n:best.n, f:best.f })); }
+function fastOpen(i){
+  const tot = songTotal(i);
+  return tot > 0 && best.n[i] >= Math.ceil(tot * FAST_GATE);
 }
 
 /* ==========================================================
@@ -556,6 +639,7 @@ const toastEl  = document.getElementById('toast');
 const freebar  = document.getElementById('freebar');
 const freeTagEl  = document.getElementById('freeTag');
 const freeExitEl = document.getElementById('freeExit');
+const menuCard = menuEl ? menuEl.querySelector('.card') : null;
 const langBtn  = document.getElementById('langBtn');
 const sndBtn   = document.getElementById('sndBtn');
 
@@ -567,6 +651,14 @@ const reduceMotion = window.matchMedia &&
    ========================================================== */
 let W = 0, H = 0, dpr = 1;
 let barTop = 0, barH = 0, laneW = 0, padX = 0;
+
+/* 카드 안쪽이 아직 남아 있으면 아래에 힌트를 띄운다 (낮은 화면·가로모드) */
+function syncCardHint(){
+  if(!menuCard) return;
+  const more = (menuCard.scrollHeight - menuCard.clientHeight - menuCard.scrollTop) > 6;
+  menuCard.classList.toggle('more', more);
+}
+if(menuCard) menuCard.addEventListener('scroll', syncCardHint, { passive:true });
 
 function resize(){
   const r = stage.getBoundingClientRect();
@@ -584,6 +676,7 @@ function resize(){
   barH  = Math.max(50, Math.min(92, H * 0.145));
   barTop = H - barH - Math.max(14, H*0.035);
   buildBackdrop();
+  syncCardHint();
 }
 window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', function(){ setTimeout(resize, 220); });
@@ -626,7 +719,10 @@ const MODE = { MENU:'menu', PLAY:'play', FREE:'free', FINALE:'finale' };
 let mode = MODE.MENU;
 
 let curSong = null;
+let curFast = false;      // '빠른 비' 판인지
 let timeline = [];
+let together = 0;         // 이번 판에서 빗방울과 함께 친 음의 수
+let lastStat = null;      // 엔딩 카드에 띄울 이번 판 결과(원값)
 let audioStart = 0;
 let songEnd = 0;
 let songTime = 0;
@@ -637,6 +733,13 @@ const JUMP = 0.5;         // clock gap that counts as a stall, not a slow frame
 const barGlow = new Float32Array(8);   // 0..1 decaying
 const barPress = new Float32Array(8);  // press depth
 const lastTap = new Float32Array(8);   // audio-clock time of player's tap
+const tapUsed = new Float32Array(8);   // 이미 한 음으로 센 탭 (한 번 친 것이 두 번 세지 않게)
+const tapOk = new Uint8Array(8);       // 그 탭이 한 레인을 겨눈 탭인지 (한꺼번에 쓸어 친 것은 아니다)
+const fireAt = new Float32Array(8);    // 그 레인에서 마지막으로 음이 난 시각
+const fireOpen = new Uint8Array(8);    // 그 음이 아직 아무 탭과도 만나지 않았는지
+let lastAnyTap = -99, lastAnyLane = -1;   // 레인을 가리지 않은 직전 탭
+const HIT_WIN = 0.22;   // 음과 '같이 쳤다'고 보는 폭 — 앞뒤가 같아야 한다
+const AIM_GAP = 0.12;   // 다른 레인을 이만큼 안에 또 치면 겨눈 탭이 아니다 (가장 짧은 음 간격 0.57초)
 
 let ripples = [], splashes = [], sparkles = [], finaleRings = [], bubbles = [];
 let freeDrops = [];       // ambient drops in free mode
@@ -711,7 +814,24 @@ function playerHit(lane){
   if(mode === MODE.MENU || mode === MODE.FINALE) return;
   /* 계측: 자유 연주 라운드는 첫 음을 칠 때 열린다 */
   if(mode === MODE.FREE && !gaFreeHit){ gaFreeHit = true; try{ gaRoundStart('free'); }catch(e){} }
-  strike(lane, 0.92, true, ac ? ac.currentTime : 0);
+  const t = ac ? ac.currentTime : 0;
+  /* 여덟 레인을 한꺼번에 쓸어 치는 탭은 어느 음도 겨눈 것이 아니다 — 난타가 이득이 되지 않게.
+     지우는 것은 스쳐 지나간 앞 레인이지 손가락이 도착한 레인이 아니다 —
+     글리산도로 정확히 짚어도 0점이 되지 않게 (드래그는 공식 안내 입력이다) */
+  if(ac && lastAnyLane >= 0 && lastAnyLane !== lane && (t - lastAnyTap) < AIM_GAP){
+    tapOk[lastAnyLane] = 0;
+    /* 스쳐 지나가며 이미 소급해서 센 음이 있으면 되돌린다 — 쓸어 치기가 여덟 음을 벌지 않게.
+       음은 다시 열어 두어, 되돌아와 제대로 짚으면 그때 세어 준다 */
+    if(tapUsed[lastAnyLane] === lastTap[lastAnyLane]){ tapUsed[lastAnyLane] = -98; fireOpen[lastAnyLane] = 1; together--; }
+  }
+  tapOk[lane] = 1;
+  lastAnyTap = t; lastAnyLane = lane;
+  strike(lane, 0.92, true, t);
+  /* 늦게 친 탭도 앞서 친 탭과 같은 폭으로 받아 준다 — 판정 창이 한쪽으로만 열리지 않게.
+     이미 소리 난 음은 노트당 한 번만 소급해서 센다. */
+  if(mode === MODE.PLAY && tapOk[lane] && fireOpen[lane] && (t - fireAt[lane]) < HIT_WIN){
+    fireOpen[lane] = 0; tapUsed[lane] = t; together++;
+  }
 }
 
 /* ==========================================================
@@ -771,7 +891,7 @@ function showOverlay(el, on){ el.classList.toggle('on', on); }
 function applyStageBar(){
   const t = T();
   if(mode === MODE.PLAY && curSong){
-    freeTagEl.textContent  = t.songs[curSong.id].n;
+    freeTagEl.textContent  = t.songs[curSong.id].n + (curFast ? ' · ' + t.fast : '');
     freeExitEl.textContent = t.stop;
   }else{
     freeTagEl.textContent  = t.freeTag;
@@ -784,7 +904,7 @@ function toMenu(){
      들어가자마자 나가는 0초 라운드는 시작도 완결도 보내지 않는다. */
   if(mode === MODE.FREE && gaFreeHit) gaRoundComplete('free', 'clear');
   mode = MODE.MENU;
-  curSong = null; timeline = [];
+  curSong = null; curFast = false; timeline = [];
   freeDrops = []; ripples = []; splashes = []; sparkles = [];
   finaleRings = []; bubbles = [];
   progEl.classList.remove('on'); progEl.style.width = '0%';
@@ -795,17 +915,20 @@ function toMenu(){
   renderList();
 }
 
-function startSong(id){
+function startSong(id, fast){
   resumeAudio();
   curSong = SONGS[id];
-  timeline = buildTimeline(curSong);
+  curFast = !!fast;
+  timeline = buildTimeline(curSong, curFast ? FAST_RATE : 1);
+  together = 0;
   songEnd = timeline.length ? (timeline[timeline.length-1].t + timeline[timeline.length-1].dur + 2.4) : 10;
   audioStart = (ac ? ac.currentTime : 0) + LEAD;
   clockFallback = 0;
   prevClock = -1; hiddenClock = -1;
   songTime = -LEAD;
   ripples = []; splashes = []; sparkles = []; freeDrops = [];
-  for(let i=0;i<8;i++){ barGlow[i]=0; barPress[i]=0; lastTap[i]=-99; }
+  for(let i=0;i<8;i++){ barGlow[i]=0; barPress[i]=0; lastTap[i]=-99; tapUsed[i]=-98; tapOk[i]=0; fireAt[i]=-99; fireOpen[i]=0; }
+  lastAnyTap = -99; lastAnyLane = -1;
   mode = MODE.PLAY;
   showOverlay(menuEl, false);
   showOverlay(finaleEl, false);
@@ -818,7 +941,8 @@ function startSong(id){
 
 function startFree(){
   resumeAudio();
-  curSong = null; timeline = [];
+  /* 자유 연주는 기록에 넣지 않는다 — 곡 기록이 오염되지 않게 */
+  curSong = null; curFast = false; timeline = [];
   mode = MODE.FREE;
   freeDrops = []; ripples = []; splashes = []; sparkles = [];
   for(let i=0;i<8;i++){ barGlow[i]=0; barPress[i]=0; lastTap[i]=-99; }
@@ -840,6 +964,19 @@ function endSong(){
     done.push(curSong.id);
     lsSet('rainxylo-done', JSON.stringify(done));
   }
+  let justOpened = false;
+  if(curSong){
+    const id  = curSong.id;
+    const tot = timeline.length;
+    const arr = curFast ? best.f : best.n;
+    const prev = Math.min(arr[id], tot);
+    const rec  = together > prev;
+    const wasOpen = fastOpen(id);
+    if(rec){ arr[id] = together; saveBest(); }
+    lastStat = { id:id, fast:curFast, n:together, tot:tot, best:Math.max(prev, together), rec:rec };
+    justOpened = !curFast && !wasOpen && fastOpen(id);
+  }
+  renderStat();
   mode = MODE.FINALE;
   finaleT = 0;
   finaleRings = []; bubbles = [];
@@ -864,8 +1001,26 @@ function endSong(){
   gaRoundComplete(gaScene(), 'clear');
   setTimeout(function(){
     showOverlay(finaleEl, true);
-    if(wasNew && allDone()) showToast(T().unlocked);
+    /* 두 소식이 한 판에 겹치면 나중 것이 삼켜지지 않게 차례로 띄운다 */
+    const both = wasNew && allDone();
+    if(both) showToast(T().unlocked);
+    else if(justOpened) showToast(T().fastOpen);
+    if(both && justOpened) setTimeout(function(){ showToast(T().fastOpen); }, 1250);
   }, 1250);
+}
+
+/* 엔딩 카드 한 줄 — 기록이 없으면 아무것도 띄우지 않는다 (빈 칸을 강조하지 않는다) */
+function renderStat(){
+  const el = document.getElementById('fStat');
+  if(!el) return;
+  const s = lastStat, t = T();
+  if(!s || s.n <= 0){ el.hidden = true; el.textContent = ''; return; }
+  const parts = [];
+  if(s.n > 0) parts.push(t.statTogether + ' ' + s.n + '/' + s.tot);
+  if(s.rec && s.n > 0) parts.push(t.statNew);
+  else if(s.best > 0) parts.push(t.statBest + ' ' + s.best + '/' + s.tot);
+  el.textContent = parts.join(' · ');
+  el.hidden = false;
 }
 
 let hintTimer = 0;
@@ -899,8 +1054,21 @@ function renderList(){
       '<span class="mark">' + (isDone(i) ? '🌈' : '') + '</span>';
     b.querySelector('.nm').textContent = info.n;
     b.querySelector('.dsc').textContent = info.d;
-    b.addEventListener('click', function(){ startSong(i); });
+    b.addEventListener('click', function(){ startSong(i, false); });
     listEl.appendChild(b);
+    /* 빠른 비 — 보상이지 관문이 아니다. 원래 곡은 위에 그대로 남는다 */
+    if(fastOpen(i)){
+      const fb = document.createElement('button');
+      fb.className = 'song fastrow';
+      fb.innerHTML =
+        '<span class="orb">🌧️</span>' +
+        '<span class="meta"><span class="nm"></span><span class="dsc"></span></span>' +
+        '<span class="mark"></span>';
+      fb.querySelector('.nm').textContent  = info.n + ' · ' + t.fast;
+      fb.querySelector('.dsc').textContent = t.fastDesc;
+      fb.addEventListener('click', function(){ startSong(i, true); });
+      listEl.appendChild(fb);
+    }
   }
   const open = allDone();
   const f = document.createElement('button');
@@ -913,6 +1081,7 @@ function renderList(){
   f.querySelector('.dsc').textContent = open ? t.freeDesc : t.freeLocked;
   if(open) f.addEventListener('click', startFree);
   listEl.appendChild(f);
+  syncCardHint();
 }
 
 /* ==========================================================
@@ -1006,7 +1175,14 @@ function updateSong(now, jumped){
       n.hit = true;
       barGlow[n.deg] = Math.min(1.35, barGlow[n.deg] + 0.6);
       barPress[n.deg] = Math.max(barPress[n.deg], 0.45);
-      const boosted = (now - lastTap[n.deg]) < 0.22 && (now - lastTap[n.deg]) > -0.22;
+      const boosted = (now - lastTap[n.deg]) < HIT_WIN && (now - lastTap[n.deg]) > -HIT_WIN;
+      // 함께 친 음만 센다. 못 친 음은 세지도, 보여 주지도 않는다.
+      if(boosted && tapOk[n.deg] && lastTap[n.deg] !== tapUsed[n.deg]){
+        tapUsed[n.deg] = lastTap[n.deg]; together++; fireOpen[n.deg] = 0;
+      }else{
+        // 아직 아무 탭과도 만나지 않은 음 — 늦게 오는 탭에게도 같은 폭을 남겨 둔다
+        fireAt[n.deg] = now; fireOpen[n.deg] = 1;
+      }
       addRipple(n.deg, boosted ? 1.15 : 0.45);
       addSplash(n.deg, boosted ? 0.95 : 0.36);
       addSparkle(n.deg, boosted ? 1.2 : 0.3);
@@ -1496,8 +1672,11 @@ function applyLang(){
   document.getElementById('fList').textContent   = t.list;
   document.getElementById('fHome').textContent   = t.home2;
   applyStageBar();
+  renderStat();
+  /* 떠 있는 투표 물음도 언어를 따라간다 (계측 표준 v1) */
+  try{ if(gaS.voteShown && !gaS.voted) gaVoteShow(gaS.voteScene); }catch(e){}
   langBtn.textContent = t.flag;
-  document.title = t.title + ' · Rain Xylophone';
+  document.title = t.docTitle;
   renderList();
 }
 
@@ -1512,7 +1691,7 @@ sndBtn.addEventListener('click', function(){
   setSound(!soundOn);
 });
 document.getElementById('fAgain').addEventListener('click', function(){
-  if(curSong) startSong(curSong.id); else toMenu();
+  if(curSong) startSong(curSong.id, curFast); else toMenu();
 });
 document.getElementById('fList').addEventListener('click', toMenu);
 document.getElementById('freeExit').addEventListener('click', toMenu);

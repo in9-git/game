@@ -572,6 +572,22 @@ select {
 .online-bar .ot-turn { padding: 4px 10px; border-radius: 8px; }
 .online-bar .ot-turn.mine { color: #69db7c; background: rgba(105,219,124,0.14); }
 .online-bar .ot-turn.opp  { color: #c8b690; background: rgba(90,110,140,0.14); }
+/* ===== 도전 모드 연승 줄 ===== */
+.streak-bar {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center;
+  width: 100%; max-width: 432px; margin: 2px 0; font-size: 13px; font-weight: 600;
+}
+.streak-bar .sk-cur {
+  padding: 4px 10px; border-radius: 8px; color: #f3cf5e;
+  border: 1px solid #c99a3e; background: #3b2e18;
+}
+.streak-bar .sk-best {
+  padding: 4px 10px; border-radius: 8px; color: #c8b690;
+  border: 1px solid #3a2c1d; background: #1e1610;
+}
+.modal .streak-line { color: #f3cf5e; font-weight: 600; margin-bottom: 16px; }
+.modal .streak-line .sk-new { color: #ffd76b; }
+.modal .pt-line { color: #cfd8e3; font-size: 13px; margin-bottom: 12px; }
 .online-toast {
   position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
   background: rgba(26,58,92,0.96); color: #f3cf5e; border: 1px solid #c99a3e;
@@ -614,7 +630,7 @@ select {
   border-radius: 6px;
   box-shadow: 0 0 8px rgba(243,207,94,0.65);
 }
-/* J1: 미구현 모드 탭 숨김 (HIDDEN_MODES 참조) */
+/* 모드 탭 숨김 장치 — HIDDEN_MODES 에 담긴 모드만 내려간다(지금은 비어 있음) */
 .mode-tab[hidden] { display: none; }
 </style>
 </head>
@@ -677,15 +693,27 @@ const PIECE_VALUES = { king: 0, chariot: 13, cannon: 7, horse: 5, elephant: 3, g
 const DIFFICULTIES = [
   // index 0: 연습 모드 — 강하지만 너무 느리지 않게
   { name: '연습', depth: 3, random: 0.02, wasmDepth: 10, skillLevel: 18, limitStrength: false, elo: 2000 },
-  // index 1, 2: 미사용 (대전/도전 모드는 추후 별도 프로필)
+  // index 1: 미사용 (대전 모드는 사람 대 사람이라 AI 프로필이 필요 없다)
   { name: '대전', depth: 3, random: 0.02, wasmDepth: 12, skillLevel: 20, limitStrength: false, elo: 2400 },
-  { name: '도전', depth: 4, random: 0,    wasmDepth: 15, skillLevel: 20, limitStrength: false, elo: 2800 }
+  // index 2: 도전 모드의 마지막 칸 — 가장 센 프로필. 연승 5부터 여기까지 올라온다.
+  { name: '도전', depth: 4, random: 0,    wasmDepth: 15, skillLevel: 20, limitStrength: false, elo: 2800 },
+  // index 3~7: 도전 사다리의 아래 칸들. 첫 칸은 연습보다 확실히 약하다 —
+  // 도전은 '이길 수 있는 첫 판'에서 시작해 연승만큼 세지는 곳이지, 처음부터 벽이 아니다.
+  { name: '도전1', depth: 1, random: 0.35, wasmDepth: 1, skillLevel: 0,  limitStrength: true,  elo: 1400 },
+  { name: '도전2', depth: 2, random: 0.20, wasmDepth: 2, skillLevel: 3,  limitStrength: true,  elo: 1600 },
+  { name: '도전3', depth: 2, random: 0.10, wasmDepth: 4, skillLevel: 7,  limitStrength: true,  elo: 1800 },
+  { name: '도전4', depth: 3, random: 0.05, wasmDepth: 6, skillLevel: 11, limitStrength: true,  elo: 2000 },
+  { name: '도전5', depth: 3, random: 0.02, wasmDepth: 9, skillLevel: 15, limitStrength: true,  elo: 2300 }
 ];
 
-// J1: 첫 화면 모드 탭 중 '도전 모드'는 아직 미구현이라 화면에서 내린다(alert 스텁 제거).
-// 탭 마크업·gameModes 번역·AI 프로필은 그대로 두었으니, 구현되면 이 배열에서 'challenge' 만
-// 빼면 탭과 진입이 함께 돌아온다. 스텁 전용 문구였던 LANG.comingSoon 은 함께 지웠다.
-const HIDDEN_MODES = ['challenge'];
+// 도전 사다리 — 연승 수(streak.cur)가 그대로 칸 번호가 된다. 0연승이면 제일 아래 칸.
+// 지면 연승이 0으로 끊기므로 사다리도 함께 내려간다.
+const CHALLENGE_LADDER = [3, 4, 5, 6, 7, 2];
+
+// 화면에서 내릴 모드 탭 목록. 지금은 비어 있다 — 연습·대전·도전 셋 다 열려 있다.
+// (J1 때 미구현이던 '도전'을 여기 담아 두었고, J3 에서 구현하면서 뺐다.)
+// 장치 자체는 남겨 둔다: 다음에 또 미완성 모드가 생기면 이름만 넣으면 탭·진입이 함께 잠긴다.
+const HIDDEN_MODES = [];
 
 // Palace boundaries
 function inPalace(col, row, team) {
@@ -1143,6 +1171,15 @@ function isCheckmate(board, team) {
 // 이렇게 하면 무르기·온라인 재생 등 판이 바뀌는 모든 경로가 기보만 맞으면 자동으로 따라온다.
 const REPEAT_LIMIT = 3;
 
+// ============================================
+// 수 제한 · 점수 판정
+// ============================================
+// 반복금지가 양쪽을 셔플에 가두면 외통도 왕잡기도 안 나와 판이 영영 안 끝난다.
+// 그래서 수(手)가 MOVE_LIMIT 에 닿으면 장기 점수제로 판을 닫는다.
+// 한(漢)에게 덤 1.5점 — 반 점이라 점수가 같아지는 일이 없다(= 무승부 없음).
+const MOVE_LIMIT = 200;
+const HAN_BONUS = 1.5;
+
 function positionKey(board, turn) {
   let s = turn + '|';
   for (let r = 0; r < ROWS; r++)
@@ -1442,6 +1479,9 @@ const LANG = {
     diff: ['하','중','상'],
     capEmpty: t => `${t} 포획 없음`,
     gameModes: { practice: '연습 모드', match: '대전 모드', challenge: '도전 모드' },
+    streakCur: n => `연승 ${n}`, streakBest: n => `최고 ${n}`,
+    streakNew: '🎉 최고 기록 경신!',
+    byPoints: (n, a, b) => `${n}수에 닿아 점수로 판정했어요 · 초 ${a} : 한 ${b} (한 덤 1.5)`,
     htmlLang: 'ko', docTitle: '베이비장기 - Baby Janggi',
     ariaEmpty: '빈 칸', ariaSide: { cho: '초', han: '한' },
     ariaPieces: { king: '궁', guard: '사', horse: '마', elephant: '상', chariot: '차', cannon: '포', soldier: '졸' },
@@ -1476,6 +1516,9 @@ const LANG = {
     diff: ['弱','中','強'],
     capEmpty: t => `${t}の捕獲なし`,
     gameModes: { practice: '練習モード', match: '対戦モード', challenge: '挑戦モード' },
+    streakCur: n => `連勝 ${n}`, streakBest: n => `最高 ${n}`,
+    streakNew: '🎉 自己ベスト更新！',
+    byPoints: (n, a, b) => `${n}手に達したので点数で判定しました · 楚 ${a} : 漢 ${b}（漢 デム1.5）`,
     htmlLang: 'ja', docTitle: 'ベビー将棋 - Baby Janggi',
     ariaEmpty: '空きマス', ariaSide: { cho: '楚', han: '漢' },
     ariaPieces: { king: '王', guard: '士', horse: '馬', elephant: '象', chariot: '車', cannon: '包', soldier: '兵' },
@@ -1510,6 +1553,9 @@ const LANG = {
     diff: ['Easy','Mid','Hard'],
     capEmpty: t => `${t} no captures`,
     gameModes: { practice: 'Practice', match: 'Match', challenge: 'Challenge' },
+    streakCur: n => `Streak ${n}`, streakBest: n => `Best ${n}`,
+    streakNew: '🎉 New best streak!',
+    byPoints: (n, a, b) => `Hit the ${n}-move limit — decided on points · Cho ${a} : Han ${b} (Han +1.5)`,
     htmlLang: 'en', docTitle: 'Baby Janggi',
     ariaEmpty: 'empty', ariaSide: { cho: 'Cho', han: 'Han' },
     ariaPieces: { king: 'King', guard: 'Guard', horse: 'Horse', elephant: 'Elephant', chariot: 'Chariot', cannon: 'Cannon', soldier: 'Soldier' },
@@ -1556,7 +1602,8 @@ let state = {
   mySide: null,        // CHO | HAN — 내가 조작하는 편
   onlinePhase: null,   // null | 'lobby' | 'connecting' | 'waiting' | 'playing' | 'full' | 'lost'
   onlineMsg: '',       // 일시 상태 메시지(상대 입장/퇴장 등)
-  notice: ''           // 규칙 안내 토스트(반복수 금지 등) — 모드 무관
+  notice: '',          // 규칙 안내 토스트(반복수 금지 등) — 모드 무관
+  byPoints: null       // 수 제한에 걸려 점수로 판정된 판이면 { cho, han }
 };
 
 // 온라인 연결(모듈 스코프) — 렌더 churn 회피를 위해 ws/handler 는 state 밖에 둔다
@@ -1675,12 +1722,17 @@ async function wasmGetBestMove(depth, skillLevel, limitStrength, elo) {
   });
 }
 
+// 판 세대 번호 — resetGame()/clearOnlineBoard() 마다 오른다. 뒤늦게 깨어난 AI 콜백이
+// 자기 세대와 다르면 그 수를 버린다(새 판에 한(漢)이 선수를 두고 wasmMoveHistory 가 어긋나는 것을 막는다).
+let aiToken = 0;
+
 let bgmStarted = false;
 function tryStartBGM() {
   if (!bgmStarted) { bgmStarted = true; if (state.bgmOn) playBGM(); }
 }
 
 function resetGame() {
+  aiToken++; // 생각 중이던 AI 의 응수는 이 판에 떨어지지 않는다
   state.board = createInitialBoard();
   state.turn = CHO;
   state.selected = null;
@@ -1698,6 +1750,11 @@ function resetGame() {
   repeatCache = { sig: null, set: null };
   undoStack = [];
   gaRoundActive = false;
+  streakScored = false;
+  streakResult = null;
+  state.byPoints = null;
+  // 도전은 '다시 하기'로 돌아올 때마다 지금 연승에 맞는 사다리 칸으로 다시 맞춘다
+  if (state.gameMode === 'challenge' && state.mode === 'ai') state.difficulty = challengeDifficulty();
   bgmStarted = false;
   // BGM이 이미 재생 중이면 idle로 (첫 수 두면 battle로 전환됨)
   if (bgmAudio) switchBGM('idle');
@@ -1840,6 +1897,7 @@ function applySelectionDOM() {
 // 추천 계산은 무거우니(minimax depth=2) 클릭 응답을 막지 않도록 비동기로 미룸
 let recommendToken = 0;
 function scheduleRecommend(team) {
+  if (state.gameMode === 'challenge') return; // 도전 모드는 훈수 없이 둔다
   const myToken = ++recommendToken;
   setTimeout(() => {
     if (myToken !== recommendToken) return; // 더 새로운 요청이 들어왔으면 폐기
@@ -1864,6 +1922,36 @@ function endIfKingCapture(board, toC, toR, moverTeam) {
   state.recommended = [];
   state.aiThinking = false;
   playWinSound(moverTeam);
+  render();
+  return true;
+}
+
+// 수 제한에 닿았다 — 남은 말값으로 판을 닫는다(한 덤 1.5점).
+function teamScore(board, team) {
+  let sum = 0;
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++) {
+      const p = board[r][c];
+      if (p && p.team === team) sum += PIECE_VALUES[p.type];
+    }
+  return sum;
+}
+
+// 이 판이 수 제한에 닿았으면 점수로 끝내고 true. 온라인은 양쪽이 따로 끝내면 어긋나므로 제외.
+function checkMoveLimit() {
+  if (state.gameOver) return false;
+  if (state.mode !== 'ai') return false;
+  if (state.moveHistory.length < MOVE_LIMIT) return false;
+  const cho = teamScore(state.board, CHO);
+  const han = teamScore(state.board, HAN) + HAN_BONUS;
+  state.gameOver = true;
+  state.winner = cho > han ? CHO : HAN;
+  state.byPoints = { cho: cho, han: han };
+  state.selected = null;
+  state.legalMoves = [];
+  state.recommended = [];
+  state.aiThinking = false;
+  playWinSound(state.winner);
   render();
   return true;
 }
@@ -1917,6 +2005,9 @@ function executeMove(fromC, fromR, toC, toR) {
       return;
     }
 
+    // 수 제한 — 여기서 판을 닫지 않으면 반복금지에 갇힌 국면이 영영 안 끝난다
+    if (checkMoveLimit()) return;
+
     // 장군 → 음성만 재생, 시각적 하이라이트/상태바 표시 없음
     if (isInCheck(state.board, enemy)) {
       playJanggunSound(state.turn);
@@ -1936,8 +2027,11 @@ function executeMove(fromC, fromR, toC, toR) {
     if (state.mode === 'ai' && state.turn === HAN && !state.gameOver) {
       state.aiThinking = true;
       render();
+      const myAiToken = aiToken; // 이 판의 세대 — 깨어났을 때 달라졌으면 그 수는 버린다
       setTimeout(async () => {
+        if (myAiToken !== aiToken) return;                       // 생각을 시작하기도 전에 새 판이 열렸다
         let aiMove = await getAIMove(state.board, HAN, state.difficulty);
+        if (myAiToken !== aiToken) return;                       // 생각하는 동안 새 판이 열렸다 — 폐기
         // 방어: 엔진(WASM) 데싱크로 '초(내 편)' 말이나 비합법 수가 와도 그대로 두지 않는다.
         aiMove = ensureLegalAIMove(aiMove, HAN);
         if (aiMove) {
@@ -1977,6 +2071,8 @@ function executeMove(fromC, fromR, toC, toR) {
               state.winner = HAN;
               state.recommended = [];
               playWinSound(HAN);
+            } else if (checkMoveLimit()) {
+              return; // 수 제한 도달 — checkMoveLimit 안에서 렌더까지 끝냈다
             } else {
               // 장군 → 음성만 재생
               if (isInCheck(state.board, CHO)) {
@@ -2016,6 +2112,8 @@ function render() {
   const app = document.getElementById('app');
   // 셀 크기는 모듈 스코프 헬퍼가 사용
 
+  // 도전 모드: 판이 끝나면 연승 기록을 반영한다 — 내부에서 판당 1회 보장
+  if (state.gameOver && state.gameMode === 'challenge' && state.mode === 'ai') recordStreak();
   // GA: 판 완결(장군/기권 등 모든 종료 경로가 render 를 거친다) — 내부에서 판당 1회 보장
   if (state.gameOver && gaRoundActive) gaRoundComplete(gaScene(), gaResult());
 
@@ -2118,6 +2216,8 @@ function render() {
 
   // ---- 온라인 대전 UI 조각 ----
   const isOnline = state.mode === 'online';
+  // 도전 모드 — 가장 센 AI 를 도움 없이 상대한다(훈수·무르기 없음, 초보 모드는 남긴다)
+  const isChallenge = !isOnline && state.gameMode === 'challenge';
   const O = LANG[state.lang].online;
   const flippedClass = (isOnline && state.mySide === HAN) ? ' flipped' : '';
   let onlineBar = '';
@@ -2134,6 +2234,11 @@ function render() {
       + `<span class="ot-side ${sideCls}">${O.side(sideName)}</span>`
       + turnTag + `</div>`;
   }
+  // 도전 모드 상태 줄 — 저장돼 있는 원값 두 정수를 그때그때 문구로 만든다
+  const streakBar = isChallenge
+    ? `<div class="streak-bar"><span class="sk-cur">${L.streakCur(streak.cur)}</span><span class="sk-best">${L.streakBest(streak.best)}</span></div>`
+    : '';
+
   const onlineToast = (isOnline && state.onlineMsg)
     ? `<div class="online-toast">${state.onlineMsg}</div>`
     : (state.notice ? `<div class="online-toast rule">${state.notice}</div>` : '');
@@ -2156,59 +2261,66 @@ function render() {
     controlsHtml = `<div class="controls"><div class="controls-row">`
       + `<button class="btn-start" onclick="resetGame()">${L.newGame}</button>`
       + (state.gameOver ? `<button class="btn-stop" onclick="quitGame()">${L.quit}</button>` : '')
-      + `<button class="btn-toggle" onclick="undoMove()"${canUndo() ? '' : ' disabled'}>${L.undo}</button>`
+      // 도전 모드에서는 무르기·훈수 버튼을 내린다. 초보(합법수 점)는 규칙을 보여 주는 장치라 남긴다.
+      + (isChallenge ? '' : `<button class="btn-toggle" onclick="undoMove()"${canUndo() ? '' : ' disabled'}>${L.undo}</button>`)
       + `<button class="btn-toggle ${state.beginnerMode ? 'active' : ''}" onclick="toggleBeginnerMode()">${L.beginner}</button>`
-      + `<button class="btn-toggle ${state.showRecommend ? 'active' : ''}" onclick="toggleRecommend()">${L.hint}</button>`
+      + (isChallenge ? '' : `<button class="btn-toggle ${state.showRecommend ? 'active' : ''}" onclick="toggleRecommend()">${L.hint}</button>`)
       + `<button class="btn-toggle ${state.koreanPieces ? 'active' : ''}" onclick="toggleKorean()">${L.korean}</button>`
       + `<button class="btn-toggle ${state.bgmOn ? 'active' : ''}" onclick="toggleBgm()">${L.bgm}</button>`
       + `</div></div>`;
   }
 
   // 오버레이 — 온라인 로비/대기/만석/끊김/종료
+  // 배려: 모달은 스크린리더에 dialog 로 알린다. 제목 h2#modalTitle 이 이름이 되고,
+  //       restoreKbFocus 가 컨테이너(tabindex=-1)를 짚으면 제목과 본문(연승 줄)이 함께 읽힌다.
+  //       한 번에 하나만 뜨므로 id 는 고정값으로 충분하다.
+  const MODAL_A11Y = ' role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="modalTitle"';
   let overlayHtml = '';
   if (isOnline && state.onlinePhase === 'lobby') {
-    overlayHtml = `<div class="modal-overlay"><div class="modal online-lobby" onclick="event.stopPropagation()">`
-      + `<h2>${O.title}</h2><p>${O.desc}</p>`
+    overlayHtml = `<div class="modal-overlay"><div class="modal online-lobby"${MODAL_A11Y} onclick="event.stopPropagation()">`
+      + `<h2 id="modalTitle">${O.title}</h2><p>${O.desc}</p>`
       + `<button class="btn-start" style="display:block;width:100%;margin:0 0 14px;" onclick="onlineCreate()">${O.create}</button>`
       + `<div class="lobby-join"><input id="roomCodeInput" maxlength="6" placeholder="${O.codePh}" autocomplete="off" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')onlineJoinFromInput()">`
       + `<button class="btn-toggle" onclick="onlineJoinFromInput()">${O.enter}</button></div>`
       + `<button onclick="onlineLeave(false)" style="background:#555;margin-top:16px;">${O.leave}</button>`
       + `</div></div>`;
   } else if (isOnline && state.onlinePhase === 'connecting') {
-    overlayHtml = `<div class="modal-overlay"><div class="modal" onclick="event.stopPropagation()"><h2 class="thinking">${O.connecting}</h2></div></div>`;
+    overlayHtml = `<div class="modal-overlay"><div class="modal"${MODAL_A11Y} onclick="event.stopPropagation()"><h2 class="thinking" id="modalTitle">${O.connecting}</h2></div></div>`;
   } else if (isOnline && state.onlinePhase === 'waiting') {
-    overlayHtml = `<div class="modal-overlay"><div class="modal" onclick="event.stopPropagation()">`
-      + `<h2>${O.waiting}</h2>`
+    overlayHtml = `<div class="modal-overlay"><div class="modal"${MODAL_A11Y} onclick="event.stopPropagation()">`
+      + `<h2 id="modalTitle">${O.waiting}</h2>`
       + `<div class="room-code-big" onclick="copyRoomCode()" title="${O.copy}">${onlineConn ? onlineConn.code : ''}</div>`
       + `<p>${O.hint}</p>`
       + `<button class="btn-toggle" onclick="copyRoomCode()">${O.copy}</button>`
       + `<button onclick="onlineLeave(false)" style="background:#555;margin-left:8px;">${O.leave}</button>`
       + `</div></div>`;
   } else if (isOnline && state.onlinePhase === 'full') {
-    overlayHtml = `<div class="modal-overlay"><div class="modal" onclick="event.stopPropagation()">`
-      + `<h2>${O.full}</h2>`
+    overlayHtml = `<div class="modal-overlay"><div class="modal"${MODAL_A11Y} onclick="event.stopPropagation()">`
+      + `<h2 id="modalTitle">${O.full}</h2>`
       + `<button onclick="openOnlineLobby()">${O.retry}</button>`
       + `<button onclick="onlineLeave(false)" style="background:#555;margin-left:8px;">${O.leave}</button>`
       + `</div></div>`;
   } else if (isOnline && state.onlinePhase === 'lost') {
-    overlayHtml = `<div class="modal-overlay"><div class="modal" onclick="event.stopPropagation()">`
-      + `<h2>${O.lost}</h2>`
+    overlayHtml = `<div class="modal-overlay"><div class="modal"${MODAL_A11Y} onclick="event.stopPropagation()">`
+      + `<h2 id="modalTitle">${O.lost}</h2>`
       + `<button onclick="onlineReconnect()">${O.retry}</button>`
       + `<button onclick="onlineLeave(false)" style="background:#555;margin-left:8px;">${O.leave}</button>`
       + `</div></div>`;
   } else if (state.gameOver && isOnline) {
     const iWon = state.winner === state.mySide;
-    overlayHtml = `<div class="modal-overlay"><div class="modal" onclick="event.stopPropagation()">`
-      + `<h2>${iWon ? O.win : O.lose}</h2>`
+    overlayHtml = `<div class="modal-overlay"><div class="modal"${MODAL_A11Y} onclick="event.stopPropagation()">`
+      + `<h2 id="modalTitle">${iWon ? O.win : O.lose}</h2>`
       + (state.onlineMsg ? `<p>${state.onlineMsg}</p>` : '')
       + gaVoteHtml()
       + `<button onclick="onlineRematch()">${O.rematch}</button>`
       + `<button onclick="onlineLeave(false)" style="background:#555;margin-left:8px;">${O.leave}</button>`
       + `</div></div>`;
   } else if (state.gameOver) {
-    overlayHtml = `<div class="modal-overlay" onclick="resetGame()"><div class="modal" onclick="event.stopPropagation()">`
-      + `<h2>${L.win(state.winner === CHO ? L.cho : L.han)}</h2>`
+    overlayHtml = `<div class="modal-overlay" onclick="resetGame()"><div class="modal"${MODAL_A11Y} onclick="event.stopPropagation()">`
+      + `<h2 id="modalTitle">${L.win(state.winner === CHO ? L.cho : L.han)}</h2>`
       + `<p>${state.winner === CHO ? (state.mode === 'ai' ? L.winAI : L.winP(L.cho)) : (state.mode === 'ai' ? L.loseAI : L.winP(L.han))}</p>`
+      + (state.byPoints ? `<p class="pt-line">${L.byPoints(MOVE_LIMIT, state.byPoints.cho, state.byPoints.han)}</p>` : '')
+      + streakModalHtml(isChallenge, L)
       + gaVoteHtml()
       + `<button onclick="resetGame()">${L.retry}</button>`
       + `<button onclick="quitGame()" style="background:#555;margin-left:8px;">${L.quit}</button>`
@@ -2224,11 +2336,14 @@ function render() {
     </div>
     <div class="mode-tabs">
       ${['practice','match','challenge'].map(m =>
-        // J1: HIDDEN_MODES 에 든 모드는 hidden 으로 내린다 (마크업·번역은 그대로 보존)
-        `<button class="mode-tab ${state.gameMode === m ? 'active' : ''}"${HIDDEN_MODES.indexOf(m) >= 0 ? ' hidden' : ''} onclick="changeGameMode('${m}')">${L.gameModes[m]}</button>`
+        // HIDDEN_MODES 에 든 모드만 hidden 으로 내린다 (마크업·번역은 그대로 보존)
+        // 배려: 선택 상태가 .active 색으로만 전해지면 스크린리더가 세 탭을 구별하지 못한다.
+        //       토글 버튼 묶음이므로 aria-pressed 로 알린다(role=tab/tablist 는 과한 구조).
+        `<button class="mode-tab ${state.gameMode === m ? 'active' : ''}" aria-pressed="${state.gameMode === m}"${HIDDEN_MODES.indexOf(m) >= 0 ? ' hidden' : ''} onclick="changeGameMode('${m}')">${L.gameModes[m]}</button>`
       ).join('')}
     </div>
     ${onlineBar}
+    ${streakBar}
     <div class="game-layout">
       <div class="board-stack">
         <div class="trophy-bar top han ${!state.gameOver && state.turn === HAN ? 'active' : ''}">${sortByValue(state.captured.cho).map(p => {
@@ -2311,8 +2426,11 @@ function focusEl(el) {
 }
 function restoreKbFocus(snap, hasOverlay) {
   if (hasOverlay) {
-    // 모달이 새로 떴다 — 반상 뒤가 아니라 모달 안으로 데려간다(엔딩의 투표·다시하기가 여기 있다)
-    if (snap) focusEl(document.querySelector('.modal button, .modal input'));
+    // 모달이 새로 떴다 — 반상 뒤가 아니라 모달 안으로 데려간다(엔딩의 투표·다시하기가 여기 있다).
+    // 컨테이너(role=dialog)를 먼저 짚어야 제목과 본문이 함께 낭독된다. 못 받으면 예전처럼 첫 버튼으로.
+    if (snap) {
+      if (!focusEl(document.querySelector('.modal'))) focusEl(document.querySelector('.modal button, .modal input'));
+    }
     return;
   }
   if (!snap) return;
@@ -2418,22 +2536,39 @@ function changeMode(mode) {
   resetGame();
 }
 
+// 도전에 들어가기 직전의 훈수 설정. 도전 중에는 바꿀 수 없으니 단순 저장·복원으로 충분하다.
+// (온라인은 onlineLeave(false) 에서 되돌리는 것과 같은 대칭)
+let hintBeforeChallenge = null;
+
 function changeGameMode(newMode) {
-  // J1: 숨긴 모드('도전')는 탭이 없으므로 평소엔 도달하지 않지만, 직접 호출도 조용히 무시한다.
-  //     구현되면 HIDDEN_MODES 에서 빼는 것만으로 탭·진입이 함께 돌아온다.
+  // HIDDEN_MODES 에 담긴 모드는 탭도 없고 직접 호출도 조용히 무시한다(지금은 비어 있음).
   if (HIDDEN_MODES.indexOf(newMode) >= 0) return;
   if (newMode === 'match') {
     openOnlineLobby();
     return;
   }
-  // practice — 온라인 연결 중이면 조용히 정리
+  const prevMode = state.gameMode;
+  // practice · challenge — 온라인 연결 중이면 조용히 정리
   if (state.mode === 'online') onlineLeave(true);
   state.gameMode = newMode;
   state.mode = 'ai';
   state.onlinePhase = null;
   state.mySide = null;
-  // Practice mode uses index 0 (강한 AI)
-  state.difficulty = 0;
+  if (newMode === 'challenge') {
+    // 도전: 사다리 칸(연승만큼 센 프로필) + 도움 없이. 훈수는 끄고 버튼도 내린다(무르기도 함께).
+    state.difficulty = challengeDifficulty();
+    if (prevMode !== 'challenge') hintBeforeChallenge = state.showRecommend; // 돌아올 때 되돌릴 값
+    state.showRecommend = false;
+    state.recommended = [];
+  } else {
+    // 도전에서 돌아왔다 — 껐던 훈수를 원래대로 (도전에 들른 적 없으면 건드리지 않는다)
+    if (prevMode === 'challenge' && hintBeforeChallenge !== null) {
+      state.showRecommend = hintBeforeChallenge;
+      hintBeforeChallenge = null;
+    }
+    // Practice mode uses index 0 (강한 AI)
+    state.difficulty = 0;
+  }
   resetGame();
 }
 
@@ -2472,6 +2607,7 @@ function flashOnlineMsg(text, ms = 2600) {
 
 // 빈 보드로 초기화 (온라인 진입/리셋 공용)
 function clearOnlineBoard() {
+  aiToken++; // AI 판에서 곧장 넘어와도 생각 중이던 응수가 온라인 판에 떨어지지 않는다
   state.board = createInitialBoard();
   state.turn = CHO;
   state.selected = null;
@@ -2486,6 +2622,7 @@ function clearOnlineBoard() {
   state.inCheck = null;
   state.lastMoveGhost = null;
   state.notice = '';
+  state.byPoints = null;
   repeatCache = { sig: null, set: null };
   wasmMoveHistory = [];
   undoStack = [];
@@ -2717,6 +2854,7 @@ function changeDifficulty(val) {
 }
 
 function toggleRecommend() {
+  if (state.gameMode === 'challenge') return; // 도전 모드는 훈수가 없다 — 조용히 무시
   state.showRecommend = !state.showRecommend;
   state.recommended = [];
   render();
@@ -2750,6 +2888,8 @@ function pushUndoSnapshot() {
   if (undoStack.length > 120) undoStack.shift();
 }
 function canUndo() {
+  // 도전 모드는 무르기가 없다 — 버튼도 없고 undoMove() 직접 호출도 여기서 조용히 막힌다
+  if (state.gameMode === 'challenge') return false;
   return state.mode === 'ai' && !state.aiThinking && undoStack.length > 0;
 }
 function undoMove() {
@@ -2777,12 +2917,74 @@ function undoMove() {
   if (state.showRecommend) scheduleRecommend(state.turn);
 }
 
+// ============================================
+// 연승 기록 (도전 모드 전용)
+// ============================================
+// 저장은 원값 두 정수(cur·best)만. "연승 3 · 최고 5" 같은 문구는 render 에서 그때 만든다.
+const STREAK_KEY = 'in9-janggi-streak';
+// NaN·음수·문자열뿐 아니라 Infinity 도 막는다(1e400 같은 값이 상태줄에 그대로 찍히면 안 된다)
+function saneCount(v) {
+  const n = Math.floor(Number(v));
+  return Number.isFinite(n) ? Math.max(0, n) : 0;
+}
+function loadStreak() {
+  try {
+    const o = JSON.parse(localStorage.getItem(STREAK_KEY));
+    if (o && typeof o === 'object') {
+      const cur = saneCount(o.cur);
+      const best = saneCount(o.best);
+      return { cur: cur, best: Math.max(best, cur) }; // best < cur 인 낡은 값도 말이 되게 올린다
+    }
+  } catch (e) {}
+  return { cur: 0, best: 0 }; // 깨진 값·구버전·저장 불가 — 모두 여기로 떨어진다
+}
+function saveStreak() {
+  try { localStorage.setItem(STREAK_KEY, JSON.stringify({ cur: streak.cur, best: streak.best })); } catch (e) {}
+}
+let streak = loadStreak();
+let streakScored = false;   // 판당 1회 보장 (render 는 종료 후에도 여러 번 돈다)
+let streakResult = null;    // 이번 판 표기용 파생값 — 저장하지 않는다
+
+// 지금 연승으로 결정되는 도전 사다리 칸 → DIFFICULTIES 인덱스
+function challengeLevel() {
+  const n = (streak && Number.isFinite(streak.cur)) ? streak.cur : 0;
+  return Math.min(Math.max(n, 0), CHALLENGE_LADDER.length - 1);
+}
+function challengeDifficulty() {
+  return CHALLENGE_LADDER[challengeLevel()];
+}
+
+// 도전 모드에서 판이 끝났을 때만 부른다. 연습·온라인은 기록에 영향이 없다.
+function recordStreak() {
+  if (streakScored) return;
+  streakScored = true;
+  const won = state.winner === CHO;   // 초(내 편) 승리만 연승. 패·무는 끊긴다.
+  const prevBest = streak.best;
+  if (won) {
+    streak.cur += 1;
+    if (streak.cur > streak.best) streak.best = streak.cur;
+  } else {
+    streak.cur = 0;
+  }
+  // 경신 문구는 세워 둔 기록이 있을 때만 — 첫 승(최고 0→1)은 경신할 기록이 없던 판이다
+  streakResult = { cur: streak.cur, best: streak.best, newBest: won && prevBest >= 1 && streak.best > prevBest };
+  saveStreak();
+}
+
+// 종료 모달의 연승 한 줄 — 이번 판 기록과, 경신했으면 그 표시까지
+function streakModalHtml(isChallenge, L) {
+  if (!isChallenge || !streakResult) return '';
+  return `<p class="streak-line">${L.streakCur(streakResult.cur)} · ${L.streakBest(streakResult.best)}`
+    + (streakResult.newBest ? ` <span class="sk-new">${L.streakNew}</span>` : '')
+    + `</p>`;
+}
+
 /* ---- GA4 portal standard v1 (2026-08-19) ---- */
 var GA_GAME='janggi';
 var gaS={started:false,completed:false,voted:false,voteShown:false,voteScene:'main',t0:0};
 var gaRoundActive=false;
 function gaLang(){ try{ return state.lang || 'ko'; }catch(e){ return 'ko'; } }
-function gaScene(){ try{ return state.mode==='online' ? 'online' : 'practice'; }catch(e){ return 'main'; } }
+function gaScene(){ try{ if(state.mode==='online')return 'online'; return state.gameMode==='challenge' ? 'challenge' : 'practice'; }catch(e){ return 'main'; } }
 function gaResult(){
   try{
     if(state.mode==='online') return state.winner===state.mySide ? 'clear' : 'fail';
@@ -2791,9 +2993,15 @@ function gaResult(){
 }
 function gaSend(name,p){ try{ if(typeof gtag!=='function')return; p=p||{}; p.game_id=GA_GAME; if(!p.lang)p.lang=gaLang(); gtag('event',name,p);}catch(e){} }
 function gaRoundStart(scene){
+  var sc=scene||'main';
   gaS.t0=Date.now();
-  if(gaS.completed){ gaS.completed=false; gaSend('game_step',{step:'replay',scene:scene||'main'}); return; }
-  if(gaS.started)return; gaS.started=true; gaSend('game_step',{step:'start',scene:scene||'main'});
+  /* 표준 v1: 페이지의 첫 판만 start, 그 뒤 모든 판은 replay. scene 은 그때의 gaScene() 값 그대로 둔다.
+     executeMove 의 gaRoundActive 가 판당 gaRoundStart 1회를 보장하므로 판 수(start+replay)는 실제 판 수와 맞고,
+     모드를 갈아탄 뒤 중도 포기해도 다음 판의 step 이 빠지지 않는다.
+     completed 는 판마다 새로 여는 '이 판 완결 보고함' 래치 — 여기서만 내린다. */
+  gaS.completed=false;
+  if(!gaS.started){ gaS.started=true; gaSend('game_step',{step:'start',scene:sc}); return; }
+  gaSend('game_step',{step:'replay',scene:sc});
 }
 function gaRoundComplete(scene,result,extra){
   if(gaS.completed)return; gaS.completed=true;

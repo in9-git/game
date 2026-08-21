@@ -311,6 +311,11 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
 .ovbtns .btn{flex:1}
 .ovbtns a.btn{display:flex;align-items:center;justify-content:center;text-decoration:none}
 #dayLine{margin-top:11px;font-size:.72rem;color:var(--ink);font-weight:600;line-height:1.6;opacity:.85}
+#dayStats{margin-top:8px}
+.daystat{font-size:.7rem;font-weight:700;line-height:1.5}
+.daystat[hidden]{display:none}
+#dayCompare{color:var(--ink)}
+#dayTally{color:var(--ink);font-size:.69rem;white-space:pre-line}
 
 @media (max-width:340px){
   .sw{width:40px}.sw .dot{width:34px;height:34px}
@@ -403,6 +408,10 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
     <h2 id="dTitle"></h2>
     <div class="h2sub" id="dSub"></div>
     <div id="dayLine"></div>
+    <div id="dayStats">
+      <div class="daystat" id="dayCompare" hidden></div>
+      <div class="daystat" id="dayTally" hidden></div>
+    </div>
     <div class="h2sub" id="dGalLabel" style="margin-top:15px"></div>
     <div id="gallery"></div>
     <div class="ga-vote" id="gaVote" hidden>
@@ -443,6 +452,9 @@ ko:{
   nextCust:'다음 손님 →', closeShop:'오늘 마감하기 🌙',
   dayTitle:'오늘 장사 끝!', daySub:'내일 또 만나요',
   dayLine:'오늘 케이크 {n}개를 만들었어요.\n손님들 모두 웃으며 돌아갔답니다.',
+  dayCompare:'지난 판 {a}★ → 이번 판 {b}★',
+  dayKeep:'이번 판도 {b}★ 모았어요',
+  dayTally:'{d}번째 영업\n지금까지 모은 별 {s}★',
   galLabel:'오늘 만든 케이크',
   again:'다시 하기', homeBtn:'홈으로',
   sheets:['바닐라','딸기','초코','말차','베리'],
@@ -472,6 +484,9 @@ ja:{
   nextCust:'つぎのお客さん →', closeShop:'本日 閉店する 🌙',
   dayTitle:'本日の営業しゅうりょう！', daySub:'また明日ね',
   dayLine:'今日はケーキを{n}個つくりました。\nお客さんはみんな笑顔で帰りました。',
+  dayCompare:'まえの回 {a}★ → 今回 {b}★',
+  dayKeep:'今回も {b}★ あつめました',
+  dayTally:'{d}回目の営業\nこれまでに あつめた星 {s}★',
   galLabel:'今日つくったケーキ',
   again:'もういちど', homeBtn:'ホームへ',
   sheets:['バニラ','いちご','チョコ','まっちゃ','ベリー'],
@@ -501,6 +516,9 @@ en:{
   nextCust:'Next guest →', closeShop:'Close the shop 🌙',
   dayTitle:"Shop's closed!", daySub:'See you tomorrow',
   dayLine:'You baked {n} cakes today.\nEvery guest left with a smile.',
+  dayCompare:'Last round {a}★ → This round {b}★',
+  dayKeep:'You collected {b}★ this round',
+  dayTally:'Round {d}\n{s}★ collected so far',
   galLabel:"Today's cakes",
   again:'Play again', homeBtn:'Home',
   sheets:['Vanilla','Berry','Choco','Matcha','Grape'],
@@ -514,7 +532,7 @@ en:{
 };
 var FLAGS={ko:'🇰🇷',ja:'🇯🇵',en:'🇬🇧'};
 var LANG_ORDER=['ko','ja','en'];
-var LANG_KEY='in9-lang', SND_KEY='squishy-cake-sound';
+var LANG_KEY='in9-lang', SND_KEY='squishy-cake-sound', PROG_KEY='squishy-cake-progress';
 
 function lsGet(k){ try{return localStorage.getItem(k);}catch(e){return null;} }
 function lsSet(k,v){ try{localStorage.setItem(k,v);}catch(e){} }
@@ -989,11 +1007,66 @@ var game={
   order:0, step:0, cake:newCake(),
   target:null, custIdx:0, custPool:[],
   done:[], sheetSel:0, creamSel:0, topSel:0,
-  finished:false, resultOpen:false
+  finished:false, resultOpen:false,
+  day:1, dayStat:null
 };
 
+/* ---------- progress (원값만 저장 · 표시 문구는 매번 다시 계산) ---------- */
+var PROG_V=1, MAX_DAYS=9999, MAX_TOTAL_STARS=999999, MAX_DAY_STARS=ORDERS_PER_DAY*3;
+function intIn(v,lo,hi){
+  if(typeof v!=='number'||!isFinite(v)) return lo;
+  var n=Math.floor(v);
+  return n<lo?lo:(n>hi?hi:n);
+}
+function loadProgress(){
+  var p={days:0,stars:0,lastStars:0,curStars:0,curOrders:0}, raw=null, o=null;
+  try{ raw=lsGet(PROG_KEY); }catch(e){ return p; }
+  if(typeof raw!=='string'||!raw) return p;
+  try{ o=JSON.parse(raw); }catch(e){ return p; }
+  if(!o||typeof o!=='object'||Object.prototype.toString.call(o)==='[object Array]') return p;
+  if(o.v!==PROG_V) return p;   /* 스키마 버전이 다르면 v1 규칙으로 오독하지 말고 리셋 */
+  p.days=intIn(o.days,0,MAX_DAYS);
+  p.stars=intIn(o.stars,0,MAX_TOTAL_STARS);
+  p.lastStars=intIn(o.lastStars,0,MAX_DAY_STARS);
+  p.curStars=intIn(o.curStars,0,MAX_DAY_STARS);
+  p.curOrders=intIn(o.curOrders,0,ORDERS_PER_DAY);
+  if(p.curOrders===0) p.curStars=0;
+  if(p.days===0) p.lastStars=0;   /* stars 는 중도이탈 회수분이라 보존 */
+  return p;
+}
+var prog=loadProgress();
+function saveProgress(){
+  lsSet(PROG_KEY,JSON.stringify({v:PROG_V,days:prog.days,stars:prog.stars,
+    lastStars:prog.lastStars,curStars:prog.curStars,curOrders:prog.curOrders}));
+}
+/* 지난 판이 마감 전에 끊겼으면, 그때까지 받은 별만 총계로 넘긴다 */
+if(prog.curOrders>0){
+  prog.stars=Math.min(MAX_TOTAL_STARS,prog.stars+prog.curStars);
+  prog.curStars=0; prog.curOrders=0;
+  saveProgress();
+}
+/* 하루 마감: 어제 값을 읽어 둔 뒤 오늘 값을 더해 저장 */
+function commitDay(){
+  var today=0,i;
+  for(i=0;i<game.done.length;i++) today+=game.done[i].stars;
+  game.dayStat={
+    day:clamp(prog.days+1,1,MAX_DAYS),
+    today:today,
+    prev:prog.days>0?prog.lastStars:-1,
+    total:Math.min(MAX_TOTAL_STARS,prog.stars+today)
+  };
+  prog.days=Math.min(MAX_DAYS,prog.days+1);
+  prog.stars=Math.min(MAX_TOTAL_STARS,prog.stars+today);
+  prog.lastStars=Math.min(MAX_DAY_STARS,today);
+  prog.curStars=0; prog.curOrders=0;
+  saveProgress();
+}
+/* 지나온 판 수만큼 주문 시트가 두꺼워진다 (2 → 3, 그 뒤 유지).
+   1층 고정은 금지 — 배지 '시트 n/3'·hint1full 이 3장 쌓기를 권하는 것과 어긋난다 */
+function orderLayerCap(){ return clamp(game.day+1,2,MAX_LAYERS); }
+
 function makeOrder(){
-  var n=1+ri(MAX_LAYERS);
+  var n=1+ri(orderLayerCap());
   var pal=[ri(SHEETS.length)];
   if(n>1 && Math.random()<0.6) pal.push(ri(SHEETS.length));
   var layers=[];
@@ -1023,6 +1096,7 @@ function orderToCake(o){
 
 function startDay(){
   game.order=0; game.done=[]; game.finished=false;
+  game.day=clamp(prog.days+1,1,MAX_DAYS); game.dayStat=null;
   game.custPool=CUSTF.map(function(_,i){return i;});
   for(var i=game.custPool.length-1;i>0;i--){
     var j=ri(i+1), tmp=game.custPool[i]; game.custPool[i]=game.custPool[j]; game.custPool[j]=tmp;
@@ -1050,7 +1124,7 @@ function scoreCake(){
   var tn=o.layers.length, n=c.layers.length, i;
   var sCount=1-Math.min(1,Math.abs(n-tn)/2);
   var m=0, lim=Math.min(n,tn);
-  for(i=0;i<lim;i++){ if(c.layers[i].c===o.layers[i].c) m++; }
+  for(i=0;i<lim;i++){ if(c.layers[i].c===o.layers[i]) m++; }
   var sColor=tn?m/tn:0;
   var cScore=0;
   if(c.creams.length>0){
@@ -1260,6 +1334,7 @@ function onLayerLand(i,cake){
 stepChips.forEach(function(c){
   c.addEventListener('click',function(){
     SFX.ensure();
+    if(game.finished) return;
     var s=parseInt(c.getAttribute('data-s'),10);
     if(s===game.step) return;
     endSqueeze();
@@ -1269,6 +1344,7 @@ stepChips.forEach(function(c){
 
 nextBtn.addEventListener('click',function(){
   SFX.ensure(); endSqueeze();
+  if(game.finished) return;
   if(game.step<2){ game.step++; renderStep(); SFX.tick(); }
   else{ serveCake(); }
 });
@@ -1296,6 +1372,7 @@ var squeeze={active:false,blob:null,lastX:0,pid:null};
 
 stage.addEventListener('pointerdown',function(e){
   SFX.ensure();
+  if(game.finished) return;
   var p=stagePos(e);
   if(game.step===0){
     if(game.cake.layers.length>=MAX_LAYERS){ SFX.nope(); return; }
@@ -1379,6 +1456,7 @@ function attachTrayDrag(el,idx){
   var dragging=false, moved=0, sx=0, sy=0, pid=null;
   el.addEventListener('pointerdown',function(e){
     SFX.ensure();
+    if(game.finished) return;
     dragging=true; moved=0; sx=e.clientX; sy=e.clientY; pid=e.pointerId;
     try{ el.setPointerCapture(e.pointerId); }catch(err){}
     ghost.textContent=TOPS[idx];
@@ -1398,6 +1476,7 @@ function attachTrayDrag(el,idx){
     e.preventDefault();
   });
   function up(e){
+    if(game.finished){ dragging=false; ghost.style.display='none'; pid=null; return; }
     if(!dragging||(e&&e.pointerId!==pid)) return;
     dragging=false;
     ghost.style.display='none';
@@ -1431,6 +1510,9 @@ function serveCake(){
   var res=scoreCake();
   var made=cloneCake(game.cake);
   game.done.push({cake:made,stars:res.stars,order:game.target});
+  prog.curStars=Math.min(MAX_DAY_STARS,prog.curStars+res.stars);
+  prog.curOrders=Math.min(ORDERS_PER_DAY,game.done.length);
+  saveProgress();
   SFX.serve();
   spawnSpark(CX,BASEY-cakeGeom(game.cake).topU*U-14*U,REDUCED?4:18);
   showResult(res);
@@ -1480,7 +1562,9 @@ $('#rNext').addEventListener('click',function(){
 
 /* ==================== day end ==================== */
 function closeShop(){
+  if(game.finished) return;
   game.finished=true;
+  commitDay();
   shutter.classList.add('down');
   SFX.shutter();
   setTimeout(function(){
@@ -1492,6 +1576,17 @@ function showDay(){
   $('#dTitle').textContent=t.dayTitle;
   $('#dSub').textContent=t.daySub;
   $('#dayLine').textContent=fmt(t.dayLine,game.done.length);
+  var ds=game.dayStat, cmpEl=$('#dayCompare'), tallyEl=$('#dayTally');
+  if(ds&&ds.prev>=0){
+    cmpEl.textContent=ds.today>=ds.prev
+      ? t.dayCompare.replace('{a}',ds.prev).replace('{b}',ds.today)
+      : t.dayKeep.replace('{b}',ds.today);
+    cmpEl.hidden=false;
+  }else{ cmpEl.textContent=''; cmpEl.hidden=true; }
+  if(ds){
+    tallyEl.textContent=t.dayTally.replace('{d}',ds.day).replace('{s}',ds.total);
+    tallyEl.hidden=false;
+  }else{ tallyEl.textContent=''; tallyEl.hidden=true; }
   $('#dGalLabel').textContent=t.galLabel;
   $('#dAgain').textContent=t.again;
   $('#dHome').textContent=t.homeBtn;
@@ -1516,7 +1611,9 @@ $('#dAgain').addEventListener('click',function(){
   SFX.ensure(); SFX.tick();
   ovDay.classList.remove('show');
   shutter.classList.remove('down');
-  gaRoundStart('day');
+  /* 새 판의 replay 는 여기(CTA)가 아니라 첫 조작에서 나간다 —
+     결과 카드를 닫고 머뭇거린 시간이 play_sec 에 섞이지 않게 */
+  gaBindFirst();
   startDay();
 });
 
@@ -1603,16 +1700,20 @@ function gaVoteRelabel(){ if(gaS.voteShown&&!gaS.voted) gaVoteShow(gaS.voteScene
     setTimeout(function(){ el.hidden=true; },1200);
   });
 })();
-/* first real play action of the page load = round start */
-(function(){
-  var zones=['stagewrap','panel','actions','steps'], i, n;
+/* first real play action of a round = round start (replay for every round after the first) */
+var gaBindFirst=(function(){
+  var zones=['stagewrap','panel','actions','steps'];
   function unbind(){
     for(var k=0;k<zones.length;k++){ var z=document.getElementById(zones[k]); if(!z)continue;
       z.removeEventListener('pointerdown',onFirst,true); z.removeEventListener('click',onFirst,true); }
   }
-  function onFirst(){ if(!gaS.started) gaRoundStart('day'); unbind(); }
-  for(i=0;i<zones.length;i++){ n=document.getElementById(zones[i]); if(!n){continue;}
-    n.addEventListener('pointerdown',onFirst,true); n.addEventListener('click',onFirst,true); }
+  function onFirst(){ unbind(); gaRoundStart('day'); }
+  function bind(){
+    for(var i=0;i<zones.length;i++){ var n=document.getElementById(zones[i]); if(!n){continue;}
+      n.addEventListener('pointerdown',onFirst,true); n.addEventListener('click',onFirst,true); }
+  }
+  bind();
+  return bind;
 })();
 
 /* ==================== boot ==================== */

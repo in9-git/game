@@ -175,6 +175,7 @@ body {
 .card-banner.kitchen { background: linear-gradient(135deg, #ffe0f0, #fff4f9, #f0f8ff); }
 .card-banner.sagwan { background: linear-gradient(135deg, #f3ecd9, #e0cba8, #8f3b2d); }
 .card-banner.janggi { background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); }
+.card-banner.matchstick { background: linear-gradient(135deg, #f3e6cf, #e2c9a0, #b5462f); }
 .card-banner-piece {
   width: 110px;
   height: auto;
@@ -475,21 +476,20 @@ body {
 
 <!-- Featured Games -->
 <section class="featured">
-  <a class="featured-card" href="board/janggi/" data-cat="board,strategy">
-    <div class="card-banner janggi"><img class="card-banner-piece" src="board/janggi/img/Red_King.png" alt="장기 한왕" /></div>
+  <a class="featured-card" href="puzzle/matchstick/" data-cat="puzzle">
+    <div class="card-banner matchstick">🔥</div>
     <div class="card-body">
       <div class="card-tags">
-        <span class="tag tag-new" id="tag-janggi-new">NEW</span>
-        <span class="tag tag-ai" id="tag-janggi-ai">AI 대전</span>
-        <span class="tag tag-cat" id="tag-janggi-board">보드</span>
+        <span class="tag tag-new" id="tag-matchstick-new">NEW</span>
+        <span class="tag tag-puzzle" id="tag-matchstick-puzzle">퍼즐</span>
       </div>
-      <div class="card-title" id="janggi-title">애기장기</div>
-      <div class="card-subtitle" id="janggi-sub">Baby Janggi / ベビー将棋</div>
-      <div class="card-desc" id="janggi-desc">
-        장기를 몰라도 바로 시작! AI가 추천하는 훈수를 보며 자연스럽게 배우는 한국 전통 장기.
-        AI 5단계 난이도 · 2인 대전 · 훈수 시스템
+      <div class="card-title" id="matchstick-title">성냥개비 수수께끼</div>
+      <div class="card-subtitle" id="matchstick-sub">マッチ棒なぞなぞ / Matchstick Riddles</div>
+      <div class="card-desc" id="matchstick-desc">
+        틀린 식 위에 성냥 한 개. 어디로 옮겨야 맞는 식이 될까?
+        여섯 단계를 오르는 동안 숫자를 보는 눈이 바뀐다.
       </div>
-      <span class="play-btn" id="janggi-play">▶ 지금 플레이</span>
+      <span class="play-btn" id="matchstick-play">▶ 지금 플레이</span>
     </div>
   </a>
   <a class="featured-card" href="simulation/sagwan/" data-cat="simulation,strategy">
@@ -583,10 +583,10 @@ const I18N = {
     featured: 'Featured Games',
     heroSub: '누구나 바로 시작할 수 있는 게임',
     // 큰제목: 한국어, 작은제목: 일본어 / 영어
-    janggiTitle: '애기장기',
-    janggiSub: 'ベビー将棋 / Baby Janggi',
-    janggiDesc: '장기를 몰라도 바로 시작! AI가 추천하는 훈수를 보며 자연스럽게 배우는 한국 전통 장기.\nAI 5단계 난이도 · 2인 대전 · 훈수 시스템',
-    janggiPlay: '▶ 지금 플레이',
+    matchstickTitle: '성냥개비 수수께끼',
+    matchstickSub: 'マッチ棒なぞなぞ / Matchstick Riddles',
+    matchstickDesc: '틀린 식 위에 성냥 한 개. 어디로 옮겨야 맞는 식이 될까?\n여섯 단계를 오르는 동안 숫자를 보는 눈이 바뀐다.',
+    matchstickPlay: '▶ 지금 플레이',
     sagwanTitle: '사관이 보고 있다',
     sagwanSub: '史官が見ている / The Historian Is Watching',
     sagwanDesc: '세종 앞에 놓인 다섯 갈림길. 어느 쪽이 실제 역사였을까? 고르고 나면 사관이 그날의 기록을 읽어준다.',
@@ -608,10 +608,10 @@ const I18N = {
     featured: 'Featured Games',
     heroSub: '誰でもすぐ遊べるゲーム',
     // 큰제목: 일본어, 작은제목: 한국어 / 영어
-    janggiTitle: 'ベビー将棋',
-    janggiSub: '애기장기 / Baby Janggi',
-    janggiDesc: '将棋を知らなくてもすぐ始められる！AIのおすすめ手を見ながら自然に学べる韓国伝統将棋。\nAI 5段階 · 対人戦 · ヒントシステム',
-    janggiPlay: '▶ 今すぐプレイ',
+    matchstickTitle: 'マッチ棒なぞなぞ',
+    matchstickSub: '성냥개비 수수께끼 / Matchstick Riddles',
+    matchstickDesc: 'まちがった式の上にマッチが1本。どこへ動かせば正しい式になる？\n6つのステージをのぼるうちに、数字の見え方が変わる。',
+    matchstickPlay: '▶ 今すぐプレイ',
     sagwanTitle: '史官が見ている',
     sagwanSub: '사관이 보고 있다 / The Historian Is Watching',
     sagwanDesc: '世宗の前に置かれた五つの分かれ道。どちらが実際の歴史だったのか？選ぶと史官がその日の記録を読んでくれる。',
@@ -633,10 +633,10 @@ const I18N = {
     featured: 'Featured Games',
     heroSub: 'Games anyone can start right away',
     // 큰제목: 영어, 작은제목: 한국어 / 일본어
-    janggiTitle: 'Baby Janggi',
-    janggiSub: '애기장기 / ベビー将棋',
-    janggiDesc: 'Start playing even without knowing Janggi! Learn naturally with AI-recommended moves in this Korean traditional chess.\nAI 5 levels · 2P mode · Hint system',
-    janggiPlay: '▶ Play Now',
+    matchstickTitle: 'Matchstick Riddles',
+    matchstickSub: '성냥개비 수수께끼 / マッチ棒なぞなぞ',
+    matchstickDesc: 'One matchstick sits on a false equation. Move it where, and the equation comes true?\nSix stages in, you start seeing numbers differently.',
+    matchstickPlay: '▶ Play Now',
     sagwanTitle: 'The Historian Is Watching',
     sagwanSub: '사관이 보고 있다 / 史官が見ている',
     sagwanDesc: 'Five crossroads stand before King Sejong. Which one was the real history? Choose, and the court historian reads out that day\'s record.',
@@ -853,10 +853,10 @@ function applyI18N() {
   const m = {
     'featured-label': L.featured,
     'hero-sub': L.heroSub,
-    'janggi-title': L.janggiTitle,
-    'janggi-sub': L.janggiSub,
-    'janggi-desc': L.janggiDesc,
-    'janggi-play': L.janggiPlay,
+    'matchstick-title': L.matchstickTitle,
+    'matchstick-sub': L.matchstickSub,
+    'matchstick-desc': L.matchstickDesc,
+    'matchstick-play': L.matchstickPlay,
     'sagwan-title': L.sagwanTitle,
     'sagwan-sub': L.sagwanSub,
     'sagwan-desc': L.sagwanDesc,
@@ -867,7 +867,7 @@ function applyI18N() {
     'cat-action': L.catAction, 'cat-rpg': L.catRPG, 'cat-archive': L.catArchive,
     'all-games-title': L.allGames,
     'footer-text': L.footer,
-    'tag-janggi-new': L.tagNew, 'tag-janggi-ai': L.tagAI, 'tag-janggi-board': L.tagBoard,
+    'tag-matchstick-new': L.tagNew, 'tag-matchstick-puzzle': L.tagPuzzle,
     'tag-sagwan-new': L.tagNew, 'tag-sagwan-sim': L.tagSim, 'tag-sagwan-strategy': L.tagStrategy,
   };
   for (const [id, text] of Object.entries(m)) {
