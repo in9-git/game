@@ -670,6 +670,7 @@ function detectLang() {
 function setLang(lang) {
   currentLang = lang;
   localStorage.setItem('in9-lang', lang);
+  document.documentElement.lang = lang;   /* 게임 23종은 하는데 현관만 빠져 있었다 */
   document.querySelectorAll('.lang-switch button').forEach(b => {
     b.classList.toggle('active', b.dataset.lang === lang);
   });
