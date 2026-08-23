@@ -152,6 +152,24 @@
     border:1px solid rgba(255,206,150,.26); box-shadow:none;
   }
 
+  /* stage picker (재진입) */
+  #stagePick { margin-top:16px; }
+  #stagePick[hidden] { display:none; }
+  .sp-label { font-size:10.5px; font-weight:700; letter-spacing:.5px; color:rgba(255,206,158,.6); margin-bottom:8px; }
+  #spRow { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px; }
+  .sp {
+    min-height:44px; padding:5px 2px; border-radius:13px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    background:rgba(255,238,214,.13); border:1px solid rgba(255,222,180,.26);
+    color:#ffeacd; font-size:14px; font-weight:800; line-height:1;
+    transition:transform .16s cubic-bezier(.34,1.56,.64,1), background .18s ease;
+  }
+  .sp .sp-f { font-size:9px; font-weight:700; color:rgba(255,206,158,.82); }
+  .sp:not([disabled]):hover { background:rgba(255,238,214,.24); }
+  .sp:not([disabled]):active { transform:scale(.93); }
+  .sp:focus-visible { outline:2px solid #ffd08a; outline-offset:2px; }
+  .sp[disabled] { opacity:.32; cursor:default; background:rgba(255,238,214,.05); }
+
   /* stage clear */
   #clearFish { font-size:24px; letter-spacing:5px; margin-top:14px; }
   #clearFish span { opacity:.24; transition:opacity .3s ease, transform .3s cubic-bezier(.34,1.56,.64,1); display:inline-block; }
@@ -257,6 +275,10 @@
         <button class="mbtn" id="startBtn"></button>
         <button class="mbtn ghost" id="contBtn" style="display:none"></button>
       </div>
+      <div id="stagePick" hidden>
+        <div class="sp-label" id="spLabel"></div>
+        <div id="spRow"></div>
+      </div>
     </div>
   </div>
 
@@ -331,7 +353,7 @@
       start: '첫 배달 나서기', cont: '이어하기',
       hintKey: '← → 달리기 · 스페이스 점프',
       hintTouch: '◀ ▶ 로 달리고 🐾 로 점프',
-      stage: '골목', fish: '생선',
+      stage: '골목', fish: '생선', pick: '지나온 골목 다시 가기', locked: '잠김',
       clearTitle: '배달 완료!',
       clearSub: '{n}번째 밤 · 우체통에 잘 넣었어요',
       clearNote: '여기서 멈춰도 괜찮아요. 다음에 이어서 할 수 있어요.',
@@ -353,7 +375,7 @@
       start: 'はじめての配達へ', cont: 'つづきから',
       hintKey: '← → はしる · スペースでジャンプ',
       hintTouch: '◀ ▶ ではしり 🐾 でジャンプ',
-      stage: '路地', fish: 'さかな',
+      stage: '路地', fish: 'さかな', pick: 'これまでの路地へ', locked: 'まだ',
       clearTitle: 'とどけました!',
       clearSub: '{n}つめの夜 · ポストにそっと入れました',
       clearNote: 'ここでやめても大丈夫。つづきから始められます。',
@@ -375,7 +397,7 @@
       start: 'Start the first round', cont: 'Continue',
       hintKey: '← → to run · Space to jump',
       hintTouch: '◀ ▶ to run, 🐾 to jump',
-      stage: 'Lane', fish: 'Fish',
+      stage: 'Lane', fish: 'Fish', pick: 'Revisit a lane', locked: 'Locked',
       clearTitle: 'Delivered!',
       clearSub: 'Evening {n} · tucked safely in the mailbox',
       clearNote: 'Stopping here is fine — you can pick up where you left off.',
@@ -684,12 +706,17 @@
       para: 0, walk: 0, fishGot: 0, hasLetter: true
     };
     parts = []; floats = [];
+    /* 누른 채로 CTA 를 넘어온 키가 남아 있으면 새 골목이 열리자마자 고양이가
+       혼자 달린다 — 판 시계는 아직 첫 조작을 기다리는 중인데. */
+    keys.l = keys.r = keys.j = false;
     cam.x = player.x - viewW * 0.42;
     cam.y = player.y - viewH * 0.5;
     deliverT = 0;
     mode = 'play';
     updateHud();
-    gaRoundStart('stage' + (idx + 1));
+    /* 판 시계는 화면이 열리는 순간이 아니라 첫 조작에서 잡는다 —
+       클리어 패널을 읽던 시간이 play_sec 에 섞이면 안 되므로. */
+    gaArm('stage' + (idx + 1));
   }
 
   /* ==================================================================
@@ -734,13 +761,15 @@
   }
 
   document.addEventListener('keydown', function (e) {
-    var k = e.key;
+    var k = e.key, moved = true;
     if (k === 'ArrowLeft' || k === 'a' || k === 'A') { keys.l = true; e.preventDefault(); }
     else if (k === 'ArrowRight' || k === 'd' || k === 'D') { keys.r = true; e.preventDefault(); }
     else if (k === ' ' || k === 'Spacebar' || k === 'ArrowUp' || k === 'w' || k === 'W') {
       if (!keys.j) pressJump();
       keys.j = true; e.preventDefault();
     }
+    else moved = false;
+    if (moved && mode === 'play') gaFirstMove();
     audio();
   }, { passive: false });
   document.addEventListener('keyup', function (e) {
@@ -753,6 +782,7 @@
   function bindHold(el, on, off) {
     el.addEventListener('pointerdown', function (e) {
       e.preventDefault(); audio();
+      if (mode === 'play') gaFirstMove();
       el.classList.add('on');
       try { el.setPointerCapture(e.pointerId); } catch (err) {}
       on();
@@ -1452,6 +1482,9 @@
         nodes[i].querySelector('.lbody').textContent = tx[1];
       }
     }
+    /* 언어를 바꾸면 떠 있던 투표 물음도 그 언어로 따라간다 */
+    try{ if(gaS.voteShown && !gaS.voted) gaVoteShow(gaS.voteScene); }catch(e){}
+    buildStagePicker();
     updateHud();
   }
 
@@ -1477,6 +1510,36 @@
       ov.classList.remove('on');
       fn();
     };
+  }
+
+  /* 스테이지 선택 — 해금된 골목만 활성. game_step 은 startStage() 안에서
+     기존 시작/이어하기 버튼과 똑같은 시점에 나간다 (칩 클릭이 별도 이벤트를 만들지 않음). */
+  function pickStage(idx) {
+    return ovOnce('introOv', function () {
+      audio(); sfx.pop();
+      if (!touchSeen) $('keyHint').classList.remove('hide');
+      startStage(idx);
+    });
+  }
+  function buildStagePicker() {
+    var t = T(), row = $('spRow'), i, b, open;
+    row.innerHTML = '';
+    for (i = 0; i < 8; i++) {
+      open = i < save.unlocked;
+      b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sp';
+      b.disabled = !open;
+      b.innerHTML = '<span class="sp-n"></span><span class="sp-f"></span>';
+      b.querySelector('.sp-n').textContent = open ? String(i + 1) : '🔒';
+      b.querySelector('.sp-f').textContent = open ? '🐟' + save.fish[i] + '/3' : '';
+      b.setAttribute('aria-label', t.stage + ' ' + (i + 1) + ' · ' +
+        (open ? t.fish + ' ' + save.fish[i] + '/3' : t.locked));
+      if (open) b.addEventListener('click', pickStage(i));
+      row.appendChild(b);
+    }
+    $('spLabel').textContent = t.pick;
+    $('stagePick').hidden = save.unlocked < 2;
   }
 
   $('startBtn').addEventListener('click', ovOnce('introOv', function () {
@@ -1572,6 +1635,11 @@
   var gaS={started:false,completed:false,voted:false,voteShown:false,voteScene:'main',t0:0};
   function gaLang(){ try{ return lang||'ko'; }catch(e){ return 'ko'; } }
   function gaSend(name,p){ try{ if(typeof gtag!=='function')return; p=p||{}; p.game_id=GA_GAME; if(!p.lang)p.lang=gaLang(); gtag('event',name,p);}catch(e){} }
+  /* 표준: replay 는 재시작 CTA 클릭이 아니라 새 판의 첫 조작에서 보낸다.
+     startStage() 는 예약만 하고, 실제 이동 입력이 들어올 때 발사한다. */
+  var gaPending=null;
+  function gaArm(scene){ gaPending=scene; }
+  function gaFirstMove(){ if(!gaPending)return; var s=gaPending; gaPending=null; gaRoundStart(s); }
   function gaRoundStart(scene){
     gaS.t0=Date.now();
     if(gaS.completed){ gaS.completed=false; gaSend('game_step',{step:'replay',scene:scene||'main'}); return; }

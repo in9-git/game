@@ -58,10 +58,17 @@ header{
 }
 .topbtns{display:flex;gap:6px}
 .chip{
+  position:relative;
   border:1px solid rgba(255,244,220,.14);background:rgba(255,244,220,.07);
   color:var(--ink);border-radius:999px;padding:7px 10px;font-size:.8rem;
   cursor:pointer;white-space:nowrap;transition:background .25s,transform .15s;
   font-family:inherit;
+}
+/* 칩은 37px 로 보이지만 손가락은 44x44 를 잡는다. 세로 패딩을 키우면 헤더가 커진 만큼
+   모래밭이 깎이므로 보이는 크기는 두고 히트 영역만 넓힌다(칩 사이 gap 6px 안에서 겹치지 않음). */
+.chip::after{
+  content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:max(100%,44px);height:44px;border-radius:999px;
 }
 .chip:hover{background:rgba(255,244,220,.15)}
 .chip:active{transform:scale(.94)}
@@ -107,15 +114,22 @@ header{
   text-align:center;font-size:.7rem;color:var(--ink-dim);letter-spacing:.03em;
   line-height:1.5;padding:0 6px;
 }
+/* 1줄(오늘의 과제) + 1줄(조작 안내) = 33.6px < 예약된 38px. 두 줄을 넘기면 모래밭이 깎이므로
+   문구는 375px 폭에서 각각 한 줄 안에 들어가야 한다(3개 국어 실측 완료). */
+#hintTask{display:block;color:var(--paper);opacity:.95;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hintTask:empty{display:none}
+#hintBase{display:block}
 /* ---------- controls ---------- */
 #controls{display:flex;flex-direction:column;gap:8px}
 #tray{
-  display:flex;gap:6px;justify-content:center;flex-wrap:nowrap;
+  /* gap 6 이면 7칸이 341px 안으로 눌려 도구 하나가 43.3px(44 미달)이 된다. 5 로 줄이면 44.4px. */
+  display:flex;gap:5px;justify-content:center;flex-wrap:nowrap;
   padding:7px;border-radius:18px;
   background:linear-gradient(180deg,rgba(255,240,210,.08),rgba(0,0,0,.16));
   border:1px solid rgba(255,240,210,.1);
 }
 .tool{
+  position:relative;
   width:48px;height:48px;flex:0 1 48px;border-radius:14px;cursor:pointer;
   background:linear-gradient(180deg,#f7efdd,#e5d6ba);
   border:1px solid #b9a47f;
@@ -125,6 +139,8 @@ header{
   padding:0;
 }
 .tool canvas{width:40px;height:40px;display:block;pointer-events:none}
+/* 좁은 폭(320px)에서 도구가 42px 로 눌려도 손가락은 44px 를 잡는다. gap 5px 안이라 이웃과 겹치지 않는다. */
+.tool::after{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:max(100%,44px);height:max(100%,44px);border-radius:14px}
 .tool:active{transform:scale(.9)}
 .tool.sel{
   background:linear-gradient(180deg,#e9f0d8,#cdd9b2);
@@ -134,17 +150,20 @@ header{
 }
 #row2{display:flex;gap:8px;align-items:stretch;justify-content:center;flex-wrap:wrap}
 #tineWrap{
-  display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:14px;
-  background:rgba(255,240,210,.06);border:1px solid rgba(255,240,210,.09);
+  /* 44px 갈퀴 버튼을 담고도 줄 높이를 44 로 유지: 세로 패딩 0 + 테두리는 inset shadow.
+     border 1px 를 쓰면 46px 이 되어 #row2 가 2px 자라고 그만큼 모래밭(346px)이 깎인다. */
+  display:flex;align-items:center;gap:5px;padding:0 9px;border-radius:14px;
+  background:rgba(255,240,210,.06);border:none;
+  box-shadow:inset 0 0 0 1px rgba(255,240,210,.09);
 }
 #tineWrap .lbl{font-size:.64rem;color:var(--ink-dim);margin-right:2px;letter-spacing:.03em}
 .tine{
-  width:36px;height:34px;border-radius:10px;cursor:pointer;border:1px solid rgba(255,240,210,.14);
+  width:44px;height:44px;border-radius:12px;cursor:pointer;border:1px solid rgba(255,240,210,.14);
   background:rgba(255,240,210,.06);color:var(--ink-dim);
   display:flex;align-items:center;justify-content:center;gap:2.5px;
   transition:transform .15s, background .2s;padding:0;
 }
-.tine i{display:block;width:2px;height:15px;background:currentColor;border-radius:1px}
+.tine i{display:block;width:2px;height:17px;background:currentColor;border-radius:1px}
 .tine:active{transform:scale(.92)}
 .tine.sel{background:var(--moss-lo);color:#e8f0d8;border-color:var(--moss-hi);box-shadow:inset 0 1px 3px rgba(0,0,0,.3)}
 .act{
@@ -207,6 +226,12 @@ header{
   *{transition-duration:.01s !important;animation:none !important}
   #veil{transition-duration:.01s}
 }
+/* ---------- focus (키보드 병렬 경로) ---------- */
+#garden:focus-visible{outline:3px solid var(--moss-hi);outline-offset:-3px}
+.home:focus-visible,.chip:focus-visible,.tool:focus-visible,.tine:focus-visible,
+.act:focus-visible,.card button:focus-visible,.ga-vote-btn:focus-visible{
+  outline:3px solid var(--moss-hi);outline-offset:2px;
+}
 /* ---------- ga vote ---------- */
 /* 트레이(#frame) 바깥, 도구줄 바로 위 힌트 줄에 겹쳐 띄운다.
    모래 위에 두면 방금 「사진 저장」으로 담은 정원을 정확히 덮는다(실측 46.8px 전부 겹침).
@@ -243,7 +268,7 @@ header{
 
   <div id="frame">
     <div id="stage">
-      <canvas id="garden"></canvas>
+      <canvas id="garden" tabindex="0" role="application" aria-describedby="hint"></canvas>
       <div id="veil"></div>
     </div>
   </div>
@@ -254,7 +279,7 @@ header{
       <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
       <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
     </div>
-    <div id="hint"></div>
+    <div id="hint"><span id="hintTask"></span><span id="hintBase"></span></div>
   </div>
 
   <div id="controls">
@@ -304,7 +329,7 @@ header{
 const I18N = {
   ko:{
     title:'모래정원 빗질', home:'홈',
-    hint:'드래그해 모래를 빗어요 · 트레이에서 골라 탭으로 놓아요 · 길게 누르면 살며시 치워져요',
+    hint:'드래그로 빗고 · 탭으로 놓고 · 길게 눌러 치워요',
     rake:'갈퀴', stone0:'둥근 돌', stone1:'선 돌', stone2:'넓은 돌',
     moss:'이끼', leaf:'단풍잎', lantern:'석등',
     tines:'갈퀴 굵기', reset:'모래 고르기', save:'사진 저장',
@@ -313,11 +338,17 @@ const I18N = {
     saveFail:'저장에 실패했어요',
     cfTitle:'모래를 고를까요?', cfBody:'정원이 처음처럼 비워져요.',
     cfYes:'고르기', cfNo:'그대로 두기',
-    docTitle:'모래정원 빗질 · Zen Rake Garden'
+    docTitle:'모래정원 빗질 · Zen Rake Garden',
+    dailyPlace:'오늘의 정원 · {i} {c}/{n} 놓기',
+    dailyRake:'오늘의 정원 · {i} {c}/{n} 빗기',
+    dailyDone:'오늘의 정원, 다 가꿨어요 🪷',
+    kbdHint:'←↑↓→ 이동 · Space 긋기·놓기 · ⌫ 치우기',
+    canvasLabel:'모래정원 캔버스 — 방향키로 옮기고 스페이스로 긋거나 놓아요',
+    tapHint:'길게 누르면 치울 수 있어요'
   },
   ja:{
     title:'枯山水にわ', home:'ホーム',
-    hint:'ドラッグで砂紋を描きます · トレイから選んでタップで置きます · 長押しでそっと片づきます',
+    hint:'ドラッグで砂紋 · タップで置く · 長押しで片づけ',
     rake:'熊手', stone0:'丸い石', stone1:'立て石', stone2:'平たい石',
     moss:'苔', leaf:'紅葉', lantern:'灯籠',
     tines:'熊手の幅', reset:'砂をならす', save:'写真を保存',
@@ -326,11 +357,17 @@ const I18N = {
     saveFail:'保存できませんでした',
     cfTitle:'砂をならしますか？', cfBody:'お庭がまっさらに戻ります。',
     cfYes:'ならす', cfNo:'このままにする',
-    docTitle:'枯山水にわ · Zen Rake Garden'
+    docTitle:'枯山水にわ · Zen Rake Garden',
+    dailyPlace:'今日のお庭 · {i} {c}/{n} おく',
+    dailyRake:'今日のお庭 · {i} {c}/{n} えがく',
+    dailyDone:'今日のお庭、できました 🪷',
+    kbdHint:'←↑↓→ 移動 · Space 描く・置く · ⌫ 片づけ',
+    canvasLabel:'砂庭のキャンバス — 矢印キーで動かし、スペースで描く・置く',
+    tapHint:'長押しで片づけられます'
   },
   en:{
     title:'Zen Rake Garden', home:'Home',
-    hint:'Drag to rake the sand · pick from the tray and tap to place · long-press to gently remove',
+    hint:'Drag to rake · tap to place · hold to remove',
     rake:'Rake', stone0:'Round stone', stone1:'Standing stone', stone2:'Flat stone',
     moss:'Moss', leaf:'Maple leaf', lantern:'Stone lantern',
     tines:'Rake width', reset:'Smooth the sand', save:'Save photo',
@@ -339,9 +376,31 @@ const I18N = {
     saveFail:'Could not save',
     cfTitle:'Smooth the sand?', cfBody:'Your garden will start anew.',
     cfYes:'Smooth it', cfNo:'Keep it',
-    docTitle:'Zen Rake Garden · 枯山水'
+    docTitle:'Zen Rake Garden · 枯山水',
+    dailyPlace:"Today's garden · place {i} {c}/{n}",
+    dailyRake:"Today's garden · rake {i} {c}/{n}",
+    dailyDone:"Today's garden is complete 🪷",
+    kbdHint:'←↑↓→ move · Space rake/place · ⌫ remove',
+    canvasLabel:'Sand garden canvas — arrows to move, Space to rake or place',
+    tapHint:'Long-press to remove it'
   }
 };
+
+/* ---------------- 오늘의 정원 (daily task) ----------------
+   언어중립 테이블: k=집계 대상, ic=이모지, n=목표 개수.
+   과제 설명은 dailyPlace / dailyRake 템플릿 2개로만 번역한다. */
+const DAILY = [
+  {k:'stone',   ic:'🪨', n:3},
+  {k:'moss',    ic:'🌿', n:4},
+  {k:'leaf',    ic:'🍁', n:5},
+  {k:'rake',    ic:'〰', n:6},
+  {k:'lantern', ic:'🏮', n:2},
+  {k:'any',     ic:'🪷', n:8},
+  {k:'stone',   ic:'🪨', n:6},
+  {k:'rake',    ic:'〰', n:12},
+  {k:'leaf',    ic:'🍁', n:9},
+  {k:'moss',    ic:'🌿', n:7}
+];
 const LANGS = ['ko','ja','en'];
 const FLAGS = {ko:'🇰🇷 KO', ja:'🇯🇵 JA', en:'🇬🇧 EN'};
 let lang = 'ko';
@@ -365,7 +424,8 @@ function applyLang(){
   const others = LANGS.filter(l=>l!==lang).map(l=>I18N[l].title);
   $('#titleSub').textContent = others.join(' · ');
   $('#homeTxt').textContent = t('home');
-  $('#hint').textContent = t('hint');
+  $('#garden').setAttribute('aria-label', t('canvasLabel'));
+  refreshHint();
   $('#tineLbl').textContent = t('tines');
   $('#resetTxt').textContent = t('reset');
   $('#saveTxt').textContent = t('save');
@@ -399,6 +459,15 @@ function mulberry32(a){
     z = z + Math.imul(z ^ z>>>7, 61 | z) ^ z;
     return ((z ^ z>>>14)>>>0)/4294967296;
   };
+}
+/* 사용자 활성화가 살아 있을 때만 진동 — 없으면 Chrome 이 콘솔에 intervention 로그를 남긴다.
+   userActivation 미지원 브라우저에서는 그대로 호출(구형 안드로이드). */
+function buzz(ms){
+  try{
+    if(!navigator.vibrate) return;
+    if(navigator.userActivation && !navigator.userActivation.isActive) return;
+    navigator.vibrate(ms);
+  }catch(e){}
 }
 function rr(g,x,y,w,h,r){
   r = Math.min(r, w/2, h/2);
@@ -437,7 +506,12 @@ let tool    = 'rake';
 let tines   = 3;
 let dirty   = true;
 let parts   = [];
-const SAVE_KEY = 'zen-garden-v1';
+const SAVE_KEY  = 'zen-garden-v1';
+const DAILY_KEY = 'zen-garden-daily';
+/* 키보드 병렬 경로 커서. on=포커스 중, pen=갈퀴를 모래에 대고 있는 상태. */
+let kb = {on:false, pen:false, hide:false, x:0, y:0};
+let kbStroke = null;
+let dailyS = {d:'', c:0, done:false};
 
 /* ---------------- sand base ---------------- */
 function initSand(){
@@ -717,6 +791,12 @@ function drawObject(g,o){
       k=.6+.4*clamp(k,0,1.25);
     }
   }
+  /* 짧은 탭의 튕김. 등장 이징(0.6배 출발)을 재사용하면 '눌렀더니 작아졌다'로 읽히므로
+     1 → 1.13 → 1 로만 부풀린다. 배치 직후 등장 이징이 우선. */
+  if(k===1 && o.nudge && !RM){
+    const q=clamp((performance.now()-o.nudge)/260, 0, 1);
+    if(q<1) k=1+.13*Math.sin(Math.PI*q);
+  }
   if(k!==1){
     g.save();
     g.translate(o.x,o.y); g.scale(k,k); g.translate(-o.x,-o.y);
@@ -752,6 +832,22 @@ function render(){
     ctx.arc(lpTarget.x, cy, (lpTarget.hr||30)+8, -Math.PI/2, -Math.PI/2+prog*Math.PI*2);
     ctx.stroke();
   }
+  if(kb.on && !kb.hide){
+    ctx.save();
+    ctx.lineCap='round';
+    ctx.strokeStyle = kb.pen ? 'rgba(70,92,48,0.95)' : 'rgba(72,54,32,0.6)';
+    ctx.lineWidth = kb.pen ? 3 : 2;
+    ctx.beginPath(); ctx.arc(kb.x,kb.y,11,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(kb.x-18,kb.y); ctx.lineTo(kb.x-6,kb.y);
+    ctx.moveTo(kb.x+6,kb.y);  ctx.lineTo(kb.x+18,kb.y);
+    ctx.moveTo(kb.x,kb.y-18); ctx.lineTo(kb.x,kb.y-6);
+    ctx.moveTo(kb.x,kb.y+6);  ctx.lineTo(kb.x,kb.y+18);
+    ctx.stroke();
+    ctx.strokeStyle='rgba(255,252,240,0.85)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(kb.x,kb.y,11,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+  }
   ctx.drawImage(vignC,0,0,W,H);
   dirty=false;
 }
@@ -768,7 +864,7 @@ function tick(ts){
     dirty=true;
   }
   const now=performance.now();
-  if(objects.some(o=>o.born && now-o.born<300)) dirty=true;
+  if(objects.some(o=>(o.born && now-o.born<300) || (o.nudge && now-o.nudge<280))) dirty=true;
   if(lpTimer) dirty=true;
   if(SFX.raking && now-SFX.lastMove>150) SFX.rakeQuiet();
   if(dirty) render();
@@ -904,7 +1000,7 @@ let saveTimer=0;
 function saveState(){
   try{
     const objs=objects.map(o=>{
-      const c={...o}; delete c.born; return c;
+      const c={...o}; delete c.born; delete c.nudge; return c;
     });
     localStorage.setItem(SAVE_KEY, JSON.stringify({w:W,h:H,marks,objects:objs}));
   }catch(e){}
@@ -961,7 +1057,9 @@ function resize(){
       if(o.hy) o.hy*=sk;
     }
   }
+  if(W && H){ kb.x*=nW/W; kb.y*=nH/H; }
   W=nW; H=nH;
+  kb.x=clamp(kb.x,0,W); kb.y=clamp(kb.y,0,H);
   canvas.width=Math.round(W*dpr); canvas.height=Math.round(H*dpr);
   sandC.width=canvas.width; sandC.height=canvas.height;
   renderVignette();
@@ -1029,9 +1127,11 @@ function placeObject(toolName,x,y){
   ringMark(rings);
   objects.push(o);
   if(objects.length>80) objects.shift();
+  /* --- 오늘의 정원 진행 기록 (소품 배치) --- */
+  dailyCheck(o.t);
   puffAt(x,y,8);
   SFX.bell(PENTA[(Math.random()*PENTA.length)|0]);
-  if(navigator.vibrate){ try{ navigator.vibrate(8); }catch(e){} }
+  buzz(8);
   scheduleSave();
   dirty=true;
 }
@@ -1051,9 +1151,23 @@ function removeObject(o){
   objects.splice(i,1);
   puffAt(o.x, o.y+(o.hy||0), 12, 'rgba(196,178,146,1)');
   SFX.puffS();
-  if(navigator.vibrate){ try{ navigator.vibrate(14); }catch(e){} }
+  buzz(14);
   toast(t('removeToast'));
+  refreshHint();
   scheduleSave();
+  dirty=true;
+}
+
+/* 소품을 짧게 탭했을 때의 반응 — 예전에는 아무 일도 없었다(objects 1→1, 무피드백).
+   튕겨 오르는 애니메이션 + 모래 먼지 + 낮은 종소리로 「눌렸다」를 알리고,
+   길게 누르면 치워진다는 것을 페이지당 한 번만 토스트로 알려 준다. */
+let tapHinted=false;
+function nudgeObject(o){
+  o.nudge=performance.now();
+  puffAt(o.x, o.y+(o.hy||0), 5, 'rgba(226,212,184,1)');
+  SFX.bell(PENTA[0]*0.5, .09);
+  buzz(6);
+  if(!tapHinted){ tapHinted=true; toast(t('tapHint')); }
   dirty=true;
 }
 
@@ -1134,18 +1248,24 @@ function endPointer(e){
       if(marks.length>260) marks.splice(0, marks.length-260);
       gaStroke();
       scheduleSave();
+      dailyCheck('rake');
     }
   }else if(!consumed && e.type==='pointerup'){
-    if(tool==='rake'){
+    const hitObj=findObjectAt(p.x,p.y);
+    if(hitObj){
+      /* 소품 위 짧은 탭 — 길게 누르기(제거)와 구분되는 가벼운 반응. */
+      nudgeObject(hitObj);
+    }else if(tool==='rake'){
       /* 갈퀴는 움직였다면 이미 stroke 로 처리됨. 제자리 탭만 점 자국. */
-      if(!moved && !findObjectAt(p.x,p.y)){
+      if(!moved){
         const dab={k:'s',n:tines,pts:[p.x,p.y]};
         rakeSeg(p.x,p.y,p.x+2,p.y+1,tines);
         marks.push(dab);
         gaStroke();
         scheduleSave();
+        dailyCheck('rake');
       }
-    }else if(!findObjectAt(p.x,p.y)){
+    }else{
       /* 배치 도구는 이산 동작 — 끄는 동안 아무 피드백도 없으므로
          손가락이 흔들렸는지와 무관하게 뗀 자리에 놓는다. */
       placeObject(tool,p.x,p.y);
@@ -1156,6 +1276,83 @@ function endPointer(e){
 canvas.addEventListener('pointerup',endPointer);
 canvas.addEventListener('pointercancel',endPointer);
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
+
+/* ---------------- keyboard (병렬 경로) ----------------
+   포인터 없이도 모래를 긋고 소품을 놓고 저장까지 갈 수 있다.
+   Tab 순서: 홈 → 소리 → 언어 → 모래밭 → 도구 7 → 갈퀴 굵기 4 → 모래 고르기 → 사진 저장. */
+canvas.addEventListener('focus',()=>{
+  if(!kb.on){ kb.on=true; kb.x=W/2; kb.y=H/2; }
+  refreshHint(); dirty=true;
+});
+canvas.addEventListener('blur',()=>{
+  kbLift();
+  kb.on=false; kb.pen=false;
+  SFX.rakeStop();
+  refreshHint(); dirty=true;
+});
+
+function kbLift(){
+  if(!kb.pen) return;
+  kb.pen=false;
+  SFX.rakeStop();
+  if(kbStroke && kbStroke.pts.length>=4){
+    marks.push(kbStroke);
+  }else{
+    /* 움직이지 않고 뗀 경우 = 제자리 점 자국 (포인터 탭과 같은 결과). */
+    rakeSeg(kb.x,kb.y,kb.x+2,kb.y+1,tines);
+    marks.push({k:'s',n:tines,pts:[kb.x,kb.y]});
+  }
+  if(marks.length>260) marks.splice(0, marks.length-260);
+  kbStroke=null;
+  gaStroke(); scheduleSave(); dailyCheck('rake');
+  dirty=true;
+}
+
+canvas.addEventListener('keydown',e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey) return;
+  let dx=0, dy=0;
+  const step = e.shiftKey ? 30 : 9;
+  const k=e.key;
+  if(k==='ArrowLeft')       dx=-step;
+  else if(k==='ArrowRight') dx=step;
+  else if(k==='ArrowUp')    dy=-step;
+  else if(k==='ArrowDown')  dy=step;
+  else if(k===' '||k==='Spacebar'||k==='Enter'){
+    e.preventDefault();
+    if(e.repeat) return;
+    SFX.ensure(); gaRoundStart('main');
+    if(tool==='rake'){
+      if(kb.pen) kbLift();
+      else{ kb.pen=true; kbStroke={k:'s',n:tines,pts:[kb.x,kb.y]}; SFX.rake(120); }
+    }else{
+      const hit=findObjectAt(kb.x,kb.y);
+      if(hit) nudgeObject(hit);
+      else placeObject(tool,kb.x,kb.y);
+      kb.x=clamp(kb.x,0,W); kb.y=clamp(kb.y,0,H);
+    }
+    dirty=true;
+    return;
+  }
+  else if(k==='Backspace'||k==='Delete'){
+    e.preventDefault();
+    SFX.ensure();
+    const hit=findObjectAt(kb.x,kb.y);
+    if(hit){ gaRoundStart('main'); removeObject(hit); }
+    else SFX.puffS();
+    dirty=true;
+    return;
+  }
+  else return;
+  e.preventDefault();
+  const nx=clamp(kb.x+dx,0,W), ny=clamp(kb.y+dy,0,H);
+  if(kb.pen && tool==='rake'){
+    rakeSeg(kb.x,kb.y,nx,ny,tines);
+    if(kbStroke) kbStroke.pts.push(Math.round(nx*10)/10, Math.round(ny*10)/10);
+    SFX.rake(step*22);
+  }
+  kb.x=nx; kb.y=ny;
+  dirty=true;
+});
 
 /* ---------------- toolbar ---------------- */
 document.querySelectorAll('.tool').forEach(b=>{
@@ -1230,12 +1427,74 @@ $('#cfYes').addEventListener('click',()=>{
   veil.classList.add('show');
   setTimeout(()=>{
     marks=[]; objects=[]; parts=[];
+    kb.pen=false; kbStroke=null;
     replay();
     saveState();
+    refreshHint();
     veil.classList.remove('show');
     toast(t('resetToast'));
   }, RM?40:640);
 });
+
+/* ---------------- 오늘의 정원 ----------------
+   같은 날 재방문하면 같은 과제가 나오도록 날짜 문자열만으로 결정한다(난수·저장값 없음).
+   진행도는 정원에 남은 개수가 아니라 '오늘 실제로 한 행동'을 세는 카운터다 —
+   어제 두고 간 정원이 오늘의 과제를 공짜로 채워 주지 않고,
+   저장 상한(획 260·소품 80)에 눌린 정원에서도 오늘 그은 획·놓은 소품이 그대로 셈에 들어간다.
+   (남은 개수를 세던 방식은 상한에 닿는 순간 영구히 0 에 멈췄다.)
+   달성은 판의 완결이 아니다 — 이 게임의 완결은 '사진 저장' 하나뿐이므로
+   여기서는 game_complete 도 game_vote 도 보내지 않고 화면 연출로만 축하한다. */
+function dayKey(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate());
+}
+function todayTask(){
+  const s=dayKey();
+  let h=2166136261;
+  for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); }
+  return DAILY[((h>>>0)%DAILY.length)];
+}
+/* kind: 'rake' | 소품 종류('stone'·'moss'·'leaf'·'lantern'). 오늘 과제에 해당하는 행동만 센다. */
+function dailyHits(task,kind){ return task.k===kind || (task.k==='any' && kind!=='rake'); }
+function dailySave(){ try{ localStorage.setItem(DAILY_KEY, JSON.stringify(dailyS)); }catch(e){} }
+function dailyLoad(){
+  const k=dayKey();
+  let st=null;
+  try{ st=JSON.parse(localStorage.getItem(DAILY_KEY)); }catch(e){}
+  if(st && st.d===k){
+    dailyS={d:k, c:st.c|0, done:!!st.done};
+    /* 저장값이 목표를 넘겼는데 done 이 아니면 그 자리에서 닫는다 —
+       '3/2 인데 아직 안 끝남' 같은 상태가 화면에 남지 않게. */
+    if(!dailyS.done && dailyS.c>=todayTask().n){ dailyS.done=true; dailySave(); }
+  }
+  else{ dailyS={d:k, c:0, done:false}; dailySave(); }
+}
+function refreshHint(){
+  const et=$('#hintTask'), eb=$('#hintBase');
+  if(!et||!eb) return;
+  if(dailyS.done) et.textContent=t('dailyDone');
+  else{
+    const task=todayTask();
+    et.textContent = t(task.k==='rake'?'dailyRake':'dailyPlace')
+      .replace('{i}',task.ic)
+      .replace('{c}',Math.min(dailyS.c,task.n))
+      .replace('{n}',task.n);
+  }
+  eb.textContent = kb.on ? t('kbdHint') : t('hint');
+}
+/* 행동 1건 기록 → 문구 갱신 → 방금 목표에 닿았으면 그 순간 1회만 축하한다.
+   계측은 손대지 않는다: 여기서 판을 닫으면 끊김 없는 한 판이 둘로 쪼개진다. */
+function dailyCheck(kind){
+  if(dailyS.d!==dayKey()) dailyLoad();          /* 탭을 켜 둔 채 자정을 넘긴 경우 */
+  if(dailyS.done){ refreshHint(); return; }
+  const task=todayTask();
+  if(kind && dailyHits(task,kind)){ dailyS.c++; dailySave(); }
+  if(dailyS.c < task.n){ refreshHint(); return; }
+  dailyS.done=true; dailySave();
+  refreshHint();
+  toast(t('dailyDone'));
+  SFX.chime();
+}
 
 function stamp(){
   const d=new Date(), p=n=>String(n).padStart(2,'0');
@@ -1244,7 +1503,7 @@ function stamp(){
 $('#saveBtn').addEventListener('click',()=>{
   SFX.ensure();
   try{
-    render();
+    kb.hide=true; render(); kb.hide=false; dirty=true;   /* 사진에 키보드 커서가 찍히지 않게 */
     const pad=Math.round(26*dpr);
     const ec=document.createElement('canvas');
     ec.width=canvas.width+pad*2; ec.height=canvas.height+pad*2;
@@ -1271,8 +1530,13 @@ $('#saveBtn').addEventListener('click',()=>{
     SFX.chime();
     toast(t('savedToast'));
     try{
-      if(!gaS.started) gaRoundStart('main');   /* 획 없이 저장만 한 경우에도 start 선행 보장 */
-      gaRoundComplete('main','clear',{strokes:gaS.strokes||0,objects:objects.length});
+      /* 빈 정원(획 0·소품 0)을 저장한 것은 완결이 아니다 — 아무것도 보내지 않는다.
+         result:'fail' 로 보내면 판 수 자체가 부풀고, start 까지 지어내면 시작 수도 오염된다.
+         '모래 고르기' 버튼이 비었다고 판단하는 조건(marks·objects 둘 다 0)과 같은 기준. */
+      if(marks.length>0 || objects.length>0){
+        if(!gaS.started) gaRoundStart('main');  /* 복원된 정원을 손대지 않고 저장한 경우 start 선행 보장 */
+        gaRoundComplete('main','clear',{strokes:gaS.strokes||0,objects:objects.length});
+      }
     }catch(gaErr){}
   }catch(err){
     toast(t('saveFail'));
@@ -1338,6 +1602,8 @@ applyLang();
 buildTrayIcons();
 resize();
 if(loadState()) toast(t('restoreToast'));
+dailyLoad();
+refreshHint();
 requestAnimationFrame(tick);
 </script>
 </body>

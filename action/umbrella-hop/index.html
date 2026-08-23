@@ -196,10 +196,24 @@
   .card-btn.locked { opacity:.5; filter:saturate(.35); cursor:default; }
   .cbi { font-size:26px; width:34px; text-align:center; flex:none; filter:drop-shadow(0 3px 5px rgba(90,110,130,.2)); }
   .cbt { flex:1; min-width:0; }
-  .cbt .n { font-size:14px; font-weight:800; color:#48596b; letter-spacing:-.2px; }
-  .cbt .d { margin-top:2px; font-size:11px; font-weight:600; color:#93a3b1; }
+  /* Name on the first line, one small line under it. The record takes that second
+     line rather than adding a third: stacked below the description it cost every
+     English card 14px and pushed the course list off a 553px-tall screen, which is
+     what an iPhone SE actually shows. Sharing the line instead would have meant
+     truncating the description on every English card at the reference size, and a
+     course you have already crossed needs no description of what it is like — the
+     number you are chasing is the live information. */
+  .cbt .n { display:block; font-size:14px; font-weight:800; color:#48596b; letter-spacing:-.2px; }
+  .cbt .d { display:block; margin-top:2px; font-size:11px; font-weight:600; color:#93a3b1; }
+  /* A locked card has no record and carries a much longer line of text. It keeps
+     the original run-on packing: stacking it would cost a third line in English
+     and push the list back off that same screen. */
+  .card-btn.locked .cbt .n,
+  .card-btn.locked .cbt .d { display:inline; }
   .cbk { font-size:15px; color:#a9b7c3; flex:none; }
   .cbdone { font-size:15px; flex:none; }
+  /* the one number that moves: a course you have crossed remembers its fastest run */
+  .cbb { display:block; margin-top:2px; font-size:10.5px; font-weight:800; color:#7e94aa; letter-spacing:-.1px; }
 
   .stats { margin-top:16px; display:flex; gap:9px; }
   .stat {
@@ -210,6 +224,8 @@
   .stat .sv { font-size:19px; font-weight:800; color:#4a5b6e; letter-spacing:-.4px; }
   .stat .sl { margin-top:3px; font-size:10.5px; font-weight:700; color:#96a5b3; letter-spacing:.2px; }
 
+  .best-note { margin-top:11px; font-size:11.5px; font-weight:700; color:#8a99a8; letter-spacing:.1px; }
+  .best-note.fresh { color:#b8860f; }
   .foot-note { margin-top:14px; font-size:11px; font-weight:600; color:#a3b1bd; letter-spacing:.2px; }
 
   @media (max-height:600px) {
@@ -297,6 +313,7 @@
         <div class="stat"><div class="sv" id="statTime">-</div><div class="sl" id="statTimeL"></div></div>
         <div class="stat"><div class="sv" id="statDrop">-</div><div class="sl" id="statDropL"></div></div>
       </div>
+      <div class="best-note" id="bestNote"></div>
       <button class="btn" id="nextBtn"></button>
       <div class="btn-row">
         <button class="btn ghost" id="retryBtn"></button>
@@ -321,6 +338,7 @@
         <div class="stat"><div class="sv" id="eTime">-</div><div class="sl" id="eTimeL"></div></div>
         <div class="stat"><div class="sv" id="eDrop">-</div><div class="sl" id="eDropL"></div></div>
       </div>
+      <div class="best-note" id="bestNoteEnd"></div>
       <button class="btn" id="againBtn"></button>
       <a class="btn ghost" id="endHome" href="../../index.html" style="line-height:43px;text-decoration:none;"></a>
       <div class="foot-note" id="endFoot"></div>
@@ -510,6 +528,11 @@
       cpToast: '여기서부터 다시 시작해요',
       clearTitle: '깃발 도착!', clearSub: '무사히 건넜어요',
       timeL: '걸린 시간', dropL: '모은 빗방울',
+      bestL: '최고 기록',
+      bestFirst: '이 코스의 첫 기록이에요',
+      bestNew: '신기록! 지난 기록보다 −{d}',
+      bestKeep: '최고 기록 {b} · +{d}',
+      bestOn: '{c} · {n}',
       next: '다음 코스', retry: '다시 하기', pickBtn: '코스 고르기', home2: '홈으로',
       endTitle: '비가 갰어요', endSub: '오늘은 여기까지 🌈',
       endMsg: '우산을 접고 하늘을 올려다봐요. 구름 사이로 무지개가 떴어요.',
@@ -533,6 +556,11 @@
       cpToast: 'ここから再開します',
       clearTitle: '旗に到着！', clearSub: '無事にわたれました',
       timeL: 'かかった時間', dropL: 'あつめた雨つぶ',
+      bestL: '最高記録',
+      bestFirst: 'このコース初めての記録です',
+      bestNew: '新記録！ まえより −{d}',
+      bestKeep: '最高記録 {b} · +{d}',
+      bestOn: '{c} · {n}',
       next: '次のコース', retry: 'もう一度', pickBtn: 'コース選択', home2: 'ホームへ',
       endTitle: '雨が上がりました', endSub: '今日はここまで 🌈',
       endMsg: 'かさを閉じて空を見上げます。雲のあいだに、にじが出ました。',
@@ -556,6 +584,11 @@
       cpToast: 'You will restart from here',
       clearTitle: 'Flag reached!', clearSub: 'You made it across',
       timeL: 'Time', dropL: 'Raindrops',
+      bestL: 'Best',
+      bestFirst: 'First record on this course',
+      bestNew: 'New best! −{d} off your record',
+      bestKeep: 'Best {b} · +{d}',
+      bestOn: '{c} · {n}',
       next: 'Next course', retry: 'Try again', pickBtn: 'Courses', home2: 'Home',
       endTitle: 'The rain has cleared', endSub: "That's all for today 🌈",
       endMsg: 'You fold your umbrella and look up. A rainbow, between the clouds.',
@@ -581,10 +614,37 @@
     return 'ko';
   }
   function fmtTime(sec) {
-    var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+    /* Floor once, then split. The printed time is then exactly Math.floor(sec)
+       seconds, which is what lets fmtDelta subtract two printed times without the
+       minute split drifting a second away from the whole it came from. */
+    var w = Math.floor(sec), m = Math.floor(w / 60), s = w % 60;
     if (lang === 'ja') return m > 0 ? m + '分' + s + '秒' : s + '秒';
     if (lang === 'en') return m > 0 ? m + 'm ' + s + 's' : s + 's';
     return m > 0 ? m + '분 ' + s + '초' : s + '초';
+  }
+  /* Gaps between runs live in tenths — fmtTime floors to whole seconds and would
+     report a real 0.7s improvement as nothing at all.
+     Takes the two times, not their difference: a gap printed in whole seconds sits
+     beside two times that were each floored to whole seconds, so it has to be the
+     difference of those two printed numbers — floor(hi)−floor(lo), never
+     floor(hi−lo). The two disagree by exactly one whenever the record's fraction is
+     the larger, which is half of all runs: a 102.399s run against an 81.840s record
+     prints "1분 42초" and "1분 21초" and then used to call the gap between them 20.
+     Under ten seconds the gap keeps its tenth on purpose — that is the scale a
+     player improves at, finer than the seconds printed beside it. And a gap that is
+     real but finer than the tenth shown floors up to 0.1 rather than to a flat 0 —
+     "신기록! −0.0초" announces an improvement and then denies it in the same breath. */
+  function fmtDelta(hi, lo) {
+    var d = Math.max(0, Math.floor(hi) - Math.floor(lo)), s;
+    if (d >= 10) s = String(d);
+    else {
+      var v = Math.max(0, hi - lo), t = Math.floor(v * 10) / 10;
+      if (v > 0 && t < 0.1) t = 0.1;
+      s = t.toFixed(1);
+    }
+    if (lang === 'ja') return s + '秒';
+    if (lang === 'en') return s + 's';
+    return s + '초';
   }
 
   /* ==================== progress (non-pressuring) ==================== */
@@ -595,19 +655,61 @@
      "one small integer" scheme — a stored 3 from an older save just means the
      final course is open but unproven, which is the honest reading. */
   var SAVE = 'in9-umbrella-hop';
+  /* The times live in their own key. Keeping them out of the unlock key is what
+     lets the unlock key stay the bare integer every earlier build of this game
+     knows how to read — this portal has served a stale bundle from the edge
+     before, and a player who met the old one would have lost every unlock to a
+     JSON string that parseInt() reads as NaN. */
+  var BESTS = 'in9-umbrella-hop-best';
   var MAXUNLOCK = 4;
   var unlocked = 1;
+  /* Fastest run per course, in seconds; null until the course has been crossed.
+     Time is the only quantity this physics lets a player move, so it is the only
+     thing worth keeping. Stored alongside `unlocked` as {u:<int>, b:[…]} — an
+     older save is a bare integer and is read as {u:that, b:empty}. */
+  var best = [null, null, null];
+  function readBests(arr) {
+    if (!arr) return;
+    for (var i = 0; i < 3; i++) {
+      var t = parseFloat(arr[i]);
+      if (isFinite(t) && t > 0 && t < 36000) best[i] = t;
+    }
+  }
   function loadSave() {
-    try {
-      var v = parseInt(localStorage.getItem(SAVE) || '1', 10);
+    var raw = null, rawB = null;
+    try { raw = localStorage.getItem(SAVE); rawB = localStorage.getItem(BESTS); } catch (e) {}
+    if (raw && raw.charAt(0) === '{') {
+      /* One interim build packed {u,b} into the unlock key; read it here so its
+         records survive, and the next write splits the two apart again. */
+      var o = null;
+      try { o = JSON.parse(raw); } catch (e) { o = null; }
+      if (o && typeof o === 'object') {
+        var u = parseInt(o.u, 10);
+        if (u >= 1 && u <= MAXUNLOCK) unlocked = u;
+        readBests(o.b);
+      }
+    } else if (raw) {                      /* the plain unlock counter */
+      var v = parseInt(raw, 10);
       if (v >= 1 && v <= MAXUNLOCK) unlocked = v;
+    }
+    if (rawB) {
+      var b = null;
+      try { b = JSON.parse(rawB); } catch (e) { b = null; }
+      readBests(b);
+    }
+  }
+  function writeSave() {
+    try {
+      localStorage.setItem(SAVE, String(unlocked));
+      localStorage.setItem(BESTS, JSON.stringify(best));
     } catch (e) {}
   }
   function saveUnlock(n) {
     if (n > MAXUNLOCK) n = MAXUNLOCK;
-    if (n <= unlocked) return;
-    unlocked = n;
-    try { localStorage.setItem(SAVE, String(unlocked)); } catch (e) {}
+    if (n > unlocked) unlocked = n;
+    /* Written unconditionally: replaying an already-open course changes no unlock
+       but may well have set a new best, and that has to reach the disk too. */
+    writeSave();
   }
 
   /* ==================== audio ==================== */
@@ -717,6 +819,8 @@
      every route in (fresh, retry, course list, replay after the ending) lands on
      the same correct sum with no bookkeeping at the entry points. */
   var courseTime = [0, 0, 0], courseDrops = [0, 0, 0];
+  /* What the just-finished run did to this course's record — read by the clear panel. */
+  var prevBest = null, isNewBest = false;
   var clearAnim = 0, endAnim = 0;
   var toastTimer = null;
   var pausedFrom = null;
@@ -1764,6 +1868,9 @@
     courseTime[courseIdx] = runTime;
     courseDrops[courseIdx] = drops;
     recomputeTotals();
+    prevBest = best[courseIdx];
+    isNewBest = (prevBest === null || runTime < prevBest);
+    if (isNewBest) best[courseIdx] = runTime;
     saveUnlock(courseIdx + 2);
     spawn(course.goalX, course.plats[course.plats.length - 1].y - 40, 26, 'sparkle');
     sndClear();
@@ -1920,9 +2027,28 @@
       toastTimer = null;
     }, ms || 1800);
   }
+  /* The clear panel's reason to come back: how this run sits against your own
+     record. Never a scold — a slower run just quotes the number to beat. */
+  /* `named` prefixes the course. The clear panel needs no prefix — every number on
+     it belongs to the run that just ended. The ending panel does: the stat above
+     this line is the three-course total, so an unlabelled single-course record
+     sitting under it reads as a total that does not add up. */
+  function renderBestNote(id, named) {
+    var el = $(id), t = T(), b = best[courseIdx];
+    if (!el) return;
+    el.classList.remove('fresh');
+    if (b === null) { el.textContent = ''; el.style.display = 'none'; return; }
+    el.style.display = '';
+    var txt;
+    if (isNewBest && prevBest === null) { txt = t.bestFirst; el.classList.add('fresh'); }
+    else if (isNewBest) { txt = t.bestNew.replace('{d}', fmtDelta(prevBest, runTime)); el.classList.add('fresh'); }
+    else txt = t.bestKeep.replace('{b}', fmtTime(b)).replace('{d}', fmtDelta(runTime, b));
+    el.textContent = named ? t.bestOn.replace('{c}', t.cn[courseIdx]).replace('{n}', txt) : txt;
+  }
   function showClearPanel() {
     $('statTime').textContent = fmtTime(runTime);
     $('statDrop').textContent = '💧 ' + drops;
+    renderBestNote('bestNote');
     $('nextBtn').style.display = courseIdx < 2 ? '' : 'none';
     gaVoteMount('#clearOv .panel');
     $('clearOv').classList.add('active');
@@ -1965,6 +2091,7 @@
   function showEndPanel() {
     $('eTime').textContent = fmtTime(totalTime);
     $('eDrop').textContent = '💧 ' + totalDrops;
+    renderBestNote('bestNoteEnd', true);
     gaVoteMount('#endOv .panel');
     $('endOv').classList.add('active');
     mode = 'done';
@@ -1998,10 +2125,17 @@
         b.className = 'ccard-btn card-btn' + (locked ? ' locked' : '');
         b.innerHTML =
           '<span class="cbi">' + (locked ? '🔒' : icons[idx]) + '</span>' +
-          '<span class="cbt"><span class="n"></span><span class="d"></span></span>' +
+          '<span class="cbt"><span class="n"></span><span class="d"></span><span class="cbb"></span></span>' +
           (locked ? '' : (idx + 2 <= unlocked ? '<span class="cbdone">🚩</span>' : '<span class="cbk">▶</span>'));
         b.querySelector('.n').textContent = t.cn[idx];
         b.querySelector('.d').textContent = locked ? t.locked : t.cd[idx];
+        /* The reason to come back has to be visible at the door, not only after a run.
+           It stands in for the description on a course already crossed — see .cbb. */
+        var bb = b.querySelector('.cbb');
+        if (!locked && best[idx] !== null) {
+          bb.textContent = t.bestL + ' ' + fmtTime(best[idx]);
+          b.querySelector('.d').style.display = 'none';
+        } else bb.style.display = 'none';
         if (!locked) {
           b.addEventListener('click', function () {
             initAudio(); sndPop();
@@ -2061,8 +2195,10 @@
     /* A toast that is still on screen is still being read — retranslate it in place. */
     if (toastKey) $('toast').textContent = t[toastKey] || '';
     if (course) $('courseTag').textContent = t.cn[courseIdx];
-    if (mode === 'clear') { $('statTime').textContent = fmtTime(runTime); }
-    if (mode === 'done') { $('eTime').textContent = fmtTime(totalTime); }
+    if (mode === 'clear') { $('statTime').textContent = fmtTime(runTime); renderBestNote('bestNote'); }
+    if (mode === 'done') { $('eTime').textContent = fmtTime(totalTime); renderBestNote('bestNoteEnd', true); }
+    /* 언어를 바꾸면 떠 있던 투표 물음도 그 언어로 따라간다 */
+    try{ if(gaS.voteShown && !gaS.voted) gaVoteShow(gaS.voteScene); }catch(e){}
     buildCourseList();
   }
 
@@ -2208,6 +2344,14 @@
     el.querySelector('[data-choice="unsure"]').textContent=c.no;
     gaS.voteScene=scene||'main'; gaS.voteShown=true; el.hidden=false; el.classList.remove('done');
   }
+  /* 눌린 채로 있는 Enter 의 오토리핏은 새 조작이 아니다. 투표 뒤 포커스를
+     옮겨주고 나면 그 반복이 옮겨간 버튼을 눌러 다음 코스가 저 혼자 시작된다 —
+     버튼의 기본 활성화만 막는다. 게임 자신의 키 처리는 그대로 돈다. */
+  document.addEventListener("keydown",function(e){
+    if(!e.repeat)return;
+    var k=e.key||""; if(k!=="Enter"&&k!==" "&&k!=="Spacebar")return;
+    var t=e.target; if(t&&t.tagName==="BUTTON")e.preventDefault();
+  },true);
   (function(){ var el=document.getElementById('gaVote'); if(!el)return;
     el.addEventListener('click',function(e){
       var b=e.target; while(b&&b!==el&&!(b.getAttribute&&b.getAttribute('data-choice')))b=b.parentNode;
@@ -2215,6 +2359,22 @@
       gaSend('game_vote',{scene:gaS.voteScene,choice:b.getAttribute('data-choice')});
       var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
       el.classList.add('done'); el.querySelector('.ga-vote-q').textContent=c.thx;
+      /* .done 이 누른 버튼을 그 자리에서 display:none 시키므로 포커스는 지금
+         이 순간 BODY 로 떨어진다. 되돌리는 것도 지금이어야 한다 — 1.2초 뒤
+         타이머에 미루면 그 사이 스스로 Tab 해 간 사람의 포커스를 빼앗아,
+         언어를 바꾸려던 Enter 가 다음 코스를 시작시킨다.
+         키보드로 누른 경우(detail 0)에만 움직인다 — 포인터로 누른 사람에게
+         링이 뜨면 안 되므로. */
+      if(e.detail===0){
+        try{
+          var ov=el.parentNode; while(ov&&!(ov.classList&&ov.classList.contains('overlay')))ov=ov.parentNode;
+          if(ov&&ov.classList.contains('active')){
+            /* 화면에 실제로 떠 있는 첫 버튼. 숨은 버튼에 focus() 하면 조용히 실패한다. */
+            var bs=ov.querySelectorAll('button.btn');
+            for(var i=0;i<bs.length;i++){ if(bs[i].offsetParent!==null){ bs[i].focus(); break; } }
+          }
+        }catch(er){}
+      }
       setTimeout(function(){ el.hidden=true; },1200);
     });
   })();

@@ -98,6 +98,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
 .slot.has:active{transform:scale(.88)}
 .slot.pop{animation:slotPop .45s cubic-bezier(.34,1.56,.64,1)}
 @keyframes slotPop{0%{transform:scale(.4) rotate(-12deg)}60%{transform:scale(1.14) rotate(4deg)}100%{transform:scale(1)}}
+.slot:focus-visible{outline:3px solid var(--bulb);outline-offset:2px}
 .slot.nope{animation:nope .4s ease}
 @keyframes nope{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 /* ---------- station ---------- */
@@ -106,7 +107,9 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
   background:linear-gradient(180deg,#2c171a,#1d1013);
   box-shadow:0 14px 30px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,190,140,.1);
 }
-#stCv{display:block;width:100%;height:100%;touch-action:none}
+#stCv{display:block;width:100%;height:100%;touch-action:none;border-radius:20px}
+#stCv:focus{outline:none}
+#stCv:focus-visible{outline:3px solid var(--bulb);outline-offset:-4px}
 /* ---------- tabs ---------- */
 #tabs{flex:0 0 auto;display:flex;gap:6px}
 .tab{
@@ -126,6 +129,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
   transform:translateY(-2px);
 }
 .tab.sel canvas{filter:none}
+.tab:focus-visible,.chip:focus-visible,.home:focus-visible,#endBtns button:focus-visible,.ga-vote-btn:focus-visible{outline:3px solid var(--bulb);outline-offset:2px}
 .tab .need{
   position:absolute;top:3px;right:6px;width:7px;height:7px;border-radius:50%;
   background:var(--bulb);box-shadow:0 0 7px var(--glow);
@@ -134,7 +138,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
 /* ---------- hint ---------- */
 #hint{
   flex:0 0 auto;text-align:center;font-size:.7rem;line-height:1.45;color:var(--ink-soft);
-  min-height:1.9em;padding:0 4px;
+  min-height:2.9em;padding:0 4px;   /* 두 줄 고정 — 힌트가 한 줄로 줄어도 조리대가 흔들리지 않게 */
 }
 /* ---------- toast ---------- */
 #toast{
@@ -162,9 +166,10 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
 }
 #endWrap{
   position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
-  padding:20px;opacity:0;pointer-events:none;transition:opacity .55s ease .15s;
+  padding:20px;opacity:0;pointer-events:none;visibility:hidden;
+  transition:opacity .55s ease .15s, visibility 0s linear .7s;
 }
-#endWrap.show{opacity:1;pointer-events:auto}
+#endWrap.show{opacity:1;pointer-events:auto;visibility:visible;transition:opacity .55s ease .15s, visibility 0s}
 #endCard{
   width:100%;max-width:360px;border-radius:24px;padding:22px 18px 18px;text-align:center;
   background:linear-gradient(180deg,#3a1f1c,#2a1416);
@@ -231,10 +236,11 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
   .slot{width:34px;height:34px;flex:0 1 34px;border-radius:10px}
   .slot canvas{width:29px;height:29px}
   #stationWrap{min-height:104px;border-radius:15px}
+  #stCv{border-radius:15px}
   .tab{padding:4px 3px 3px;border-radius:12px}
   .tab canvas{width:22px;height:22px}
   .tab span{font-size:.6rem}
-  #hint{font-size:.6rem;line-height:1.25;min-height:0}
+  #hint{font-size:.6rem;line-height:1.25;min-height:2.5em}
 }
 @media (orientation:landscape) and (max-height:430px){
   body:not(.rot-ok) #rotate{display:flex}
@@ -274,7 +280,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
 
   <div id="trayBar"></div>
 
-  <div id="stationWrap"><canvas id="stCv"></canvas></div>
+  <div id="stationWrap"><canvas id="stCv" tabindex="0" role="application" aria-label="조리대"></canvas></div>
 
   <div id="tabs">
     <button class="tab sel" data-st="tteok"><canvas></canvas><span>떡볶이</span></button>
@@ -331,6 +337,7 @@ const I18N = {
     hint_odeng:'국물은 냄비 아래쪽에서, 꼬치는 윗쪽에서 컵으로 드래그 🍢',
     hint_serve:'트레이의 음식을 탭하면 손님에게 드려요',
     trayFull:'트레이가 가득 찼어요 — 손님께 드리거나 길게 눌러 정리해요',
+    trayFullKb:'트레이가 가득 찼어요 — 손님께 드리거나 Delete 로 정리해요',
     discarded:'음식을 정리했어요',
     restartAsk:'한 번 더 누르면 처음부터 시작해요',
     rotTitle:'세로로 돌려주세요',
@@ -353,7 +360,15 @@ const I18N = {
     guest:'손님',
     thanks:['잘 먹을게요!','따끈하네요, 고마워요','이 맛이야…','밤엔 이게 최고죠'],
     hums:['♪','♫','～'],
-    ready:'준비됐어요'
+    ready:'준비됐어요',
+    doorBest:'지난 최고 — 바삭 붕어빵 {n}개',
+    slotEmpty:'빈 자리',
+    kb_tteok:'←/→ 나 스페이스로 냄비를 저어요',
+    kb_bung:'←/→ 로 틀을 고르고 스페이스로 붓기·뒤집기·꺼내기',
+    kb_odeng:'↑/↓ 로 꼬치·국물을 고르고 스페이스로 컵에 담아요',
+    kb_serve:'Shift+Tab 으로 트레이 → Enter 로 손님께 · 1·2·3 가게 전환',
+    kb_slot:'Enter 로 손님께 · Delete 로 정리 · Esc 로 조리대',
+    kb_aria:'조리대. 방향키로 고르고 스페이스로 조리해요. 1·2·3 으로 가게를 바꿔요.'
   },
   ja:{
     title:'ミニ屋台', home:'ホーム',
@@ -364,6 +379,7 @@ const I18N = {
     hint_odeng:'つゆは鍋の下側、串は上側からカップへドラッグ 🍢',
     hint_serve:'トレイの料理をタップするとお客さんに出せます',
     trayFull:'トレイがいっぱい — お出しするか、長押しで片づけましょう',
+    trayFullKb:'トレイがいっぱい — お出しするか、Delete で片づけましょう',
     discarded:'片づけました',
     restartAsk:'もう一度押すと最初から始めます',
     rotTitle:'縦向きにしてください',
@@ -386,7 +402,15 @@ const I18N = {
     guest:'お客さん',
     thanks:['いただきます！','あったかい、ありがとう','この味だね…','夜はこれが一番'],
     hums:['♪','♫','～'],
-    ready:'できました'
+    ready:'できました',
+    doorBest:'これまでの最高 — カリッと{n}個',
+    slotEmpty:'空きスロット',
+    kb_tteok:'←/→ かスペースで鍋を混ぜます',
+    kb_bung:'←/→ で型を選び、スペースで流す・返す・取り出す',
+    kb_odeng:'↑/↓ で串・つゆを選び、スペースでカップへ',
+    kb_serve:'Shift+Tab でトレイ → Enter でお客さんへ · 1･2･3 で屋台切替',
+    kb_slot:'Enter でお客さんへ · Delete で片づけ · Esc で調理台',
+    kb_aria:'調理台。矢印キーで選び、スペースで調理します。1･2･3 で屋台を切り替えます。'
   },
   en:{
     title:'Tiny Street Food', home:'Home',
@@ -397,6 +421,7 @@ const I18N = {
     hint_odeng:'Drag broth from the lower pot, skewers from the top, into the cup 🍢',
     hint_serve:'Tap an item in the tray to hand it to the guest',
     trayFull:'Tray is full — serve one, or long-press to clear',
+    trayFullKb:'Tray is full — serve one, or press Delete to clear',
     discarded:'Cleared it away',
     restartAsk:'Tap again to start over',
     rotTitle:'Please rotate to portrait',
@@ -419,7 +444,15 @@ const I18N = {
     guest:'Guest',
     thanks:['Thank you!','So warm, thanks','This is the taste…','Perfect for a night like this'],
     hums:['♪','♫','～'],
-    ready:'ready'
+    ready:'ready',
+    doorBest:'Best crispy so far: {n}',
+    slotEmpty:'Empty slot',
+    kb_tteok:'Arrow keys or Space to stir the pan',
+    kb_bung:'←/→ pick a mold, Space to pour / flip / take',
+    kb_odeng:'↑/↓ pick skewer or broth, Space to add to the cup',
+    kb_serve:'Shift+Tab to the tray → Enter to serve · 1/2/3 switch stall',
+    kb_slot:'Enter to serve · Delete to clear · Esc back to the station',
+    kb_aria:'Cooking station. Arrow keys to choose, Space to cook, 1/2/3 to switch stalls.'
   }
 };
 const LANGS=['ko','ja','en'];
@@ -779,6 +812,25 @@ function saveBest(prev,made,crispy){
   try{ localStorage.setItem(BEST_KEY,JSON.stringify(b)); }catch(e){}
 }
 
+/* 문 앞의 기록 한 줄 — 판이 열릴 때 지난 최고를 토스트로 스친다.
+   저장이 없거나 바삭 0개면 띄우지 않는다: 빈 칸을 강조하지 않는다는
+   엔딩 카드(buildBestRow)의 규칙을 시작 쪽에도 그대로 적용한 것.
+   토스트는 pointer-events:none 이라 첫 조작을 막지 않고,
+   game_step 'start' 는 여전히 첫 조작에서 나간다. */
+let doorTimer=0;
+function showDoorLine(delay){
+  clearTimeout(doorTimer);
+  const b=loadBest();
+  if(!b||!b.crispy) return;
+  doorTimer=setTimeout(function(){
+    if(G.over) return;
+    /* ↺ 확인 안내가 떠 있는 동안에는 덮지 않는다 — 안내만 사라지고 무장이 남으면
+       다음 ↺ 탭이 예고 없이 판을 지운다 */
+    if(resetArm && performance.now()-resetArm<RESET_ARM_MS) return;
+    toast(t('doorBest').replace('{n}',b.crispy));
+  }, delay==null?700:delay);
+}
+
 function makeCustomers(){
   const list=[];
   for(let i=0;i<TOTAL;i++){
@@ -844,7 +896,24 @@ for(let i=0;i<TRAY_MAX;i++){
     if(holdFired){ holdFired=false; return; }  // long-press already handled it
     serveFromSlot(i);
   });
-  b.addEventListener('pointerdown',function(){ holdStart(i); });
+  b.addEventListener('pointerdown',function(){ kbPtrAt=Date.now(); kbSlotSet(false); holdStart(i); });
+  b.addEventListener('focus',function(){ kbSlotSet(Date.now()-kbPtrAt>400 && kbVis(b)); });
+  b.addEventListener('blur',function(){ kbSlotSet(false); });
+  /* 키보드 정리 — 길게눌러 정리와 같은 출구. 이게 없으면 아무도 원하지 않는
+     음식으로 트레이가 차 버렸을 때 키보드만 쓰는 사람은 판을 끝낼 수 없다. */
+  b.addEventListener('keydown',function(e){
+    if(e.altKey||e.ctrlKey||e.metaKey) return;
+    const k=e.key;
+    if(k==='Delete'||k==='Del'||k==='Backspace'){
+      e.preventDefault();
+      if(G.over||!G.tray[i]) return;
+      discardFromSlot(i);
+      try{ gaBindFirst.first(); }catch(err){}
+    }else if(k==='Escape'||k==='Esc'){
+      e.preventDefault();
+      try{ stCv.focus(); }catch(err){}
+    }
+  });
   b.addEventListener('pointerup',holdEnd);
   b.addEventListener('pointercancel',holdEnd);
   b.addEventListener('pointerleave',holdEnd);
@@ -857,16 +926,28 @@ function renderTray(){
     if(it){
       b.classList.add('has');
       b.setAttribute('aria-label',t('tab_'+it.type));
+      b.tabIndex=0;                 /* 키보드: 담긴 칸만 Tab 순서에 남긴다 */
       paintIcon(cv,it.type,it.q);
     }else{
       b.classList.remove('has');
-      b.removeAttribute('aria-label');
+      b.setAttribute('aria-label',t('slotEmpty'));
+      b.tabIndex=-1;
       const r=fit(cv); r.g.clearRect(0,0,r.w,r.h);
     }
   }
 }
+/* 방금 비운 칸에 포커스가 남아 있으면(=키보드로 냈다) 갈 곳을 만들어 준다.
+   그냥 두면 tabIndex=-1 이 된 빈 칸에 포커스가 갇혀 Tab 이 맨 앞으로 튄다. */
+function refocusTray(i){
+  if(document.activeElement!==slots[i]) return;
+  for(let k=i;k<TRAY_MAX;k++){ if(G.tray[k]){ slots[k].focus(); return; } }
+  for(let k=i-1;k>=0;k--){ if(G.tray[k]){ slots[k].focus(); return; } }
+  try{ stCv.focus(); }catch(e){}
+}
+/* 안내는 지금 쓰고 있는 입력으로 실제 할 수 있는 조작만 말한다 */
+function trayFullMsg(){ return (KB.focus||KB.slot) ? t('trayFullKb') : t('trayFull'); }
 function addToTray(type,q){
-  if(G.tray.length>=TRAY_MAX){ toast(t('trayFull')); SFX.nope(); return false; }
+  if(G.tray.length>=TRAY_MAX){ toast(trayFullMsg()); SFX.nope(); return false; }
   G.tray.push({type:type,q:q==null?.5:q});
   renderTray();
   const b=slots[G.tray.length-1];
@@ -884,6 +965,7 @@ function discardFromSlot(i){
   renderTray(); updateTabs();
   SFX.nope();
   toast(t('discarded'));
+  refocusTray(i);
   const b=slots[i];
   if(b&&G.tray[i]){ b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
 }
@@ -903,6 +985,7 @@ function serveFromSlot(i){
   G.tray.splice(i,1);
   G.made[it.type]++;
   renderTray();
+  refocusTray(i);
   SFX.happy();
   for(let k=0;k<10;k++) sparkHeart();
   if(c.order.every(o=>o.done)){
@@ -926,13 +1009,15 @@ function updateDots(){
 
 /* ---------------- tabs ---------------- */
 const tabs=Array.prototype.slice.call(document.querySelectorAll('.tab'));
+function setStation(ty){
+  if(!ty||G.station===ty) return false;
+  G.station=ty;
+  SFX.ensure(); SFX.tick();
+  updateTabs(); updateHint();
+  return true;
+}
 tabs.forEach(function(b){
-  b.addEventListener('click',function(){
-    if(G.station===b.dataset.st) return;
-    G.station=b.dataset.st;
-    SFX.ensure(); SFX.tick();
-    updateTabs(); updateHint();
-  });
+  b.addEventListener('click',function(){ setStation(b.dataset.st); });
 });
 function updateTabs(){
   const need=neededTypes();
@@ -950,7 +1035,12 @@ function paintTabIcons(){
   tabs.forEach(function(b){ paintIcon(b.querySelector('canvas'),b.dataset.st,.55); });
 }
 function updateHint(){
-  $('#hint').textContent = t('hint_'+G.station)+' · '+t('hint_serve');
+  $('#hint').textContent = KB.slot
+    ? t('kb_slot')
+    : KB.focus
+      ? t('kb_'+G.station)+' · '+t('kb_serve')
+      : t('hint_'+G.station)+' · '+t('hint_serve');
+  try{ stCv.setAttribute('aria-label', t('tab_'+G.station)+' — '+t('kb_aria')); }catch(e){}
 }
 
 /* ---------------- particles ---------------- */
@@ -1253,7 +1343,13 @@ function drawBubble(g,x,y,w,h,c){
 const TT={prog:0,need:TAU*2.7,spin:0,vel:0,last:null,dir:0,bub:[],glow:0};
 const BG={molds:[],hintT:0};
 const OD={cup:{broth:0,skewer:false,doneT:-1},carry:null,cx:0,cy:0,ladle:0,ripple:0};
+/* 키보드 조작 상태 — 터치 경로와 나란히 도는 두 번째 입력이다.
+   focus 는 '키보드로 들어온 포커스'일 때만 true(=:focus-visible). 마우스로 눌렀을 땐
+   커서를 그리지 않아 기존 화면이 그대로 남는다. */
+const KB={focus:false, slot:false, mold:0, od:'broth'};
+const KB_STIR=TAU*.25;   /* 한 번 누를 때마다 1/4 바퀴 — 한 접시에 11번 */
 function resetStations(){
+  KB.mold=0; KB.od='broth';
   TT.prog=0; TT.spin=0; TT.vel=0; TT.last=null; TT.bub.length=0; TT.glow=0;
   BG.molds=[{st:'empty',t:0,bake:0,flipAnim:0,wob:0},{st:'empty',t:0,bake:0,flipAnim:0,wob:0},{st:'empty',t:0,bake:0,flipAnim:0,wob:0}];
   OD.cup={broth:0,skewer:false,doneT:-1}; OD.carry=null; OD.ripple=0;
@@ -1352,6 +1448,7 @@ function drawStation(dt){
   if(G.station==='tteok') drawTteokStation(g,w,h);
   else if(G.station==='bung') drawBungStation(g,w,h);
   else drawOdengStation(g,w,h);
+  drawKbCursor(g,w,h);
 
   // particles
   for(let i=0;i<stP.length;i++){
@@ -1365,6 +1462,27 @@ function drawStation(dt){
   }
 }
 
+/* 키보드로 들어왔을 때만 그리는 선택 표시. 기존 호박색 안내선과 겹치지 않게 흰 점선. */
+function drawKbCursor(g,w,h){
+  if(!KB.focus||G.over) return;
+  const ph=.5+.5*Math.sin(G.time*4);
+  g.save();
+  g.strokeStyle='rgba(255,252,245,'+(.5+.4*ph)+')';
+  g.lineWidth=2.4; g.setLineDash([7,5]); g.lineDashOffset=-G.time*14;
+  if(G.station==='tteok'){
+    const L=ttLayout(w,h);
+    g.beginPath(); g.ellipse(L.cx,L.cy,L.R*1.14,L.R*.68,0,0,TAU); g.stroke();
+  }else if(G.station==='bung'){
+    const L=bgLayout(w,h), m=L.molds[KB.mold]||L.molds[0];
+    rr(g,m.x-m.w*.60,m.y-m.h*.66,m.w*1.20,m.h*1.32,9); g.stroke();
+  }else{
+    const L=odLayout(w,h), P=L.pot, by=P.y+P.h*.20;
+    if(KB.od==='skewer'){ rr(g,P.x+P.w*.05,by-P.h*.66,P.w*.90,P.h*.56,9); g.stroke(); }
+    else{ g.beginPath(); g.ellipse(P.x+P.w*.5,by+P.h*.02,P.w*.45,P.h*.17,0,0,TAU); g.stroke(); }
+  }
+  g.setLineDash([]); g.lineDashOffset=0;
+  g.restore();
+}
 function flame(g,x,y,w,h2,seed){
   for(let i=0;i<3;i++){
     const fx=x+(i-1)*w*.24, sc=.7+.3*Math.sin(G.time*7+i*2+seed);
@@ -1743,6 +1861,7 @@ function stPos(e){
 }
 stCv.addEventListener('pointerdown',function(e){
   if(G.over) return;
+  kbPtrAt=Date.now(); kbSet(false);
   SFX.ensure();
   const p=stPos(e); ptrDown=true;
   try{ stCv.setPointerCapture(e.pointerId); }catch(err){}
@@ -1795,6 +1914,91 @@ function endPtr(e){
 stCv.addEventListener('pointerup',endPtr);
 stCv.addEventListener('pointercancel',endPtr);
 stCv.addEventListener('pointerleave',function(e){ if(ptrDown) endPtr(e); });
+
+/* ---------------- station input · keyboard ----------------
+   터치와 같은 함수를 그대로 부른다(bungTap / odengDown / odengDrop).
+   키보드 전용 분기를 따로 만들면 두 경로가 조용히 갈라지기 때문. */
+function kbVis(el){
+  try{ return el.matches(':focus-visible'); }catch(e){ return true; }
+}
+function kbVisible(){ return kbVis(stCv); }
+function kbSet(v){
+  if(KB.focus===v) return;
+  KB.focus=v; updateHint();
+}
+/* 트레이 슬롯에 키보드 포커스가 들어와 있는 동안 — 힌트 줄을 트레이 조작으로 바꾼다 */
+function kbSlotSet(v){
+  if(KB.slot===v) return;
+  KB.slot=v; updateHint();
+}
+/* 탭으로 눌러 들어온 포커스는 키보드 포커스가 아니다 — pointerdown 직후의
+   focus 는 :focus-visible 판정과 상관없이 커서를 켜지 않는다 */
+let kbPtrAt=0;
+stCv.addEventListener('focus',function(){ kbSet(Date.now()-kbPtrAt>400 && kbVisible()); });
+stCv.addEventListener('blur',function(){ kbSet(false); });
+function stBox(){
+  const r=stCv.getBoundingClientRect();
+  return {w:Math.max(1,r.width), h:Math.max(1,r.height)};
+}
+let kbStirT=0;
+function kbStir(dir){
+  const b=stBox(), L=ttLayout(b.w,b.h);
+  const d=dir*KB_STIR;
+  TT.prog=Math.min(TT.need,TT.prog+Math.abs(d));
+  TT.vel=lerp(TT.vel,d*7,.55);
+  SFX.ensure(); SFX.stir(.8);
+  clearTimeout(kbStirT); kbStirT=setTimeout(function(){ SFX.stirStop(); },240);
+  for(let i=0;i<3;i++) spark(stP,L.cx+rand(-L.R*.6,L.R*.6),L.cy,'255,150,90');
+  if(TT.prog>=TT.need) finishTteok();
+}
+function kbBungAct(){
+  const b=stBox(), mm=bgLayout(b.w,b.h).molds[KB.mold];
+  if(!mm) return;
+  SFX.ensure();
+  bungTap({x:mm.x,y:mm.y,w:b.w,h:b.h});
+}
+function kbOdengAct(){
+  const b=stBox(), L=odLayout(b.w,b.h), P=L.pot, C=L.cup;
+  const by=P.y+P.h*.20;
+  const sx=P.x+P.w*.5;
+  const sy=KB.od==='skewer' ? by-P.h*.30 : by+P.h*.06;
+  SFX.ensure();
+  odengDown({x:sx,y:sy,w:b.w,h:b.h});
+  if(!OD.carry) return;
+  OD.cx=sx; OD.cy=sy;
+  odengDrop({x:C.x,y:C.y,w:b.w,h:b.h});
+}
+stCv.addEventListener('keydown',function(e){
+  if(e.altKey||e.ctrlKey||e.metaKey) return;
+  const k=e.key;
+  let used=true;
+  if(k==='1'||k==='2'||k==='3'){
+    kbSet(true);
+    setStation(TYPES[+k-1]);
+  }else if(G.over){
+    used=false;
+  }else if(G.station==='tteok'){
+    if(k==='ArrowLeft') kbStir(-1);
+    else if(k==='ArrowRight'||k===' '||k==='Spacebar'||k==='Enter') kbStir(1);
+    else used=false;
+  }else if(G.station==='bung'){
+    if(k==='ArrowLeft'){ KB.mold=(KB.mold+2)%3; SFX.ensure(); SFX.tick(); }
+    else if(k==='ArrowRight'){ KB.mold=(KB.mold+1)%3; SFX.ensure(); SFX.tick(); }
+    else if(k===' '||k==='Spacebar'||k==='Enter') kbBungAct();
+    else used=false;
+  }else{
+    if(k==='ArrowUp'){ KB.od='skewer'; SFX.ensure(); SFX.tick(); }
+    else if(k==='ArrowDown'){ KB.od='broth'; SFX.ensure(); SFX.tick(); }
+    else if(k===' '||k==='Spacebar'||k==='Enter') kbOdengAct();
+    else used=false;
+  }
+  if(!used) return;
+  kbSet(true);
+  /* 새 판의 첫 '조작'은 키보드에서도 조작이다 — 포인터 경로와 같은 훅을 쓴다.
+     Tab 은 여기까지 오지 않으므로 포커스 이동만으로는 start 가 나가지 않는다. */
+  try{ gaBindFirst.first(); }catch(err){}
+  e.preventDefault();
+});
 
 function finishTteok(){
   TT.prog=0; TT.glow=1;
@@ -1862,7 +2066,7 @@ function odengDrop(p){
   if(cup.doneT>=0) return;
   // cup is already complete but could not be handed off yet — retry instead of locking
   if(cup.broth>=1&&cup.skewer){
-    if(!odengTryFinish(p.w,p.h)){ toast(t('trayFull')); SFX.nope(); }
+    if(!odengTryFinish(p.w,p.h)){ toast(trayFullMsg()); SFX.nope(); }
     return;
   }
   if(kind==='broth'){
@@ -1877,7 +2081,7 @@ function odengDrop(p){
     SFX.tick();
     for(let i=0;i<6;i++) spark(stP,C.x,C.y-C.h*.4,'250,225,180');
   }
-  if(cup.broth>=1&&cup.skewer&&!odengTryFinish(p.w,p.h)){ toast(t('trayFull')); SFX.nope(); }
+  if(cup.broth>=1&&cup.skewer&&!odengTryFinish(p.w,p.h)){ toast(trayFullMsg()); SFX.nope(); }
   updateTabs();
 }
 /* hand the finished cup to the tray; keeps it pending (not locked) while the tray is full */
@@ -1929,9 +2133,19 @@ function endDay(){
     buildEnd();
     $('#endWrap').classList.add('show');
     SFX.happy();
+    /* 키보드로 놀던 사람의 포커스가 사라진 조리대에 남지 않도록 카드로 넘긴다 */
+    const a=document.activeElement;
+    if(a===stCv||(a&&a.classList&&a.classList.contains('slot'))){ try{ $('#againBtn').focus(); }catch(e){} }
   },1500);
 }
+/* 카드 버튼의 Tab 순서 — visibility 가 0.7초 늦게 hidden 이 되므로 CSS 만으로는
+   그 사이가 비지 않는다. 카드를 세울 때 켜고, 판을 다시 열 때 손으로 끈다. */
+function endCardTabbable(on){
+  const bs=document.querySelectorAll('#endCard button');
+  for(let i=0;i<bs.length;i++) bs[i].tabIndex = on?0:-1;
+}
 function buildEnd(){
+  endCardTabbable(true);
   $('#endTitle').textContent=t('endTitle');
   $('#endSub').textContent=t('endSub');
   $('#againBtn').textContent=t('again');
@@ -1980,9 +2194,13 @@ function restart(){
   /* 셔터가 내려가는 중에 ↺ 로 새 판을 열면, endDay 가 예약해 둔 카드가
      진행 중인 판 위로 덮여 조작이 막힌다 — 예약부터 취소한다 */
   clearTimeout(endT1); clearTimeout(endT2); endT1=0; endT2=0;
+  /* 카드가 숨겨지면서(visibility:hidden) 포커스가 body 로 날아가지 않게 먼저 옮긴다 */
+  const af=document.activeElement;
+  if(af&&(af.id==='againBtn'||af.id==='homeBtn2')){ try{ stCv.focus(); }catch(e){} }
   /* 새 판의 start/replay 는 여기(CTA)가 아니라 첫 조작에서 나간다 —
      엔딩 카드를 읽는 시간이 play_sec 에 섞이지 않게 */
   gaBindFirst();
+  endCardTabbable(false);
   $('#endWrap').classList.remove('show');
   setTimeout(function(){ $('#shutter').classList.remove('down'); },260);
   G.customers=makeCustomers(); G.ci=0; G.phase='in'; G.pt=0;
@@ -1991,16 +2209,18 @@ function restart(){
   sceneP.length=0; stP.length=0;
   resetStations();
   renderTray(); updateDots(); updateTabs(); updateHint();
+  showDoorLine(950);
 }
 $('#againBtn').addEventListener('click',function(){ SFX.ensure(); SFX.tick(); restart(); });
 $('#homeBtn2').addEventListener('click',function(){ location.href='../../index.html'; });
 
 /* in-play restart — two taps, no dialog */
+const RESET_ARM_MS=2600;
 let resetArm=0;
 $('#resetBtn').addEventListener('click',function(){
   SFX.ensure(); SFX.tick();
   const now=performance.now();
-  if(resetArm&&now-resetArm<2600){ resetArm=0; restart(); }
+  if(resetArm&&now-resetArm<RESET_ARM_MS){ resetArm=0; restart(); }
   else{ resetArm=now; toast(t('restartAsk')); }
 });
 $('#rotBtn').addEventListener('click',function(){ document.body.classList.add('rot-ok'); });
@@ -2085,16 +2305,20 @@ function gaVoteRelabel(){ if(gaS.voteShown&&!gaS.voted) gaVoteShow(gaS.voteScene
 /* first real play action of a round = round start (replay for every round after the first) */
 var gaBindFirst=(function(){
   var zones=['stationWrap','trayBar','tabs'];
+  var fired=false;
   function unbind(){
     for(var k=0;k<zones.length;k++){ var z=document.getElementById(zones[k]); if(!z)continue;
       z.removeEventListener('pointerdown',onFirst,true); z.removeEventListener('click',onFirst,true); }
   }
-  function onFirst(){ unbind(); gaRoundStart('day'); }
+  /* 판당 정확히 한 번. 키보드 경로도 이걸 부르므로 gaS.t0 가 두 번 리셋되면 안 된다. */
+  function onFirst(){ if(fired)return; fired=true; unbind(); gaRoundStart('day'); }
   function bind(){
+    fired=false;
     for(var i=0;i<zones.length;i++){ var n=document.getElementById(zones[i]); if(!n){continue;}
       n.addEventListener('pointerdown',onFirst,true); n.addEventListener('click',onFirst,true); }
   }
   bind();
+  bind.first=onFirst;
   return bind;
 })();
 
@@ -2105,6 +2329,7 @@ renderTray();
 updateDots();
 updateTabs();
 applyLang();
+showDoorLine(700);
 window.addEventListener('resize',function(){
   paintTabIcons(); renderTray();
   if(G.over) buildEnd();

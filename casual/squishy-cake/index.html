@@ -118,7 +118,9 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
   border:1.5px solid rgba(255,178,205,.5);
   box-shadow:0 10px 26px var(--shadow), inset 0 2px 0 #fff, inset 0 -14px 26px rgba(255,200,220,.35);
 }
-#stage{display:block;width:100%;height:100%;touch-action:none;cursor:pointer}
+#stage{position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:none;cursor:pointer;border-radius:22px}
+#stage:focus{outline:none}
+#stage:focus-visible,#stage.kbdon:focus{outline:3px solid var(--pink-lo);outline-offset:-4px}
 #stagewrap::after{
   content:'';position:absolute;inset:0;pointer-events:none;border-radius:23px;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.6);
@@ -146,11 +148,26 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
   box-shadow:0 2px 6px rgba(220,150,175,.22);
 }
 
+/* ---------- door note (returning player only) ----------
+   스테이지 위에 얹는다 — 흐름에서 높이를 먹으면 되찾은 스테이지를 다시 깎는다 */
+#doorNote{
+  position:absolute;top:8px;right:10px;z-index:4;pointer-events:none;max-width:62%;
+  font-size:.6rem;font-weight:700;letter-spacing:.01em;color:var(--ink-dim);
+  padding:4px 9px;border-radius:999px;
+  background:rgba(255,255,255,.82);
+  border:1px solid rgba(255,178,205,.45);
+  box-shadow:0 2px 6px rgba(220,150,175,.18), inset 0 1px 0 #fff;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#doorNote[hidden]{display:none}
+
 /* ---------- hint ---------- */
 #hint{
   text-align:center;font-size:.68rem;line-height:1.45;color:var(--ink);
   padding:0 4px;min-height:2em;font-weight:600;opacity:.85;
 }
+#kbdTip{display:block;font-size:.56rem;line-height:1.2;color:var(--pink-lo);font-weight:700;letter-spacing:-.01em}
+#kbdTip[hidden]{display:none}
 
 /* ---------- steps ---------- */
 #steps{display:flex;gap:6px}
@@ -322,9 +339,19 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
   .top{width:50px}
   .ordCake{width:74px;flex:0 0 74px}
 }
+/* 세로가 짧은 화면(320×568 등)에서 행 사이만 1px 씩 줄여 준다 */
+@media (max-height:620px){
+  #app{gap:6px}
+}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001s !important;animation-iteration-count:1 !important;transition-duration:.09s !important}
   #shutter{transition-duration:.3s !important}
+}
+
+/* ---- keyboard focus ring — 브랜드 색으로 (기본 파란 링 대체) ---- */
+.home-btn:focus-visible,.icon-btn:focus-visible,.stepchip:focus-visible,
+.sw:focus-visible,.top:focus-visible,.btn:focus-visible,.ga-vote-btn:focus-visible{
+  outline:3px solid var(--pink-lo);outline-offset:2px;
 }
 
 /* ---- GA4 portal standard v1 — vote row ---- */
@@ -360,12 +387,13 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
   </div>
 
   <div id="stagewrap">
-    <canvas id="stage"></canvas>
+    <canvas id="stage" tabindex="0" role="application" aria-label="cake worktop"></canvas>
     <div id="stageBadge"></div>
+    <div id="doorNote" hidden></div>
     <div id="shutter"></div>
   </div>
 
-  <div id="hint"></div>
+  <div id="hint"><span id="hintMain"></span><span id="kbdTip" hidden></span></div>
 
   <div id="steps">
     <button class="stepchip on" data-s="0"></button>
@@ -456,6 +484,10 @@ ko:{
   dayKeep:'이번 판도 {b}★ 모았어요',
   dayTally:'{d}번째 영업\n지금까지 모은 별 {s}★',
   galLabel:'오늘 만든 케이크',
+  doorDays:'어제까지 {d}일 · 별 {s}개',
+  doorStars:'지난번에 모은 별 {s}개',
+  kbdTip:'키보드 ← → 자리 · ↑ ↓ 고르기 · Enter 놓기 · Tab 이동',
+  stageAria:'케이크 작업대. 화살표로 고르고 옮기고, Enter 로 놓아요.',
   again:'다시 하기', homeBtn:'홈으로',
   sheets:['바닐라','딸기','초코','말차','베리'],
   creams:['화이트','핑크','민트','레몬','초코'],
@@ -488,6 +520,10 @@ ja:{
   dayKeep:'今回も {b}★ あつめました',
   dayTally:'{d}回目の営業\nこれまでに あつめた星 {s}★',
   galLabel:'今日つくったケーキ',
+  doorDays:'きのうまで{d}日・星{s}コ',
+  doorStars:'このまえ あつめた星 {s}コ',
+  kbdTip:'キーボード ← → いち · ↑ ↓ えらぶ · Enter おく · Tab いどう',
+  stageAria:'ケーキ作業台。矢印でえらんで動かし、Enterでおきます。',
   again:'もういちど', homeBtn:'ホームへ',
   sheets:['バニラ','いちご','チョコ','まっちゃ','ベリー'],
   creams:['ホイップ','ピンク','ミント','レモン','チョコ'],
@@ -520,6 +556,10 @@ en:{
   dayKeep:'You collected {b}★ this round',
   dayTally:'Round {d}\n{s}★ collected so far',
   galLabel:"Today's cakes",
+  doorDays:'{d} days, {s} stars so far',
+  doorStars:'{s} stars from last time',
+  kbdTip:'Keys ← → move · ↑ ↓ pick · Enter place · Tab next',
+  stageAria:'Cake worktop. Arrow keys to pick and move, Enter to place.',
   again:'Play again', homeBtn:'Home',
   sheets:['Vanilla','Berry','Choco','Matcha','Grape'],
   creams:['Whip','Pink','Mint','Lemon','Choco'],
@@ -1045,6 +1085,16 @@ if(prog.curOrders>0){
   prog.curStars=0; prog.curOrders=0;
   saveProgress();
 }
+/* 문 앞의 기록 한 줄 — 저장값이 있을 때만. 첫 방문자에게는 줄 자체가 없다 */
+function renderDoorNote(){
+  var el=document.getElementById('doorNote'); if(!el) return;
+  var t=T(), txt='';
+  if(prog.days>0) txt=t.doorDays.replace('{d}',prog.days).replace('{s}',prog.stars);
+  else if(prog.stars>0) txt=t.doorStars.replace('{s}',prog.stars);
+  if(txt){ el.textContent=txt; el.hidden=false; }
+  else{ el.textContent=''; el.hidden=true; }
+}
+
 /* 하루 마감: 어제 값을 읽어 둔 뒤 오늘 값을 더해 저장 */
 function commitDay(){
   var today=0,i;
@@ -1102,6 +1152,7 @@ function startDay(){
     var j=ri(i+1), tmp=game.custPool[i]; game.custPool[i]=game.custPool[j]; game.custPool[j]=tmp;
   }
   nextOrder();
+  renderDoorNote();
 }
 function nextOrder(){
   game.target=makeOrder();
@@ -1111,6 +1162,7 @@ function nextOrder(){
   game.sheetSel=game.target.layers[0];
   game.creamSel=ri(CREAMS.length);
   game.topSel=-1;
+  kbd.nx=0;
   refreshPalSel();
   parts.length=0;
   renderOrderBar();
@@ -1156,7 +1208,9 @@ function fit(cv,ctx){
   ctx.setTransform(dpr,0,0,dpr,0,0);
   return {w:w,h:h};
 }
+var boxW=-1, boxH=-1;
 function resize(){
+  boxW=stage.clientWidth; boxH=stage.clientHeight;
   var d=fit(stage,sctx);
   W=d.w; H=d.h;
   U=Math.min(W/335,H/288);
@@ -1165,13 +1219,25 @@ function resize(){
   BASEY=H-Math.max(22,H*0.10);
   drawTarget();
 }
+/* 스테이지 박스는 window resize 없이도 바뀐다(힌트 줄바꿈·키보드 팁 등).
+   창이 아니라 박스를 봐야 캔버스가 눌린 채로 그려지지 않는다 */
+function resizeIfBoxChanged(){
+  if(stage.clientWidth!==boxW||stage.clientHeight!==boxH) resize();
+}
 window.addEventListener('resize',resize);
+var stageRO=null;
+if(typeof ResizeObserver==='function'){
+  try{ stageRO=new ResizeObserver(resizeIfBoxChanged); stageRO.observe(stage); }
+  catch(e){ stageRO=null; }
+}
+var roTick=0;   /* ResizeObserver 가 없는 구형 브라우저용 폴백 (약 6 프레임마다) */
 
 /* ==================== main loop ==================== */
 var lastT=performance.now(), animT=0;
 function frame(now){
   var dt=Math.min(0.05,(now-lastT)/1000); lastT=now;
   animT+=dt;
+  if(!stageRO){ roTick=(roTick+1)%6; if(!roTick) resizeIfBoxChanged(); }
   updateCake(game.cake,dt,U);
   if(squeeze.active) growSqueeze(dt);
   updateParts(dt);
@@ -1180,6 +1246,7 @@ function frame(now){
   drawBackdrop(sctx,W,H);
   drawCake(sctx,game.cake,CX,BASEY,U,animT);
   drawParts(sctx);
+  drawKbdCaret(sctx);
 
   requestAnimationFrame(frame);
 }
@@ -1216,7 +1283,7 @@ function drawTarget(){
 }
 
 /* ==================== UI wiring ==================== */
-var hintEl=$('#hint'), badgeEl=$('#stageBadge');
+var hintMain=$('#hintMain'), kbdTipEl=$('#kbdTip'), badgeEl=$('#stageBadge');
 var palSheet=$('#palSheet'), palCream=$('#palCream'), trayTop=$('#trayTop');
 var nextBtn=$('#nextBtn'), clearBtn=$('#clearBtn');
 var stepChips=Array.prototype.slice.call(document.querySelectorAll('.stepchip'));
@@ -1305,11 +1372,11 @@ function renderStep(){
   trayTop.style.display=game.step===2?'flex':'none';
 
   if(game.step===0){
-    hintEl.textContent=game.cake.layers.length>=MAX_LAYERS?t.hint1full:t.hint1;
+    hintMain.textContent=game.cake.layers.length>=MAX_LAYERS?t.hint1full:t.hint1;
   }else if(game.step===1){
-    hintEl.textContent=t.hint2;
+    hintMain.textContent=t.hint2;
   }else{
-    hintEl.textContent=t.hint3;
+    hintMain.textContent=t.hint3;
   }
   nextBtn.textContent=game.step===2?t.done:t.next;
   nextBtn.classList.toggle('finish',game.step===2);
@@ -1334,22 +1401,26 @@ function onLayerLand(i,cake){
 stepChips.forEach(function(c){
   c.addEventListener('click',function(){
     SFX.ensure();
-    if(game.finished) return;
+    if(game.finished||game.resultOpen) return;
     var s=parseInt(c.getAttribute('data-s'),10);
     if(s===game.step) return;
     endSqueeze();
     game.step=s; renderStep(); SFX.tick();
+    if(kbd.on){ try{ stage.focus(); }catch(err){} }
   });
 });
 
+/* 결과 카드가 떠 있는 동안은 아래 버튼들이 죽어 있어야 한다 —
+   마우스는 오버레이가 막아 주지만 키보드 포커스는 가려진 버튼에 그대로 남는다 */
 nextBtn.addEventListener('click',function(){
   SFX.ensure(); endSqueeze();
-  if(game.finished) return;
-  if(game.step<2){ game.step++; renderStep(); SFX.tick(); }
+  if(game.finished||game.resultOpen) return;
+  if(game.step<2){ game.step++; renderStep(); SFX.tick(); if(kbd.on){ try{ stage.focus(); }catch(err){} } }
   else{ serveCake(); }
 });
 clearBtn.addEventListener('click',function(){
   SFX.ensure(); endSqueeze();
+  if(game.finished||game.resultOpen) return;
   if(game.step===0) game.cake.layers.length=0;
   else if(game.step===1) game.cake.creams.length=0;
   else { game.cake.tops.length=0; game.topSel=-1; refreshPalSel(); }
@@ -1370,14 +1441,19 @@ function nxFromX(x){
 
 var squeeze={active:false,blob:null,lastX:0,pid:null};
 
+function dropSponge(){
+  if(game.cake.layers.length>=MAX_LAYERS){ SFX.nope(); return false; }
+  dropLayer(game.cake,game.sheetSel,U);
+  updateBadge(); renderStep();
+  return true;
+}
+
 stage.addEventListener('pointerdown',function(e){
   SFX.ensure();
   if(game.finished) return;
   var p=stagePos(e);
   if(game.step===0){
-    if(game.cake.layers.length>=MAX_LAYERS){ SFX.nope(); return; }
-    dropLayer(game.cake,game.sheetSel,U);
-    updateBadge(); renderStep();
+    if(!dropSponge()) return;
   }else if(game.step===1){
     if(game.cake.layers.length===0){ SFX.nope(); return; }
     try{ stage.setPointerCapture(e.pointerId); }catch(err){}
@@ -1430,6 +1506,7 @@ function growSqueeze(dt){
   }
 }
 function endSqueeze(){
+  kbd.sq=false;                 /* 어떤 경로로 끝났든 키보드 홀드도 함께 풀린다 */
   if(!squeeze.active) return;
   squeeze.active=false;
   if(squeeze.blob){ squeeze.blob.sq=0.28; squeeze.blob.sqv=0; }
@@ -1494,6 +1571,113 @@ function attachTrayDrag(el,idx){
   }
   el.addEventListener('pointerup',up);
   el.addEventListener('pointercancel',up);
+  /* 트레이 버튼은 pointer 전용이라 Enter 가 죽어 있었다.
+     detail===0 = 키보드로 눌린 click 뿐이라 마우스 경로와 겹치지 않는다 */
+  el.addEventListener('click',function(e){
+    if(e.detail!==0) return;
+    if(game.finished) return;
+    SFX.ensure(); SFX.tick();
+    game.topSel=idx; refreshPalSel();
+    if(game.step!==2){ game.step=2; renderStep(); }
+  });
+}
+
+/* ---------- keyboard play (parallel path — pointer behaviour untouched) ----------
+   ← →  자리 / 색   ↑ ↓  고르기   Enter·Space  놓기   Tab  단계 이동
+   한 판(주문 5개 → 마감)을 키보드만으로 끝까지 갈 수 있어야 한다. */
+var kbd={on:false, nx:0, sq:false};
+var KBD_STEP_NX=0.12, KBD_MAX_NX=0.86;
+
+function kbdIsPlayKey(k){
+  return k==='Enter'||k===' '||k==='Spacebar'||k==='ArrowLeft'||k==='ArrowRight'||k==='ArrowUp'||k==='ArrowDown';
+}
+function kbdTipSync(){
+  if(!kbdTipEl) return;
+  var show=kbd.on&&document.activeElement===stage&&!game.finished;
+  kbdTipEl.textContent=show?T().kbdTip:'';
+  kbdTipEl.hidden=!show;
+  stage.classList.toggle('kbdon',kbd.on);
+}
+function kbdPx(nx){
+  var g=cakeGeom(game.cake);
+  return CX+nx*g.halfU*U;
+}
+function kbdCycle(cur,len,dir){ return ((cur+dir)%len+len)%len; }
+function kbdMove(dir){
+  if(game.step===0){                                   /* 0단계는 자리가 무의미 → 색 넘기기 */
+    game.sheetSel=kbdCycle(game.sheetSel,SHEETS.length,dir); refreshPalSel(); SFX.tick(); return;
+  }
+  kbd.nx=clamp(kbd.nx+dir*KBD_STEP_NX,-KBD_MAX_NX,KBD_MAX_NX);
+  SFX.tick();
+}
+function kbdPick(dir){
+  if(game.step===0) game.sheetSel=kbdCycle(game.sheetSel,SHEETS.length,dir);
+  else if(game.step===1) game.creamSel=kbdCycle(game.creamSel,CREAMS.length,dir);
+  else game.topSel=game.topSel<0?(dir>0?0:TOPS.length-1):kbdCycle(game.topSel,TOPS.length,dir);
+  refreshPalSel(); SFX.tick();
+}
+function kbdActDown(){
+  if(game.step===0){ dropSponge(); return; }
+  if(game.cake.layers.length===0){ SFX.nope(); return; }
+  if(game.step===1){
+    if(kbd.sq) return;
+    kbd.sq=true; startSqueeze(kbdPx(kbd.nx));
+  }else{
+    if(game.topSel<0){ game.topSel=0; refreshPalSel(); }
+    placeTopping(game.topSel,kbdPx(kbd.nx));
+  }
+}
+function kbdActUp(){
+  if(kbd.sq){ kbd.sq=false; endSqueeze(); }
+}
+stage.addEventListener('keydown',function(e){
+  var k=e.key;
+  if(e.altKey||e.ctrlKey||e.metaKey) return;
+  if(!kbdIsPlayKey(k)) return;
+  e.preventDefault();
+  SFX.ensure();
+  if(!kbd.on){ kbd.on=true; kbdTipSync(); }
+  if(game.finished||game.resultOpen) return;
+  if(k==='ArrowLeft'){ if(!e.repeat||game.step>0) kbdMove(-1); }
+  else if(k==='ArrowRight'){ if(!e.repeat||game.step>0) kbdMove(1); }
+  else if(k==='ArrowUp'){ if(!e.repeat) kbdPick(-1); }
+  else if(k==='ArrowDown'){ if(!e.repeat) kbdPick(1); }
+  else{ if(!e.repeat) kbdActDown(); }
+});
+stage.addEventListener('keyup',function(e){
+  var k=e.key;
+  if(k==='Enter'||k===' '||k==='Spacebar'){ e.preventDefault(); kbdActUp(); }
+});
+stage.addEventListener('focus',kbdTipSync);
+stage.addEventListener('blur',function(){ kbdActUp(); kbdTipSync(); });
+/* 손가락·마우스로 돌아오면 키보드 모드를 끈다 —
+   팁 줄과 포커스 링, 오버레이 자동 포커스가 세션 내내 남지 않게 */
+document.addEventListener('pointerdown',function(){
+  if(kbd.on){ kbd.on=false; kbdTipSync(); }
+},true);
+
+/* 키보드로 고른 자리를 눈으로 볼 수 있게 — 0단계에서는 자리가 없으니 안 그린다 */
+function drawKbdCaret(g){
+  if(!kbd.on||document.activeElement!==stage||game.finished||game.step===0) return;
+  var geo=cakeGeom(game.cake);
+  var x=kbdPx(kbd.nx);
+  var ch=game.step===2?creamHeightAt(game.cake,kbd.nx)*U:0;
+  var y=BASEY-geo.topU*U-ch-9*U;
+  if(y<26) y=26;
+  g.save();
+  g.globalAlpha=0.9;
+  g.strokeStyle='#F58AB1'; g.lineWidth=2; g.setLineDash([4,4]);
+  g.beginPath(); g.moveTo(x,y-19); g.lineTo(x,y-6); g.stroke();
+  g.setLineDash([]);
+  g.fillStyle='#F58AB1';
+  g.beginPath(); g.moveTo(x-6,y-7); g.lineTo(x+6,y-7); g.lineTo(x,y+2); g.closePath(); g.fill();
+  if(game.step===2&&game.topSel>=0){
+    g.globalAlpha=0.75;
+    g.font='700 '+Math.round(15*U)+'px system-ui,sans-serif';
+    g.textAlign='center'; g.textBaseline='alphabetic';
+    g.fillText(TOPS[game.topSel],x,y-24);
+  }
+  g.restore();
 }
 
 /* ==================== serve / result ==================== */
@@ -1506,6 +1690,8 @@ function cloneCake(c){
 }
 
 function serveCake(){
+  if(game.finished||game.resultOpen) return;   /* 재진입 금지 — 한 케이크는 한 번만 나간다 */
+  game.resultOpen=true;
   endSqueeze();
   var res=scoreCake();
   var made=cloneCake(game.cake);
@@ -1518,6 +1704,33 @@ function serveCake(){
   showResult(res);
   renderOrderBar();
 }
+
+/* ---------- 오버레이 CTA 무장 — 키보드 활성화에만 걸린다 ----------
+   결과·하루 카드가 뜨는 순간 CTA 로 포커스가 옮겨가므로, 그 직전에 눌려 있던
+   Enter/Space 가 카드를 그대로 관통해 버린다. 그래서 '키보드로 눌린 것'만 잠깐 막는다.
+     · 카드가 뜬 뒤 OV_ARM_MS 동안
+     · 카드가 뜰 때 이미 눌려 있던 키(오토리핏 홀드 포함)는 손을 뗄 때까지
+     · 막힌 키가 계속 들어오는 동안(연타)은 멈출 때까지
+   포인터 클릭은 detail>0 이라 이 판정을 아예 지나간다 — 마우스·터치 지연 0. */
+var OV_ARM_MS=400;
+var ovG={shown:0, rej:0, held:false}, ovKeyIsDown=false;
+function ovIsActKey(k){ return k==='Enter'||k===' '||k==='Spacebar'; }
+document.addEventListener('keydown',function(e){ if(ovIsActKey(e.key)) ovKeyIsDown=true; },true);
+document.addEventListener('keyup',function(e){ if(ovIsActKey(e.key)){ ovKeyIsDown=false; ovG.held=false; } },true);
+window.addEventListener('blur',function(){ ovKeyIsDown=false; ovG.held=false; });
+function ovArm(){ ovG.shown=Date.now(); ovG.rej=0; ovG.held=ovKeyIsDown; }
+function ovKeyBlocked(){
+  var n=Date.now();
+  return ovG.held || (n-ovG.shown)<OV_ARM_MS || (!!ovG.rej&&(n-ovG.rej)<OV_ARM_MS);
+}
+function ovGuardKey(btn){
+  if(!btn) return;
+  btn.addEventListener('keydown',function(e){
+    if(!ovIsActKey(e.key)) return;
+    if(ovKeyBlocked()){ ovG.rej=Date.now(); e.preventDefault(); }
+  });
+}
+ovGuardKey($('#rNext')); ovGuardKey($('#dAgain'));
 
 function showResult(res){
   var t=T();
@@ -1534,6 +1747,7 @@ function showResult(res){
   var ss=$('#rStars').children;
   for(var i=0;i<3;i++){ ss[i].classList.remove('lit'); ss[i].style.animationDelay=''; }
   ovResult.classList.add('show');
+  ovArm();
 
   var last=game.done[game.done.length-1];
   drawMini($('#cmpWant'),$('#cmpWant').getContext('2d'),orderToCake(last.order));
@@ -1550,14 +1764,22 @@ function showResult(res){
   var lastOne=game.done.length>=ORDERS_PER_DAY;
   $('#rNext').textContent=lastOne?t.closeShop:t.nextCust;
   $('#rNext').classList.toggle('finish',lastOne);
+  kbdFocusOverlay('#rNext');
+}
+/* 키보드로 놀던 사람만 오버레이 버튼으로 옮겨준다 (터치/마우스 경로는 그대로) */
+function kbdFocusOverlay(sel){
+  if(!kbd.on) return;
+  var b=document.querySelector(sel); if(!b) return;
+  setTimeout(function(){ try{ b.focus(); }catch(e){} },REDUCED?20:80);
 }
 
-$('#rNext').addEventListener('click',function(){
+$('#rNext').addEventListener('click',function(e){
+  if(e.detail===0&&ovKeyBlocked()){ ovG.rej=Date.now(); return; }   /* 키보드 관통 차단 */
   SFX.ensure(); SFX.tick();
   ovResult.classList.remove('show');
   game.resultOpen=false;
   if(game.done.length>=ORDERS_PER_DAY){ closeShop(); }
-  else{ game.order++; nextOrder(); }
+  else{ game.order++; nextOrder(); if(kbd.on){ try{ stage.focus(); }catch(e){} } }
 });
 
 /* ==================== day end ==================== */
@@ -1569,6 +1791,9 @@ function closeShop(){
   SFX.shutter();
   setTimeout(function(){
     showDay();
+    /* 최초 표시에서만 포커스를 옮긴다 — showDay() 안에 두면 언어 전환의
+       재렌더가 매번 포커스를 훔쳐 하루 카드를 함정으로 만든다 */
+    kbdFocusOverlay('#dAgain');
   },REDUCED?380:1250);
 }
 function showDay(){
@@ -1592,6 +1817,7 @@ function showDay(){
   $('#dHome').textContent=t.homeBtn;
   var gal=$('#gallery'); gal.innerHTML='';
   ovDay.classList.add('show');
+  ovArm();
   game.done.forEach(function(d,i){
     var wrap=document.createElement('div');
     wrap.className='gitem';
@@ -1605,9 +1831,11 @@ function showDay(){
     drawMini(cv,cv.getContext('2d'),d.cake);
   });
   SFX.dayEnd();
+  kbdTipSync();
   gaRoundComplete('day','clear',{stars_total:game.done.reduce(function(a,d){return a+d.stars;},0),orders:game.done.length});
 }
-$('#dAgain').addEventListener('click',function(){
+$('#dAgain').addEventListener('click',function(e){
+  if(e.detail===0&&ovKeyBlocked()){ ovG.rej=Date.now(); return; }   /* 키보드 관통 차단 */
   SFX.ensure(); SFX.tick();
   ovDay.classList.remove('show');
   shutter.classList.remove('down');
@@ -1615,6 +1843,8 @@ $('#dAgain').addEventListener('click',function(){
      결과 카드를 닫고 머뭇거린 시간이 play_sec 에 섞이지 않게 */
   gaBindFirst();
   startDay();
+  kbdTipSync();
+  if(kbd.on){ try{ stage.focus(); }catch(e){} }
 });
 
 /* ==================== language / sound ==================== */
@@ -1626,9 +1856,12 @@ function applyLang(){
   $('#titleSub').textContent=['ko','ja','en'].filter(function(l){return l!==lang;}).map(function(l){return NAMES[l];}).join(' · ');
   $('#langBtn').textContent=FLAGS[lang];
   $('#dHome').textContent=t.homeBtn;
+  stage.setAttribute('aria-label',t.stageAria);
   labelPalettes();
   renderOrderBar();
   renderStep();
+  renderDoorNote();
+  kbdTipSync();
   if(game.resultOpen){
     $('#clWant').textContent=t.want;
     $('#clGot').textContent=t.got;
@@ -1705,12 +1938,24 @@ var gaBindFirst=(function(){
   var zones=['stagewrap','panel','actions','steps'];
   function unbind(){
     for(var k=0;k<zones.length;k++){ var z=document.getElementById(zones[k]); if(!z)continue;
-      z.removeEventListener('pointerdown',onFirst,true); z.removeEventListener('click',onFirst,true); }
+      z.removeEventListener('pointerdown',onFirst,true); z.removeEventListener('click',onFirst,true);
+      z.removeEventListener('keydown',onFirstKey,true); }
   }
-  function onFirst(){ unbind(); gaRoundStart('day'); }
+  /* 카드가 떠 있거나 판이 끝난 동안의 조작은 '판의 첫 조작'이 아니다 —
+     오버레이를 스쳐 지나간 유령 Enter 가 replay 를 먼저 쏘지 못하게 */
+  function playing(){ return !game.finished&&!game.resultOpen&&!ovDay.classList.contains('show'); }
+  function onFirst(){ if(!playing()) return; unbind(); gaRoundStart('day'); }
+  /* 키보드 플레이도 '첫 조작'이다. Tab 은 이동일 뿐이라 세지 않는다 */
+  function onFirstKey(e){
+    if(e.repeat) return;                        /* 오토리핏은 새 조작이 아니다 */
+    var k=e.key;
+    if(k!=='Enter'&&k!==' '&&k!=='Spacebar'&&(!k||k.indexOf('Arrow')!==0)) return;
+    onFirst();
+  }
   function bind(){
     for(var i=0;i<zones.length;i++){ var n=document.getElementById(zones[i]); if(!n){continue;}
-      n.addEventListener('pointerdown',onFirst,true); n.addEventListener('click',onFirst,true); }
+      n.addEventListener('pointerdown',onFirst,true); n.addEventListener('click',onFirst,true);
+      n.addEventListener('keydown',onFirstKey,true); }
   }
   bind();
   return bind;

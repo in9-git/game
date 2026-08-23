@@ -61,6 +61,7 @@
     color:var(--cream);
     font-size:13px;font-weight:700;
     padding:8px 11px;border-radius:12px;cursor:pointer;
+    min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;
     text-decoration:none;white-space:nowrap;
     transition:transform .16s cubic-bezier(.34,1.56,.64,1), background .2s;
     backdrop-filter:blur(6px);
@@ -136,6 +137,9 @@
     box-shadow:var(--shadow-m), inset 0 0 0 1px rgba(255,255,255,.08);
   }
   .bench canvas{display:block;width:100%;height:auto;touch-action:none;}
+  /* 포커스 링은 .bench 가 overflow:hidden 이라 음수 offset 으로 안쪽에 그린다 */
+  .bench canvas:focus{outline:none;}
+  .bench canvas:focus-visible{outline:3px solid var(--amber);outline-offset:-3px;border-radius:16px;}
   .benchhint{
     position:absolute;left:0;right:0;bottom:6px;text-align:center;
     font-size:10.5px;color:rgba(59,48,38,.5);font-weight:700;pointer-events:none;
@@ -149,12 +153,12 @@
     border-radius:16px;padding:9px;
     box-shadow:var(--shadow-s);
   }
-  .tabs{display:flex;gap:5px;overflow-x:auto;padding-bottom:7px;scrollbar-width:none;}
+  .tabs{display:flex;gap:5px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
   .tabs::-webkit-scrollbar{display:none;}
   .tab{
     flex:1 0 auto;border:none;cursor:pointer;white-space:nowrap;
     background:rgba(255,255,255,.07);color:rgba(255,246,230,.66);
-    font-size:12px;font-weight:800;padding:7px 12px;border-radius:11px;
+    font-size:12px;font-weight:800;padding:10px 13px;border-radius:11px;min-height:38px;
     transition:all .22s cubic-bezier(.34,1.56,.64,1);font-family:inherit;
   }
   .tab.on{background:linear-gradient(160deg,var(--amber),var(--amber-d));color:#3a2a08;box-shadow:0 4px 12px rgba(242,181,68,.32);}
@@ -169,6 +173,23 @@
   .item:hover{border-color:rgba(242,181,68,.5);transform:translateY(-2px);}
   .item.sel{border-color:var(--amber);box-shadow:0 0 0 2px rgba(242,181,68,.28),0 6px 16px rgba(0,0,0,.28);background:linear-gradient(165deg,rgba(242,181,68,.22),rgba(242,181,68,.06));}
   .item canvas{width:46px;height:46px;pointer-events:none;}
+  .item:focus-visible,.tab:focus-visible,.btn:focus-visible,.hbtn:focus-visible,.ga-vote-btn:focus-visible{
+    outline:3px solid var(--amber);outline-offset:2px;
+  }
+  /* 키보드 힌트는 터치 사용자에게 폴드만 잡아먹는다 — 평소엔 스크린리더에만, 첫 키 입력 후 눈에 보이게 */
+  .kbhint{
+    position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+    clip:rect(0 0 0 0);white-space:nowrap;border:0;
+  }
+  .kbhint.on{
+    position:static;width:auto;height:auto;overflow:visible;clip:auto;white-space:normal;
+    margin:8px 0 0;text-align:center;font-size:10px;line-height:1.4;font-weight:700;
+    color:rgba(255,246,230,.46);
+  }
+  .sr-only{
+    position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+    clip:rect(0 0 0 0);white-space:nowrap;border:0;
+  }
   .item span{font-size:10px;font-weight:700;color:rgba(255,246,230,.78);text-align:center;line-height:1.15;}
   .ghost{
     position:fixed;z-index:90;pointer-events:none;width:64px;height:64px;
@@ -254,7 +275,7 @@
   }
   .ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 2px;font-size:14px;line-height:1.2;opacity:.92}
   .ga-vote[hidden]{display:none}
-  .ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+  .ga-vote-btn{font:inherit;font-size:14px;padding:10px 16px;min-height:44px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
   .ga-vote-btn:active{opacity:1}
   .ga-vote.done .ga-vote-btn{display:none}
 </style>
@@ -288,13 +309,15 @@
 
     <div class="col-r">
       <div class="bench">
-        <canvas id="bench"></canvas>
+        <canvas id="bench" tabindex="0" role="application" aria-label="작업대"></canvas>
         <div class="benchhint" id="hint"></div>
       </div>
+      <p class="sr-only" id="kbStatus" aria-live="polite"></p>
 
       <div class="pal">
         <div class="tabs" id="tabs"></div>
         <div class="items" id="items"></div>
+        <p class="kbhint" id="kbHint"></p>
       </div>
 
       <div class="acts">
@@ -362,14 +385,38 @@ var I18N = {
       dc_lamp:'램프', dc_bell:'방울', dc_plant:'화분', dc_catbed:'고양이 방석'
     },
     orders:{
-      onelegdesk:{n:'다리 하나뿐인 책상', q:'"균형은… 책상이 스스로 잡는대요!"', c:['상판이 있어요','다리가 딱 1개','장식이 1개 이상']},
-      catsofa:{n:'고양이 전용 3단 소파', q:'"3단이래요. 고양이는 맨 위에서 잔대요."', c:['쿠션이 3개','등받이가 있어요','고양이 방석이 있어요']},
-      rocker:{n:'잠이 솔솔 오는 흔들의자', q:'"앉자마자 졸리면 합격이래요."', c:['스프링 다리 2개 이상','등받이가 있어요','쿠션이 1개 이상']},
-      upsidebook:{n:'거꾸로 붙은 책장', q:'"천장에 붙일 거라 다리는 필요 없대요."', c:['다리가 하나도 없어요','상판이 있어요','장식이 2개 이상']},
-      skytable:{n:'하늘을 나는 티테이블', q:'"둥근 상판이 잘 난대요. 방울 소리도 필수!"', c:['동그란 상판','다리가 딱 4개','방울이 있어요']},
-      plantchair:{n:'램프가 자라는 화분 의자', q:'"물을 주면 불이 켜진다는 소문이…"', c:['화분이 있어요','램프가 있어요','쿠션이 1개 이상']},
-      runaway:{n:'바퀴 여섯 달린 도망가는 협탁', q:'"가끔 도망간대요. 빠르게 만들어 주세요."', c:['바퀴 다리가 6개','상판이 있어요','쿠션이 없어요']},
-      wavetable:{n:'물결치는 아침 식탁', q:'"아침마다 파도 소리가 났으면 좋겠대요."', c:['물결 상판','다리가 3개 이상','램프가 있어요']}
+      onelegdesk:{n:'다리 하나뿐인 책상', q:'"균형은… 책상이 스스로 잡는대요!"', c:['상판이 있어요','다리가 딱 1개','장식이 1개 이상'], r:{
+        hi:['다리 하나로 서 있어요! 이건 가구가 아니라 조각이에요.','기울었는데 안 넘어지네요. 이게 바로 예술이죠!'],
+        mid:['음, 다리 수가 제 상상이랑 조금 다른데… 한 번 세어볼게요.','균형은 제가 잡아볼게요. 손으로요.'],
+        lo:['저… 책상은 어디에 있나요?','이건 균형을 잡을 것도 없네요!']}},
+      catsofa:{n:'고양이 전용 3단 소파', q:'"3단이래요. 고양이는 맨 위에서 잔대요."', c:['쿠션이 3개','등받이가 있어요','고양이 방석이 있어요'], r:{
+        hi:['3단 확인! 고양이가 벌써 맨 위에 올라갔어요.','야옹. (통역하면 완벽하다는 뜻이래요.)'],
+        mid:['한 층이 모자란데… 뭐, 고양이가 점프하면 되죠.','냄새는 맡아봤어요. 그것만 해도 좋은 신호예요.'],
+        lo:['우리 고양이는 상자를 더 좋아하는데요…','쳐다보지도 않네요. 다음엔 3단으로 부탁해요.']}},
+      rocker:{n:'잠이 솔솔 오는 흔들의자', q:'"앉자마자 졸리면 합격이래요."', c:['스프링 다리 2개 이상','등받이가 있어요','쿠션이 1개 이상'], r:{
+        hi:['앉자마자 하품이 나왔어요. 합격!','흔들흔들… 어머, 벌써 저녁이네?'],
+        mid:['흔들리긴 하는데 좀 씩씩하게 흔들리는구먼.','졸리긴 해요. 근데 난 원래 졸려.'],
+        lo:['이건 흔들리기 전에 내가 먼저 넘어지겠어.','잠은… 서서 자야 하는 건가?']}},
+      upsidebook:{n:'거꾸로 붙은 책장', q:'"천장에 붙일 거라 다리는 필요 없대요."', c:['다리가 하나도 없어요','상판이 있어요','장식이 2개 이상'], r:{
+        hi:['천장에 딱 붙었네! 책이 안 떨어지는 건 내 주문 덕이고.','다리가 없으니 정답이지. 중력은 내가 미리 설득해 뒀네.'],
+        mid:['다리가 조금 남았구먼. 천장에 걸리겠는데.','반쯤은 떠 있군. 나머지 반은 내가 들고 있겠네.'],
+        lo:['이건 바닥용이잖나. 나는 천장을 부탁했는데.','거꾸로 뒤집었더니… 그냥 떨어졌네.']}},
+      skytable:{n:'하늘을 나는 티테이블', q:'"둥근 상판이 잘 난대요. 방울 소리도 필수!"', c:['동그란 상판','다리가 딱 4개','방울이 있어요'], r:{
+        hi:['이륙 준비 완료! 방울 소리가 관제탑 신호예요.','떴어요! 찻잔은 제가 붙잡고 있을게요.'],
+        mid:['활주로까진 나갔는데 아직 안 뜨네요. 조금만 더요.','기체는 좋아요. 다만 이 무게로는 저공비행이에요.'],
+        lo:['이건… 착륙한 상태로 태어났네요.','하늘은 접고 지상에서 차 마실까요?']}},
+      plantchair:{n:'램프가 자라는 화분 의자', q:'"물을 주면 불이 켜진다는 소문이…"', c:['화분이 있어요','램프가 있어요','쿠션이 1개 이상'], r:{
+        hi:['물을 줬더니 진짜 불이 켜졌어요! 내일은 두 송이 피겠는걸요.','앉으면 따뜻하고 향까지 나요. 이건 풍년입니다.'],
+        mid:['싹은 텄는데 아직 안 켜지네요. 햇빛을 더 줄까요?','화분은 좋아요. 전구가 아직 제철이 아닌가 봐요.'],
+        lo:['심을 데가 없는데요. 흙은 어디에 붓죠?','이건 물을 줘도 그냥 젖기만 할 것 같아요.']}},
+      runaway:{n:'바퀴 여섯 달린 도망가는 협탁', q:'"가끔 도망간대요. 빠르게 만들어 주세요."', c:['바퀴 다리가 6개','상판이 있어요','쿠션이 없어요'], r:{
+        hi:['벌써 도망갔습니다. 여섯 바퀴, 예상대로 빠르군요.','붙잡는 데 3분 걸렸어요. 완벽한 용의자입니다.'],
+        mid:['움직이긴 하는데… 걸어서도 따라잡히겠는데요.','바퀴 수가 안 맞습니다. 도주 속도 미달.'],
+        lo:['이건 도망은커녕 자수하겠는데요.','현장에 그대로 있습니다. 수사 종료.']}},
+      wavetable:{n:'물결치는 아침 식탁', q:'"아침마다 파도 소리가 났으면 좋겠대요."', c:['물결 상판','다리가 3개 이상','램프가 있어요'], r:{
+        hi:['파도 소리가 들려요! 아침 수프가 저절로 섞이네요.','여기서 먹으면 아침마다 바닷가에 앉은 기분이겠어요.'],
+        mid:['오늘은 파도가 잔잔하네요. 무풍인가 봐요.','접시가 안 미끄러져요. 좋은 건지 아쉬운 건지…'],
+        lo:['이건 물결이 아니라 그냥… 잔잔한 육지인데요.','아침은 대체 어디에 놓죠?']}}
     },
     rTitle:'납품 완료!', rSub:'손님이 써보는 중…',
     next:'다음 주문 →', last:'공방 마감 →', saved:'갤러리에 저장했어요 🖼️',
@@ -378,6 +425,9 @@ var I18N = {
     eMsg:'오늘은 여기까지. 내일도 뚝딱뚝딱! 🔨', total:'오늘 받은 별 {n}개',
     again:'다시 하기', goHome:'홈으로',
     gTitle:'작품 갤러리', gSub:'지금까지 만든 가구 {n}점', gEmpty:'아직 만든 가구가 없어요.', close:'닫기',
+    kb:'키보드로도 만들 수 있어요 · Tab 으로 부품 → Enter 로 고르기 · 작업대에서 ← → 자리 이동 · Enter 붙이기 · Del 떼기',
+    aBench:'작업대. 방향키로 자리를 옮기고, 엔터로 붙이고, 딜리트로 뗍니다.',
+    aPart:'{n} 고르기', kbEmpty:'빈 자리', kbPut:'붙였어요', kbDel:'뗐어요',
     react:{
       hi:['완벽해요! 이건 제 인생 가구예요.','우와, 상상한 것보다 더 엉뚱해요!','이거… 진짜 도망가려고 하는데요?','오늘 밤은 여기서 잘래요.','장인의 손맛이 느껴지는 엉뚱함!'],
       mid:['음… 절반쯤은 제가 상상한 거예요!','쓰다 보면 정들 것 같아요.','조금 흔들리는데, 그게 매력이죠.','일단 앉아볼게요. …오, 앉아지네요!'],
@@ -395,14 +445,38 @@ var I18N = {
       dc_lamp:'ランプ', dc_bell:'鈴', dc_plant:'植木鉢', dc_catbed:'猫ざぶとん'
     },
     orders:{
-      onelegdesk:{n:'脚が一本だけの机', q:'「バランスは…机が自分でとるって！」', c:['天板がある','脚がちょうど1本','飾りが1つ以上']},
-      catsofa:{n:'猫専用3段ソファ', q:'「3段だって。猫は一番上で寝るらしい。」', c:['クッションが3つ','背もたれがある','猫ざぶとんがある']},
-      rocker:{n:'うとうと揺り椅子', q:'「座った瞬間に眠くなれば合格。」', c:['バネ脚が2本以上','背もたれがある','クッションが1つ以上']},
-      upsidebook:{n:'さかさま本棚', q:'「天井に付けるから脚はいらないって。」', c:['脚が一本もない','天板がある','飾りが2つ以上']},
-      skytable:{n:'空飛ぶティーテーブル', q:'「丸天板がよく飛ぶらしい。鈴の音も必須！」', c:['丸い天板','脚がちょうど4本','鈴がある']},
-      plantchair:{n:'ランプが育つ植木鉢いす', q:'「水をやると灯るという噂が…」', c:['植木鉢がある','ランプがある','クッションが1つ以上']},
-      runaway:{n:'車輪六つの逃げるサイドテーブル', q:'「たまに逃げるって。速く作ってね。」', c:['車輪脚が6本','天板がある','クッションがない']},
-      wavetable:{n:'波打つ朝の食卓', q:'「毎朝、波の音がしてほしいって。」', c:['波の天板','脚が3本以上','ランプがある']}
+      onelegdesk:{n:'脚が一本だけの机', q:'「バランスは…机が自分でとるって！」', c:['天板がある','脚がちょうど1本','飾りが1つ以上'], r:{
+        hi:['脚一本で立ってる！これは家具じゃなくて彫刻ですね。','傾いてるのに倒れない。これこそ芸術です！'],
+        mid:['うーん、脚の数が想像とちょっと違うかも…数えてみますね。','バランスは私がとります。手で。'],
+        lo:['あの、机はどこですか？','これ、バランスをとるものすらないですね！']}},
+      catsofa:{n:'猫専用3段ソファ', q:'「3段だって。猫は一番上で寝るらしい。」', c:['クッションが3つ','背もたれがある','猫ざぶとんがある'], r:{
+        hi:['3段かくにん！猫がもう一番上にのぼりました。','にゃー。（通訳すると「完璧」だそうです。）'],
+        mid:['一段たりないけど…まあ、猫がジャンプすればいいか。','においだけは嗅いでくれました。いい兆候です。'],
+        lo:['うちの猫、段ボールのほうが好きなんです…','見向きもしません。次は3段でお願いします。']}},
+      rocker:{n:'うとうと揺り椅子', q:'「座った瞬間に眠くなれば合格。」', c:['バネ脚が2本以上','背もたれがある','クッションが1つ以上'], r:{
+        hi:['座ったとたんにあくびが出ましたよ。合格！','ゆらゆら…あら、もう夕方かい？'],
+        mid:['揺れることは揺れるけど、ちょっと元気がよすぎるねえ。','眠くはなるよ。まあ、わたしゃ元々眠いんだけど。'],
+        lo:['これは揺れる前にわたしが先に倒れそうだよ。','眠るのは…立ったままかい？']}},
+      upsidebook:{n:'さかさま本棚', q:'「天井に付けるから脚はいらないって。」', c:['脚が一本もない','天板がある','飾りが2つ以上'], r:{
+        hi:['天井にぴたりじゃ！本が落ちんのは わしの呪文のおかげじゃがな。','脚がないのが正解じゃ。重力には話をつけておいた。'],
+        mid:['脚が少し残っておるな。天井につかえるぞ。','半分は浮いておる。残り半分は わしが持っておこう。'],
+        lo:['これは床用じゃな。わしは天井を頼んだのじゃが。','さかさまにしてみたら…ただ落ちたわい。']}},
+      skytable:{n:'空飛ぶティーテーブル', q:'「丸天板がよく飛ぶらしい。鈴の音も必須！」', c:['丸い天板','脚がちょうど4本','鈴がある'], r:{
+        hi:['離陸準備かんりょう！鈴の音が管制塔のサインです。','浮きました！ティーカップは私が押さえておきます。'],
+        mid:['滑走路までは出たんですが、まだ浮きません。あと少し。','機体はいいですね。ただ この重さだと低空飛行です。'],
+        lo:['これは…着陸したまま生まれてきましたね。','空はあきらめて、地上でお茶にしましょうか。']}},
+      plantchair:{n:'ランプが育つ植木鉢いす', q:'「水をやると灯るという噂が…」', c:['植木鉢がある','ランプがある','クッションが1つ以上'], r:{
+        hi:['水をやったら本当に灯りました！明日は二つ咲きそうです。','座るとあたたかくて、香りまでする。これは豊作ですよ。'],
+        mid:['芽は出たんですが、まだ灯りません。もう少し日に当てますか。','植木鉢はいいですね。電球はまだ旬じゃないのかも。'],
+        lo:['植えるところがありませんよ。土はどこに入れます？','これは水をやっても、ただ濡れるだけな気がします。']}},
+      runaway:{n:'車輪六つの逃げるサイドテーブル', q:'「たまに逃げるって。速く作ってね。」', c:['車輪脚が6本','天板がある','クッションがない'], r:{
+        hi:['もう逃げました。六輪、読みどおり速い。','取り押さえるのに3分。完璧な容疑者です。'],
+        mid:['動くことは動きますが…歩いても追いつけますね。','車輪の数が合いません。逃走速度、不足。'],
+        lo:['これは逃げるどころか自首しますよ。','現場に留まったままです。捜査、終了。']}},
+      wavetable:{n:'波打つ朝の食卓', q:'「毎朝、波の音がしてほしいって。」', c:['波の天板','脚が3本以上','ランプがある'], r:{
+        hi:['波の音がします！朝のスープがひとりでに混ざりますよ。','ここで食べたら、毎朝 海辺に座ってる気分だなあ。'],
+        mid:['今日は波がおだやかですね。無風みたいだ。','お皿がすべりません。いいことなのか、残念なのか…'],
+        lo:['これは波じゃなくて、ただの…おだやかな陸地ですね。','朝ごはんは いったいどこに置けば？']}}
     },
     rTitle:'納品かんりょう！', rSub:'お客さんが使ってみています…',
     next:'次の注文 →', last:'工房を閉める →', saved:'ギャラリーに保存しました 🖼️',
@@ -411,6 +485,9 @@ var I18N = {
     eMsg:'今日はここまで。明日もトンテンカン！🔨', total:'今日もらった星 {n}こ',
     again:'もう一度', goHome:'ホームへ',
     gTitle:'作品ギャラリー', gSub:'これまでに作った家具 {n}点', gEmpty:'まだ作った家具がありません。', close:'閉じる',
+    kb:'キーボードでも作れます · Tabで部品 → Enterで選ぶ · 作業台で ← → 位置移動 · Enterで取り付け · Delで取り外し',
+    aBench:'作業台。方向キーで位置を移動、Enterで取り付け、Deleteで取り外します。',
+    aPart:'{n} を選ぶ', kbEmpty:'空き', kbPut:'つけました', kbDel:'はずしました',
     react:{
       hi:['完璧です！これぞ人生の家具。','わあ、想像よりもっとトンデモ！','これ…本当に逃げようとしてる？','今夜はここで寝ます。','職人技のトンデモさですね！'],
       mid:['うーん、半分くらいは想像どおり！','使ううちに愛着がわきそう。','少し揺れるけど、そこが魅力。','とりあえず座ってみます。…お、座れた！'],
@@ -428,14 +505,38 @@ var I18N = {
       dc_lamp:'Lamp', dc_bell:'Bell', dc_plant:'Plant', dc_catbed:'Cat bed'
     },
     orders:{
-      onelegdesk:{n:'The One-Legged Desk', q:'"It balances itself, apparently!"', c:['Has a tabletop','Exactly 1 leg','1+ decoration']},
-      catsofa:{n:'Three-Tier Cat Sofa', q:'"Three tiers. The cat sleeps on top."', c:['3 cushions','Has a backrest','Has a cat bed']},
-      rocker:{n:'The Doze-Off Rocker', q:'"Success is yawning the moment you sit."', c:['2+ spring legs','Has a backrest','1+ cushion']},
-      upsidebook:{n:'The Upside-Down Bookshelf', q:'"It goes on the ceiling — no legs needed."', c:['No legs at all','Has a tabletop','2+ decorations']},
-      skytable:{n:'The Flying Tea Table', q:'"Round tops fly best. Bells required!"', c:['Round tabletop','Exactly 4 legs','Has a bell']},
-      plantchair:{n:'The Lamp-Growing Planter Chair', q:'"Water it and it lights up, they say."', c:['Has a plant','Has a lamp','1+ cushion']},
-      runaway:{n:'Six-Wheeled Runaway Table', q:'"It runs off sometimes. Make it fast."', c:['6 wheel legs','Has a tabletop','No cushions']},
-      wavetable:{n:'The Wavy Breakfast Table', q:'"They want to hear waves each morning."', c:['Wavy tabletop','3+ legs','Has a lamp']}
+      onelegdesk:{n:'The One-Legged Desk', q:'"It balances itself, apparently!"', c:['Has a tabletop','Exactly 1 leg','1+ decoration'], r:{
+        hi:['It stands on one leg! That is a sculpture, not a desk.','It leans and still it holds. This is art.'],
+        mid:['Hmm, the leg count is not quite what I pictured. Let me recount.','I will handle the balancing myself. By hand.'],
+        lo:['Sorry — where is the desk, exactly?','There is nothing here to balance!']}},
+      catsofa:{n:'Three-Tier Cat Sofa', q:'"Three tiers. The cat sleeps on top."', c:['3 cushions','Has a backrest','Has a cat bed'], r:{
+        hi:['Three tiers confirmed! The cat is already on the top one.','Meow. (Roughly translated: it is perfect.)'],
+        mid:['One tier short, but the cat can jump, I suppose.','The cat sniffed it. Around here that counts as a yes.'],
+        lo:['My cat honestly prefers a cardboard box…','It will not even look at it. Three tiers next time, please.']}},
+      rocker:{n:'The Doze-Off Rocker', q:'"Success is yawning the moment you sit."', c:['2+ spring legs','Has a backrest','1+ cushion'], r:{
+        hi:['I yawned the second I sat down. It passes!','Rock, rock… oh dear, is it evening already?'],
+        mid:['It rocks, all right. A bit too energetically for my taste.','I do feel sleepy. Mind you, I always do.'],
+        lo:['I will topple over long before this thing rocks.','Am I meant to nap standing up, dear?']}},
+      upsidebook:{n:'The Upside-Down Bookshelf', q:'"It goes on the ceiling — no legs needed."', c:['No legs at all','Has a tabletop','2+ decorations'], r:{
+        hi:['Fixed to the ceiling! The books stay put thanks to my spell.','No legs — precisely right. I had a word with gravity beforehand.'],
+        mid:['A leg or two left over. It will scrape the ceiling.','Half of it floats. I shall hold up the other half.'],
+        lo:['This one is for the floor. I asked for the ceiling.','I turned it over and it simply fell. As expected.']}},
+      skytable:{n:'The Flying Tea Table', q:'"Round tops fly best. Bells required!"', c:['Round tabletop','Exactly 4 legs','Has a bell'], r:{
+        hi:['Cleared for takeoff! The bell is my control tower.','We are airborne! I will hold on to the teacups.'],
+        mid:['We reached the runway but never left it. Nearly there.','Sound airframe. At this weight, though, we stay low.'],
+        lo:['This one was born already landed.','Let us give up on the sky and take tea on the ground.']}},
+      plantchair:{n:'The Lamp-Growing Planter Chair', q:'"Water it and it lights up, they say."', c:['Has a plant','Has a lamp','1+ cushion'], r:{
+        hi:['I watered it and it really lit up! Two blooms by tomorrow.','Warm to sit on, and it smells lovely. A fine harvest.'],
+        mid:['It sprouted, but no light yet. More sunshine, maybe?','The pot is lovely. The bulb must be out of season.'],
+        lo:['There is nowhere to plant anything. Where does the soil go?','Water this and I reckon it just gets wet.']}},
+      runaway:{n:'Six-Wheeled Runaway Table', q:'"It runs off sometimes. Make it fast."', c:['6 wheel legs','Has a tabletop','No cushions'], r:{
+        hi:['It has already fled. Six wheels — fast, just as I predicted.','Three minutes to bring it in. A perfect suspect.'],
+        mid:['It moves, yes. But I could catch it at walking pace.','Wheel count does not add up. Escape speed: insufficient.'],
+        lo:['This one will not flee. It will turn itself in.','Still at the scene. Case closed.']}},
+      wavetable:{n:'The Wavy Breakfast Table', q:'"They want to hear waves each morning."', c:['Wavy tabletop','3+ legs','Has a lamp'], r:{
+        hi:['I can hear the waves! The morning soup stirs itself.','Eat here and every breakfast feels like the seaside.'],
+        mid:['Calm waters today. Not a breath of wind.','The plates do not slide. Good news, I think? Hard to say.'],
+        lo:['That is not a wave, that is dry land.','And where am I supposed to put breakfast?']}}
     },
     rTitle:'Delivered!', rSub:'The customer is trying it out…',
     next:'Next order →', last:'Close the workshop →', saved:'Saved to your gallery 🖼️',
@@ -444,6 +545,9 @@ var I18N = {
     eMsg:"That's it for today. More tinkering tomorrow! 🔨", total:'{n} stars earned today',
     again:'Play again', goHome:'Home',
     gTitle:'Workshop Gallery', gSub:'{n} pieces built so far', gEmpty:'No furniture built yet.', close:'Close',
+    kb:'Keyboard works too · Tab to a part → Enter to pick · on the bench ← → to move · Enter to attach · Del to remove',
+    aBench:'Workbench. Arrow keys move between spots, Enter attaches, Delete removes.',
+    aPart:'Pick {n}', kbEmpty:'empty spot', kbPut:'attached', kbDel:'removed',
     react:{
       hi:['Perfect! This is the furniture of my life.','Wow, even weirder than I imagined!','Is it… actually trying to run away?','I am sleeping right here tonight.','Master-crafted nonsense. I love it!'],
       mid:['Hmm, about half of what I pictured!','I think it will grow on me.','It wobbles a bit — that is the charm.','Let me sit… oh, it holds!'],
@@ -913,7 +1017,12 @@ function renderTabs(){
     var b=document.createElement('button');
     b.className='tab'+(cat===curCat?' on':'');
     b.textContent=T().cats[cat];
-    b.addEventListener('click',function(){ curCat=cat; sTick(); renderTabs(); renderItems(); });
+    b.addEventListener('click',function(){
+      /* renderTabs() 가 이 버튼을 지워버리므로 포커스를 새 버튼으로 옮겨준다 (키보드 흐름 유지) */
+      var wasFocused = (document.activeElement===this);
+      curCat=cat; sTick(); renderTabs(); renderItems();
+      if(wasFocused){ var nb=$('#tabs').children[CATS.indexOf(cat)]; if(nb){ try{ nb.focus(); }catch(e){} } }
+    });
     t.appendChild(b);
   });
 }
@@ -924,7 +1033,16 @@ function renderItems(){
     el.className='item'+(selPart===id?' sel':'');
     el.appendChild(makeIcon(id,46));
     var sp=document.createElement('span'); sp.textContent=T().parts[id]; el.appendChild(sp);
+    el.tabIndex=0; el.setAttribute('role','button');
+    el.setAttribute('aria-label', fmt(T().aPart,{n:T().parts[id]}));
+    el.setAttribute('aria-pressed', selPart===id? 'true':'false');
     el.addEventListener('pointerdown',function(ev){ startDrag(ev,id,el); });
+    el.addEventListener('keydown',function(ev){
+      if(ev.key==='Enter'||ev.key===' '||ev.key==='Spacebar'){
+        ev.preventDefault(); ac(); selectPart(id);
+        kbFocus('#bench');   /* 고른 즉시 작업대로 — 키보드만으로도 흐름이 끊기지 않게 */
+      }
+    });
     box.appendChild(el);
   });
 }
@@ -937,8 +1055,13 @@ function startDrag(ev,id,el){
   dragging={id:id, moved:false, x:ev.clientX, y:ev.clientY};
   selPart=id;
   /* never re-render the palette mid-drag: it would destroy the capturing node */
+  kbSlot=null;
   var sib=el.parentNode.children;
-  for(var i=0;i<sib.length;i++) sib[i].classList.toggle('sel', sib[i]===el);
+  for(var i=0;i<sib.length;i++){
+    var onx=(sib[i]===el);
+    sib[i].classList.toggle('sel', onx);
+    sib[i].setAttribute('aria-pressed', onx? 'true':'false');
+  }
   var g=makeIcon(id,64);
   ghostEl=g; g.className='ghost';
   g.style.left=ev.clientX+'px'; g.style.top=ev.clientY+'px';
@@ -1022,6 +1145,142 @@ benchCv.addEventListener('pointerdown',function(ev){
   }
 });
 
+/* ============================ keyboard path ============================ */
+/* 마우스·터치 없이도 한 판을 끝낼 수 있는 병렬 경로 (드래그 경로는 그대로 둔다) */
+var kbSlot=null, kbMode=false;
+function kbList(){
+  var cat = selPart? PARTS[selPart].cat : null, out=[], i;
+  for(i=0;i<SLOTS.length;i++){ if(!cat||SLOTS[i].cat===cat) out.push(SLOTS[i]); }
+  out.sort(function(a,b){ return (a.x-b.x) || (b.y-a.y); });
+  return out;
+}
+function kbIndex(list){ for(var i=0;i<list.length;i++) if(list[i].id===kbSlot) return i; return -1; }
+function kbSync(){
+  var list=kbList();
+  if(kbIndex(list)<0) kbSlot = list.length? list[0].id : null;
+  return list;
+}
+function kbAnnounce(extra){
+  var el=$('#kbStatus'); if(!el) return;
+  var list=kbSync();
+  if(!kbSlot){ el.textContent=''; return; }
+  var s=slotById(kbSlot);
+  var what = build[kbSlot]? T().parts[build[kbSlot]] : T().kbEmpty;
+  /* 자리 번호는 읽어주는 카테고리 안에서 센다 — 부품 미선택 시 list 는 15자리 전부라 그대로 쓰면 어긋난다 */
+  var same=[], pos=0, i;
+  for(i=0;i<list.length;i++) if(list[i].cat===s.cat) same.push(list[i]);
+  for(i=0;i<same.length;i++) if(same[i].id===kbSlot){ pos=i+1; break; }
+  el.textContent = T().cats[s.cat]+' '+pos+'/'+same.length+' · '+what+(extra? ' · '+extra : '');
+}
+/* 이미 읽고 있던 안내만 갱신한다 (부팅 때 aria-live 를 괜히 건드리지 않게) */
+function kbRefresh(){ var el=$('#kbStatus'); if(el&&el.textContent) kbAnnounce(); }
+function kbMove(d){
+  var list=kbSync(); if(!list.length) return;
+  var i=kbIndex(list); i=(i+d+list.length)%list.length;
+  kbSlot=list[i].id; sTick(); kbAnnounce();
+}
+function removeSlot(sid){
+  if(!build[sid]) return false;
+  delete build[sid]; sPop();
+  if(!reduce) puff(slotAnchor(slotById(sid)));
+  renderChecks(false); return true;
+}
+function selectPart(id){
+  selPart=id; kbSlot=null;
+  var box=$('#items'), kids=box? box.children:[], list=CATITEMS[curCat];
+  for(var i=0;i<kids.length;i++){
+    var onx=(list[i]===id);
+    kids[i].classList.toggle('sel', onx);
+    kids[i].setAttribute('aria-pressed', onx? 'true':'false');
+  }
+  sTick(); kbSync(); kbAnnounce();
+}
+/* ---- 오버레이 포커스 가둠 ----
+   포인터는 .ov(fixed;inset:0;z-index:100) 가 막지만 키보드는 안 막힌다.
+   1) inert 로 배경을 통째로 빼고(미지원 브라우저는 tabindex 저장/복원),
+   2) Tab 을 오버레이 안에서 순환시키고,
+   3) 그래도 새면 focusin 에서 되돌린다. 상태 가드는 별도로 deliver()/rNext/eAgain 에 둔다. */
+var OV_IDS=['#ovReact','#ovEnd','#ovGal'];
+var INERT_OK=(typeof HTMLElement!=='undefined')&&('inert' in HTMLElement.prototype);
+var FOCUSABLE='a[href],button,input,select,textarea,[tabindex]';
+function curOv(){ for(var i=0;i<OV_IDS.length;i++){ var e=$(OV_IDS[i]); if(e&&e.classList.contains('show')) return e; } return null; }
+function ovOpen(){ return !!curOv(); }
+function ovFocusables(ov){
+  var out=[], list=ov.querySelectorAll(FOCUSABLE), i, el;
+  for(i=0;i<list.length;i++){
+    el=list[i];
+    if(el.disabled||el.hidden) continue;
+    if(el.getAttribute('tabindex')==='-1') continue;
+    if(el.offsetWidth===0&&el.offsetHeight===0) continue;   /* display:none (숨은 투표 행 등) 제외 */
+    out.push(el);
+  }
+  return out;
+}
+function bgTabbable(on){
+  var w=$('.wrap'); if(!w) return;
+  if(INERT_OK){ w.inert=!on; return; }
+  var list=w.querySelectorAll(FOCUSABLE), i, el, v;
+  for(i=0;i<list.length;i++){
+    el=list[i];
+    if(on){
+      if(el.hasAttribute('data-kbti')){
+        v=el.getAttribute('data-kbti');
+        if(v==='') el.removeAttribute('tabindex'); else el.setAttribute('tabindex',v);
+        el.removeAttribute('data-kbti');
+      }
+    }else if(!el.hasAttribute('data-kbti')){
+      el.setAttribute('data-kbti', el.hasAttribute('tabindex')? el.getAttribute('tabindex'):'');
+      el.setAttribute('tabindex','-1');
+    }
+  }
+}
+function ovSync(){ bgTabbable(!curOv()); }
+function ovShow(sel){ var e=$(sel); if(e) e.classList.add('show'); ovSync(); }
+function ovHide(sel){ var e=$(sel); if(e) e.classList.remove('show'); ovSync(); }
+document.addEventListener('keydown',function(e){
+  if((e.key||'')!=='Tab') return;
+  var ov=curOv(); if(!ov) return;
+  var f=ovFocusables(ov);
+  if(!f.length){ e.preventDefault(); return; }
+  var first=f[0], last=f[f.length-1], a=document.activeElement;
+  if(!ov.contains(a)){ e.preventDefault(); try{ (e.shiftKey? last:first).focus(); }catch(x){} return; }
+  if(e.shiftKey&&a===first){ e.preventDefault(); try{ last.focus(); }catch(x){} }
+  else if(!e.shiftKey&&a===last){ e.preventDefault(); try{ first.focus(); }catch(x){} }
+},true);
+document.addEventListener('focusin',function(e){
+  var ov=curOv(); if(!ov||ov.contains(e.target)) return;
+  var f=ovFocusables(ov); if(!f.length) return;
+  try{ f[0].focus(); }catch(x){}
+},true);
+function kbFocus(sel){ if(!kbMode) return; var el=$(sel); if(el){ try{ el.focus(); }catch(e){} } }
+benchCv.addEventListener('keydown',function(ev){
+  if(ovOpen()) return;
+  var k=ev.key, s;
+  if(k==='ArrowRight'||k==='ArrowDown'){ ev.preventDefault(); kbMove(1); return; }
+  if(k==='ArrowLeft'||k==='ArrowUp'){ ev.preventDefault(); kbMove(-1); return; }
+  if(k==='Enter'||k===' '||k==='Spacebar'){
+    ev.preventDefault(); ac(); kbSync(); s=slotById(kbSlot); if(!s) return;
+    if(selPart){ place(s,selPart); kbAnnounce(T().kbPut); }
+    else if(removeSlot(s.id)){ kbAnnounce(T().kbDel); }
+    return;
+  }
+  if(k==='Backspace'||k==='Delete'){
+    ev.preventDefault(); ac(); kbSync(); s=slotById(kbSlot);
+    if(s&&removeSlot(s.id)) kbAnnounce(T().kbDel);
+    return;
+  }
+});
+benchCv.addEventListener('focus',function(){ kbSync(); kbAnnounce(); });
+document.addEventListener('keydown',function(e){
+  var k=e.key||'';
+  if(k==='Tab'||k==='Enter'||k===' '||k.indexOf('Arrow')===0){
+    kbMode=true;
+    var kh=$('#kbHint'); if(kh&&!kh.classList.contains('on')) kh.classList.add('on');
+  }
+  if(k==='Escape'&&$('#ovGal').classList.contains('show')){ ovHide('#ovGal'); kbFocus('#galBtn'); }
+},true);
+document.addEventListener('pointerdown',function(){ kbMode=false; },true);
+
 /* ============================ bench loop ============================ */
 var t0=performance.now();
 function benchFrame(now){
@@ -1033,19 +1292,25 @@ function benchFrame(now){
     paper(c);
     /* empty slot markers */
     c.save();
+    var kbActive = kbMode && (document.activeElement===benchCv) && !dragging;   /* 터치로 캔버스를 눌렀을 때는 커서를 띄우지 않는다 */
     for(var i=0;i<SLOTS.length;i++){
       var s=SLOTS[i];
+      var kbHere = kbActive && kbSlot===s.id;
       var interesting = dragging? (PARTS[dragging.id].cat===s.cat) : (selPart? PARTS[selPart].cat===s.cat : false);
-      if(build[s.id]&&!interesting) continue;
+      if(build[s.id]&&!interesting&&!kbHere) continue;
       var a=slotAnchor(s);
-      if(interesting){
-        var on = hoverSlot&&hoverSlot.id===s.id;
+      if(interesting||kbHere){
+        var on = kbHere || (hoverSlot&&hoverSlot.id===s.id);
         c.globalAlpha= on? .95 : .45;
         c.setLineDash(on?[]:[4,4]);
         c.lineWidth= on? 2.6 : 1.6;
         c.strokeStyle= on? '#e08a2a' : '#8aa08c';
         c.beginPath(); c.arc(a.x,a.y, on?15:10, 0, 7); c.stroke();
         if(on){ c.globalAlpha=.18; c.fillStyle='#f2b544'; c.fill(); }
+        if(kbHere){
+          c.globalAlpha=.95; c.setLineDash([]); c.lineWidth=2.2; c.strokeStyle='#f2b544';
+          c.beginPath(); c.arc(a.x,a.y, 21+(reduce?0:Math.sin(tm*4)*2), 0, 7); c.stroke();
+        }
       }else if(!build[s.id]){
         c.globalAlpha=.16; c.setLineDash([3,4]); c.lineWidth=1.2; c.strokeStyle='#7f9280';
         c.beginPath(); c.arc(a.x,a.y,6,0,7); c.stroke();
@@ -1073,16 +1338,20 @@ requestAnimationFrame(benchFrame);
 /* ============================ delivery ============================ */
 var rAnim=null;
 function deliver(){
+  if(ovOpen()) return false;   /* 오버레이가 떠 있는 동안 납품은 다시 일어나지 않는다 (재진입 가드) */
   gaFirstMove();
   var o=today[idx], s=summarize(build);
   var met=0; for(var i=0;i<3;i++) if(o.tests[i](s)) met++;
   var stars=[1,2,3,5][met];
-  var pool = stars>=4? T().react.hi : (stars>=2? T().react.mid : T().react.lo);
+  var tier = stars>=4? 'hi' : (stars>=2? 'mid' : 'lo');
+  var per = (T().orders[o.id] && T().orders[o.id].r) || {};   /* 주문별 대사, 없으면 전역 풀로 폴백 */
+  var pool = (per[tier] && per[tier].length)? per[tier] : T().react[tier];
   var line = pool[Math.floor(Math.random()*pool.length)];
   var snap=JSON.parse(JSON.stringify(build));
   results.push({o:o.id, s:stars, b:snap, line:line, who:o.who});
-  saveWork({o:o.id, s:stars, b:snap, t:Date.now()});
+  if(s.n > 0) saveWork({o:o.id, s:stars, b:snap, t:Date.now()});   /* 백지는 갤러리에 남기지 않는다 */
   showReact(stars,line,o,snap);
+  return true;
 }
 function showReact(stars,line,o,snap){
   $('#rTitle').textContent=T().rTitle;
@@ -1102,7 +1371,8 @@ function showReact(stars,line,o,snap){
   for(var j=0;j<stars;j++) sChime(j);
   if(stars>=4) setTimeout(sFan,320+stars*130);
   $('#rNext').textContent= idx>=3? T().last : T().next;
-  $('#ovReact').classList.add('show');
+  ovShow('#ovReact');
+  kbFocus('#rNext');
   var start=performance.now(), conf=[];
   if(stars>=4&&!reduce){
     for(var q2=0;q2<26;q2++) conf.push({x:200+(Math.random()-.5)*220, y:-20-Math.random()*120, vy:1+Math.random()*2.2, vx:(Math.random()-.5)*1.2, r:Math.random()*6, c:['#f2b544','#e2725b','#6fb894','#fff6e6'][q2%4]});
@@ -1137,17 +1407,30 @@ function showReact(stars,line,o,snap){
   rAnim=requestAnimationFrame(frame);
 }
 $('#rNext').addEventListener('click',function(){
+  if(!$('#ovReact').classList.contains('show')) return;   /* 재진입 가드 */
   sTick();
-  $('#ovReact').classList.remove('show');
+  ovHide('#ovReact');
   cancelAnimationFrame(rAnim);
   if(idx>=3){ showEnd(); }
-  else{ idx++; build={}; prevMet=[false,false,false]; sSaw(); renderOrder(); renderDay(); renderChecks(true); }
+  else{ idx++; build={}; prevMet=[false,false,false]; sSaw(); renderOrder(); renderDay(); renderChecks(true); kbFocus('#bench'); }
 });
 
 /* ============================ storage ============================ */
 var GKEY='in9-tondemo-gallery';
 function loadGallery(){
-  try{ var r=localStorage.getItem(GKEY); return r? JSON.parse(r):[]; }catch(e){ return []; }
+  try{
+    var r=localStorage.getItem(GKEY), g=r? JSON.parse(r):[];
+    if(!g||!g.length) return [];
+    /* 예전 버전이 저장해 둔 백지 작품도 여기서 걸러진다 (다음 저장 때 영구 정리됨) */
+    return g.filter(function(w){
+      if(!w||!w.b||typeof w.b!=='object') return false;
+      var ks=Object.keys(w.b); if(!ks.length) return false;
+      for(var i=0;i<ks.length;i++){ var pid=w.b[ks[i]]; if(!pid||!PARTS[pid]||!DRAW[pid]) return false; }
+      var st=(typeof w.s==='number'&&isFinite(w.s))? Math.round(w.s):0;
+      w.s=Math.max(0,Math.min(5,st));
+      return true;
+    });
+  }catch(e){ return []; }
 }
 function saveWork(w){
   try{
@@ -1181,12 +1464,14 @@ function showEnd(quiet){
     s.textContent=new Array(r.s+1).join('★')+new Array(5-r.s+1).join('☆'); d.appendChild(s);
     sh.appendChild(d);
   });
-  $('#ovEnd').classList.add('show');
+  ovShow('#ovEnd');
+  kbFocus('#eAgain');
   if(!quiet) sFan();
   gaRoundComplete('day','clear',{stars_total:tot});
 }
 $('#eAgain').addEventListener('click',function(){
-  sTick(); $('#ovEnd').classList.remove('show'); sSaw(); newDay();
+  if(!$('#ovEnd').classList.contains('show')) return;   /* 재진입 가드 */
+  sTick(); ovHide('#ovEnd'); sSaw(); newDay(); kbFocus('#bench');
   /* replay 이벤트는 여기서 보내지 않는다 — gaFirstMove 가 첫 조작에서 보낸다 */
 });
 
@@ -1207,11 +1492,12 @@ function showGallery(){
     s.textContent=new Array(w.s+1).join('★'); d.appendChild(s);
     grid.appendChild(d);
   });
-  $('#ovGal').classList.add('show');
+  ovShow('#ovGal');
+  kbFocus('#gClose');
 }
-$('#galBtn').addEventListener('click',function(){ ac(); sTick(); showGallery(); });
-$('#gClose').addEventListener('click',function(){ sTick(); $('#ovGal').classList.remove('show'); });
-$('#ovGal').addEventListener('click',function(e){ if(e.target===this){ $('#ovGal').classList.remove('show'); } });
+$('#galBtn').addEventListener('click',function(){ if(ovOpen()) return; ac(); sTick(); showGallery(); });
+$('#gClose').addEventListener('click',function(){ sTick(); ovHide('#ovGal'); kbFocus('#galBtn'); });
+$('#ovGal').addEventListener('click',function(e){ if(e.target===this){ ovHide('#ovGal'); kbFocus('#galBtn'); } });
 
 /* ============================ toast ============================ */
 var toastT=null;
@@ -1222,15 +1508,16 @@ function toast(msg){
 
 /* ============================ buttons ============================ */
 $('#deliver').addEventListener('click',function(){
+  if(ovOpen()) return;
   ac();
   var wasEmpty = summarize(build).n===0;
-  deliver();
-  toast(wasEmpty? T().empty : T().saved);
+  if(deliver()) toast(wasEmpty? T().empty : T().saved);
 });
 $('#clearBtn').addEventListener('click',function(){
+  if(ovOpen()) return;
   ac(); build={}; sSaw();
   if(!reduce){ for(var i=0;i<4;i++) puff({x:120+i*55,y:FLOOR-40}); }
-  renderChecks(false);
+  renderChecks(false); kbRefresh();
 });
 $('#soundBtn').addEventListener('click',function(){
   sndOn=!sndOn; this.textContent= sndOn? '🔊':'🔈';
@@ -1249,9 +1536,12 @@ function applyLang(){
   $('#homeBtn').textContent=T().home;
   $('#deliver').textContent=T().deliver;
   $('#hint').textContent=T().hint;
+  $('#kbHint').textContent=T().kb;
+  benchCv.setAttribute('aria-label',T().aBench);
   renderTabs(); renderItems(); renderOrder(); renderDay(); renderChecks(true);
   if($('#ovGal').classList.contains('show')) showGallery();
   if($('#ovEnd').classList.contains('show')) showEnd(true);
+  if(document.activeElement===benchCv) kbAnnounce(); else kbRefresh();
   try{ if($('#ovEnd').classList.contains('show') && gaS.voteShown && !gaS.voted) gaVoteShow(gaS.voteScene); }catch(e){}
 }
 
@@ -1283,12 +1573,21 @@ function gaVoteShow(scene){
   el.querySelector('[data-choice="unsure"]').textContent=c.no;
   gaS.voteScene=scene||'main'; gaS.voteShown=true; el.hidden=false; el.classList.remove('done');
 }
+/* 눌린 채로 있는 Enter 의 오토리핏은 새 조작이 아니다. 투표·납품 뒤 포커스를
+   옮겨주고 나면 그 반복이 옮겨간 버튼을 눌러 판이 저 혼자 넘어간다 —
+   버튼의 기본 활성화만 막는다. 게임 자신의 키 처리는 그대로 돈다. */
+document.addEventListener("keydown",function(e){
+  if(!e.repeat)return;
+  var k=e.key||""; if(k!=="Enter"&&k!==" "&&k!=="Spacebar")return;
+  var t=e.target; if(t&&t.tagName==="BUTTON")e.preventDefault();
+},true);
 (function(){ var el=document.getElementById('gaVote'); if(!el)return;
   el.addEventListener('click',function(e){
     var b=e.target; while(b&&b!==el&&!(b.getAttribute&&b.getAttribute('data-choice')))b=b.parentNode;
     if(!b||b===el||gaS.voted)return; gaS.voted=true;
     gaSend('game_vote',{scene:gaS.voteScene,choice:b.getAttribute('data-choice')});
     var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+    kbFocus('#eAgain');   /* 누른 버튼이 곧 사라진다 — 포커스를 엔딩 안에 먼저 옮겨두고 숨긴다 */
     el.classList.add('done'); el.querySelector('.ga-vote-q').textContent=c.thx;
     setTimeout(function(){ el.hidden=true; },1200);
   });
