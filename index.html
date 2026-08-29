@@ -177,6 +177,8 @@ body {
 .card-banner.sagwan { background: linear-gradient(135deg, #f3ecd9, #e0cba8, #8f3b2d); }
 .card-banner.janggi { background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); }
 .card-banner.matchstick { background: linear-gradient(135deg, #f3e6cf, #e2c9a0, #b5462f); }
+.card-banner.onestroke { background: linear-gradient(135deg, #f7e2e6, #d8a8b8, #4a3b46); }
+.card-banner.foldlight { background: linear-gradient(135deg, #1b1b3a, #3a2f5c, #c9922e); }
 .card-banner-piece {
   width: 110px;
   height: auto;
@@ -409,7 +411,7 @@ body {
 <header class="header">
   <div class="header-inner">
     <a class="logo" href="/" aria-label="in-9 Games">
-      <img class="logo-img" src="assets/logo_final.svg" alt="in-9 Games — Just play it." />
+      <img class="logo-img" src="assets/logo_final.svg" alt="in-9 Games" />
       <span class="logo-mark">in-9 Games</span>
     </a>
     <div style="display:flex;align-items:center;gap:16px;">
@@ -419,7 +421,7 @@ body {
         <button onclick="setLang('en')" data-lang="en">EN</button>
       </div>
       <div class="header-stats">
-        <span data-i18n="games">게임 <span class="stat-num" id="totalGames">2</span></span>
+        <span data-i18n="games">게임 <span class="stat-num" id="totalGames">23</span></span>
         <span data-i18n="categories">카테고리 <span class="stat-num">8</span></span>
       </div>
     </div>
@@ -428,49 +430,6 @@ body {
 
 <!-- Hero with Logo -->
 <section class="hero">
-  <div style="max-width:480px; margin:0 auto 16px;">
-    <svg viewBox="0 0 600 200" width="100%" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="swooshGrad" x1="0%" y1="50%" x2="100%" y2="50%">
-          <stop offset="0%" stop-color="#7c3aed"/>
-          <stop offset="50%" stop-color="#FF6B00"/>
-          <stop offset="100%" stop-color="#ff4081"/>
-        </linearGradient>
-        <filter id="swooshGlow">
-          <feGaussianBlur stdDeviation="6" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-        <filter id="touchGlow">
-          <feGaussianBlur stdDeviation="8" result="blur"/>
-          <feColorMatrix in="blur" type="matrix"
-            values="1.5 0 0 0 0  0 1.2 0 0 0  0 0 2 0 0  0 0 0 1.8 0" result="brightBlur"/>
-          <feMerge><feMergeNode in="brightBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-        <radialGradient id="touchFill" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="white" stop-opacity="1"/>
-          <stop offset="20%" stop-color="#e0d0ff" stop-opacity="0.95"/>
-          <stop offset="45%" stop-color="#a78bfa" stop-opacity="0.8"/>
-          <stop offset="70%" stop-color="#7c3aed" stop-opacity="0.4"/>
-          <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
-        </radialGradient>
-      </defs>
-      <!-- Nike swoosh: thick left, sweeps right, tapers to sharp tip -->
-      <path d="M22,130 C50,132 90,124 140,100 C200,72 270,50 350,42 C430,34 500,38 565,55 L555,42 C495,26 430,22 350,30 C270,38 200,58 140,86 C90,110 55,124 30,120 Z"
-            fill="url(#swooshGrad)" filter="url(#swooshGlow)" opacity="0.92"/>
-      <!-- Touch ripple at the bend — vivid & intense -->
-      <circle cx="140" cy="92" r="18" fill="url(#touchFill)" filter="url(#touchGlow)"/>
-      <circle cx="140" cy="92" r="30" fill="none" stroke="#c4b5fd" stroke-width="2.5" opacity="0.7"/>
-      <circle cx="140" cy="92" r="46" fill="none" stroke="#a78bfa" stroke-width="2" opacity="0.4"/>
-      <circle cx="140" cy="92" r="64" fill="none" stroke="#7c3aed" stroke-width="1.5" opacity="0.2"/>
-      <!-- Text -->
-      <text x="300" y="172" text-anchor="middle"
-            font-family="'Futura', 'Helvetica Neue', 'Arial Black', sans-serif"
-            font-size="48" font-weight="900" font-style="italic"
-            fill="white" letter-spacing="-2">
-        Just play.
-      </text>
-    </svg>
-  </div>
   <span class="featured-label" id="featured-label">Featured Games</span>
   <h2 id="hero-sub">누구나 바로 시작할 수 있는 게임</h2>
 </section>
@@ -509,6 +468,36 @@ body {
       <span class="play-btn" id="sagwan-play">▶ 지금 플레이</span>
     </div>
   </a>
+  <a class="featured-card" href="puzzle/one-stroke-garden/" data-cat="puzzle">
+    <div class="card-banner onestroke">🌸</div>
+    <div class="card-body">
+      <div class="card-tags">
+        <span class="tag tag-new" id="tag-onestroke-new">NEW</span>
+        <span class="tag tag-puzzle" id="tag-onestroke-puzzle">퍼즐</span>
+      </div>
+      <div class="card-title" id="onestroke-title">한 붓 정원</div>
+      <div class="card-subtitle" id="onestroke-sub">一筆の庭 / One-Stroke Garden</div>
+      <div class="card-desc" id="onestroke-desc">
+        펜을 떼지 않고 모든 길을 한 번씩. 지나간 자리마다 꽃이 피고, 다 이으면 정원이 완성된다.
+      </div>
+      <span class="play-btn" id="onestroke-play">▶ 지금 플레이</span>
+    </div>
+  </a>
+  <a class="featured-card" href="puzzle/fold-the-light/" data-cat="puzzle">
+    <div class="card-banner foldlight">🏮</div>
+    <div class="card-body">
+      <div class="card-tags">
+        <span class="tag tag-new" id="tag-foldlight-new">NEW</span>
+        <span class="tag tag-puzzle" id="tag-foldlight-puzzle">퍼즐</span>
+      </div>
+      <div class="card-title" id="foldlight-title">빛 접기</div>
+      <div class="card-subtitle" id="foldlight-sub">光おり / Fold the Light</div>
+      <div class="card-desc" id="foldlight-desc">
+        거울을 돌려 빛의 길을 접는 30개의 밤. 등불이 모두 켜지면 다음 밤이 열린다.
+      </div>
+      <span class="play-btn" id="foldlight-play">▶ 지금 플레이</span>
+    </div>
+  </a>
 </section>
 
 <!-- Categories -->
@@ -518,47 +507,47 @@ body {
     <div class="cat-card" data-filter="all" onclick="filterGames('all')">
       <div class="cat-icon">🎮</div>
       <div class="cat-name" id="cat-all">전체</div>
-      <div class="cat-count">2 games</div>
+      <div class="cat-count">23</div>
     </div>
     <div class="cat-card" data-filter="board" onclick="filterGames('board')">
       <div class="cat-icon">♟️</div>
       <div class="cat-name" id="cat-board">보드</div>
-      <div class="cat-count">1 game</div>
+      <div class="cat-count">2</div>
     </div>
     <div class="cat-card" data-filter="puzzle" onclick="filterGames('puzzle')">
       <div class="cat-icon">🧩</div>
       <div class="cat-name" id="cat-puzzle">퍼즐</div>
-      <div class="cat-count">coming soon</div>
+      <div class="cat-count">9</div>
     </div>
     <div class="cat-card" data-filter="simulation" onclick="filterGames('simulation')">
       <div class="cat-icon">🏗️</div>
       <div class="cat-name" id="cat-sim">시뮬레이션</div>
-      <div class="cat-count">1 game</div>
+      <div class="cat-count">6</div>
     </div>
     <div class="cat-card" data-filter="strategy" onclick="filterGames('strategy')">
       <div class="cat-icon">🧠</div>
       <div class="cat-name" id="cat-strategy">전략</div>
-      <div class="cat-count">1 game</div>
+      <div class="cat-count">3</div>
     </div>
     <div class="cat-card" data-filter="casual" onclick="filterGames('casual')">
       <div class="cat-icon">☕</div>
       <div class="cat-name" id="cat-casual">캐주얼</div>
-      <div class="cat-count">1 game</div>
+      <div class="cat-count">14</div>
     </div>
     <div class="cat-card" data-filter="action" onclick="filterGames('action')">
       <div class="cat-icon">⚔️</div>
       <div class="cat-name" id="cat-action">액션</div>
-      <div class="cat-count">coming soon</div>
+      <div class="cat-count">2</div>
     </div>
     <div class="cat-card" data-filter="rpg" onclick="filterGames('rpg')">
       <div class="cat-icon">🐉</div>
       <div class="cat-name" id="cat-rpg">RPG</div>
-      <div class="cat-count">coming soon</div>
+      <div class="cat-count">Coming Soon</div>
     </div>
     <div class="cat-card" data-filter="archive" onclick="filterGames('archive')">
       <div class="cat-icon">🗃️</div>
       <div class="cat-name" id="cat-archive">보관소</div>
-      <div class="cat-count">coming soon</div>
+      <div class="cat-count">1</div>
     </div>
   </div>
 </section>
@@ -566,7 +555,191 @@ body {
 <!-- All Games -->
 <section class="games-section">
   <h3 class="section-title" id="all-games-title">전체 게임</h3>
-  <div class="all-games-grid" id="gameGrid"><!-- CATALOG에서 렌더링 --></div>
+  <div class="all-games-grid" id="gameGrid"><a class="game-card" href="board/janggi/" data-cat="board,strategy">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#1a1a2e,#16213e);"><img class="game-card-banner-piece" src="board/janggi/img/Green_King.png" alt=""></div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span><span class="tag tag-ai">AI 대전</span></div>
+        <div class="game-card-title">애기장기</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">ベビー将棋 / Baby Janggi</div>
+        <div class="game-card-desc">AI 훈수와 함께하는 한국 전통 장기</div>
+      </div>
+    </a><a class="game-card" href="casual/zen-garden/" data-cat="casual,simulation">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#e8dcc8,#6a5138);">🪷</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span></div>
+        <div class="game-card-title">모래정원 빗질</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">枯山水にわ / Zen Rake Garden</div>
+        <div class="game-card-desc">갈퀴로 모래에 물결을 그리는 고요한 정원</div>
+      </div>
+    </a><a class="game-card" href="casual/squishy-cake/" data-cat="casual,simulation">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#ffd9e6,#fff1dc);">🍰</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span></div>
+        <div class="game-card-title">말랑 케이크 공장</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">ぷにケーキ工房 / Squishy Cake Shop</div>
+        <div class="game-card-desc">말랑말랑 시트에 크림 짜고 토핑 얹기</div>
+      </div>
+    </a><a class="game-card" href="casual/seed-circle/" data-cat="casual,simulation">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#efe0c2,#6f9a4e);">🌰</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span><span class="tag ">simulation</span></div>
+        <div class="game-card-title">씨앗 한 바퀴</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">たねひとめぐり / Seed Full Circle</div>
+        <div class="game-card-desc">씨앗을 고르고 물을 줘, 다시 그 씨앗이 맺힐 때까지</div>
+      </div>
+    </a><a class="game-card" href="casual/cloud-snap/" data-cat="casual">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#bfe0f7,#ffe3c9);">☁️</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span></div>
+        <div class="game-card-title">구름 사진관</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">くも写真館 / Cloud Snap</div>
+        <div class="game-card-desc">오늘의 모양을 닮은 구름 다섯 컷</div>
+      </div>
+    </a><a class="game-card" href="casual/night-bugs/" data-cat="casual">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#12203f,#2a3b1c);">🔦</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span></div>
+        <div class="game-card-title">밤곤충 손전등</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">夜のむし探し / Night Bug Hunt</div>
+        <div class="game-card-desc">손전등을 비춰 여름밤 곤충 관찰 — 풀숲과 연못가, 두 밤 스무 마리</div>
+      </div>
+    </a><a class="game-card" href="casual/street-food/" data-cat="casual,simulation">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#8c2f24,#f0a34b);">🍢</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span></div>
+        <div class="game-card-title">미니 분식집</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">ミニ屋台 / Tiny Street Food</div>
+        <div class="game-card-desc">떡볶이·붕어빵·어묵, 느긋한 밤 포장마차</div>
+      </div>
+    </a><a class="game-card" href="casual/rain-xylophone/" data-cat="casual">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#3a6ea8,#a7d8f0);">💧</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span></div>
+        <div class="game-card-title">빗방울 실로폰</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">雨だれシロフォン / Rain Xylophone</div>
+        <div class="game-card-desc">빗방울이 떨어지면 울리는 무지개 건반</div>
+      </div>
+    </a><a class="game-card" href="casual/two-hand-knit/" data-cat="casual">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#f7e0d0,#e8917c);">🧶</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span></div>
+        <div class="game-card-title">둘이 뜨개</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">ふたり編み / Two-Hand Knit</div>
+        <div class="game-card-desc">한 기기에서 둘이 번갈아 뜨는 목도리</div>
+      </div>
+    </a><a class="game-card" href="puzzle/one-stroke-garden/" data-cat="puzzle">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#f7e2e6,#4a3b46);">🌸</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span><span class="tag tag-puzzle">퍼즐</span></div>
+        <div class="game-card-title">한 붓 정원</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">一筆の庭 / One-Stroke Garden</div>
+        <div class="game-card-desc">한 붓에 이으면 길마다 꽃이 피는 정원</div>
+      </div>
+    </a><a class="game-card" href="puzzle/fold-the-light/" data-cat="puzzle">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#1b1b3a,#c9922e);">🏮</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span><span class="tag tag-puzzle">퍼즐</span></div>
+        <div class="game-card-title">빛 접기</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">光おり / Fold the Light</div>
+        <div class="game-card-desc">거울을 돌려 등불을 모두 밝히는 30스테이지</div>
+      </div>
+    </a><a class="game-card" href="puzzle/matchstick/" data-cat="puzzle">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#f3e6cf,#b5462f);">🔥</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span><span class="tag tag-puzzle">퍼즐</span></div>
+        <div class="game-card-title">성냥개비 수수께끼</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">マッチ棒なぞなぞ / Matchstick Riddles</div>
+        <div class="game-card-desc">성냥을 옮겨 틀린 식을 바로잡는 6단계</div>
+      </div>
+    </a><a class="game-card" href="puzzle/yaminabe/" data-cat="puzzle,casual">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#2d1b4e,#1a1a2e);">🍲</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span><span class="tag tag-puzzle">퍼즐</span></div>
+        <div class="game-card-title">야미나베</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">闇鍋パズル / Yaminabe</div>
+        <div class="game-card-desc">깜깜한 냄비 속 재료를 냄새와 소리로 추리</div>
+      </div>
+    </a><a class="game-card" href="puzzle/tondemo-kagu/" data-cat="puzzle,simulation">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#1b3a2d,#8a6a3f);">🔨</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span><span class="tag tag-puzzle">퍼즐</span></div>
+        <div class="game-card-title">엉뚱가구 공방</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">トンデモ家具工房 / Tondemo Furniture</div>
+        <div class="game-card-desc">다리 하나짜리 책상? 주문대로 뚝딱</div>
+      </div>
+    </a><a class="game-card" href="puzzle/sound-blocks/" data-cat="puzzle,casual">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#2a2140,#f0a6c8);">🎵</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span><span class="tag tag-puzzle">퍼즐</span></div>
+        <div class="game-card-title">소리 블록</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">音ブロック / Sound Blocks</div>
+        <div class="game-card-desc">흩어진 음을 제자리에 맞춰 동요 완성</div>
+      </div>
+    </a><a class="game-card" href="puzzle/star-threads/" data-cat="puzzle,casual">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#0f1a3d,#d8c07a);">✨</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span><span class="tag tag-puzzle">퍼즐</span></div>
+        <div class="game-card-title">별자리 잇기</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">星つなぎ / Star Threads</div>
+        <div class="game-card-desc">마음대로 이으면 이름이 붙는 나만의 별자리</div>
+      </div>
+    </a><a class="game-card" href="board/baduk/" data-cat="board,strategy">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#d9a760,#5c3a1e);">⚫</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span><span class="tag tag-ai">AI 대전</span></div>
+        <div class="game-card-title">애기바둑 이음</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">ベビー囲碁 / Baby Baduk</div>
+        <div class="game-card-desc">6×6 따내기 바둑 — 세 점 먼저 따면 승</div>
+      </div>
+    </a><a class="game-card" href="action/umbrella-hop/" data-cat="action,casual">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#8fa8bf,#ffd85e);">☂️</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span></div>
+        <div class="game-card-title">점프 우산</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">かさジャンプ / Umbrella Hop</div>
+        <div class="game-card-desc">우산을 폈다 접으며 지붕을 건너는 원버튼</div>
+      </div>
+    </a><a class="game-card" href="action/cat-post/" data-cat="action">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#f0955e,#3a2b4a);">🐈</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span></div>
+        <div class="game-card-title">고양이 배달</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">ねこ配達 / Cat Post</div>
+        <div class="game-card-desc">편지를 물고 노을 진 지붕을 달리는 여덟 밤</div>
+      </div>
+    </a><a class="game-card" href="simulation/sagwan/" data-cat="simulation,strategy">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#f3ecd9,#8f3b2d);">📜</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span></div>
+        <div class="game-card-title">사관이 보고 있다</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">史官が見ている / The Historian Is Watching</div>
+        <div class="game-card-desc">세종의 다섯 갈림길 — 역사의 선택을 찾아라</div>
+      </div>
+    </a><a class="game-card" href="puzzle/pattern-line/" data-cat="puzzle,casual">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#6c5ce7,#1a1240);">🕹️</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span><span class="tag tag-puzzle">퍼즐</span></div>
+        <div class="game-card-title">무늬 나란히</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">もようならべ / Line of Three</div>
+        <div class="game-card-desc">세 칸 조각을 굴려 같은 무늬를 셋 나란히 — 옛 오락실 낙하 퍼즐</div>
+      </div>
+    </a><a class="game-card" href="puzzle/strata/" data-cat="puzzle,casual">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#c9b79a,#3b3630);">🦴</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span><span class="tag tag-puzzle">퍼즐</span></div>
+        <div class="game-card-title">화석이 되는 시간</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">かせきになる じかん / Time Into Stone</div>
+        <div class="game-card-desc">퇴적물을 쌓아 한 겹이 차면, 굳은 층에서 화석이 드러난다</div>
+      </div>
+    </a><a class="game-card" href="casual/bousou-kitchen/" data-cat="archive">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#ffe0f0,#fff4f9);">🍳</div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-first">1호작</span></div>
+        <div class="game-card-title">폭주키친</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">暴走キッチン / Runaway Kitchen</div>
+        <div class="game-card-desc">이 포탈의 첫 번째 게임 — 처음 만든 그대로 보관 중</div>
+      </div>
+    </a></div>
 </section>
 
 <!-- Footer -->
@@ -592,6 +765,14 @@ const I18N = {
     sagwanSub: '史官が見ている / The Historian Is Watching',
     sagwanDesc: '세종 앞에 놓인 다섯 갈림길. 어느 쪽이 실제 역사였을까? 고르고 나면 사관이 그날의 기록을 읽어준다.',
     sagwanPlay: '▶ 지금 플레이',
+    onestrokeTitle: '한 붓 정원',
+    onestrokeSub: '一筆の庭 / One-Stroke Garden',
+    onestrokeDesc: '펜을 떼지 않고 모든 길을 한 번씩. 지나간 자리마다 꽃이 피고, 다 이으면 정원이 완성된다.',
+    onestrokePlay: '▶ 지금 플레이',
+    foldlightTitle: '빛 접기',
+    foldlightSub: '光おり / Fold the Light',
+    foldlightDesc: '거울을 돌려 빛의 길을 접는 30개의 밤. 등불이 모두 켜지면 다음 밤이 열린다.',
+    foldlightPlay: '▶ 지금 플레이',
     catTitle: '카테고리',
     catAll: '전체', catBoard: '보드', catPuzzle: '퍼즐', catSim: '시뮬레이션',
     catStrategy: '전략', catCasual: '캐주얼', catAction: '액션', catRPG: 'RPG',
@@ -617,6 +798,14 @@ const I18N = {
     sagwanSub: '사관이 보고 있다 / The Historian Is Watching',
     sagwanDesc: '世宗の前に置かれた五つの分かれ道。どちらが実際の歴史だったのか？選ぶと史官がその日の記録を読んでくれる。',
     sagwanPlay: '▶ 今すぐプレイ',
+    onestrokeTitle: '一筆の庭',
+    onestrokeSub: '한 붓 정원 / One-Stroke Garden',
+    onestrokeDesc: '一筆で道をぜんぶ一度ずつ。なぞった道に花が咲き、つなぎ終えると庭が完成する。',
+    onestrokePlay: '▶ 今すぐプレイ',
+    foldlightTitle: '光おり',
+    foldlightSub: '빛 접기 / Fold the Light',
+    foldlightDesc: '鏡を回して光の道をおる30の夜。灯りがぜんぶともると、次の夜がひらく。',
+    foldlightPlay: '▶ 今すぐプレイ',
     catTitle: 'カテゴリー',
     catAll: '全部', catBoard: 'ボード', catPuzzle: 'パズル', catSim: 'シミュレーション',
     catStrategy: '戦略', catCasual: 'カジュアル', catAction: 'アクション', catRPG: 'RPG',
@@ -642,6 +831,14 @@ const I18N = {
     sagwanSub: '사관이 보고 있다 / 史官が見ている',
     sagwanDesc: 'Five crossroads stand before King Sejong. Which one was the real history? Choose, and the court historian reads out that day\'s record.',
     sagwanPlay: '▶ Play Now',
+    onestrokeTitle: 'One-Stroke Garden',
+    onestrokeSub: '한 붓 정원 / 一筆の庭',
+    onestrokeDesc: 'Trace every path exactly once without lifting your finger. Flowers bloom where you pass.',
+    onestrokePlay: '▶ Play Now',
+    foldlightTitle: 'Fold the Light',
+    foldlightSub: '빛 접기 / 光おり',
+    foldlightDesc: 'Turn the mirrors to fold the light through thirty nights. Light every lantern and the next night opens.',
+    foldlightPlay: '▶ Play Now',
     catTitle: 'Categories',
     catAll: 'All', catBoard: 'Board', catPuzzle: 'Puzzle', catSim: 'Simulation',
     catStrategy: 'Strategy', catCasual: 'Casual', catAction: 'Action', catRPG: 'RPG',
@@ -858,6 +1055,10 @@ function applyI18N() {
     'sagwan-sub': L.sagwanSub,
     'sagwan-desc': L.sagwanDesc,
     'sagwan-play': L.sagwanPlay,
+    'onestroke-title': L.onestrokeTitle, 'onestroke-sub': L.onestrokeSub,
+    'onestroke-desc': L.onestrokeDesc, 'onestroke-play': L.onestrokePlay,
+    'foldlight-title': L.foldlightTitle, 'foldlight-sub': L.foldlightSub,
+    'foldlight-desc': L.foldlightDesc, 'foldlight-play': L.foldlightPlay,
     'cat-title': L.catTitle,
     'cat-all': L.catAll, 'cat-board': L.catBoard, 'cat-puzzle': L.catPuzzle,
     'cat-sim': L.catSim, 'cat-strategy': L.catStrategy, 'cat-casual': L.catCasual,
@@ -866,6 +1067,8 @@ function applyI18N() {
     'footer-text': L.footer,
     'tag-matchstick-new': L.tagNew, 'tag-matchstick-puzzle': L.tagPuzzle,
     'tag-sagwan-new': L.tagNew, 'tag-sagwan-sim': L.tagSim, 'tag-sagwan-strategy': L.tagStrategy,
+    'tag-onestroke-new': L.tagNew, 'tag-onestroke-puzzle': L.tagPuzzle,
+    'tag-foldlight-new': L.tagNew, 'tag-foldlight-puzzle': L.tagPuzzle,
   };
   for (const [id, text] of Object.entries(m)) {
     const el = document.getElementById(id);
