@@ -15,3 +15,7 @@ node_modules
 !.dev.vars.example
 .env*
 !.env.example
+
+# 세션 로컬 — 커밋 금지
+.claude/
+CLAUDE.md

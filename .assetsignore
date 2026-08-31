@@ -15,3 +15,6 @@ CLAUDE.md
 puzzle/seeing/SPEC.md
 board/janggi/engine-test.html
 casual/bousou-kitchen-v2/
+# 도판 원본 스캔 — 파생물 재생성과 감사용으로 git 에는 두되 배포하지 않는다
+assets/lifeform/src/
+tools/
