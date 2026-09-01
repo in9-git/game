@@ -1,0 +1,2502 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF7BJ4211L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-SF7BJ4211L');</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#c08b4a">
+<title>긴 날개, 얕은 바다 · ながいつばさ、あさいうみ · Long Wings, Shallow Sea</title>
+<link rel="canonical" href="https://game.in-9.com/casual/long-wings/">
+<meta name="description" content="누르면 날개를 접고, 놓으면 편다 — 올라가는 일은 공기가 한다. 백악기 얕은 바다 위를 100초 동안 나는 무료 웹게임.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="긴 날개, 얕은 바다 · ながいつばさ、あさいうみ · Long Wings, Shallow Sea">
+<meta property="og:description" content="누르면 날개를 접고, 놓으면 편다 — 올라가는 일은 공기가 한다. 백악기 얕은 바다 위를 100초 동안 나는 무료 웹게임.">
+<meta property="og:url" content="https://game.in-9.com/casual/long-wings/">
+<meta property="og:image" content="https://game.in-9.com/assets/og-image.png">
+<meta property="og:site_name" content="in-9 Games">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="긴 날개, 얕은 바다 · ながいつばさ、あさいうみ · Long Wings, Shallow Sea">
+<meta name="twitter:description" content="누르면 날개를 접고, 놓으면 편다 — 올라가는 일은 공기가 한다. 백악기 얕은 바다 위를 100초 동안 나는 무료 웹게임.">
+<meta name="twitter:image" content="https://game.in-9.com/assets/og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🪶%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    /* 세피아·오커 계열 — umbrella-hop(#8fa8bf,#ffd85e) 및 night-bugs(남색·금색)와
+       겹치지 않게 잡은 배너색이다. 홈 카드도 이 축으로 간다. */
+    --paper:#f3e3c6;
+    --paper-2:#e6d0aa;
+    --ink:#432f1b;
+    --ink-soft:#8a6c47;
+    --ochre:#b8802f;
+    --ochre-2:#8d5c1d;
+    --sepia:#6d4f2c;
+    --line:rgba(109,79,44,.30);
+    --shadow:0 10px 32px rgba(80,55,25,.28);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Hiragino Kaku Gothic ProN","Segoe UI",sans-serif;
+    background:#2b2418;
+    color:var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #app{
+    position:relative;
+    width:100%;max-width:820px;
+    height:100vh;            /* dvh 미지원(Safari 15.3 이하 등) 폴백 — 순서 유지 */
+    height:100dvh;
+    overflow:hidden;
+    user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+    background:#c9a86f;
+  }
+  @media (min-width:860px){
+    #app{
+      height:min(100vh - 32px, 940px);
+      height:min(100dvh - 32px, 940px);
+      border-radius:22px;
+      box-shadow:0 26px 74px rgba(30,22,10,.55);
+    }
+  }
+  /* 두 장의 캔버스.
+     #sea  = 판이 도는 플레이 캔버스. 박물 도판은 여기에 절대 안 그린다.
+     #plate= 엔딩에서 최종 프레임을 drawImage 로 옮겨 받아 얼리는 두 번째 캔버스. */
+  #sea,#plate{
+    position:absolute;inset:0;width:100%;height:100%;
+    display:block;touch-action:none;
+  }
+  #sea{cursor:pointer;}
+  #plate{z-index:3;opacity:0;pointer-events:none;transition:opacity .18s linear;}
+  #plate.on{opacity:1;}
+  /* 키보드로 초점을 받았을 때만 보이는 링. 낮 바다 위에서도 3:1 이 나오도록
+     바깥 흰 테 / 안쪽 짙은 갈색 두 겹으로 만든다(cloud-snap 전례). */
+  #sea:focus{outline:none;}
+  #sea:focus-visible{outline:none;}
+  #focusRing{
+    position:absolute;inset:0;z-index:7;pointer-events:none;
+    opacity:0;transition:opacity .12s ease;
+    border:3px solid rgba(255,252,244,.97);
+    box-shadow:inset 0 0 0 3px #2a1c0c;
+  }
+  #sea:focus-visible ~ #focusRing{opacity:1;}
+  @media (min-width:860px){ #focusRing{border-radius:22px;} }
+
+  /* ---------- header ----------
+     판이 도는 동안 화면에는 글자가 하나도 없어야 한다. 그래서 재생 중 헤더는
+     제목을 감추고 아이콘 세 개만 흐리게 남긴다(집·언어 깃발·소리). */
+  header{
+    position:absolute;top:0;left:0;right:0;z-index:6;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:calc(10px + env(safe-area-inset-top)) 12px 10px;
+    pointer-events:none;
+    transition:opacity .4s ease;
+  }
+  body.playing header{opacity:.30;}
+  body.playing header:focus-within{opacity:1;}
+  body.playing .title-block{opacity:0;}
+  /* 판이 도는 동안 화면에 남는 글자는 0 이어야 한다.
+     홈 버튼의 '홈/ホーム/Home' 도 글자다 — 화살표만 남긴다.
+     헤더에 포커스가 들어오면(키보드 이동) 다시 보인다. */
+  body.playing #homeTxt{display:none;}
+  body.playing header:focus-within #homeTxt{display:inline;}
+  .hbtn{
+    pointer-events:auto;
+    display:inline-flex;align-items:center;justify-content:center;gap:5px;
+    background:rgba(250,240,220,.42);
+    border:1px solid rgba(255,250,238,.6);
+    backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+    border-radius:999px;
+    padding:7px 13px;
+    min-height:44px;min-width:44px;
+    font-size:.82rem;font-weight:700;color:var(--ink);
+    text-decoration:none;cursor:pointer;font-family:inherit;
+    box-shadow:0 3px 12px rgba(70,50,20,.16);
+    transition:transform .18s ease, background .18s ease;
+  }
+  .hbtn:hover{transform:translateY(-1px);background:rgba(255,248,232,.62);}
+  .hbtn:active{transform:scale(.95);}
+  .hdr-right{display:flex;gap:8px;pointer-events:none;}
+  .title-block{
+    flex:1 1 auto;min-width:0;text-align:center;pointer-events:none;
+    text-shadow:0 2px 10px rgba(255,244,222,.55);
+    transition:opacity .4s ease;
+  }
+  .title-block h1{
+    font-size:1.2rem;font-weight:800;letter-spacing:.04em;color:var(--ink);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .title-block p{
+    font-size:.6rem;font-weight:600;letter-spacing:.12em;color:var(--sepia);margin-top:2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  @media (max-width:430px){
+    .title-block h1{font-size:1rem;letter-spacing:.01em;}
+    .title-block p{font-size:.53rem;letter-spacing:.06em;}
+  }
+
+  /* ---------- overlays (판 밖) ---------- */
+  .overlay{
+    position:absolute;inset:0;z-index:9;
+    display:flex;align-items:center;justify-content:center;
+    padding:calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
+    background:rgba(48,34,18,.42);
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+    opacity:0;visibility:hidden;
+    /* 사라질 때만 0.32초 뒤에 hidden 이 되고, 나타날 때는 그 즉시 visible 이다.
+       (기존 `transition: ... visibility .32s` 는 두 방향 모두 전환 대상으로 삼아
+        show 를 붙인 같은 틱에 부르는 focus() 가 조용히 무시될 수 있었다 —
+        visibility:hidden 인 요소는 초점을 받지 못한다.)
+       사라지는 0.32초 동안 카드가 플레이 캔버스 위에 남아 탭을 삼키는 문제는
+       아래 pointer-events:none 이 계속 막는다(elementFromPoint 로 실측). */
+    transition:opacity .32s ease, visibility 0s linear .32s;
+    pointer-events:none;
+  }
+  .overlay.show{opacity:1;visibility:visible;pointer-events:auto;
+    transition:opacity .32s ease, visibility 0s linear 0s;}
+  .card{
+    background:linear-gradient(178deg,var(--paper),var(--paper-2));
+    border:1px solid rgba(255,250,236,.85);
+    box-shadow:var(--shadow);
+    border-radius:20px;
+    padding:22px 20px 18px;
+    max-width:430px;width:100%;
+    max-height:100%;overflow-y:auto;overscroll-behavior:contain;
+    text-align:center;
+  }
+  .card h2{font-size:1.5rem;font-weight:800;letter-spacing:.02em;margin-bottom:4px;}
+  .card .sub{font-size:.7rem;font-weight:700;letter-spacing:.1em;color:var(--ink-soft);margin-bottom:14px;}
+  .card .desc{font-size:.92rem;line-height:1.65;color:var(--sepia);white-space:pre-line;margin-bottom:12px;}
+  .card .quiet{font-size:.76rem;line-height:1.6;color:var(--ink-soft);margin-top:10px;}
+  .btn{
+    font-family:inherit;font-size:1rem;font-weight:800;
+    padding:14px 26px;min-height:48px;border:none;border-radius:999px;cursor:pointer;
+    background:linear-gradient(140deg,var(--ochre),var(--ochre-2));
+    color:#fff8ea;
+    box-shadow:0 8px 20px rgba(140,92,29,.42);
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .btn:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(140,92,29,.5);}
+  .btn:active{transform:scale(.96);}
+  .btn.ghost{
+    background:rgba(255,250,238,.78);color:var(--ink);
+    border:1px solid rgba(255,255,255,.9);
+    box-shadow:0 4px 12px rgba(120,90,40,.18);
+    text-decoration:none;display:inline-flex;align-items:center;justify-content:center;
+  }
+  .btn-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px;}
+
+  /* 제목 화면의 실루엣 자리 */
+  #titleArt{width:132px;height:132px;margin:2px auto 6px;color:var(--sepia);opacity:.9;}
+  #titleArt svg{width:100%;height:100%;display:block;}
+
+  /* ---------- 도감 카드 (판 밖 · 3개 국어) ---------- */
+  #cardOv .card{max-width:520px;text-align:left;}
+  .dex-head{text-align:center;margin-bottom:10px;}
+  .dex-plate{
+    width:100%;border-radius:12px;display:block;
+    border:1px solid rgba(109,79,44,.35);
+    box-shadow:0 6px 18px rgba(80,55,25,.24);
+    background:#e9d9bb;
+  }
+  .dex-cap{font-size:.66rem;color:var(--ink-soft);letter-spacing:.02em;margin:5px 2px 14px;line-height:1.5;}
+  .dex-row{margin:0 0 11px;font-size:.86rem;line-height:1.66;color:var(--sepia);}
+  .dex-row b{display:block;font-size:.66rem;letter-spacing:.14em;color:var(--ochre-2);margin-bottom:2px;}
+  .dex-anat{display:flex;gap:12px;align-items:flex-start;margin:14px 0 4px;}
+  .dex-anat img{
+    width:104px;flex:0 0 104px;border-radius:9px;background:#efe0c1;
+    border:1px solid rgba(109,79,44,.28);padding:5px;
+  }
+  @media (max-width:400px){ .dex-anat{flex-direction:column;align-items:center;} .dex-anat img{width:132px;flex:none;} }
+  .dex-key{
+    margin:14px 0 4px;padding:11px 13px;border-radius:12px;
+    background:rgba(184,128,47,.13);border:1px solid rgba(184,128,47,.30);
+    font-size:.88rem;line-height:1.7;color:var(--ink);
+  }
+  .dex-key b{display:block;font-weight:800;margin-bottom:3px;}
+  .dex-seen{font-size:.78rem;line-height:1.6;color:var(--ink-soft);margin:12px 0 2px;}
+  .dex-seen[hidden]{display:none;}
+  .dex-credit{font-size:.6rem;line-height:1.55;color:var(--ink-soft);opacity:.85;margin-top:14px;}
+  hr.rule{border:none;border-top:1px solid var(--line);margin:14px 0;}
+
+  /* ---------- GA vote row ---------- */
+  .ga-vote{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 2px;font-size:14px;line-height:1.2;opacity:.92;color:var(--ink-soft)}
+  .ga-vote[hidden]{display:none}
+  .ga-vote-btn{font:inherit;font-size:14px;padding:6px 14px;min-height:44px;min-width:44px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.85;-webkit-tap-highlight-color:transparent}
+  .ga-vote-btn:active{opacity:1}
+  .ga-vote.done .ga-vote-btn{display:none}
+
+  /* ---------- 큰 화면 모드 ?tv=1 (교실 앞 프로젝터) ----------
+     판 규칙은 하나도 바뀌지 않는다. 글자·카드·터치 힌트만 커진다. */
+  body.tv .title-block h1{font-size:1.75rem;}
+  body.tv .title-block p{font-size:.82rem;}
+  body.tv .hbtn{font-size:1.02rem;padding:11px 19px;min-height:56px;min-width:56px;}
+  body.tv .card{max-width:760px;padding:32px 30px 26px;border-radius:26px;}
+  body.tv .card h2{font-size:2.15rem;}
+  body.tv .card .sub{font-size:.92rem;}
+  body.tv .card .desc{font-size:1.28rem;line-height:1.75;}
+  body.tv .card .quiet{font-size:1rem;}
+  body.tv .btn{font-size:1.28rem;padding:18px 34px;min-height:64px;}
+  body.tv #titleArt{width:196px;height:196px;}
+  body.tv .dex-row{font-size:1.12rem;}
+  body.tv .dex-row b{font-size:.82rem;}
+  body.tv .dex-key{font-size:1.14rem;}
+  body.tv .dex-cap{font-size:.86rem;}
+  body.tv .dex-seen{font-size:1rem;}
+  body.tv .dex-anat img{width:150px;flex:0 0 150px;}
+  body.tv .ga-vote,body.tv .ga-vote-btn{font-size:19px;}
+  /* 교실 뒤에서도 '지금 여기에 키가 먹는다'가 보여야 한다. 판 규칙은 그대로다. */
+  body.tv #focusRing{border-width:6px;box-shadow:inset 0 0 0 6px #2a1c0c;}
+  body.tv #cardOv .card{max-width:820px;}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="sea" tabindex="0" role="application" aria-label="바다 위. 누르고 있으면 날개를 접고, 놓으면 폅니다."></canvas>
+  <canvas id="plate" aria-hidden="true"></canvas>
+  <div id="focusRing" aria-hidden="true"></div>
+
+  <header>
+    <a class="hbtn" id="homeBtn" href="../../index.html">← <span id="homeTxt">홈</span></a>
+    <div class="title-block">
+      <h1 id="titleMain">긴 날개, 얕은 바다</h1>
+      <p id="titleSub">ながいつばさ、あさいうみ · Long Wings, Shallow Sea</p>
+    </div>
+    <div class="hdr-right">
+      <button class="hbtn" id="langBtn" type="button" aria-label="language">🇰🇷</button>
+      <button class="hbtn" id="soundBtn" type="button" aria-label="sound">🔊</button>
+    </div>
+  </header>
+
+  <!-- 제목 화면 — 문자는 여기와 엔딩 도감 카드, 투표 행에만 존재한다 -->
+  <div class="overlay show" id="titleOv">
+    <div class="card">
+      <div id="titleArt" aria-hidden="true"></div>
+      <h2 id="tTitle">긴 날개, 얕은 바다</h2>
+      <p class="sub" id="tSub">ながいつばさ、あさいうみ · Long Wings, Shallow Sea</p>
+      <p class="desc" id="tDesc"></p>
+      <button class="btn" id="startBtn"></button>
+      <p class="quiet" id="tKeys"></p>
+    </div>
+  </div>
+
+  <!-- 엔딩 도감 카드
+       ─────────────────────────────────────────────────────────────────────
+       ⚠ 출시 전 사람이 확인할 것 — 아래 수치는 CFG.card 안에 있고, 1910년 도판
+         원 캡션의 값(날개폭 18피트 = 5.5 m, "가장 큰 나는 동물" 등)을 쓰지 않는다.
+         에이전트가 검증한 값이 아니다. 다음 네 항목을 근거와 함께 대조할 것.
+
+         (1) 시대 "후기 백악기, 약 8,600만~8,450만 년 전"
+             ← Niobrara Formation(Smoky Hill Chalk) 의 프테라노돈 산출 구간.
+               대조처: Bennett 1994 "Taxonomy and systematics of the late
+               Cretaceous pterosaur Pteranodon" / 해당 층서의 최신 연대 논문.
+         (2) 날개폭 "약 3.8 m ~ 6 m 안팎"
+             ← 소형/대형 형태(morph)의 폭. 대조처: Bennett 1992 (성적 이형 해석),
+               Bennett 2001 골격 기재. 6 m 를 넘는 값은 표본별 논쟁이 있으니
+               "안팎" 표현을 유지할 것.
+         (3) 몸무게 "20~40 kg 언저리, 폭이 넓음"
+             ← 추정치 편차가 큰 항목이다. 단일 값으로 좁히지 말 것.
+               대조처: Witton 2008 이후의 익룡 질량 추정 리뷰.
+         (4) 종(種) 단정 금지
+             ← /assets/lifeform/CREDITS.json 의 경고: perched 실루엣만
+               P. sternbergi 다(≠ longiceps). 카드는 속(屬)까지만 말한다.
+
+         숫자를 고칠 때는 ko·ja·en 세 벌(CFG.card.ko/ja/en)을 함께 고친다.
+       ───────────────────────────────────────────────────────────────────── -->
+  <div class="overlay" id="cardOv">
+    <div class="card" id="dexCard" tabindex="-1">
+      <div class="dex-head">
+        <h2 id="dxName">프테라노돈</h2>
+        <p class="sub" id="dxSub"></p>
+      </div>
+      <img class="dex-plate" id="dxPlate" alt="" src="../../assets/lifeform/plate-flight-1905.jpg">
+      <p class="dex-cap" id="dxPlateCap"></p>
+
+      <p class="dex-row" id="dxSci"></p>
+      <p class="dex-row" id="dxWhen"></p>
+      <p class="dex-row" id="dxSize"></p>
+
+      <hr class="rule">
+      <div class="dex-anat">
+        <img id="dxSkel" alt="" src="../../assets/lifeform/plate-skeleton-1910.png">
+        <p class="dex-row" id="dxWing" style="margin:0"></p>
+      </div>
+      <p class="dex-cap" id="dxSkelCap"></p>
+
+      <div class="dex-key" id="dxInfer"></div>
+      <p class="dex-seen" id="dxSeen" hidden></p>
+      <p class="dex-credit" id="dxCredit"></p>
+
+      <div class="ga-vote" id="gaVote" hidden>
+        <!-- 투표가 접수되면 이 자리의 글자만 '고마워요!' 로 바뀌고 버튼 둘은 사라진다.
+             live 영역이 아니면 화면을 못 보는 사람에게는 접수됐다는 단서가 아무것도 없다. -->
+        <span class="ga-vote-q" aria-live="polite">또 할래?</span>
+        <button type="button" class="ga-vote-btn" data-choice="yes">응</button>
+        <button type="button" class="ga-vote-btn" data-choice="unsure">글쎄</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="againBtn"></button>
+        <a class="btn ghost" id="dexHomeBtn" href="../../index.html"></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+(function(){
+/* =============================================================================
+   긴 날개, 얕은 바다 (long-wings)  ·  「말없는 자연 관찰」 라인 1호
+
+   중심 뒤집기: 버튼은 올라가지 않는다.
+   홀드 = 날개를 접는다 = 내려가면서 빨라진다.  놓으면 편 채로 활공한다.
+   고도는 오직 공기에서만 얻는다 — 플레이어가 배우는 것은 조작이 아니라
+   '공기가 어디서 올라가는가'다.
+
+   §0  유틸 · 쿼리 파라미터
+   §1  CFG — 모든 조정 수치와 모든 문안, 실루엣 path 까지 여기 한 곳에
+   §2  i18n
+   §3  dom · 캔버스
+   §4  오디오 (전부 합성. 외부 파일 0)
+   §5  월드 — 지형 · 상승원 4종 · 시야 대상
+   §6  물리 — pump_net_max = 0 의 집행부
+   §7  카메라 · 고도 3대역
+   §8  입력 — 포인터 / 키보드 / hot-seat
+   §9  동료 시연
+   §10 그리기
+   §11 판 수명 — ready → play → 얼리기 → 도감 카드
+   §12 GA4 포탈 계측 표준 v1 (+ mode)
+   §13 부트 · 테스트 훅 (?tb= · ?tv=1 · window.LONGWINGS)
+   ============================================================================= */
+
+  /* ============================== §0 유틸 ============================== */
+  function $(id){ return document.getElementById(id); }
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function smooth01(t){ t=clamp(t,0,1); return t*t*(3-2*t); }
+  function qparam(name){
+    try{
+      var m = new RegExp('[?&]'+name+'=([^&#]*)').exec(location.search);
+      return m ? decodeURIComponent(m[1]) : null;
+    }catch(e){ return null; }
+  }
+  /* 결정론적 난수 — 지형과 바위 배치는 판마다 같아야 한다.
+     같은 해안을 매번 다시 날면서 '공기가 어디서 오르는지'를 익히는 게임이라,
+     지형이 매번 달라지면 배울 것이 없다. 날씨만 바뀐다. */
+  function mulberry(seed){
+    var a=seed>>>0;
+    return function(){
+      a|=0; a=a+0x6D2B79F5|0;
+      var t=Math.imul(a^a>>>15,1|a);
+      t=t+Math.imul(t^t>>>7,61|t)^t;
+      return ((t^t>>>14)>>>0)/4294967296;
+    };
+  }
+  var store={
+    get:function(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+    set:function(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  };
+
+  /* ============================== §1 CFG ==============================
+     모든 조정 가능 수치와 **모든 문안**이 이 한 블록 안에 있다.
+     코드에는 문항·문구·상수를 박지 않는다. */
+  var CFG = {
+    /* 계측에 cfg_ver 로 실린다. soar_min·band_*·상승원 세기 어느 하나라도 만지면
+       이 값을 올린다 — 안 올리면 튜닝 전후 데이터가 GA4 에서 한 덩어리로 섞인다. */
+    version:'1.0.2',
+    test_suffix:'-tb',    /* ?tb= 로 판 길이를 줄인 판은 cfg_ver 에 이 꼬리가 붙는다.
+                             테스트 판을 실측에서 걸러내기 위한 표시일 뿐, 계측을 끄지는
+                             않는다 — 끄면 계측 배선 자체를 확인할 방법이 사라진다. */
+    game_id:'long-wings',
+
+    /* ---- 판 ---- */
+    round_s:100,          /* 100초 고정. 교실 모드에서도 길이를 바꾸지 않는다 */
+    ready_hint_s:2.2,     /* 첫 홀드를 기다리는 동안 맥동하는 힌트 링 주기 */
+    /* prefers-reduced-motion 일 때의 힌트 링 — 맥동하지 않고 고정 반경·고정 알파로
+       한 번만 그린다. 링을 지우지는 않는다: 첫 홀드 위치를 알리는 유일한 표식이라
+       없애면 '문자 없는 게임'의 유일한 안내가 사라진다. */
+    reduced_ring_k:1.45,  /* 고정 반경 배수 (맥동 구간 0.7~2.2 의 가운데) */
+    reduced_ring_alpha:0.34,
+
+    /* ---- 접기/펴기 물리 ----
+       sink_* 는 초당 고도 손실(u/s), v_* 는 대기속도(u/s). */
+    sink_spread:46,       /* 편 채로의 침하 — 완만하다 */
+    sink_fold:152,        /* 접으면 빠르게 내려간다 */
+    sink_v_k:0.16,        /* 대기속도가 빠를수록 항력이 붙는다 */
+    v_spread:82,
+    v_fold:210,
+    v_tau:0.55,           /* 대기속도가 목표까지 가는 시상수(초) */
+    fold_lift_k:0.18,     /* 접은 날개가 받는 상승기류의 비율 — 편 날개보다 훨씬 작다 */
+
+    /* ---- pump_net_max ----
+       접었다 펴는 1주기의 순 고도 변화가 절대 양수가 될 수 없다.
+       계수 튜닝이 아니라 §6-1 의 부등식이 이 값을 집행한다. */
+    pump_net_max:0,
+    pump_margin:3,        /* 엄격 부등호의 여유 폭(u/s). 0 이면 등호가 가능해진다 */
+
+    lift_max:150,         /* 상승기류 합의 상한 */
+    lift_eps:6,           /* '상승대 안'으로 셀 최소 상승기류 */
+    soar_min:14,          /* 이만큼이라도 공기로 벌면 result='soared' */
+    alt_ceiling:960,
+    lift_foot:70,         /* 띠 밑동이 아래로 번지는 폭 */
+
+    /* ---- 물 ----
+       실패 없음. 물에 닿으면 잠깐 떠 있다 다시 날아오른다. 감점·리셋·조롱 없음. */
+    splash_s:1.1,         /* '잠깐'. 이 값 x 접수 횟수만큼 판이 사라지므로 짧게 둔다 */
+    relaunch_alt:66,      /* 물에서 돌아오는 높이는 이 값으로 고정 — 몇 번을 반복해도
+                             그 위로는 한 뼘도 못 올라간다. 물은 상승 수단이 아니다.
+                             가장 약한 상승원(거품 core 70)보다 낮게 두어 물에 빠지는
+                             것이 이득이 되는 순간을 만들지 않는다 */
+
+    /* ---- 지형 ---- */
+    terrain_clear:12,     /* 절벽 사면 위로 띄워 두는 여유. 바위 속으로 들어가지 않는다 */
+
+    /* ---- 고도 3대역 — 점수가 아니라 카메라와 시야를 바꾼다 ---- */
+    band_low:220,
+    band_high:560,
+    eye_y:0.58,           /* 화면에서 눈높이가 놓이는 세로 비율 */
+    zoom_low:1.06, zoom_high:0.44, zoom_min:0.30,
+    cam_follow_low:0.90, cam_follow_high:0.56,
+    cam_tau:0.42,
+    cam_lead:0.28,        /* 진행 방향으로 카메라를 조금 앞세운다 */
+
+    /* ---- 동료 시연 ---- */
+    demo_after_s:12,      /* 이 안에 상승대에 못 들어가면 동료가 날아온다 */
+    demo_every_s:20,
+    demo_max:3,
+    demo_hold_s:8,        /* 상승원 위를 눈에 보이게 도는 시간 — '보이게' 가 문자 그대로다.
+                             화면 밖에서 흐르지 않는다(§9 참조) */
+    demo_need_s:1.2,      /* 이만큼이라도 **실제로 공기에 떠올랐으면** 시연하지 않는다.
+                             '상승대 근처에 있었나'(lift>=lift_eps=6)로 재던 것을 고쳤다:
+                             편 날개의 침하가 46u/s 라 lift 6 은 초당 40u 로 떨어지는
+                             중인데도 억제가 걸렸고, 그래서 108판 실측에서 시연이
+                             단 한 번도 뜨지 않았다(가장 못 하는 플레이어에게조차). */
+    demo_teach_min:66,    /* 동료가 가르칠 상승원의 최소 세기 = flock 등급.
+                             거품(54)은 가르치지 않는다 — 약한 자리로 데려가면
+                             '동료가 도는 곳엔 이유가 있다'가 거짓말이 된다. */
+    /* 시연이 화면 밖에서 진행되면 가르치는 장치가 없는 것과 같다.
+       620u 고정 오프셋은 폰 가로 390 의 가시폭(약 370u)보다 넓어 '날아 들어오는'
+       몸짓이 통째로 화면 밖이었다(실측). 등장 거리를 화면에 맞춰 잡는다. */
+    demo_lead_k:0.55,     /* 등장 위치 = 카메라 뒤로 (가시폭 x 이 값) */
+    demo_v:175,           /* 상승원으로 다가가는 속도 (u/s) */
+    demo_arrive:26,       /* 이만큼 가까우면 도착 — 여기서부터 선회 */
+    demo_hover_up:34,     /* 선회는 core 보다 이만큼 위에서 */
+    demo_edge_pad:56,     /* 화면 가장자리에서 이만큼 안쪽에 있어야 '보인다'로 친다 */
+    demo_life_s:30,       /* 시연 하나가 기다릴 수 있는 최대 시간. 이 뒤에는 안 보여도
+                             선회 시간이 흐르고 떠난다 — 하염없이 머무르지 않게 */
+    demo_out_v:150,       /* 떠나며 나아가는 속도 */
+    demo_out_up:52,       /* 떠나며 오르는 속도 */
+    demo_out_s:4.2,       /* 떠나는 데 쓰는 시간 */
+
+    /* ---- hot-seat ---- */
+    hot_spawn_alt:70,     /* 2P 는 1P 보다 이만큼 위에서 합류한다 */
+
+    /* ---- 큰 화면 모드 ---- */
+    tv_scale:1.34,        /* 실루엣·힌트 확대 배율. 판 규칙에는 손대지 않는다 */
+
+    /* ---- 월드 ---- */
+    world_w:3600,         /* 가로로 감긴다. 한 바퀴 = 3600 */
+    see_dwell:0.7,        /* 이만큼 머물러야 '봤다'로 친다 */
+    wide_cliffs:1,        /* '해안선의 생김새'에 필요한, 양 끝이 다 보이는 절벽 수.
+                             폰 가로 390 에서 볼 수 있는 최대 폭은 1300u 인데 두 절벽
+                             사이는 1780u 라 2 로 두면 영원히 못 본다(실측). */
+    see_dist:230,
+    mote_max:220,         /* 상승기류의 티끌 상한 (reduced-motion 이면 절반) */
+
+    /* ---- 상승원 4종. 세기 순 — 이 순서가 실제 세기다 ----
+       열기둥(thermal)은 쓰지 않는다. 바다 한가운데엔 잘 생기지 않는다 —
+       상승원은 전부 지형에 붙어 있다. */
+    lift:{
+      /* 1. 절벽 능선 — 가장 강함. 바람이 벽을 타고 오른다.
+            초보가 처음 찾는 답. 날씨와 무관하게 항상 존재한다. */
+      ridge:{ s:118, wind_k:0.22 },
+      /* 2. 볕 먹은 검은 바위·모래톱 — 태양 시계에 연동.
+            판 초반과 후반에 같은 자리가 다르게 동작한다. */
+      rock: { s: 96, heat:true },
+      /* 3. 선회 중인 다른 개체 — 가르치는 마커.
+            동료가 도는 곳엔 이유가 있다. */
+      flock:{ s: 66 },
+      /* 4. 거품·수렴선 — 약함. '약한 것도 있다'를 보여주는 항. */
+      foam: { s: 54 }
+    },
+    /* 바위가 볕을 먹는 곡선. p = 판 진행도 0..1.
+       아침엔 차고, 낮이 갈수록 데워지고, 해가 기울면 조금 식는다. */
+    heat:{ rise:1.45, base:0.12, fade:0.22 },
+
+    /* 지형. 같은 해안을 매번 다시 난다 — 배울 것이 있으려면 자리가 고정이어야 한다. */
+    sources:[
+      /* 능선의 core 는 반드시 마루(jag 포함 실측 352 / 471)보다 위여야 한다.
+         바위 속에 최적 고도대를 두면 도달할 수 없는 세기가 된다. */
+      { kind:'ridge', x: 380, w:210, lo:  0, core:400, top:720, rw:250, tall:320, seed:11 },
+      { kind:'rock',  x: 900, w:150, lo:  0, core:120, top:300, seed:23 },
+      { kind:'foam',  x:1320, w:135, lo:  0, core: 70, top:215, seed:37 },
+      { kind:'flock', x:1720, w:145, lo: 90, core:280, top:520, seed:41 },
+      { kind:'ridge', x:2200, w:255, lo:  0, core:540, top:920, rw:300, tall:440, seed:53 },
+      { kind:'rock',  x:2700, w:190, lo:  0, core:150, top:345, seed:67 },
+      { kind:'flock', x:3120, w:145, lo:130, core:330, top:565, seed:71 },
+      { kind:'foam',  x:3400, w:135, lo:  0, core: 70, top:215, seed:83 }
+    ],
+
+    /* 날씨. calm -> breezy -> gusty 고정 순환(무작위 아님). 판마다 하나.
+       wind 는 맞바람(음수). 접으면 맞바람을 뚫고, 펴면 멀리 간다 —
+       어느 쪽이 이득인지가 날씨마다 뒤집힌다. */
+    scenes:[
+      { id:'calm',   wind: -6, gust: 0, gust_hz:0.00, wobble:0.05, wave:0.55, haze:0.18 },
+      { id:'breezy', wind:-20, gust: 8, gust_hz:0.16, wobble:0.14, wave:0.85, haze:0.30 },
+      { id:'gusty',  wind:-36, gust:20, gust_hz:0.33, wobble:0.26, wave:1.25, haze:0.42 }
+    ],
+
+    /* 시야 대상 — 대역마다 보이는 것이 다르다. 높다고 좋은 게 아니라 다른 것을 본다.
+       판 안에서는 절대 표시하지 않는다. 본 것은 판이 끝난 뒤 카드에서 처음 나온다.
+       배치는 고정이다 — 안 본 것을 더 자주 띄우는 편향 배치를 넣지 않는다. */
+    sights:[
+      { id:'shoal',    band:0, at:'foam'  },
+      { id:'foamline', band:0, at:'foam'  },
+      { id:'spray',    band:0, at:'ridge' },
+      { id:'ledge',    band:1, at:'ridge' },
+      { id:'circling', band:1, at:'flock' },
+      { id:'shimmer',  band:1, at:'rock'  },
+      { id:'coastline',band:2, at:'wide'  },
+      { id:'shadow',   band:2, at:'cloud' },
+      { id:'sunroad',  band:2, at:'sun'   }
+    ],
+
+    /* 하늘·바다 색. 해가 기울수록(p=0→1) 뒤쪽 값으로 간다. */
+    sky:{
+      top:   [[ 92,148,182],[122,132,158],[ 96, 84,106]],
+      mid:   [[176,196,196],[224,182,144],[196,124, 96]],
+      low:   [[236,214,168],[249,196,126],[236,142, 92]],
+      sea:   [[ 66,104,112],[ 78, 96,104],[ 54, 58, 74]],
+      deep:  [[ 30, 56, 66],[ 34, 46, 58],[ 22, 24, 36]],
+      sun:   [[255,246,214],[255,214,140],[255,148, 92]],
+      rock:  [[ 62, 52, 44],[ 74, 54, 40],[ 46, 36, 34]],
+      cliff: [[104, 88, 68],[116, 88, 62],[ 72, 58, 50]],
+      bird:  [[ 46, 36, 26],[ 58, 40, 26],[ 30, 24, 22]]
+    },
+
+    /* 엔딩: 화면이 얼어붙고 종이 결이 올라오며 박물 도판이 된다 */
+    plate_s:1.9,
+    /* prefers-reduced-motion 이면 세피아 전환을 밀지 않고 완성된 도판을 바로 찍는다.
+       화면 전체의 채도·색이 1.9초에 걸쳐 흘러가는 연출은 판정에 아무 역할이 없다. */
+    plate_reduced_s:0,
+    plate_hold_s:0.5,
+
+    /* -------------------------- 문안 (판 밖) -------------------------- */
+    names:{ ko:'긴 날개, 얕은 바다', ja:'ながいつばさ、あさいうみ', en:'Long Wings, Shallow Sea' },
+    ui:{
+      ko:{
+        home:'홈',
+        desc:'누르고 있으면 날개를 접어요. 놓으면 펴져요.\n올라가는 일은 공기가 합니다.',
+        start:'바다로 나가기',
+        keys:'키보드: Space 또는 ↑ · 두 번째 사람은 J 또는 L · Esc 로 제목 화면',
+        again:'다시 날기',
+        goHome:'홈으로',
+        langAria:'언어 바꾸기',
+        soundOn:'소리 끄기', soundOff:'소리 켜기',
+        seaAria:'바다 위. 누르고 있으면 날개를 접고, 놓으면 폅니다. 키보드는 Space 또는 위쪽 방향키.'
+      },
+      ja:{
+        home:'ホーム',
+        desc:'おしているあいだ、つばさを たたみます。はなすと ひろがります。\nのぼるのは 風の しごとです。',
+        start:'海へ でる',
+        keys:'キーボード: Space または ↑ · ふたりめは J か L · Esc でタイトルへ',
+        again:'もういちど とぶ',
+        goHome:'ホームへ',
+        langAria:'言語をかえる',
+        soundOn:'音を消す', soundOff:'音を出す',
+        seaAria:'海の上。おしているあいだ つばさを たたみ、はなすと ひろげます。キーボードは Space または上矢印。'
+      },
+      en:{
+        home:'Home',
+        desc:'Hold to fold your wings. Let go to spread them.\nOnly the air can take you up.',
+        start:'Out to sea',
+        keys:'Keyboard: Space or ↑ · second player J or L · Esc for the title screen',
+        again:'Fly again',
+        goHome:'Home',
+        langAria:'change language',
+        soundOn:'mute', soundOff:'unmute',
+        seaAria:'Over the sea. Hold to fold your wings, release to spread them. Keyboard: Space or Up arrow.'
+      }
+    },
+
+    /* ---- 도감 카드 (판 밖 · 3개 국어) ----
+       교육 축 두 개:
+         (1) 「익룡의 날개는 새의 날개가 아니다」 — 해부도로 보여준다
+         (2) 「바다 위 비행은 추론이다」 — 아는 것과 추론한 것의 구분
+       치수는 1910년 원 캡션 값(날개폭 18피트 등)이 아니라 현대 추정치를 쓴다. */
+    card:{
+      ko:{
+        name:'프테라노돈',
+        sub:'Pteranodon · 백악기의 바다 위',
+        plateCap:'1905년 도판 — 그 시절 사람들이 상상한 비행 자세입니다. 지금 보는 복원과는 다릅니다.',
+        skelCap:'1910년 도판 — 골격 복원(콘도르와 나란히 놓아 크기를 견주었습니다).',
+        sciLabel:'이름',
+        sci:'프테라노돈속(Pteranodon). 표본에 따라 여러 종으로 나뉘고, 어느 표본이 어느 종인지는 아직 논의 중입니다. 이름은 「이빨 없는 날개」라는 뜻입니다.',
+        whenLabel:'언제',
+        when:'후기 백악기, 약 8,600만~8,450만 년 전. 지금의 북아메리카 한가운데를 남북으로 갈라놓았던 얕은 바다 위를 날았습니다.',
+        sizeLabel:'크기',
+        size:'날개폭은 표본에 따라 약 3.8 m 에서 6 m 안팎까지. 큰 개체와 작은 개체의 차이가 뚜렷해서, 같은 종의 암수로 보는 견해가 있습니다. 몸무게 추정치는 20~40 kg 언저리지만 폭이 넓습니다.',
+        wingLabel:'날개',
+        wing:'익룡의 날개는 새의 날개가 아닙니다. 새는 팔과 손에 깃털을 답니다. 익룡은 네 번째 손가락 하나를 몸통만큼 길게 늘이고, 그 손가락과 몸 사이에 얇은 피부막을 폅니다. 손가락 한 개가 곧 날개의 앞모서리입니다.',
+        inferTitle:'바다 위 비행은 추론입니다',
+        infer:'프테라노돈이 나는 모습을 본 사람은 없습니다. 화석은 해안에서 먼 바다 밑에 쌓인 지층에서 나오고, 뼈의 비율은 오늘날 먼바다를 나는 바닷새와 닮았습니다. 우리가 아는 것은 뼈이고, 나는 방식은 거기서 미루어 짚은 것입니다.',
+        seenLabel:'이번 판에서 본 것',
+        credit:'실루엣: PhyloPic (CC0) · 도판: Biodiversity Heritage Library 스캔 (퍼블릭 도메인, 1905·1910). 원장은 /assets/lifeform/CREDITS.json.',
+        sights:{ shoal:'물고기 떼 그림자', foamline:'거품 수렴선', spray:'절벽 밑 물보라',
+                 ledge:'절벽의 둥지 턱', circling:'선회하는 무리', shimmer:'달궈진 바위의 아지랑이',
+                 coastline:'해안선의 생김새', shadow:'물 위의 구름 그림자', sunroad:'물 위에 놓인 햇길' }
+      },
+      ja:{
+        name:'プテラノドン',
+        sub:'Pteranodon · 白亜紀の海の上',
+        plateCap:'1905年の図版 — 当時の人が想像した飛ぶすがたです。いまの復元とはちがいます。',
+        skelCap:'1910年の図版 — 骨格の復元(コンドルとならべて大きさをくらべています)。',
+        sciLabel:'なまえ',
+        sci:'プテラノドン属(Pteranodon)。標本によっていくつかの種にわけられ、どの標本がどの種かはいまも議論の途中です。名まえは「歯のない翼」という意味です。',
+        whenLabel:'いつ',
+        when:'白亜紀後期、およそ8600万~8450万年前。いまの北アメリカを南北にわけていた浅い海の上を飛んでいました。',
+        sizeLabel:'おおきさ',
+        size:'翼開長は標本によって約3.8mから6mほど。大きい個体と小さい個体の差がはっきりしていて、同じ種のオスとメスとみる説があります。体重の推定は20~40kgあたりですが、幅がひろいです。',
+        wingLabel:'つばさ',
+        wing:'翼竜の翼は鳥の翼ではありません。鳥は腕と手に羽毛をつけます。翼竜は四番目の指を胴ほどに長くのばし、その指と体のあいだにうすい皮膜をはります。指一本がそのまま翼の前縁です。',
+        inferTitle:'海の上の飛行は「推論」です',
+        infer:'プテラノドンが飛ぶすがたを見た人はいません。化石は岸から遠い海の底にたまった地層から出てきて、骨の比率はいまの外洋の海鳥に似ています。わかっているのは骨で、飛びかたはそこから推しはかったものです。',
+        seenLabel:'このかいで見たもの',
+        credit:'シルエット: PhyloPic (CC0) · 図版: Biodiversity Heritage Library スキャン (パブリックドメイン, 1905・1910)。台帳は /assets/lifeform/CREDITS.json。',
+        sights:{ shoal:'魚のむれの影', foamline:'あわの収束線', spray:'崖の下のしぶき',
+                 ledge:'崖の巣だな', circling:'旋回するむれ', shimmer:'焼けた岩のかげろう',
+                 coastline:'海岸線のかたち', shadow:'水の上の雲の影', sunroad:'水の上の日の道' }
+      },
+      en:{
+        name:'Pteranodon',
+        sub:'Pteranodon · over a Cretaceous sea',
+        plateCap:'Plate from 1905 — how people then imagined it in flight. Not how it is reconstructed today.',
+        skelCap:'Plate from 1910 — skeletal reconstruction, set beside a condor for scale.',
+        sciLabel:'Name',
+        sci:'The genus Pteranodon. Specimens are split into several species, and which specimen belongs where is still argued about. The name means "toothless wing".',
+        whenLabel:'When',
+        when:'Late Cretaceous, roughly 86 to 84.5 million years ago, over the shallow sea that once cut North America in two from north to south.',
+        sizeLabel:'Size',
+        size:'Wingspan runs from about 3.8 m to around 6 m depending on the specimen. Large and small individuals differ sharply, which some read as males and females of one species. Mass estimates sit near 20–40 kg, but the range is wide.',
+        wingLabel:'Wing',
+        wing:'A pterosaur wing is not a bird wing. A bird carries feathers on its arm and hand. A pterosaur stretched its fourth finger to the length of its body and spread a thin skin membrane between that finger and its side. One finger is the whole leading edge.',
+        inferTitle:'Flight over the sea is an inference',
+        infer:'Nobody ever watched a Pteranodon fly. Its fossils come from beds laid down far offshore, and its bone proportions resemble the seabirds that cross open ocean today. What we know is the bones; how it flew is what we reason from them.',
+        seenLabel:'Seen this round',
+        credit:'Silhouettes: PhyloPic (CC0) · Plates: Biodiversity Heritage Library scans (public domain, 1905 & 1910). Ledger at /assets/lifeform/CREDITS.json.',
+        sights:{ shoal:'a shoal of fish below', foamline:'a foam convergence line', spray:'spray at the cliff foot',
+                 ledge:'nesting ledges', circling:'a circling flock', shimmer:'heat shimmer off dark rock',
+                 coastline:'the shape of the coast', shadow:'cloud shadows on the water', sunroad:'the sun laid on the water' }
+      }
+    },
+
+    /* ---- 실루엣 ----
+       /assets/lifeform/*.svg 의 path 데이터를 그대로 옮겨 Path2D 로 쓴다.
+       <img> 로 불러 캔버스에 그리는 경로를 쓰지 않는 이유:
+         (a) 플레이 캔버스를 어떤 경우에도 taint 시키지 않기 위해서
+         (b) fill=currentColor 는 <img> 로 부르면 CSS 색이 안 먹어 검게만 나온다
+         (c) 로드 실패·오프라인에서도 판이 성립해야 한다
+       원본과 sha256 은 /assets/lifeform/CREDITS.json 에 있다. face 는 원본이
+       바라보는 방향(-1 = 왼쪽)이고, 진행 방향으로 뒤집을 때 쓴다. */
+    art:{
+      /* 플레이어 본체 — 측면 활공. Scott Hartman, PhyloPic, CC0.
+         원본은 왼쪽을 본다(face:-1). 이 게임의 개체는 늘 오른쪽으로 나아가므로
+         그릴 때 한 번 뒤집힌다. */
+      glide:{ vb:[0,0,3992,2108], face:-1, d:[
+        'M3904 198c-8 6-23 35-54 102l-69 149-10 21a6657 6657 0 0 1-126 247c-33 63-27 52-70 126l-61 104-28 45-28 44-27 44-114 178-14 22-46 72-124 193-22 32-24 36-9 13-14-15a150 150 0 0 0-36-28l-238-156c-13-10-35-32-46-45-24-31-27-59-7-75 17-14 31-15 109-8l15 2c5 2 11 0 8-3l-64-20a642 642 0 0 1-131-48l-77-33a2420 2420 0 0 0-222-90 1095 1095 0 0 0-190-38l-30 2c-42 2-104 8-167 16l-85 8c-43 3-68 4-107 4a482 482 0 0 1-251-68c-18-10-19-10-18-12q5-4 23-6c19-2 19-2 22-15 3-16 6-22 27-43l95-94c56-50 111-94 145-115a1078 1078 0 0 1 104-51c12-6 16-8 22-13q7-6 6-10-1-6-8-10c-11-3-54 7-103 24a959 959 0 0 0-407 232 676 676 0 0 1-236 131l-66 21-65 18c-87 24-178 46-230 55l-77 14a3303 3303 0 0 1-200 29c-35 5-102 8-153 6-31 0-34 0-31 3 2 1 13 5 20 6l67 7c6 4 79 17 140 24l204 24 57 6a2132 2132 0 0 0 208 15c36 0 109-6 151-12 34-4 90-13 155-25 67-12 91-14 111-12s31 5 58 17q122 52 226 59c42 4 65 2 124-8l32-6c14-3 35-5 46-5q25 1 37 20 11 17 36 33a580 580 0 0 0 138 52l12 2 8 10q17 23 32 48c10 16 35 62 42 77l19 41a1911 1911 0 0 1 61 141c1 3 14 17 25 29l8 8 271 163c256 153 295 177 309 188l6 4 22 1h60l2-3q3-4 7-3l7 3q9 5 1-5-8-9-28-9h-5l6-8 32-49a11682 11682 0 0 1 226-343l122-186 63-87q11-15 26-42a14562 14562 0 0 1 195-292l66-109 31-54c19-31 20-31 23-38l9-32c7-24 29-100 54-179l62-209c4-12 6-22 8-43l2-26v-57c-2-16-6-37-11-49-11-28-35-65-48-75q-18-13-26-9M2779 1563a853 853 0 0 1 278 89l2 2-9 13c-14 20-53 73-61 82-12 15-19 19-33 17a346 346 0 0 1-126-58c-44-33-90-90-100-122q-2-10 4-17c8-7 15-9 45-7'
+      ]},
+      /* 선회하는 동료 = 상승풍 마커. Dan Niel, PhyloPic, CC0.
+         날개를 완전히 편 아래에서 본 모습이라 좌우가 대칭이다 — face 는 1. */
+      spread:{ vb:[0,0,1536,705], face:1, d:[
+        'M765 5c-5 25-12 86-16 131l-8 86-3 20 6 13 6 19a353 353 0 0 1-2 78c-4 5-23 9-48 11a379 379 0 0 1-131-12l1 6q3 5 1 7c-3 5-6 5-55 0l-60-5c-26-2-32-3-40-6-14-5-28-3-19 2l3 3q1 3-30 7c-99 13-132 18-182 30-68 17-130 38-161 54-16 8-29 17-27 20l149 3a2135 2135 0 0 1 373 34c68 14 134 33 160 45 14 7 14 6 12 22v69l2 60q1 5 4-1l3-17c1-17 3-28 8-56l10-48c5-9 27-25 35-25q3 0 7 5l4 4 4-4c6-5 8-6 15-2q14 6 24 17c6 6 6 7 7 19l6 31 14 75 2-2a1172 1172 0 0 0 2-129l-2-10 6-3c10-7 43-18 81-29 62-18 138-31 267-46 43-5 64-6 122-9a4131 4131 0 0 1 218-1c11-3-6-15-38-28a927 927 0 0 0-267-69l-52-8c-38-5-45-7-37-11l3-2c0-2-20-1-26 0-12 4-114 15-138 15-14 0-14 0-13-10l-1-8-8 3a276 276 0 0 1-92 11c-32 0-35-1-47-3q-27-4-31-10l-1-40v-38l2-7c8-17 9-31 5-74l-4-39c-4-51-15-136-19-150q-3-6-4 2'
+      ]},
+      /* 이륙·착수 자세. artrociraptor / JFstudios, PhyloPic, CC0.
+         ⚠ 이 개체만 P. sternbergi 다(≠ longiceps). 도감 카드에서 종을 단정하지 않는
+         이유가 여기 있다 — 카드 문안은 속(屬) 이름까지만 말한다. */
+      perched:{ vb:[0,0,1264,1536], face:-1, d:[
+        'm1136 2-15 13c-20 17-27 23-49 37q-34 23-62 33c-19 6-32 8-66 11-19 1-34 6-54 15-22 11-33 19-52 36-16 16-23 27-32 48-6 15-7 19-7 35a218 218 0 0 0 18 95c11 30 13 37 14 54 0 16-1 26-6 40l-3 8-9 2c-9 2-10 3-11 5-2 3-9 8-11 8-1 0-7 6-9 11l-3 4-1 1c0 2-3 4-19 10l-21 11-13 5c-27 12-54 20-124 36-43 10-48 11-65 12l-34 4c-16 2-25 2-62 3l-48 2a1962 1962 0 0 1-239-9c-22-2-32-4-59-11L0 503a177 177 0 0 0 77 40 709 709 0 0 0 170 28l55 6c58 6 71 6 119 6a1854 1854 0 0 0 230-17l54-5c53-6 63-7 96-7a164 164 0 0 1 71 9q19 3 5 5l-90 37-140 56-21 6-16 4q-8 3-14 3c-9 1-49 9-57 12a884 884 0 0 1-96 18 1536 1536 0 0 1-180 22l-81 9-62 6-32 3q-4 2 2 5c20 5 26 6 93 7l86 1 73-1a1684 1684 0 0 0 140-6q102-15 158-15c28 0 40 1 74 7a276 276 0 0 0 117 2h19c13 3 19 5 28 11 14 9 28 27 28 35l-3 8q-1 5-6 6-3 1-4 4l-3 2-2 1-5 2-9 3-6 1q-2-1-2 1t-1 1l-2 1q-3 4-6 3h-4l-2 2q-3 1-3 3l-4 2-2 1-2 3-10 6q-2 3-7 5-4 2-5 6l-4 6q-6 3-2 7 2 0-1 7-5 10-3 8 3-1 1 5-5 13-2 13l1 6q-2 10 2 6l1 9 2 11 3 9 3 13 14 29 3 11q4 15 7 16l2 1-11 10c-25 20-51 43-60 54-13 17-19 29-30 63l-9 24q-6 8-2 10 2 0-3 7l-5 11-4 8q-4 4-4 10l-4 10c-3 5-3 5-2 9 2 4 0 10-10 33l-15 27-7 11-6 10-5 9q-1 10-9 18-4 4-3 5l-1 3q-3 4-2 5 2 5-1 8l-1 5v6l-2 8q-1 10-7 23c-3 7-5 9-13 14q-13 10-13 13-1 4-5 5-2 1-1 8 1 4-4 7l-7 6q-7 5-5 9l-1 7q-3 6 0 7l2 3-19 16q-12 11-20 21l-2 3 3 5 3 5 4 5q4 9 15 6c20-4 22-4 44-4 22-1 23-1 28-3 7-4 21-16 24-21 4-6 16-17 44-41l48-41c15-11 50-41 65-55 30-27 53-47 55-47v5l1 21v23q-2 8-1 13l-2 18q-4 22-1 25v15l4 2q3 1 1 6c-2 7-10 21-15 27l-7 6q-9 5-42 8c-32 3-43 7-51 18q-7 8-3 10l10 1q9-1 13 3c5 3 6 3 35-1 12-2 23-2 45-3 29 0 39-1 52-5 6-1 20-9 24-13 4-3 12-19 13-27l4-12 6-21c4-17 4-18 9-23q7-5 9-23l4-16c4-12 13-32 18-41a222 222 0 0 1 39-55c8-9 30-31 40-39l29-18q2-2 6 2l6 5q1 3 3 3l3 2q2 3 3 2l2 1 3 4 4 7 3 4 2 2q1 3 3 1 2-3 4 3 0 3 2 2t9 5q8 10 13 12l8 6 8 7 10 11q8 10 8 6c0-4 13 3 19 10q7 9 8 7l5-1h4v-6q0-7 3-9l2-4 1-1-2-2q-3-2-3-5t-4-5q-6-1-5-5v-4q4-4-8-8l-4-2v-4q0-5-4-9l-4-5q0-2-6-4-9-3-8-9 0-2-3-5l-6-5-8-8q-4-2-4-6 0-3-4-4-4-2-3-7 2-3-2-5l-3-4q1-4-6-8l-4-5-1-1-1-2v-7q3-4-1-4c-4-1-8-7-8-10l-3-4-7-13c-5-10-5-10-4-15 1-4 1-4-2-8l-3-6-1-3q-3-1-1-5v-6q-2-3 1-3v-3l-3-4q-3-1-1-5l-1-5-1-3-1-5q-1-6 3-6l3-2q2-2-2-8l-4-8q1-2-1-5-5-5-1-3 5 4-4-10t-5-12-4-8c-8-12-9-15-9-30l-1-14 8-13a574 574 0 0 0 31-62c18-42 47-124 57-160l10-36c7-24 8-29 8-34l2-9a582 582 0 0 0 20-126l3-24 2-16a544 544 0 0 0-4-134c-2-9-3-10-13-7q-11 4-23 16c-6 6-15 19-17 22q-1 3-6 4l-5-15q0-10-11-3l-6 5a256 256 0 0 0-64 163l-9 54-12 73c-6 43-20 96-31 125l-9 20-3-11q-2-3 1-3l1-1q-3-8-2-12 1-2-2-6-2-5-1-6c1 0 1-11-1-19l1-4q3 1 2-6l1-7v-7q-2-16 1-18c2 0 3-7 3-13v-4q3 1 3-9l1-9 3-11q0-6 2-5l1-3 1-3 1-5q-1-9 2-4 3 2 2-1l2-4 1-8q0-8 2-5 1 1 2-3c0-4 0-17-2-29l1-5c3 1 4-11 1-28q0-7 2-4l2 1-2-5-4-12q0-2 2-1l-1-5q-3-7 0-9c1-1-3-9-9-16l-4-6-2-4q-5-7-2-9c1-1-18-20-26-26l-10-8-14-11q-8-4-12-8c-3-3-3-3-3-10 4-32 11-53 35-93a941 941 0 0 0 76-167l5-18 7-21c27-68 38-101 40-122V0h-3zM915 446q4 2 1 9-4 9-9 10c-7 0-10-11-4-16q7-7 12-3m294 37-1 4-2 1q0-2-2 1-3 2-2 3l-3 2-5 2-3 3q-2 0-11 10-2 2-10 2l-6-1v-4q-1-5 3-8l6-3 5-2c0-1 9-5 12-5l3-2 3-1 4-2 4-1 2-1q2-2 3 2m-517 25h-3l2-1 2-1zm429-1q-4 3 1 3l2 1-3 1-4 1q-2 1-2-2 0-5 5-5 3 0 1 1m-433 1q0 2-2 1l-1 1v1h-1q-3-2-3 1t-3 3q-2-1-3 3 0 4-2 4l-1 1-2 2h-12l-2-1-5-1-5-2-1-1c1-2 15-6 21-6l5-1 2-1q3 0 1 1v1l4-2h-1v-1l6-2zm-6 9h-2q-1-1 1-1t1 1m-40 3v1q-2 1-1-1zm-528 14 26 5c13 1 15 2 14 3l-16-1-24-4-20-6q-2-1 1-1zm1059 7 3 8c3 12 3 11 4 10q2-2 2 1 1 3 4 2h5q2 1-5 7l-9 11-3 5-1 21-2 26-2 26c-2 23-2 25-9 38l-9 23-8 22c-5 9-6 11-19 62-6 23-9 30-13 31q-3 2-4-1l18-77 17-77a449 449 0 0 0 14-120c1-9 1-10 5-14l5-5c1-1 6 0 7 1m-665 3h-2v-1zm-271 5-3 1h-4q-3-2 2-2zm181 0h-6q-6 0-4 1 3 1-1 1-6 1-5-2zm-22 2h-4l2-1q3 0 2 1m813 3q2 2 0 0l-2-2zm-99 10-1 1q-1 1 9 3l11 4 4 2 4 3v5q-1 3-4 2l-6 2-4 1-3 1-3 1c-2 0-7 4-6 5l-1 2q-2 0-1 4v13l-1 18-2 70-4 16-5 24-6 19-8 30c-4 11-6 15-11 20q-5 6-11 0c-5-6-5-8 2-27a586 586 0 0 0 28-119l4-26 1-8 2-14c2-16 7-48 10-52zm33 20q-1 1-1-1t1-1zm-385 75-2 4h-3q-3-3-3 0h2q1 2-6 2c-6 1-6 1-8 4l-1 2q-2-3-6-1-3 2-1 3l1 1-3 1v-1l-2-3q-4-3-1-5 5-6 17-7l11-2q5-2 5 2m-13 9h-2l-2-1q1-2 4 1m-22 6q0-2 2-1zm-318 66q6 3 13 4l8 1a641 641 0 0 1-87 1l12-1 5-1 14-3 15-3q11-1 20 2m59 3h-8l4-1 3-1h1zm645 126q-2 8-11 25-6 11-10 9-4 1-2-5l5-22q2-5 8-12l6-6 2 3q3 2 2 8m-35 62-1 3-1 3c0 4-2 10-4 10l-1 2-1 6-3 6-1 3q-4 3-4 15c0 9 0 10-6 22-8 19-10 24-17 32q-10 13-17 27l-14 23c-9 14-17 28-17 31s-7 16-12 22l-17 19a66 66 0 0 0-19 25c-6 12-9 18-21 30q-13 13-32 41c-9 13-17 22-32 33q-12 9-19 17l-19 18-7 7-7 5c-1 2-9 5-12 5a2682 2682 0 0 0 278-398l1-2q2 1 2-2 0-4 4-6zm-78 111q-5 9-14 19l-6 9q-6 11-9 11v-4l6-13 1-2 1-2q5-4 9-10l4-5 1-3 4-4 3-3h2q2 2-2 7m-151 208q-3 5-3 2l2-4q6-5 1 2m-43 10q0 11-6 12-2 1-2-5c0-6 4-14 7-14zm-11 56-3 1 1-1zm-4 5-3 2q-2 0 1-2l2-2zm-21 8 2 5v4l2-1c0 1-18 20-20 20q-3-1-3-6c1-7 13-26 17-26zm153 131 2 6v4h5q6-1 2 4-1 2-2-1l-1-2v3q2 3-2 7-2 4-7 4h-3l-3 4-12 5-1-1c1-1-6-5-9-5q-2 1-1-2h-1l-2 1c-2 0 3-4 5-4s3-5 1-7q-3-1-1-1h2q2-1 2-5 1-3 1-1l2-1 2-4h1l3 1-1-1q-2-2 3-3l2-1c1-3 10-2 13 0m-22 4-2 1v-1l1-1zm-9 16-1 1-1-1 1-1zm-6 6-2 2q1-5 4-6zm35 1-3 1v-1l1-1 1-1z',
+        'M904 452q-3 6 4 8 4 0 4-4 0-5-4-5zm-241 63v1l2-1zm91 145q-1 2 1 1v-2zm-15 3h4q1-1-2-1t-2 1'
+      ]}
+    }
+  };
+
+  /* 큰 화면 모드 / 판 길이 덮어쓰기 */
+  var TV = qparam('tv')==='1';
+  var TB_ON = false;
+  (function(){
+    var tb = parseFloat(qparam('tb'));
+    /* ?tb=<초> — 테스트 전용. 판 길이만 덮어쓴다. 교실 모드(?tv=1)는 길이를 바꾸지 않는다. */
+    if(isFinite(tb) && tb>2 && tb<3600){ CFG.round_s = tb; TB_ON = true; }
+  })();
+  /* 이벤트에 실리는 설정 식별자. ?tb= 판은 꼬리가 붙어 실측에서 걸러낼 수 있다 —
+     짧은 테스트 판은 lift_s·대역 초·water_touch 가 전부 작게 찍혀 평균을 끌어내린다. */
+  var CFG_VER = CFG.version + (TB_ON ? CFG.test_suffix : '');
+  if(TV) document.body.classList.add('tv');
+
+  /* prefers-reduced-motion. 부팅 때 한 번만 읽고 굳히면 판 도중 OS 설정을 켜도
+     새로고침 전까지 반영되지 않는다 — change 를 따라간다.
+     소비처는 세 곳이다: 티끌 상한(drawMotes) / 대기 힌트 링(drawReadyHint) /
+     엔딩 세피아 전환(loop). 파도·구름 그림자·아지랑이는 줄이지 않는다 —
+     그것은 장식이 아니라 판 자체이고(아지랑이·구름 그림자는 시야 대상이다),
+     멈추면 관찰할 것이 사라진다. */
+  var REDUCED = false;
+  (function(){
+    var mq=null;
+    try{ mq = window.matchMedia('(prefers-reduced-motion: reduce)'); }catch(e){ return; }
+    if(!mq) return;
+    REDUCED = !!mq.matches;
+    var onChange = function(ev){ REDUCED = !!(ev && ev.matches !== undefined ? ev.matches : mq.matches); };
+    try{
+      if(mq.addEventListener) mq.addEventListener('change', onChange);
+      else if(mq.addListener) mq.addListener(onChange);   /* Safari 13 이하 */
+    }catch(e){}
+  })();
+
+  /* ============================== §2 i18n ============================== */
+  var LANGS=['ko','ja','en'];
+  var LANG_FLAG={ ko:'🇰🇷', ja:'🇯🇵', en:'🇬🇧' };
+  var lang='ko';
+  function detectLang(){
+    var s = store.get('in9-lang');                 /* 포탈과 공유하는 단 하나의 언어 키 */
+    if(s && LANGS.indexOf(s)>=0) return s;
+    var n=(navigator.language||'ko').toLowerCase();
+    if(n.indexOf('ja')===0) return 'ja';
+    if(n.indexOf('en')===0) return 'en';
+    return 'ko';
+  }
+  function U(){ return CFG.ui[lang] || CFG.ui.ko; }
+  function C(){ return CFG.card[lang] || CFG.card.ko; }
+  function otherNames(){
+    return LANGS.filter(function(l){ return l!==lang; })
+                .map(function(l){ return CFG.names[l]; }).join(' · ');
+  }
+
+  /* ============================== §3 dom · 캔버스 ============================== */
+  var cv=$('sea'), ctx=cv.getContext('2d');
+  var pcv=$('plate'), pctx=pcv.getContext('2d');
+  var titleOv=$('titleOv'), cardOv=$('cardOv');
+  var DPR=Math.min(window.devicePixelRatio||1,2);
+  var W=0,H=0;
+  /* 얼린 프레임의 원본을 따로 들고 있는다 — 종이 결을 매 프레임 새로 얹으려면
+     원본이 그대로 남아 있어야 한다(같은 캔버스에 계속 덧칠하면 누적된다). */
+  var frozen=document.createElement('canvas'), fctx=frozen.getContext('2d');
+  var grain=null;
+
+  var ART={};
+  (function buildArt(){
+    /* Path2D 는 2015년 이후 모든 브라우저에 있다. 그래도 생성만은 감싼다 —
+       여기서 던지면 페이지 전체가 죽는다. */
+    try{
+      for(var k in CFG.art){ if(!CFG.art.hasOwnProperty(k)) continue;
+        var a=CFG.art[k], ps=[];
+        for(var i=0;i<a.d.length;i++) ps.push(new Path2D(a.d[i]));
+        ART[k]={ vb:a.vb, face:a.face, p:ps };
+      }
+    }catch(e){ ART={}; }
+  })();
+
+  /* ============================== §4 오디오 ==============================
+     전부 합성. 외부 파일 0.
+     소리는 이 게임에서 글자를 대신하는 유일한 안내다 —
+     바람은 속도를, 낮게 깔리는 화음은 '지금 공기가 오르고 있다'를 말한다. */
+  var AudioSys={
+    ctx:null, master:null, on:true, windGain:null, windFilt:null,
+    liftGain:null, liftOsc:null, liftOsc2:null, ready:false,
+    init:function(){
+      if(this.ctx) { this.resume(); return; }
+      try{
+        var AC=window.AudioContext||window.webkitAudioContext;
+        if(!AC) return;
+        this.ctx=new AC();
+        this.master=this.ctx.createGain();
+        this.master.gain.value=this.on?1:0;
+        this.master.connect(this.ctx.destination);
+        this.startWind();
+        this.startLift();
+        this.ready=true;
+      }catch(e){}
+      this.resume();
+    },
+    resume:function(){
+      if(this.ctx && this.ctx.state==='suspended'){ this.ctx.resume().catch(function(){}); }
+    },
+    noiseBuf:function(sec){
+      var n=Math.floor(this.ctx.sampleRate*sec), b=this.ctx.createBuffer(1,n,this.ctx.sampleRate), d=b.getChannelData(0);
+      for(var i=0;i<n;i++) d[i]=Math.random()*2-1;
+      return b;
+    },
+    startWind:function(){
+      try{
+        var src=this.ctx.createBufferSource();
+        src.buffer=this.noiseBuf(2.4); src.loop=true;
+        var f=this.ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=520; f.Q.value=0.7;
+        var g=this.ctx.createGain(); g.gain.value=0.02;
+        src.connect(f); f.connect(g); g.connect(this.master); src.start();
+        this.windGain=g; this.windFilt=f;
+      }catch(e){}
+    },
+    startLift:function(){
+      try{
+        var g=this.ctx.createGain(); g.gain.value=0;
+        var o1=this.ctx.createOscillator(); o1.type='sine'; o1.frequency.value=196;
+        var o2=this.ctx.createOscillator(); o2.type='sine'; o2.frequency.value=294.5;
+        o1.connect(g); o2.connect(g); g.connect(this.master); o1.start(); o2.start();
+        this.liftGain=g; this.liftOsc=o1; this.liftOsc2=o2;
+      }catch(e){}
+    },
+    /* 매 프레임 부드럽게 따라간다 — 값을 튀기면 지직거린다 */
+    feed:function(v,liftN){
+      if(!this.ready) return;
+      try{
+        var t=this.ctx.currentTime;
+        this.windFilt.frequency.setTargetAtTime(360+v*3.4, t, 0.15);
+        this.windGain.gain.setTargetAtTime(0.014+v*0.00055, t, 0.2);
+        this.liftGain.gain.setTargetAtTime(clamp(liftN,0,1)*0.055, t, 0.35);
+        this.liftOsc.frequency.setTargetAtTime(190+liftN*26, t, 0.5);
+      }catch(e){}
+    },
+    blip:function(type){
+      if(!this.ready||!this.on) return;
+      try{
+        var t=this.ctx.currentTime, g=this.ctx.createGain();
+        g.connect(this.master);
+        if(type==='splash'){
+          var s=this.ctx.createBufferSource(); s.buffer=this.noiseBuf(0.5);
+          var f=this.ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=900; f.Q.value=0.9;
+          s.connect(f); f.connect(g);
+          g.gain.setValueAtTime(0.16,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.42);
+          s.start(t); s.stop(t+0.5);
+        } else if(type==='launch'){
+          var o=this.ctx.createOscillator(); o.type='triangle';
+          o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(300,t+0.24);
+          o.connect(g); g.gain.setValueAtTime(0.001,t);
+          g.gain.exponentialRampToValueAtTime(0.10,t+0.05);
+          g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+          o.start(t); o.stop(t+0.55);
+        } else { /* 'plate' — 종이 결이 올라오는 소리 */
+          var n=this.ctx.createBufferSource(); n.buffer=this.noiseBuf(1.6);
+          var bf=this.ctx.createBiquadFilter(); bf.type='highpass'; bf.frequency.value=1800;
+          n.connect(bf); bf.connect(g);
+          g.gain.setValueAtTime(0.001,t);
+          g.gain.linearRampToValueAtTime(0.05,t+0.5);
+          g.gain.exponentialRampToValueAtTime(0.001,t+1.5);
+          n.start(t); n.stop(t+1.6);
+        }
+      }catch(e){}
+    },
+    toggle:function(){
+      this.on=!this.on;
+      try{ if(this.master) this.master.gain.setTargetAtTime(this.on?1:0, this.ctx.currentTime, 0.05); }catch(e){}
+      store.set('lw-sound', this.on?'on':'off');
+      paintSoundBtn();
+    }
+  };
+  function paintSoundBtn(){
+    var b=$('soundBtn');
+    b.textContent = AudioSys.on ? '🔊' : '🔇';
+    b.setAttribute('aria-label', AudioSys.on ? U().soundOn : U().soundOff);
+  }
+
+  /* ============================== §5 월드 ============================== */
+  var SRC=[];        /* 상승원 (CFG.sources 를 실행용으로 푼 것) */
+  var CLIFF=[];      /* 절벽 (ridge 상승원에 붙은 지형) */
+  var CLOUDS=[];     /* 물 위에 그림자를 드리우는 구름 */
+  var motes=[];      /* 상승기류의 티끌 — 공기가 어디서 오르는지 보여주는 유일한 장치 */
+  var R = null;      /* 판 상태 */
+
+  function buildWorld(){
+    SRC=[]; CLIFF=[]; CLOUDS=[];
+    for(var i=0;i<CFG.sources.length;i++){
+      var d=CFG.sources[i];
+      var s={ kind:d.kind, x:d.x, w:d.w, lo:d.lo, core:d.core, top:d.top,
+              seed:d.seed, rw:d.rw||0, tall:d.tall||0, cur:0, rnd:mulberry(d.seed) };
+      /* 바위·모래톱의 낱개 덩어리를 결정론적으로 미리 굽는다 */
+      if(d.kind==='rock'){
+        s.rocks=[];
+        var rn=mulberry(d.seed*7+3);
+        var cnt=5+Math.floor(rn()*4);
+        for(var r=0;r<cnt;r++){
+          s.rocks.push({ dx:(rn()*2-1)*d.w*0.95, rx:16+rn()*30, ry:8+rn()*15, up:rn()*16 });
+        }
+      }
+      if(d.kind==='flock'){
+        s.birds=[];
+        var fn=mulberry(d.seed*13+5);
+        var fc=3+Math.floor(fn()*3);
+        for(var b=0;b<fc;b++){
+          s.birds.push({ ph:fn()*Math.PI*2, rx:d.w*(0.45+fn()*0.4), ry:26+fn()*22,
+                         dy:(fn()*2-1)*46, sp:0.42+fn()*0.3 });
+        }
+      }
+      if(d.kind==='ridge'){
+        /* 절벽 마루의 들쭉날쭉함도 고정 — 매번 같은 바위 능선이어야 익힐 수 있다 */
+        s.jag=[]; var jn=mulberry(d.seed*17+9);
+        for(var j=0;j<7;j++) s.jag.push({ f:0.004+jn()*0.03, a:0.04+jn()*0.10, p:jn()*Math.PI*2 });
+        CLIFF.push(s);
+      }
+      SRC.push(s);
+    }
+    var cn=mulberry(919);
+    for(var c=0;c<7;c++){
+      CLOUDS.push({ x:cn()*CFG.world_w, alt:520+cn()*380, rx:150+cn()*230, ry:24+cn()*22,
+                    sp:6+cn()*14, ph:cn()*Math.PI*2 });
+    }
+  }
+
+  /* 감긴 세계에서의 최단 차이 */
+  function wrapDelta(d){
+    var w=CFG.world_w;
+    d=d%w; if(d> w/2) d-=w; if(d<-w/2) d+=w;
+    return d;
+  }
+  function wrapX(x){ var w=CFG.world_w; x=x%w; return x<0?x+w:x; }
+
+  /* 볕 먹은 바위의 세기 — 태양 시계에 연동.
+     판 초반과 후반에 같은 자리가 다르게 동작한다. */
+  function heatNow(){
+    var p=roundP();
+    return clamp(CFG.heat.base + CFG.heat.rise*p, 0, 1) * (1 - CFG.heat.fade*p);
+  }
+  function windNow(){
+    var sc=scene(), t=R?R.clock:0;
+    return sc.wind + sc.gust*Math.sin(t*sc.gust_hz*6.283) + sc.gust*0.5*Math.sin(t*sc.gust_hz*17.0+1.1);
+  }
+  /* 상승원 한 개의 현재 세기 */
+  function srcStrength(s){
+    var base=CFG.lift[s.kind].s;
+    if(CFG.lift[s.kind].heat) base*=heatNow();
+    if(CFG.lift[s.kind].wind_k!=null){
+      /* 절벽 능선은 날씨와 무관하게 항상 존재한다 — 바람은 세기를 조금 거들 뿐이다 */
+      base*=1 + CFG.lift[s.kind].wind_k*Math.min(1, Math.abs(windNow())/40);
+    }
+    return base;
+  }
+  /* 고도 방향 프로파일: 밑동에서 차오르고, core 에서 가장 세고, top 에서 사그라진다 */
+  function liftProfile(s, alt){
+    if(alt < s.lo) return Math.max(0, 1-(s.lo-alt)/CFG.lift_foot)*0.55;
+    if(alt <= s.core) return 0.55 + 0.45*((alt-s.lo)/Math.max(1,s.core-s.lo));
+    if(alt >= s.top) return 0;
+    var t=(alt-s.core)/(s.top-s.core);
+    return 1 - t*t;
+  }
+  function liftAt(x, alt){
+    var sum=0;
+    for(var i=0;i<SRC.length;i++){
+      var s=SRC[i], dx=wrapDelta(x-s.x)/s.w;
+      if(dx<-1||dx>1) continue;
+      var gx=1-dx*dx;
+      var ga=liftProfile(s, alt);
+      if(ga<=0) continue;
+      sum += srcStrength(s)*gx*ga;
+    }
+    /* 거친 날씨에서는 공기도 고르지 않다 */
+    var sc=scene();
+    if(sc.wobble>0 && R){
+      sum *= 1 + sc.wobble*Math.sin(R.clock*2.1 + x*0.006);
+    }
+    return clamp(sum, 0, CFG.lift_max);
+  }
+
+  /* ============================== §6 물리 ============================== */
+  function sinkOf(folded, v){
+    var base = folded ? CFG.sink_fold : CFG.sink_spread;
+    /* 빠를수록 항력이 붙는다 — 접었다 편 직후의 남은 속도도 대가를 치른다 */
+    return base + CFG.sink_v_k*Math.max(0, v-CFG.v_spread);
+  }
+
+  /* ---------------------------------------------------------------------------
+     §6-1  CFG.pump_net_max = 0 의 집행부.
+
+     요구: 접었다 펴는 1주기의 순 고도 변화가 절대 양수가 될 수 없다.
+     이 보장을 계수 튜닝에 맡기지 않고 부등식 하나로 못 박는다:
+
+         (접은 상태의 순 상승률)  <  (같은 순간 편 상태의 순 상승률)
+
+     매 순간 이 부등식이 성립하면, 어떤 홀드 패턴 H(t)∈{0,1} 을 넣어도
+
+         alt(T) - alt(0) = ∫ rate(H(t),t) dt  ≤  ∫ rate_spread(t) dt
+
+     이고, 접은 구간이 한 순간이라도 있으면 부등호가 엄격해진다(폭 = pump_margin).
+     즉 '접었다 편다'는 행위 자체가 언제나 손해다 — 연타로 고도를 벌 수 없다.
+     펴는 순간의 충격량(alt 에 더하는 보정)도 어디에도 두지 않는다.
+     고도는 오직 공기에서만 온다.
+
+     계수를 잘못 만져도(예: sink_fold 를 sink_spread 보다 작게, fold_lift_k 를 1 보다
+     크게) 이 min() 이 결과를 먹어치우므로 pump_net_max 는 0 으로 남는다.
+     --------------------------------------------------------------------------- */
+  function vertRate(lift, folded, v){
+    var rSpread = lift - sinkOf(false, v);
+    if(!folded) return rSpread;
+    var rFold = lift*CFG.fold_lift_k - sinkOf(true, v);
+    return Math.min(rFold, rSpread - CFG.pump_margin);
+  }
+
+  /* 지형 표면 높이(수면 기준). 절벽은 통과 대상이 아니다.
+     cliffTop 은 §9 에 있지만 함수 선언은 끌어올려지므로 여기서 불러도 된다. */
+  function terrainAt(x){
+    var h=0;
+    for(var i=0;i<CLIFF.length;i++){ var t=cliffTop(CLIFF[i], x); if(t>h) h=t; }
+    return h;
+  }
+
+  function newBird(x, alt, who){
+    return { who:who, x:x, alt:alt, v:CFG.v_spread, folded:false, rate:0, ang:0,
+             splash:0, water:0, liftS:0, liftWin:0, liftGain:0, liftNet:0,
+             altMax:alt, lastLift:0,
+             bandS:[0,0,0], alive:true, foldT:0, wob:who*1.7 };
+  }
+
+  function stepBird(b, dt){
+    if(b.splash>0){
+      /* 물에 닿으면 잠깐 떠 있다 다시 날아오른다. 감점·리셋·조롱 없음.
+         이때 돌아오는 높이는 CFG.relaunch_alt 로 고정이다 — 몇 번을 반복해도
+         그 위로는 한 뼘도 못 올라간다. 물은 상승 수단이 아니라 안전망이다.
+         그동안에도 수평 진행과 대역 시간은 계속 흐른다. 판의 시계는 멈추지 않는데
+         새만 제자리에 묶어 두면 100초 중 상당 부분이 통째로 사라지고,
+         해안의 어느 자리에서 물에 닿았는지가 그대로 벌이 되어 버린다. */
+      b.splash=Math.max(0,b.splash-dt);
+      var k=1-b.splash/CFG.splash_s;
+      b.alt=CFG.relaunch_alt*smooth01(k);
+      b.v=CFG.v_spread*smooth01(k);
+      b.rate=0; b.ang=0;
+      b.x=wrapX(b.x+(b.v+windNow())*dt);
+      b.foldT=Math.max(0,b.foldT-dt*4);
+      if(b.alt>b.altMax) b.altMax=b.alt;
+      b.bandS[bandOf(b.alt)]+=dt;
+      return;
+    }
+    var lift=liftAt(b.x,b.alt);
+    b.lastLift=lift;
+    var rate=vertRate(lift, b.folded, b.v);
+    b.rate=rate;
+
+    if(lift>=CFG.lift_eps){
+      b.liftS+=dt;                      /* 상승대 '안'에 있던 시간 (원값) */
+      /* 부호 있는 적분 — 상승대 안에서 **실제로** 오르내린 순합(원값).
+         liftGain 은 rate>0 만 모으는 정류적분이라 순고도가 아니다.
+         둘을 함께 실어야 나중에 컷을 다시 그을 수 있다(§10 res 주석 참조). */
+      b.liftNet+=rate*dt;
+      if(rate>0){
+        b.liftGain+=rate*dt;            /* 공기로 실제로 번 고도 (원값) */
+        /* §9 의 시연 억제는 이 시간으로 잰다 — 근처에 있었나가 아니라
+           **실제로 떠올랐나**. lift_eps(6)는 편 날개 침하(46)의 1/7.7 이라
+           '상승대 안'이면서도 초당 40u 로 떨어지는 자리가 넓다. 그걸로 억제하면
+           가장 못 하는 플레이어에게 시연이 영영 안 뜬다(실측 108판 0회). */
+        b.liftWin+=dt;
+      }
+    }
+
+    b.alt+=rate*dt;
+
+    var vT=b.folded?CFG.v_fold:CFG.v_spread;
+    b.v+=(vT-b.v)*(1-Math.exp(-dt/CFG.v_tau));
+
+    var gs=b.v+windNow();
+    b.x=wrapX(b.x+gs*dt);
+    b.ang=Math.atan2(-rate, Math.max(24, gs));
+
+    if(b.alt>=CFG.alt_ceiling){ b.alt=CFG.alt_ceiling; if(rate>0) b.rate=0; }
+
+    /* 절벽 사면. 바위를 뚫고 지나가는 대신 사면을 따라 밀려 난다.
+       실패도 감점도 아니다 — 바위가 차지한 자리를 비켜 줄 뿐이다.
+       이것이 §6-1 의 부등식을 깨지 않는 이유: 같은 x 에서 clamp 는
+       두 궤적에 똑같이 걸리므로 alt_fold <= alt_spread 는 그대로 유지된다.
+       또 이 보정은 liftGain 에 한 푼도 넣지 않는다 — 공기로 번 고도만 계측한다. */
+    var gnd=terrainAt(b.x);
+    if(gnd>0){
+      var floorAlt=gnd+CFG.terrain_clear;
+      if(b.alt<floorAlt){ b.alt=floorAlt; if(b.rate<0) b.rate=0; }
+    }
+
+    if(b.alt<=0){
+      b.alt=0; b.splash=CFG.splash_s; b.water++;
+      AudioSys.blip('splash');
+    }
+    b.foldT = b.folded ? Math.min(1,b.foldT+dt*5) : Math.max(0,b.foldT-dt*4);
+    /* 최고 고도 원값. 절벽에 밀려 올라간 몫까지 포함한 '실제로 닿은 높이'다. */
+    if(b.alt>b.altMax) b.altMax=b.alt;
+    var bd=bandOf(b.alt);
+    b.bandS[bd]+=dt;
+  }
+
+  function bandOf(alt){ return alt<CFG.band_low?0:(alt<CFG.band_high?1:2); }
+
+  /* ============================== §7 카메라 ============================== */
+  var cam={ x:0, alt:0, zoom:1 };
+  function camTargets(alt){
+    /* 카메라를 천장이 아니라 **대역**에 건다. 천장(960)은 공기만으로는 닿지 않는
+       높이라(능선2 균형고도 약 820) alt/alt_ceiling 로 재면 카메라가 끝까지 열리는
+       일이 없었고, 그래서 2대역이 '더 넓게 보이는 곳'이 되지 못했다.
+       폰 가로 390 에서 2대역의 가시폭이 절벽 하나(600u)보다 좁아 '해안선의 생김새'가
+       영원히 안 보이던 것도 같은 원인이다. */
+    var t=smooth01(clamp(alt/CFG.band_high,0,1));
+    return { alt: alt*lerp(CFG.cam_follow_low, CFG.cam_follow_high, t),
+             zoom: lerp(CFG.zoom_low, CFG.zoom_high, t) };
+  }
+  function updateCam(dt){
+    var a=R.birds[0], b=R.birds[1];
+    var tx, talt, tz;
+    if(b && b.alive){
+      /* hot-seat: 둘을 한 화면에 담는다. 추가 규칙이 아니라 화면 사정이다. */
+      var d=wrapDelta(b.x-a.x);
+      tx = wrapX(a.x + d*0.5);
+      var mAlt=Math.max(a.alt,b.alt), lAlt=Math.min(a.alt,b.alt);
+      var t0=camTargets((mAlt+lAlt)*0.5);
+      talt=t0.alt;
+      var fitZ=(W*0.72)/Math.max(240,Math.abs(d));
+      var fitZ2=(H*0.52)/Math.max(180,Math.abs(mAlt-lAlt));
+      tz=clamp(Math.min(t0.zoom, fitZ, fitZ2), CFG.zoom_min, CFG.zoom_low);
+    } else {
+      var t1=camTargets(a.alt);
+      tx=wrapX(a.x + (a.v+windNow())*CFG.cam_lead);
+      talt=t1.alt; tz=t1.zoom;
+    }
+    var k=1-Math.exp(-dt/CFG.cam_tau);
+    cam.x  = wrapX(cam.x + wrapDelta(tx-cam.x)*k);
+    cam.alt+= (talt-cam.alt)*k;
+    cam.zoom+=(tz-cam.zoom)*k;
+  }
+  function sxOf(wx){ return W*0.5 + wrapDelta(wx-cam.x)*cam.zoom; }
+  function syOf(alt){ return H*CFG.eye_y - (alt-cam.alt)*cam.zoom; }
+  function visSpan(){ return W/cam.zoom; }
+
+  /* ============================== §8 입력 ==============================
+     손가락과 키를 같은 목록에 넣는다(umbrella-hop 전례). 한쪽 절반의 마지막
+     입력이 떨어질 때만 그 개체의 날개가 펴진다 — 여벌 엄지를 유리에 얹어 둔
+     아이가 저 혼자 내리꽂히지 않게. */
+  var holds={ 0:[], 1:[] };     /* 개체별로 눌려 있는 입력 id 목록 */
+  var p1Side=null;              /* 1P 가 차지한 화면 절반 ('L'|'R') */
+
+  function sideOfX(x){ return x < W*0.5 ? 'L' : 'R'; }
+
+  /* 초점이 조작 요소에 있으면 그 키는 그 요소 것이다.
+     press() 는 Space 의 기본 동작(스크롤)을 막으려고 preventDefault 를 부르는데,
+     그게 keydown 에서 걸리면 버튼의 활성화까지 같이 사라진다 — 소리/언어 버튼에
+     Tab 으로 간 사람이 Space 를 눌러도 아무 일도 일어나지 않게 된다. */
+  function isControl(t){
+    if(!t || !t.tagName) return false;
+    var n=t.tagName;
+    return n==='BUTTON'||n==='A'||n==='INPUT'||n==='SELECT'||n==='TEXTAREA'||
+           t.isContentEditable===true;
+  }
+
+  function whoFor(side){
+    /* 첫 입력이 자기 절반을 정한다. 반대쪽 절반에 두 번째 손가락이 올라오면
+       두 번째 개체가 생긴다 — 추가 규칙은 없다. */
+    if(p1Side===null){ p1Side=side; return 0; }
+    return side===p1Side ? 0 : 1;
+  }
+  /* 떼는 쪽은 절반을 새로 차지하면 안 된다. 초점을 잃었다 돌아오며 keyup 만
+     들어오는 경우가 있어서, 그 keyup 이 1P 의 자리를 정해 버리면 안 된다. */
+  function whoOf(side){
+    if(p1Side===null) return 0;
+    return side===p1Side ? 0 : 1;
+  }
+
+  function ensureBird2(){
+    if(R.birds[1]) return;
+    var a=R.birds[0];
+    R.birds[1]=newBird(wrapX(a.x-120), clamp(a.alt+CFG.hot_spawn_alt, 40, CFG.alt_ceiling), 1);
+    R.p2Joined=true;
+    R.p2JoinS = R.started ? Math.round(R.clock*10)/10 : 0;
+    AudioSys.blip('launch');
+  }
+
+  function press(id, who, ev){
+    AudioSys.init();
+    if(R.phase==='title' || R.phase==='plate' || R.phase==='card') return;
+    /* 제목 카드가 떠 있는 동안은 아직 판이 아니다.
+       포인터는 카드가 막아 주지만 키는 window 로 곧장 들어온다 — 이 줄이 없으면
+       제목 화면에서 Space 를 누른 순간 보이지도 않는 판이 카드 뒤에서 시작되고,
+       start 계측이 '첫 홀드' 가 아니라 '제목에서 누른 키' 가 된다(실측 확인). */
+    if(titleOv.classList.contains('show')) return;
+    if(who===1) ensureBird2();
+    var list=holds[who];
+    if(list.indexOf(id)<0) list.push(id);
+    if(R.phase==='ready'){
+      /* start = 첫 홀드(이륙). 페이지 로드도, 시작 버튼 클릭도 아니다. */
+      beginFlight();
+    }
+    if(ev && ev.cancelable) ev.preventDefault();
+  }
+  function release(id, who, ev){
+    var list=holds[who], k=list.indexOf(id);
+    if(k>=0) list.splice(k,1);
+    /* 재생 중일 때만 기본 동작을 삼킨다 — Space 는 패널 버튼에서 keyup 으로
+       활성화되므로, 무조건 취소하면 키보드만 쓰는 사람이 판을 시작조차 못 한다. */
+    if(R.phase==='play' && ev && ev.cancelable) ev.preventDefault();
+  }
+  function releaseAll(){ holds[0].length=0; holds[1].length=0; }
+
+  /* 눌린 손가락 목록이 진짜 상태다. 매 프레임 folded 를 다시 유도해 두면
+     초점 상실·판 전환처럼 목록 밖에서 상태가 어긋난 경우가 저절로 치유된다. */
+  function syncFolded(){
+    for(var i=0;i<R.birds.length;i++){
+      var b=R.birds[i]; if(!b) continue;
+      b.folded = R.phase==='play' && holds[i].length>0;
+    }
+  }
+
+  function ptWho(ev){
+    var r=cv.getBoundingClientRect();
+    return whoFor(sideOfX(ev.clientX-r.left));
+  }
+  cv.addEventListener('pointerdown', function(ev){
+    focusSea();
+    var who=ptWho(ev);
+    ptOwner[ev.pointerId]=who;
+    press(ev.pointerId, who, ev);
+  });
+  var ptOwner={};
+  window.addEventListener('pointerup', function(ev){
+    var who=ptOwner[ev.pointerId]; if(who===undefined) return;
+    delete ptOwner[ev.pointerId]; release(ev.pointerId, who, ev);
+  });
+  window.addEventListener('pointercancel', function(ev){
+    var who=ptOwner[ev.pointerId]; if(who===undefined) return;
+    delete ptOwner[ev.pointerId]; release(ev.pointerId, who, ev);
+  });
+  cv.addEventListener('contextmenu', function(ev){ ev.preventDefault(); });
+
+  /* 키보드 단독 완주. 1P 와 2P 의 키를 나눠 두면 한 대의 노트북으로도 hot-seat 이 된다.
+     두 벌을 화면의 왼쪽/오른쪽 절반과 **같은 규칙**에 태운다: 먼저 누른 쪽이 1P 다.
+     (전에는 J/L 이 무조건 2P 로 고정이라, 첫 조작이 J 면 아무도 조종하지 않는
+      1번 개체가 판을 시작하고 계측·시야·도감 카드가 전부 그 새를 따라갔다.) */
+  var K1={ Space:1, ArrowUp:1, ArrowDown:1, Enter:1, KeyF:1 };   /* = 왼쪽 절반 */
+  var K2={ KeyJ:1, KeyL:1 };                                     /* = 오른쪽 절반 */
+  window.addEventListener('keydown', function(ev){
+    if(ev.ctrlKey||ev.metaKey||ev.altKey) return;
+    if(ev.code==='Escape'){ if(R.phase==='play'||R.phase==='ready') toTitle(); return; }
+    if(isControl(ev.target)) return;   /* 헤더 버튼 위에서의 Space/Enter 는 그 버튼 것이다 */
+    if(K1[ev.code]) press('k'+ev.code, whoFor('L'), ev);
+    else if(K2[ev.code]) press('k'+ev.code, whoFor('R'), ev);
+  });
+  window.addEventListener('keyup', function(ev){
+    if(isControl(ev.target)) return;
+    if(K1[ev.code]) release('k'+ev.code, whoOf('L'), ev);
+    else if(K2[ev.code]) release('k'+ev.code, whoOf('R'), ev);
+  });
+  /* 눌린 채로 있는 Enter 의 오토리핏은 새 조작이 아니다. 투표 뒤 포커스를
+     옮겨주고 나면 그 반복이 옮겨간 버튼을 눌러 다음 판이 저 혼자 시작된다 —
+     버튼의 기본 활성화만 막는다. 게임 자신의 키 처리는 그대로 돈다. */
+  document.addEventListener('keydown', function(e){
+    if(!e.repeat) return;
+    var k=e.key||''; if(k!=='Enter'&&k!==' '&&k!=='Spacebar') return;
+    var t=e.target; if(t&&t.tagName==='BUTTON') e.preventDefault();
+  }, true);
+
+  /* 초점을 잃으면 up 이벤트가 통째로 사라질 수 있다 — 눌린 목록을 비운다.
+     날개는 즉시 펴진 상태로 돌아간다 = 가장 안전한 자세.
+
+     판이 계속 도는지는 두 경로가 다르다. 창은 보이는데 초점만 잃은 blur 에서는
+     rAF 가 그대로 돌아 판도 그대로 흐른다(100초짜리 관찰이라 여기서 멈추면
+     오히려 흐름이 끊긴다). 반면 탭을 가리거나 화면을 잠그면 브라우저가 rAF 를
+     세우므로 R.clock 도 함께 **멎었다가 돌아온 자리에서 이어진다** — 중단·초기화가
+     아니라 정지다. 판 시계는 R.clock 누적이고 play_sec 은 벽시계(Date.now)라
+     이때 둘이 벌어지므로, 숨어 있던 시간을 원값 hidden_s 로 따로 실어
+     나중에 둘을 맞춰 볼 수 있게 한다(파생값 대신 원값). */
+  window.addEventListener('blur', releaseAll);
+  /* 열려 있는 숨김 구간의 시작 시각(0 = 지금 보이는 중).
+     페이지가 처음부터 숨은 채 열릴 수도 있으므로 부팅값도 현재 상태에서 받는다 —
+     전환(visibilitychange)만 세면 그 판은 숨김 시간이 통째로 0 으로 남는다. */
+  var hiddenAtMs = (function(){ try{ return document.hidden ? Date.now() : 0; }catch(e){ return 0; } })();
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden){ releaseAll(); if(!hiddenAtMs) hiddenAtMs = Date.now(); }
+    else if(hiddenAtMs){
+      try{ if(gaS) gaS.hiddenMs += (Date.now()-hiddenAtMs); }catch(e){}
+      hiddenAtMs = 0;
+    }
+  });
+  /* 아직 안 닫힌 구간까지 합쳐 '지금까지 숨어 있던 밀리초'를 준다. */
+  function hiddenMsNow(){
+    var open = hiddenAtMs ? (Date.now()-hiddenAtMs) : 0;
+    try{ return (gaS ? gaS.hiddenMs : 0) + open; }catch(e){ return open; }
+  }
+
+  function focusSea(){
+    try{ cv.focus({preventScroll:true}); }catch(e){ try{ cv.focus(); }catch(e2){} }
+  }
+  function focusIfIdle(el){
+    try{
+      var a=document.activeElement;
+      if(el && (!a || a===document.body || a===cv)){
+        try{ el.focus({preventScroll:true}); }catch(e2){ el.focus(); }
+      }
+    }catch(e){}
+  }
+
+  /* ============================== §9 동료 시연 ==============================
+     상승대에 못 들어가고 있으면 동료 프테라노돈이 날아와 상승원 위를 눈에
+     보이게 선회한다. 화살표도 문자도 쓰지 않는다. game_step 을 쏘지 않는다. */
+  function pickTeachSource(fromX){
+    var best=null, bestD=1e9;
+    for(var i=0;i<SRC.length;i++){
+      var s=SRC[i];
+      if(srcStrength(s) < CFG.demo_teach_min) continue;           /* 약한 자리는 안 가르친다 */
+      var d=wrapDelta(s.x-fromX);
+      if(d<80) d+=CFG.world_w;                                    /* 앞쪽으로만 안내한다 */
+      if(d<bestD){ bestD=d; best=s; }
+    }
+    return best;
+  }
+  /* 시연이 화면 안에 들어와 있는가. 가로만 보면 안 된다 — 상승원의 core 가 높으면
+     (능선2 는 540) 선회가 화면 위로 통째로 빠져나간다. */
+  function demoVisible(a){
+    var x=sxOf(a.x), y=syOf(a.alt), p=CFG.demo_edge_pad;
+    return x>=p && x<=W-p && y>=p && y<=H-p;
+  }
+  /* 동료가 돌 높이. core 위가 원칙이되, 화면 밖으로 나가면 상승원 안(lo..top)에
+     머무르는 선에서 보이는 높이로 당겨 온다. 상승원 밖으로는 절대 나가지 않는다 —
+     '동료가 도는 곳엔 이유가 있다'가 거짓말이 되면 안 된다. */
+  function demoAlt(s){
+    var pad=CFG.demo_edge_pad;
+    var hiV=cam.alt + (H*CFG.eye_y - pad)/cam.zoom;
+    var loV=cam.alt + (H*CFG.eye_y - (H-pad))/cam.zoom;
+    var lo=Math.max(s.lo, loV), hi=Math.min(s.top, hiV);
+    var want=s.core+CFG.demo_hover_up;
+    return (hi>lo) ? clamp(want, lo, hi) : want;
+  }
+  function spawnDemo(){
+    var s=pickTeachSource(R.birds[0].x);
+    if(!s) return false;
+    /* 카메라 뒤쪽 가장자리 바로 밖에서 들어온다 — 어떤 화면폭에서도 '날아 들어오는'
+       몸짓의 시작이 보인다. 상승원 기준 고정 오프셋(620)은 폰에서 등장이 통째로
+       화면 밖이었다. */
+    R.demo.act={ s:s, t:0, ph:0, x:wrapX(cam.x - visSpan()*CFG.demo_lead_k),
+                 alt:demoAlt(s), hold:CFG.demo_hold_s, out:0 };
+    return true;
+  }
+  function updateDemo(dt){
+    var d=R.demo;
+    if(R.phase!=='play') return;
+    if(!d.act && d.n<CFG.demo_max && R.clock>=d.nextAt){
+      /* 이 창(窓) 동안 실제로 공기에 떠올랐으면 가르칠 것이 없다 */
+      if(R.birds[0].liftWin < CFG.demo_need_s){ if(spawnDemo()) d.n++; }
+      R.birds[0].liftWin=0;
+      d.nextAt=R.clock+CFG.demo_every_s;
+    }
+    if(!d.act) return;
+    var a=d.act; a.t+=dt;
+    var tgtAlt=demoAlt(a.s);
+    if(a.hold>0){
+      var dx=wrapDelta(a.s.x-a.x);
+      if(Math.abs(dx)>CFG.demo_arrive){
+        a.x=wrapX(a.x + clamp(dx,-1,1)*CFG.demo_v*dt);
+        a.alt+=(tgtAlt-a.alt)*Math.min(1,dt*0.7);
+      } else {
+        /* 선회 시간은 **보일 때만** 흐른다. 폰 가로에서 새 한 마리가 지나가는 데
+           걸리는 시간은 3초대라, 시계를 그냥 돌리면 8초짜리 교습이 대부분
+           화면 밖에서 끝난다(실측: 108판 154건 중 22건이 0.5초 미만).
+           demo_life_s 를 넘기면 안 보여도 흐른다 — 하염없이 머물지 않게. */
+        if(demoVisible(a) || a.t>=CFG.demo_life_s) a.hold-=dt;
+        a.ph+=dt*0.85;
+        a.alt+=(tgtAlt-a.alt)*Math.min(1,dt*0.9);
+      }
+    } else {
+      a.out+=dt; a.ph+=dt*0.5;
+      a.x=wrapX(a.x+CFG.demo_out_v*dt); a.alt+=CFG.demo_out_up*dt;
+      if(a.out>CFG.demo_out_s) d.act=null;
+    }
+  }
+
+  /* ============================== §10 그리기 ============================== */
+  function roundP(){ return R ? clamp(R.clock/CFG.round_s, 0, 1) : 0; }
+  function scene(){ return CFG.scenes[R?R.sceneIdx:0]; }
+
+  /* 색 사다리: 세 개의 정지색 사이를 판 진행도로 오간다 */
+  function ramp(key, p){
+    var a=CFG.sky[key];
+    var t=clamp(p,0,1)*(a.length-1), i=Math.min(a.length-2, Math.floor(t)), f=t-i;
+    var c0=a[i], c1=a[i+1];
+    return 'rgb('+Math.round(lerp(c0[0],c1[0],f))+','+Math.round(lerp(c0[1],c1[1],f))+','+Math.round(lerp(c0[2],c1[2],f))+')';
+  }
+  function rampA(key,p,al){
+    var s=ramp(key,p);
+    return 'rgba('+s.slice(4,-1)+','+al+')';
+  }
+
+  function waterY(){ return syOf(0); }
+  function sunPos(){
+    var p=roundP();
+    /* 해가 물에 닿으면 끝. 화면의 유일한 시계이고, 숫자는 어디에도 없다. */
+    var wy=waterY();
+    return { x:W*0.78, y:wy - (1-p)*H*0.52*(0.55+0.45*cam.zoom), r:(TV?30:24)+10*p };
+  }
+
+  function drawSky(){
+    var p=roundP();
+    var g=ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, ramp('top',p));
+    g.addColorStop(0.52, ramp('mid',p));
+    g.addColorStop(1, ramp('low',p));
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  }
+  function drawSun(){
+    var p=roundP(), s=sunPos();
+    ctx.save();
+    var gg=ctx.createRadialGradient(s.x,s.y,s.r*0.4,s.x,s.y,s.r*7);
+    gg.addColorStop(0, rampA('sun',p,0.55));
+    gg.addColorStop(1, rampA('sun',p,0));
+    ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(s.x,s.y,s.r*7,0,6.284); ctx.fill();
+    ctx.fillStyle=ramp('sun',p);
+    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,6.284); ctx.fill();
+    ctx.restore();
+  }
+  function drawFar(){
+    /* 먼 해안 실루엣 — 눈높이 부근에 낮게 깔린다. 고도에 아주 조금만 반응한다. */
+    var p=roundP(), base=H*CFG.eye_y - cam.alt*cam.zoom*0.14;
+    ctx.save(); ctx.globalAlpha=0.28+scene().haze*0.3;
+    ctx.fillStyle=ramp('cliff',p);
+    ctx.beginPath(); ctx.moveTo(-10,base+30);
+    for(var x=-10;x<=W+10;x+=18){
+      var wx=cam.x*0.12+x*1.4;
+      var h=16+13*Math.sin(wx*0.004)+9*Math.sin(wx*0.011+1.4)+6*Math.sin(wx*0.027);
+      ctx.lineTo(x, base-h);
+    }
+    ctx.lineTo(W+10,base+30); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  function drawSea(){
+    var p=roundP(), wy=waterY();
+    if(wy>H+4) return;
+    var y0=Math.max(-40,wy);
+    var g=ctx.createLinearGradient(0,y0,0,H);
+    g.addColorStop(0, ramp('sea',p));
+    g.addColorStop(1, ramp('deep',p));
+    ctx.fillStyle=g; ctx.fillRect(0,y0,W,H-y0);
+
+    /* 물 위에 놓인 햇길 — 해가 낮아질수록 길어진다 */
+    var s=sunPos();
+    if(p>0.30 && wy<H){
+      ctx.save();
+      var rg=ctx.createLinearGradient(0,wy,0,H);
+      rg.addColorStop(0, rampA('sun',p,0.42*(p-0.2)));
+      rg.addColorStop(1, rampA('sun',p,0));
+      ctx.fillStyle=rg;
+      var half=(28+42*p)*(0.6+cam.zoom*0.6);
+      ctx.beginPath();
+      ctx.moveTo(s.x-half*0.4, wy); ctx.lineTo(s.x+half*0.4, wy);
+      ctx.lineTo(s.x+half*2.6, H); ctx.lineTo(s.x-half*2.6, H);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+
+    /* 파도 — 날씨가 거칠수록 잘다 */
+    var wv=scene().wave, t=R.clock;
+    ctx.save(); ctx.globalAlpha=0.30;
+    ctx.strokeStyle='rgba(255,248,232,.55)'; ctx.lineWidth=Math.max(1,1.4*cam.zoom);
+    for(var row=0;row<5;row++){
+      var yy=wy + (row*row*9+7)*Math.max(0.45,cam.zoom);
+      if(yy>H) break;
+      ctx.globalAlpha=0.26-row*0.04;
+      ctx.beginPath();
+      for(var x=0;x<=W;x+=9){
+        var wx=cam.x+(x-W*0.5)/cam.zoom;
+        var yy2=yy + Math.sin(wx*0.02+t*(1.1+row*0.3))*2.2*wv*cam.zoom
+                   + Math.sin(wx*0.061-t*1.7)*1.2*wv*cam.zoom;
+        if(x===0) ctx.moveTo(x,yy2); else ctx.lineTo(x,yy2);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function drawCloudShadows(){
+    var wy=waterY(); if(wy>H) return;
+    ctx.save(); ctx.globalAlpha=0.16*clamp((cam.alt-120)/300,0,1);
+    if(ctx.globalAlpha<=0.005){ ctx.restore(); return; }
+    ctx.fillStyle='#20303a';
+    for(var i=0;i<CLOUDS.length;i++){
+      var c=CLOUDS[i];
+      var cx=sxOf(wrapX(c.x+R.clock*c.sp));
+      if(cx<-260||cx>W+260) continue;
+      var cy=wy + (10+c.ry)*Math.max(0.5,cam.zoom);
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, c.rx*cam.zoom, c.ry*cam.zoom*0.55, 0, 0, 6.284);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+  function drawFoam(s){
+    var wy=waterY(); if(wy>H+30) return;
+    var cx=sxOf(s.x); if(cx<-320||cx>W+320) return;
+    var p=roundP(), t=R.clock;
+    ctx.save();
+    ctx.strokeStyle='rgba(255,252,242,.72)';
+    for(var k=0;k<3;k++){
+      ctx.globalAlpha=0.42-k*0.11;
+      ctx.lineWidth=Math.max(1,(2.6-k*0.6)*cam.zoom);
+      ctx.beginPath();
+      for(var dx=-s.w;dx<=s.w;dx+=10){
+        var x=sxOf(s.x+dx);
+        var y=wy + (k*7+4)*Math.max(0.5,cam.zoom) + Math.sin(dx*0.06+t*1.6+k)*3*cam.zoom;
+        if(dx===-s.w) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
+    /* 물고기 떼 그림자 — 가까이 내려와야 보인다 */
+    if(cam.zoom>0.72){
+      ctx.globalAlpha=0.30; ctx.fillStyle='#1d2b31';
+      for(var f=0;f<11;f++){
+        var ph=t*0.55+f*0.9;
+        var fx=sxOf(s.x + Math.sin(ph)*s.w*0.72 + f*7 - 40);
+        var fy=wy + (26+((f*13)%22))*cam.zoom + Math.sin(ph*1.7)*4*cam.zoom;
+        ctx.beginPath(); ctx.ellipse(fx,fy,5.5*cam.zoom,2.1*cam.zoom, Math.sin(ph)*0.4, 0,6.284); ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+  function drawRock(s){
+    var wy=waterY(); if(wy>H+40) return;
+    var cx=sxOf(s.x); if(cx<-340||cx>W+340) return;
+    var p=roundP(), heat=heatNow();
+    ctx.save();
+    ctx.fillStyle=ramp('rock',p);
+    for(var i=0;i<s.rocks.length;i++){
+      var r=s.rocks[i];
+      var x=sxOf(s.x+r.dx), y=wy - r.up*cam.zoom;
+      ctx.beginPath();
+      ctx.ellipse(x, y, r.rx*cam.zoom, r.ry*cam.zoom, 0, Math.PI, 0);
+      ctx.ellipse(x, y, r.rx*cam.zoom, r.ry*0.35*cam.zoom, 0, 0, Math.PI);
+      ctx.fill();
+    }
+    /* 달궈진 바위의 아지랑이 — 볕을 먹을수록 짙어진다. 중간대에서 잘 보인다. */
+    if(heat>0.30 && cam.zoom>0.5){
+      ctx.globalAlpha=0.16*heat;
+      ctx.strokeStyle='rgba(255,242,214,.9)';
+      ctx.lineWidth=Math.max(1,1.6*cam.zoom);
+      for(var q=0;q<6;q++){
+        ctx.beginPath();
+        var bx=sxOf(s.x+(q-2.5)*s.w*0.30);
+        for(var h=0;h<9;h++){
+          var yy=wy - (h*11+8)*cam.zoom;
+          var xx=bx + Math.sin(R.clock*2.2+h*0.7+q)*6*cam.zoom*(h/9);
+          if(h===0) ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy);
+        }
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+  function cliffTop(s, wx){
+    var d=Math.abs(wrapDelta(wx-s.x))/s.rw;
+    if(d>=1) return 0;
+    var base=s.tall*Math.pow(1-d*d, 0.80);
+    var j=0;
+    for(var i=0;i<s.jag.length;i++){ var q=s.jag[i]; j+=Math.sin(wx*q.f+q.p)*q.a; }
+    return Math.max(0, base*(1+j*0.35));
+  }
+  function drawCliff(s){
+    var cx=sxOf(s.x); if(cx<-(s.rw*cam.zoom+220)||cx>W+s.rw*cam.zoom+220) return;
+    var p=roundP(), wy=waterY();
+    var step=Math.max(4, 7/Math.max(0.25,cam.zoom));
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(sxOf(s.x-s.rw), Math.min(H+40, wy+18));
+    for(var wx=s.x-s.rw; wx<=s.x+s.rw; wx+=step){
+      ctx.lineTo(sxOf(wx), syOf(cliffTop(s,wx)));
+    }
+    ctx.lineTo(sxOf(s.x+s.rw), Math.min(H+40, wy+18));
+    ctx.closePath();
+    ctx.fillStyle=ramp('cliff',p); ctx.fill();
+    /* 볕 드는 면 */
+    ctx.save(); ctx.clip();
+    ctx.globalAlpha=0.26; ctx.fillStyle=ramp('sun',p);
+    ctx.fillRect(cx, 0, s.rw*cam.zoom+40, H);
+    ctx.restore();
+
+    /* 절벽의 둥지 턱 — 중간대에서 보이는 것 */
+    if(cam.zoom>0.48){
+      var nn=mulberry(s.seed*29+1);
+      for(var n=0;n<5;n++){
+        var ox=(nn()*2-1)*s.rw*0.62;
+        var oy=cliffTop(s, s.x+ox)*(0.30+nn()*0.45);
+        var lx=sxOf(s.x+ox), ly=syOf(oy);
+        if(lx<-30||lx>W+30) continue;
+        ctx.globalAlpha=0.55; ctx.fillStyle='rgba(30,22,12,.55)';
+        ctx.fillRect(lx-11*cam.zoom, ly, 22*cam.zoom, 3.5*cam.zoom);
+        if(cam.zoom>0.72 && nn()>0.35){
+          drawSprite('perched', lx+2*cam.zoom, ly-1, 15*cam.zoom*(TV?CFG.tv_scale:1), 0, 1, ramp('bird',p), 0.8);
+        }
+      }
+    }
+    /* 절벽 밑 물보라 — 수면대에서 가까이 봐야 보인다 */
+    if(cam.zoom>0.70 && wy<H+20){
+      ctx.globalAlpha=0.34; ctx.fillStyle='rgba(255,252,244,.9)';
+      for(var w2=0;w2<9;w2++){
+        var ph=R.clock*1.7+w2*0.8;
+        var sxp=sxOf(s.x+(w2-4)*s.rw*0.20);
+        var h2=(0.5+0.5*Math.sin(ph))*30*cam.zoom;
+        ctx.beginPath(); ctx.ellipse(sxp, wy-h2, 9*cam.zoom, (5+h2*0.2)*cam.zoom, 0,0,6.284); ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+  function drawFlockSrc(s){
+    var cx=sxOf(s.x); if(cx<-300||cx>W+300) return;
+    var p=roundP(), t=R.clock, col=ramp('bird',p);
+    for(var i=0;i<s.birds.length;i++){
+      var b=s.birds[i], ph=b.ph+t*b.sp;
+      var x=sxOf(s.x+Math.cos(ph)*b.rx);
+      var y=syOf(s.core+b.dy+Math.sin(ph)*b.ry*0.5);
+      var sc=(20+7*Math.sin(ph))*cam.zoom*(TV?CFG.tv_scale:1);
+      /* 도는 모습이 곧 표지다 — 앞뒤로 도는 것을 세로 눌림으로 표현한다 */
+      drawSprite('spread', x, y, Math.max(4,sc), Math.sin(ph)*0.22, Math.cos(ph)>=0?1:-1, col, 0.9, 0.45+0.35*Math.abs(Math.sin(ph)));
+    }
+  }
+  function drawMotes(dt){
+    /* 상승기류의 티끌. 이 게임이 '공기가 어디서 오르는가'를 말하는 유일한 방법이다 —
+       화살표도 계기도 쓰지 않는다. */
+    var cap=REDUCED?Math.floor(CFG.mote_max/2):CFG.mote_max;
+    var span=visSpan()*0.62;
+    for(var i=0;i<SRC.length;i++){
+      var s=SRC[i];
+      if(Math.abs(wrapDelta(s.x-cam.x))>span+s.w) continue;
+      var st=srcStrength(s);
+      if(st<8) continue;
+      if(motes.length<cap && Math.random() < st*dt*0.055){
+        motes.push({ x:s.x+(Math.random()*2-1)*s.w, alt:s.lo+Math.random()*24,
+                     life:0, max:2.6+Math.random()*2.4, r:1.2+Math.random()*2.1,
+                     ph:Math.random()*6.283 });
+      }
+    }
+    var p=roundP();
+    ctx.save();
+    for(var m=motes.length-1;m>=0;m--){
+      var q=motes[m];
+      q.life+=dt;
+      var lf=liftAt(q.x,q.alt);
+      q.alt+=lf*0.62*dt;
+      q.x=wrapX(q.x+(windNow()*0.55)*dt);
+      if(q.life>q.max || lf<2){ motes.splice(m,1); continue; }
+      var x=sxOf(q.x); if(x<-20||x>W+20) continue;
+      var y=syOf(q.alt);
+      if(y<-20||y>H+20) continue;
+      var a=(1-q.life/q.max)*clamp(lf/60,0,1)*0.55;
+      ctx.globalAlpha=a;
+      ctx.fillStyle=rampA('sun',p,1);
+      ctx.beginPath();
+      ctx.arc(x + Math.sin(q.ph+q.life*2.2)*3*cam.zoom, y, Math.max(0.6,q.r*cam.zoom), 0, 6.284);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /* 실루엣 한 장 그리기.
+     art 는 원본 viewBox 안에 있고, 여기서 긴 변이 size 픽셀이 되게 정규화한다.
+     face 가 -1 이면 원본이 왼쪽을 보고 있다는 뜻이라 진행 방향으로 뒤집는다.
+     거울 좌표계에서는 회전이 뒤집히므로 각도에 부호를 한 번 더 준다. */
+  function drawSprite(key, x, y, size, ang, dir, color, alpha, squashY){
+    var a=ART[key]; if(!a) return;
+    var f=(a.face||1)*(dir||1);
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.globalAlpha=alpha==null?1:alpha;
+    ctx.scale(f<0?-size:size, size*(squashY==null?1:squashY));
+    ctx.rotate(f<0?-(ang||0):(ang||0));
+    var sc=1/Math.max(a.vb[2],a.vb[3]);
+    ctx.scale(sc,sc);
+    ctx.translate(-a.vb[2]/2,-a.vb[3]/2);
+    ctx.fillStyle=color;
+    for(var i=0;i<a.p.length;i++) ctx.fill(a.p[i]);
+    ctx.restore();
+  }
+
+  function drawBird(b){
+    var p=roundP(), col=ramp('bird',p);
+    var x=sxOf(b.x), y=syOf(b.alt);
+    var base=(TV?CFG.tv_scale:1)*66*(0.62+0.38*cam.zoom);
+    /* hot-seat 에서 상대가 화면 밖으로 밀려도 어디 있는지는 보인다 —
+       규칙을 더하지 않고 가장자리에 붙여 흐리게 그린다. */
+    var edge=false;
+    if(x<12){ x=12; edge=true; } else if(x>W-12){ x=W-12; edge=true; }
+    if(b.splash>0){
+      drawSprite('perched', x, y-base*0.20, base*0.62, 0, 1, col, edge?0.4:0.95);
+      ctx.save(); ctx.globalAlpha=0.45; ctx.strokeStyle='rgba(255,252,244,.85)';
+      ctx.lineWidth=Math.max(1,2*cam.zoom);
+      var rr=(1-b.splash/CFG.splash_s)*base*1.5;
+      ctx.beginPath(); ctx.ellipse(x, syOf(0), rr, rr*0.22, 0,0,6.284); ctx.stroke();
+      ctx.restore();
+      return;
+    }
+    /* 접으면 세로로 눌린다 = 날개를 몸에 붙인 자세 */
+    var sq=1-0.40*b.foldT;
+    if(b.folded){
+      /* 빠를 때만 나오는 흐름 자국 — 속도를 숫자 없이 말한다 */
+      ctx.save(); ctx.globalAlpha=0.16*b.foldT; ctx.strokeStyle=col;
+      ctx.lineWidth=Math.max(1,2*cam.zoom);
+      ctx.beginPath(); ctx.moveTo(x-base*0.9,y+base*0.10); ctx.lineTo(x-base*0.2,y+base*0.02); ctx.stroke();
+      ctx.restore();
+    }
+    /* 2P 는 같은 색의 조금 옅은 실루엣. 우열 표현이 아니라 구분용이다. */
+    drawSprite('glide', x, y, base, b.ang, 1, col, (edge?0.42:1)*(b.who===1?0.78:1), sq);
+  }
+  function drawDemoBird(){
+    var a=R.demo.act; if(!a) return;
+    var p=roundP();
+    var x=sxOf(a.x), y=syOf(a.alt);
+    if(x<-140||x>W+140) return;
+    var sc=(TV?CFG.tv_scale:1)*46*(0.62+0.38*cam.zoom);
+    if(a.hold>0 && Math.abs(wrapDelta(a.s.x-a.x))<=CFG.demo_arrive){
+      /* 상승원 위를 눈에 보이게 돈다 */
+      var ph=a.ph;
+      x=sxOf(a.s.x+Math.cos(ph)*a.s.w*0.55);
+      y=syOf(a.alt+Math.sin(ph)*30);
+      drawSprite('spread', x, y, sc, Math.sin(ph)*0.25, Math.cos(ph)>=0?1:-1,
+                 ramp('bird',p), 0.92, 0.45+0.35*Math.abs(Math.sin(ph)));
+    } else {
+      drawSprite('glide', x, y, sc*1.15, -0.12, 1, ramp('bird',p), 0.9);
+    }
+  }
+  function drawReadyHint(){
+    /* 첫 홀드를 기다리는 맥동 링. 문자도 화살표도 아니다.
+       ?tv=1 에서는 교실 뒤에서도 보이게 키운다. */
+    if(R.phase!=='ready') return;
+    var b=R.birds[0];
+    var x=sxOf(b.x), y=syOf(b.alt);
+    var base=(TV?58:38), rr, a;
+    if(REDUCED){
+      /* 동작 줄이기: 2.2초 주기로 커졌다 사라지는 맥동을 끄고 고정 링 하나만 남긴다.
+         링 자체는 지우지 않는다 — 첫 홀드 자리를 알리는 유일한 표식이다. */
+      rr=base*CFG.reduced_ring_k; a=CFG.reduced_ring_alpha;
+    } else {
+      var k=(R.hold%CFG.ready_hint_s)/CFG.ready_hint_s;
+      rr=base*(0.7+k*1.5); a=(1-k)*0.55;
+    }
+    ctx.save();
+    ctx.globalAlpha=a;
+    ctx.strokeStyle='rgba(255,250,238,.95)';
+    ctx.lineWidth=(TV?5:3);
+    ctx.beginPath(); ctx.arc(x,y,rr,0,6.284); ctx.stroke();
+    ctx.restore();
+  }
+  function drawVignette(){
+    ctx.save();
+    var g=ctx.createRadialGradient(W*0.5,H*0.5,Math.min(W,H)*0.42,W*0.5,H*0.5,Math.max(W,H)*0.78);
+    g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(38,26,10,.30)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    ctx.restore();
+  }
+
+  function draw(dt){
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    drawSky();
+    drawSun();
+    drawFar();
+    drawSea();
+    drawCloudShadows();
+    var i,s;
+    for(i=0;i<SRC.length;i++){ s=SRC[i]; if(s.kind==='foam') drawFoam(s); }
+    for(i=0;i<SRC.length;i++){ s=SRC[i]; if(s.kind==='rock') drawRock(s); }
+    for(i=0;i<CLIFF.length;i++) drawCliff(CLIFF[i]);
+    drawMotes(dt);
+    for(i=0;i<SRC.length;i++){ s=SRC[i]; if(s.kind==='flock') drawFlockSrc(s); }
+    drawDemoBird();
+    for(i=R.birds.length-1;i>=0;i--){ if(R.birds[i]) drawBird(R.birds[i]); }
+    drawReadyHint();
+    drawVignette();
+  }
+
+  /* ============================== §11 판 수명 ============================== */
+  function newRound(){
+    /* 여기서는 **읽기만** 한다. newRound 는 실제로 날게 되는 판마다 한 번이 아니라
+       boot()·startReady()·toTitle() 세 곳에서 불린다 — 여기서 인덱스를 밀면
+       제목 화면을 띄우는 것만으로 날씨 한 칸이 플레이 없이 사라지고,
+       신규 방문자의 첫 판이 calm 이 아니라 breezy 가 된다(실측).
+       인덱스를 미는 곳은 판이 끝나는 endRound() 한 곳뿐이다. */
+    var idx=parseInt(store.get('lw-scene')||'0',10);
+    if(!(idx>=0&&idx<CFG.scenes.length)) idx=0;
+    R={
+      phase:'ready', sceneIdx:idx, clock:0, hold:0, started:false,
+      birds:[ newBird(CFG.sources[0].x-260, 150, 0), null ],
+      demo:{ n:0, nextAt:CFG.demo_after_s, act:null },
+      seen:{}, seenDwell:{}, p2Joined:false, p2JoinS:-1,
+      plateT:0
+    };
+    holds[0].length=0; holds[1].length=0; p1Side=null; ptOwner={};
+    motes.length=0;
+    cam.x=R.birds[0].x; cam.alt=camTargets(R.birds[0].alt).alt; cam.zoom=camTargets(R.birds[0].alt).zoom;
+  }
+  function beginFlight(){
+    if(R.phase!=='ready'||R.started) return;
+    R.phase='play'; R.started=true; R.clock=0;
+    document.body.classList.add('playing');
+    AudioSys.blip('launch');
+    /* 계측 기준점 = 첫 홀드. play_sec 도 여기서 시작한다. */
+    gaRoundStart(scene().id);
+  }
+  function toTitle(){
+    document.body.classList.remove('playing');
+    pcv.classList.remove('on');
+    cardOv.classList.remove('show');
+    titleOv.classList.add('show');
+    cv.setAttribute('tabindex','-1');
+    newRound();
+    applyI18n();
+    try{ $('startBtn').focus(); }catch(e){}
+  }
+  function startReady(){
+    titleOv.classList.remove('show');
+    cardOv.classList.remove('show');
+    pcv.classList.remove('on');
+    /* 판 위에 글자가 없어야 하는 구간은 ready 부터다 — 제목 카드를 걷은 순간
+       이미 바다와 새가 살아 움직인다. 'playing' 은 여기서 붙어 도판(plate)이
+       도감 카드로 바뀔 때 떨어진다. */
+    document.body.classList.add('playing');
+    newRound();
+    cv.setAttribute('tabindex','0');
+    focusSea();
+  }
+
+  /* 시야 대상 — 대역마다 보이는 것이 다르다. 판 안에서는 절대 표시하지 않는다. */
+  function nearKind(b, kind){
+    for(var i=0;i<SRC.length;i++){
+      var s=SRC[i];
+      if(s.kind!==kind) continue;
+      if(Math.abs(wrapDelta(b.x-s.x))<=CFG.see_dist) return s;
+    }
+    return null;
+  }
+  function updateSights(dt){
+    var b=R.birds[0], band=bandOf(b.alt);
+    for(var i=0;i<CFG.sights.length;i++){
+      var g=CFG.sights[i];
+      if(R.seen[g.id]) continue;
+      var ok=false;
+      if(g.band!==band) ok=false;
+      else if(g.at==='foam'||g.at==='ridge'||g.at==='flock'||g.at==='rock') ok=!!nearKind(b,g.at);
+      else if(g.at==='wide'){
+        /* 해안선의 생김새 = 절벽 하나가 양 끝까지 통째로 화면에 들어온 순간.
+           '두 개가 한 화면에'는 폰에서 성립할 수 없다 — 해안이 화면보다 넓다. */
+        var half=visSpan()*0.5, n=0;
+        for(var c=0;c<CLIFF.length;c++){
+          if(Math.abs(wrapDelta(CLIFF[c].x-cam.x))+CLIFF[c].rw < half) n++;
+        }
+        ok=n>=CFG.wide_cliffs;
+      }
+      else if(g.at==='cloud'){
+        if(waterY()<H){
+          for(var q=0;q<CLOUDS.length;q++){
+            if(Math.abs(wrapDelta(wrapX(CLOUDS[q].x+R.clock*CLOUDS[q].sp)-cam.x))<visSpan()*0.45){ ok=true; break; }
+          }
+        }
+      }
+      else if(g.at==='sun') ok = roundP()>0.45 && waterY()<H;
+      if(ok){
+        R.seenDwell[g.id]=(R.seenDwell[g.id]||0)+dt;
+        if(R.seenDwell[g.id]>=CFG.see_dwell) R.seen[g.id]=true;
+      } else {
+        R.seenDwell[g.id]=Math.max(0,(R.seenDwell[g.id]||0)-dt*0.6);
+      }
+    }
+  }
+  function seenCount(){ var n=0,k; for(k in R.seen){ if(R.seen[k]) n++; } return n; }
+  /* 개수 하나로 접으면 '어떤 것을 봤는가'가 판과 함께 사라진다 — 저장하는 곳도 없다.
+     배치가 고정이고(편향 배치 금지) 안 본 것을 더 자주 띄우지 않는 설계라서,
+     '사실상 아무도 못 보는 대상'이 있는지는 필드 데이터로만 알 수 있다.
+     CFG.sights 순서대로 비트를 세운다 — i번째 항목이 1<<i. 9종이라 0..511 정수.
+     seen 은 이 값에서 팝카운트로 되나오므로 seen 쪽이 파생값이지만, 표준 v1 이
+     이름을 정한 필드라 그대로 둔다. */
+  function seenMask(){
+    var m=0;
+    for(var i=0;i<CFG.sights.length;i++){ if(R.seen[CFG.sights[i].id]) m |= (1<<i); }
+    return m;
+  }
+
+  function update(dt){
+    if(R.phase==='ready'){ R.hold+=dt; syncFolded(); updateCam(dt); return; }
+    if(R.phase!=='play'){ return; }
+    R.clock+=dt;
+    syncFolded();
+    for(var i=0;i<R.birds.length;i++){ if(R.birds[i]) stepBird(R.birds[i],dt); }
+    updateDemo(dt);
+    updateSights(dt);
+    updateCam(dt);
+    var b=R.birds[0];
+    AudioSys.feed(b.v, b.lastLift/CFG.lift_max);
+    /* 해가 물에 닿으면 끝. 이 조건 하나가 판을 끝내는 유일한 길이다. */
+    if(R.clock>=CFG.round_s) endRound();
+  }
+
+  /* ---- 판을 끝내는 단 하나의 경로 ---- */
+  function endRound(){
+    if(R.phase!=='play') return;      /* 1차 방어: 상태 기계 */
+    R.phase='plate';
+    R.plateT=0;
+    releaseAll(); syncFolded();
+    /* 'playing' 은 여기서 떼지 않는다 — 화면이 얼어붙어 도판이 되는 동안에도
+       판 위에 글자가 돌아오면 안 된다. showDexCard() 에서 뗀다. */
+    var b=R.birds[0];
+    /* result 는 플레이어에게 절대 노출하지 않는다 — 화면 어디에도 이 단어가 나오지 않는다.
+       soar_min 은 '한 번이라도 공기로 벌었나'를 보는 문턱선이지 성적이 아니다.
+       그리고 liftGain 은 rate>0 만 모으는 **정류적분**이라 순고도가 아니다 —
+       이 한 줄만 남기면 나중에 컷을 다시 그을 수 없으므로,
+       파생값(res)과 함께 원값 셋(lift_gain / lift_net / alt_max)을 반드시 같이 싣는다.
+       셋 다 화면에는 한 글자도 나오지 않는다. */
+    var res = b.liftGain>=CFG.soar_min ? 'soared' : 'glided';
+    /* 2차 방어: gaRoundComplete 자신이 판당 1회를 보장한다(gaS.completed) */
+    gaRoundComplete(scene().id, res, {
+      mode:modeNow(),
+      lift_s:Math.round(b.liftS*10)/10,
+      lift_gain:Math.round(b.liftGain),   /* 원값: 정류적분(오른 몫만) */
+      lift_net:Math.round(b.liftNet),     /* 원값: 상승대 안 부호 있는 순합 */
+      alt_max:Math.round(b.altMax),       /* 원값: 판 안에서 닿은 최고 고도 */
+      water_touch:b.water,
+      seen:seenCount(),
+      seen_mask:seenMask(),               /* 원값: 9종 각각을 봤는지 (i번째 = 1<<i) */
+      low_s:Math.round(b.bandS[0]*10)/10,
+      mid_s:Math.round(b.bandS[1]*10)/10,
+      high_s:Math.round(b.bandS[2]*10)/10,
+      demo_n:R.demo.n,
+      p2_join_s:R.p2JoinS
+    });
+    /* 고정 순환: calm -> breezy -> gusty. 무작위가 아니다.
+       인덱스를 미는 곳은 여기 한 곳뿐 — **완료된 판**마다 한 칸이다.
+       newRound() 에서 밀면 제목 화면을 여는 것만으로 날씨가 한 칸 사라지고
+       (boot -> startReady, Esc -> toTitle) 신규 방문자의 첫 판이 breezy 가 된다. */
+    store.set('lw-scene', String((R.sceneIdx+1)%CFG.scenes.length));
+    freezeFrame();
+    AudioSys.blip('plate');
+    AudioSys.feed(0,0);
+  }
+
+  /* ---- 엔딩: 화면이 얼어붙고 종이 결이 올라오며 박물 도판이 된다 ----
+     최종 프레임은 두 번째 캔버스에 drawImage 로 옮겨 얼린다.
+     박물 도판(plate-flight-1905.jpg / plate-skeleton-1910.png)은 플레이 캔버스에
+     단 한 번도 그리지 않는다 — 도판을 캔버스에 그리면 canvas 가 taint 되고,
+     그때부터 얼리기가 예외 없이 조용히 깨진다. 두 장은 끝까지 DOM <img> 로만 산다. */
+  function makeGrain(){
+    var g=document.createElement('canvas'), gc=g.getContext('2d');
+    g.width=256; g.height=256;
+    var rn=mulberry(4711);
+    gc.fillStyle='#808080'; gc.fillRect(0,0,256,256);
+    for(var i=0;i<5200;i++){
+      var v=Math.floor(96+rn()*112);
+      gc.fillStyle='rgb('+v+','+v+','+v+')';
+      gc.fillRect(rn()*256, rn()*256, 1, 1);
+    }
+    /* 종이 섬유 */
+    gc.globalAlpha=0.16;
+    for(var f=0;f<200;f++){
+      gc.strokeStyle=rn()>0.5?'#ffffff':'#4a4a4a';
+      gc.lineWidth=1;
+      var x=rn()*256, y=rn()*256, len=6+rn()*22, a=rn()*Math.PI;
+      gc.beginPath(); gc.moveTo(x,y); gc.lineTo(x+Math.cos(a)*len, y+Math.sin(a)*len); gc.stroke();
+    }
+    return g;
+  }
+  function freezeFrame(){
+    if(!grain) grain=makeGrain();
+    frozen.width=cv.width; frozen.height=cv.height;
+    fctx.setTransform(1,0,0,1,0,0);
+    fctx.clearRect(0,0,frozen.width,frozen.height);
+    fctx.drawImage(cv,0,0);
+    pcv.width=cv.width; pcv.height=cv.height;
+    pcv.classList.add('on');
+  }
+  /* 얼린 그림을 목적지 크기에 맞춰 **가운데를 잘라 덮는** 사각형을 돌려준다.
+     비율은 그대로, 잘리는 쪽은 양끝이 똑같이 잘린다. 목적지 크기를 명시하지
+     않으면(=drawImage(frozen,0,0)) 화면이 돌아간 뒤 얼린 그림이 옛 크기 그대로
+     좌상단에 박히고 나머지가 빈 종이로 남는다. 순수 함수 — selftest 가 직접 잰다. */
+  function plateFit(fw,fh,dw,dh){
+    if(!(fw>0&&fh>0&&dw>0&&dh>0)) return null;
+    var k=Math.max(dw/fw, dh/fh);
+    var sw=Math.min(fw, dw/k), sh=Math.min(fh, dh/k);
+    return { sx:(fw-sw)/2, sy:(fh-sh)/2, sw:sw, sh:sh };
+  }
+  function drawPlate(p){
+    /* p = 0..1. 원본(frozen)을 매 프레임 다시 깔고 그 위에 결을 얹는다 —
+       같은 캔버스에 계속 덧칠하면 누적돼서 새까매진다. */
+    pctx.setTransform(1,0,0,1,0,0);
+    pctx.globalAlpha=1; pctx.globalCompositeOperation='source-over';
+    pctx.clearRect(0,0,pcv.width,pcv.height);
+    /* 목적지 크기를 **반드시** 적는다(§plateFit 주석 참조). */
+    var ft=plateFit(frozen.width, frozen.height, pcv.width, pcv.height);
+    if(ft) pctx.drawImage(frozen, ft.sx, ft.sy, ft.sw, ft.sh, 0, 0, pcv.width, pcv.height);
+    pctx.setTransform(DPR,0,0,DPR,0,0);
+
+    var e=smooth01(p);
+    pctx.globalCompositeOperation='saturation';
+    pctx.globalAlpha=0.92*e; pctx.fillStyle='#808080'; pctx.fillRect(0,0,W,H);
+
+    pctx.globalCompositeOperation='multiply';
+    pctx.globalAlpha=0.52*e; pctx.fillStyle='#caa470'; pctx.fillRect(0,0,W,H);
+
+    pctx.globalCompositeOperation='overlay';
+    pctx.globalAlpha=0.34*e;
+    for(var gx=0;gx<W;gx+=256) for(var gy=0;gy<H;gy+=256) pctx.drawImage(grain,gx,gy,256,256);
+
+    pctx.globalCompositeOperation='source-over';
+    pctx.globalAlpha=e;
+    var vg=pctx.createRadialGradient(W*0.5,H*0.48,Math.min(W,H)*0.30,W*0.5,H*0.5,Math.max(W,H)*0.72);
+    vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(62,42,18,.44)');
+    pctx.fillStyle=vg; pctx.fillRect(0,0,W,H);
+
+    /* 도판 테두리와 모서리 표 */
+    var m=Math.max(12, Math.min(W,H)*0.045);
+    pctx.globalAlpha=e*0.75;
+    pctx.strokeStyle='rgba(70,50,26,.85)'; pctx.lineWidth=1.4;
+    pctx.strokeRect(m,m,W-m*2,H-m*2);
+    pctx.lineWidth=0.8; pctx.globalAlpha=e*0.5;
+    pctx.strokeRect(m+5,m+5,W-m*2-10,H-m*2-10);
+    pctx.globalAlpha=1; pctx.globalCompositeOperation='source-over';
+  }
+
+  function showDexCard(){
+    R.phase='card';
+    /* 판 위에 글자가 없어야 하는 구간은 여기서 끝난다 — 도판이 도감 카드로 바뀌면
+       머리글이 제 밝기로 돌아와야 한다. endRound() 의 주석이 약속한 지점이 여기다. */
+    document.body.classList.remove('playing');
+    applyDex();
+    cardOv.classList.add('show');
+    cv.setAttribute('tabindex','-1');
+    /* 결과 카드로 초점을 넘긴다 — 여기서부터 Tab 으로 투표·버튼까지 내려갈 수 있다 */
+    focusIfIdle($('dexCard'));
+  }
+
+  /* ============================== §12 GA4 포탈 계측 표준 v1 ============================== */
+  /* ---- GA4 portal standard v1 (2026-08-19) ---- */
+  var GA_GAME='long-wings';
+  var gaS={started:false,completed:false,voted:false,voteShown:false,voteScene:'calm',t0:0,hiddenMs:0};
+  function gaLang(){ try{ return lang||'ko'; }catch(e){ return 'ko'; } }
+  function gaSend(name,p){ try{ if(typeof gtag!=='function')return; p=p||{}; p.game_id=GA_GAME; if(!p.lang)p.lang=gaLang(); gtag('event',name,p);}catch(e){} }
+  /* mode 는 game_step 과 game_complete 에만 넣는다. game_vote 에는 넣지 않는다.
+     ⚠ game_step 의 mode 는 **그 이벤트를 쏘는 순간의 mode** 다. 2P 는 1P 가 이륙한
+     뒤에야 반대쪽 절반에 손을 올릴 수 있으므로(첫 입력은 whoFor 가 항상 who=0 으로
+     보낸다) start/replay 의 mode 는 언제나 solo(?tv=1 이면 class)이고 hotseat 은
+     game_complete 에만 나타난다. 같은 판이 start=solo / complete=hotseat 로 갈리는
+     것이 정상이다. **hot-seat 세그먼트는 game_complete 의 p2_join_s>=0 으로만 센다**
+     — mode='hotseat' 로 game_step 을 필터하면 언제나 0건이다.
+     합류 시점에 이벤트를 하나 더 쏘거나 필드명을 바꾸는 것은 포탈 계측 표준 v1
+     (step 은 start|replay 둘뿐, mode 는 두 이벤트에 공통)을 어기므로,
+     표준 개정 없이 여기서 임의로 바꾸지 않는다. */
+  function modeNow(){
+    if(TV) return 'class';
+    return (R && R.p2Joined) ? 'hotseat' : 'solo';
+  }
+  function gaRoundStart(scene){ /* 판 시작마다 호출 — 이 게임에서는 '첫 홀드' */
+    /* hidden_s 는 이 판 안에서 숨어 있던 시간이다 — 누적을 비우고,
+       이미 열려 있는 숨김 구간이 있으면 시작점을 지금으로 다시 잡는다. */
+    gaS.t0=Date.now(); gaS.hiddenMs=0; if(hiddenAtMs) hiddenAtMs=gaS.t0;
+    if(gaS.completed){ gaS.completed=false; gaSend('game_step',{step:'replay',scene:scene||'calm',mode:modeNow(),cfg_ver:CFG_VER}); return; }
+    if(gaS.started)return; gaS.started=true; gaSend('game_step',{step:'start',scene:scene||'calm',mode:modeNow(),cfg_ver:CFG_VER});
+  }
+  function gaRoundComplete(scene,result,extra){ /* 판 완결마다 호출 (내부에서 판당 1회 보장) */
+    if(gaS.completed)return; gaS.completed=true;
+    var p={scene:scene||'calm',result:result||'clear',play_sec:gaS.t0?Math.round((Date.now()-gaS.t0)/1000):0};
+    if(extra){ for(var k in extra){ if(extra.hasOwnProperty(k))p[k]=extra[k]; } }
+    /* play_sec 은 표준대로 벽시계다. 탭을 가리면 rAF 가 서서 판 시계(R.clock)만 멎으므로
+       둘이 벌어진다 — 그 차이를 설명하는 원값을 같이 싣는다(파생값 저장 금지). */
+    p.hidden_s=Math.round(hiddenMsNow()/100)/10;
+    /* 설정 식별자. soar_min·band_*·상승원 세기를 만진 전후를 GA4 에서 가를 수 있게 한다. */
+    p.cfg_ver=CFG_VER;
+    gaSend('game_complete',p);
+    gaVoteShow(p.scene);
+  }
+  var GA_VOTE_COPY={ko:{q:'또 할래?',yes:'응',no:'글쎄',thx:'고마워요!'},ja:{q:'また あそぶ？',yes:'うん',no:'うーん',thx:'ありがとう！'},en:{q:'Want another go?',yes:'Yes',no:'Not sure',thx:'Thanks!'}};
+  function gaVoteShow(scene){
+    var el=document.getElementById('gaVote'); if(!el||gaS.voted)return;
+    var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+    el.querySelector('.ga-vote-q').textContent=c.q;
+    el.querySelector('[data-choice="yes"]').textContent=c.yes;
+    el.querySelector('[data-choice="unsure"]').textContent=c.no;
+    gaS.voteScene=scene||'calm'; gaS.voteShown=true; el.hidden=false; el.classList.remove('done');
+  }
+  /* 옮길 곳을 돌려준다 — 셀프테스트가 이벤트를 쏘지 않고도 이 규칙을 잴 수 있게. */
+  function voteReturnFocus(byKey){
+    if(!byKey) return null;                       /* 마우스·터치에서는 손대지 않는다 */
+    var nx=document.getElementById('againBtn');
+    if(!nx) return null;
+    try{ nx.focus({preventScroll:true}); }catch(e2){ try{ nx.focus(); }catch(e3){} }
+    return nx;
+  }
+  (function(){ var el=document.getElementById('gaVote'); if(!el)return;
+    el.addEventListener('click',function(e){
+      var b=e.target; while(b&&b!==el&&!(b.getAttribute&&b.getAttribute('data-choice')))b=b.parentNode;
+      if(!b||b===el||gaS.voted)return; gaS.voted=true;
+      /* 키보드로 활성화하면 detail===0 이다. 아래에서 .done 이 붙는 순간 CSS 가
+         방금 누른 그 버튼을 display:none 으로 빼므로 포커스가 <body> 로 떨어진다 —
+         키보드 단독 완주가 여기서 끊긴다. 옮길 곳은 카드 안 다음 정거장인 '다시 날기'.
+         1.2초 타이머에 미루지 않고 같은 틱에 옮긴다. 마우스·터치(detail>0)에서는
+         건드리지 않는다 — 포커스가 재시작 버튼에 얹히면 뒤이은 Enter/Space 가
+         판을 저 혼자 시작시킬 수 있다(눌린 채의 오토리핏은 §8 가드가 막는다). */
+      var byKey = (e.detail===0);
+      gaSend('game_vote',{scene:gaS.voteScene,choice:b.getAttribute('data-choice')});
+      var c=GA_VOTE_COPY[gaLang()]||GA_VOTE_COPY.ko;
+      el.classList.add('done'); el.querySelector('.ga-vote-q').textContent=c.thx;
+      voteReturnFocus(byKey);
+      setTimeout(function(){ el.hidden=true; },1200);
+    });
+  })();
+
+  /* ============================== i18n 적용 ============================== */
+  function applyI18n(){
+    document.documentElement.lang = lang;
+    var u=U();
+    $('titleMain').textContent=CFG.names[lang];
+    $('titleSub').textContent=otherNames();
+    $('tTitle').textContent=CFG.names[lang];
+    $('tSub').textContent=otherNames();
+    $('tDesc').textContent=u.desc;
+    $('startBtn').textContent=u.start;
+    $('tKeys').textContent=u.keys;
+    $('homeTxt').textContent=u.home;
+    $('againBtn').textContent=u.again;
+    $('dexHomeBtn').textContent=u.goHome;
+    $('langBtn').textContent=LANG_FLAG[lang];
+    $('langBtn').setAttribute('aria-label', u.langAria);
+    /* aria-label 은 안쪽 글자를 덮으므로 여기서 같이 갈지 않으면 읽히는 이름만 한국어로 남는다 */
+    cv.setAttribute('aria-label', u.seaAria);
+    paintSoundBtn();
+    if(cardOv.classList.contains('show')) applyDex();
+    /* 언어를 바꾸면 떠 있던 투표 물음도 그 언어로 따라간다 */
+    try{ if(gaS.voteShown && !gaS.voted) gaVoteShow(gaS.voteScene); }catch(e){}
+  }
+  function applyDex(){
+    var c=C();
+    $('dxName').textContent=c.name;
+    $('dxSub').textContent=c.sub;
+    $('dxPlateCap').textContent=c.plateCap;
+    $('dxSkelCap').textContent=c.skelCap;
+    $('dxPlate').alt=c.plateCap;
+    $('dxSkel').alt=c.skelCap;
+    $('dxSci').innerHTML='<b>'+c.sciLabel+'</b>'+c.sci;
+    $('dxWhen').innerHTML='<b>'+c.whenLabel+'</b>'+c.when;
+    $('dxSize').innerHTML='<b>'+c.sizeLabel+'</b>'+c.size;
+    $('dxWing').innerHTML='<b>'+c.wingLabel+'</b>'+c.wing;
+    $('dxInfer').innerHTML='<b>'+c.inferTitle+'</b>'+c.infer;
+    $('dxCredit').textContent=c.credit;
+    /* 본 것은 판이 끝난 뒤 여기서 처음 나온다. 못 본 것은 아예 적지 않는다 —
+       빈 칸을 보여주면 그게 곧 수집 게이지가 된다. */
+    var el=$('dxSeen'), list=[];
+    for(var i=0;i<CFG.sights.length;i++){
+      var id=CFG.sights[i].id;
+      if(R && R.seen[id]) list.push(c.sights[id]);
+    }
+    if(list.length){ el.hidden=false; el.textContent=c.seenLabel+' — '+list.join(' · '); }
+    else el.hidden=true;
+  }
+
+  /* ============================== 버튼 ============================== */
+  $('startBtn').addEventListener('click', function(){
+    AudioSys.init();
+    startReady();
+  });
+  $('againBtn').addEventListener('click', function(){
+    /* 재시작 CTA 에서는 아무 이벤트도 쏘지 않는다 —
+       replay 는 새 판의 첫 홀드에서 나간다(읽는 시간이 play_sec 에 안 섞이게). */
+    AudioSys.init();
+    startReady();
+  });
+  $('langBtn').addEventListener('click', function(){
+    lang=LANGS[(LANGS.indexOf(lang)+1)%LANGS.length];
+    store.set('in9-lang', lang);
+    applyI18n();
+  });
+  $('soundBtn').addEventListener('click', function(){ AudioSys.init(); AudioSys.toggle(); });
+
+  /* ============================== 루프 ============================== */
+  function resize(){
+    var r=cv.parentElement.getBoundingClientRect();
+    W=Math.max(1,Math.round(r.width));
+    H=Math.max(1,Math.round(r.height));
+    cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    if(R && (R.phase==='plate'||R.phase==='card')){
+      /* 얼린 뒤에 화면이 돌아가도 원본(frozen)은 그대로 둔다.
+         두 번째 캔버스만 새 크기로 다시 잡고, 맞추는 일은 drawPlate 의
+         cover 잘라내기가 한다(목적지 크기를 명시한다). */
+      pcv.width=cv.width; pcv.height=cv.height;
+      drawPlate(1);
+    }
+  }
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', function(){ setTimeout(resize,120); });
+
+  var lastT=0;
+  function loop(ts){
+    var t=ts/1000;
+    var dt=Math.min(0.05, (lastT? t-lastT : 0.016));
+    lastT=t;
+    if(R){
+      update(dt);
+      if(R.phase==='plate'){
+        R.plateT+=dt;
+        /* 동작 줄이기면 세피아 전환을 밀지 않고 완성된 도판(p=1)을 바로 찍는다.
+           plate_reduced_s=0 이라 나눗셈 없이 hold 만 남는다. */
+        var pdur = REDUCED ? CFG.plate_reduced_s : CFG.plate_s;
+        drawPlate(pdur>0 ? clamp(R.plateT/pdur,0,1) : 1);
+        if(R.plateT >= pdur+CFG.plate_hold_s) showDexCard();
+      } else if(R.phase!=='card'){
+        draw(dt);
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+
+  /* ============================== §13 부트 · 테스트 훅 ============================== */
+  function bootTitleArt(){
+    /* 제목 화면의 실루엣. 판 밖이라 여기서는 인라인 <svg> 로 그린다 —
+       fill=currentColor 가 CSS 색을 그대로 받는다. */
+    var a=CFG.art.perched;
+    var d=''; for(var i=0;i<a.d.length;i++) d+='<path d="'+a.d[i]+'"/>';
+    $('titleArt').innerHTML='<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="'+
+      a.vb.join(' ')+'" aria-hidden="true">'+d+'</svg>';
+  }
+  function boot(){
+    lang=detectLang();
+    AudioSys.on = store.get('lw-sound')!=='off';
+    buildWorld();
+    newRound();
+    bootTitleArt();
+    resize();
+    applyI18n();
+    cv.setAttribute('tabindex','-1');   /* 제목 화면 동안 캔버스는 Tab 순서에서 빠진다 */
+    try{ $('startBtn').focus(); }catch(e){}
+    requestAnimationFrame(loop);
+  }
+
+  /* 다른 게임의 훅 관례를 따른다 */
+  window.LONGWINGS = {
+    config: CFG,
+    state: function(){ return R; },
+    cam: function(){ return cam; },
+    ga: function(){ return gaS; },
+    mode: function(){ return modeNow(); },
+    pure: { liftAt:liftAt, vertRate:vertRate, sinkOf:sinkOf, bandOf:bandOf,
+            heatNow:heatNow, windNow:windNow, wrapDelta:wrapDelta,
+            terrainAt:terrainAt, plateFit:plateFit },
+    /* pump_net_max = 0 을 수치로 확인한다.
+       최악의 연타 패턴들을 실제로 적분해 순 고도 변화가 0 을 넘지 않는지 본다. */
+    selftest: function(){
+      var out=[], dt=1/120;
+      var lifts=[0,20,54,66,96,118,150];
+      var periods=[0.02,0.05,0.1,0.25,0.5,1,2];
+      var worst=-Infinity, worstAt=null;
+      for(var li=0;li<lifts.length;li++){
+        for(var pi=0;pi<periods.length;pi++){
+          for(var duty=0.1; duty<=0.95; duty+=0.1){
+            var v=CFG.v_spread, net=0, T=0, per=periods[pi];
+            while(T<8){
+              var folded=((T%per)/per) < duty;
+              var rate=vertRate(lifts[li], folded, v);
+              var rSp =vertRate(lifts[li], false, v);
+              net += (rate-rSp)*dt;            /* '계속 펴고 있었을 때' 대비 순이득 */
+              var vT=folded?CFG.v_fold:CFG.v_spread;
+              v += (vT-v)*(1-Math.exp(-dt/CFG.v_tau));
+              T+=dt;
+            }
+            if(net>worst){ worst=net; worstAt={lift:lifts[li],period:per,duty:Math.round(duty*10)/10}; }
+          }
+        }
+      }
+      out.push({ name:'pump_net_max', pass: worst<=CFG.pump_net_max,
+                 worst_net_gain: Math.round(worst*1000)/1000, at: worstAt,
+                 note:'접었다 펴는 어떤 주기·듀티에서도 계속 편 경우보다 고도를 더 벌 수 없다' });
+      /* 같은 질문을 실제 적분기(stepBird)로 한 번 더 묻는다.
+         위 검사는 vertRate 라는 부등식만 본다 — 게임이 실제로 도는 코드는
+         stepBird 다. 여기서는 그 코드로 두 마리를 같은 자리·같은 고도에서
+         출발시켜, 한 마리는 연타하고 한 마리는 계속 펴게 두고 끝 고도를 잰다.
+         수평 이동은 매 스텝 되돌려 x 를 고정한다 — 자리를 옮겨 더 센 상승원을
+         만나는 것은 펌핑이 아니라 항법이고, 그건 이 게임이 권하는 바다. */
+      var wasOn=AudioSys.on; AudioSys.on=false;
+      var wGain=-Infinity, wAt=null, edge=false;
+      for(var xi=0; xi<24; xi++){
+        var X=CFG.world_w*xi/24;
+        for(var p2=0;p2<periods.length;p2++){
+          for(var du=0.2; du<=0.9; du+=0.2){
+            var bp=newBird(X,450,0), bs=newBird(X,450,0), T2=0, pr=periods[p2];
+            while(T2<2){
+              bp.folded=((T2%pr)/pr)<du; bs.folded=false;
+              stepBird(bp,dt); stepBird(bs,dt);
+              bp.x=X; bs.x=X;                 /* 항법 변수를 뺀다 */
+              T2+=dt;
+            }
+            if(bp.alt<=0||bs.alt<=0||bp.alt>=CFG.alt_ceiling||bs.alt>=CFG.alt_ceiling) edge=true;
+            var g=bp.alt-bs.alt;
+            if(g>wGain){ wGain=g; wAt={x:Math.round(X),period:pr,duty:Math.round(du*10)/10}; }
+          }
+        }
+      }
+      AudioSys.on=wasOn;
+      out.push({ name:'pump_net_max_integrator', pass: wGain<=CFG.pump_net_max && !edge,
+                 worst_net_gain: Math.round(wGain*1000)/1000, at: wAt, hit_clamp: edge,
+                 note:'실제 stepBird 로 2초를 돌려도 연타한 쪽이 계속 편 쪽보다 높을 수 없다' });
+      /* 부등식 자체를 직접 확인 */
+      var strict=true;
+      for(var l2=0;l2<=CFG.lift_max;l2+=5){ for(var v2=0;v2<=CFG.v_fold;v2+=10){
+        if(!(vertRate(l2,true,v2) < vertRate(l2,false,v2))) strict=false;
+      }}
+      out.push({ name:'fold_rate_strictly_below_spread', pass:strict });
+      /* 물 복귀가 상승 수단이 아닌지 */
+      out.push({ name:'relaunch_capped', pass: CFG.relaunch_alt < CFG.band_low,
+                 note:'물에서 돌아오는 높이는 고정이라 반복해도 그 위로 못 올라간다' });
+      /* 상승원 4종의 세기 순서 */
+      var L=CFG.lift;
+      out.push({ name:'source_order', pass: L.ridge.s>L.rock.s && L.rock.s>L.flock.s && L.flock.s>L.foam.s });
+      /* 도판을 플레이 캔버스에 그리지 않는지 (정적 확인용 표시) */
+      out.push({ name:'plate_never_on_play_canvas', pass:true,
+                 note:'도판 2장은 DOM <img>(#dxPlate,#dxSkel) 로만 존재한다' });
+
+      /* 얼린 그림을 옮길 때 목적지 크기를 명시하는지 — 화면이 돌아간 뒤에도
+         빈 종이가 남지 않아야 한다. 순수 함수 plateFit 을 직접 잰다. */
+      var dims=[[320,640],[640,320],[800,800],[1170,2532],[2532,1170],[1024,768]];
+      var fitOk=true, fitBad=null, EPS=1e-6;
+      for(var fi=0; fi<dims.length; fi++){ for(var di=0; di<dims.length; di++){
+        var f0=dims[fi], d0=dims[di], rc=plateFit(f0[0],f0[1],d0[0],d0[1]);
+        if(!rc){ fitOk=false; fitBad={from:f0,to:d0,rect:null}; continue; }
+        var inside = rc.sx>=-EPS && rc.sy>=-EPS &&
+                     rc.sx+rc.sw<=f0[0]+EPS && rc.sy+rc.sh<=f0[1]+EPS;
+        var aspect = Math.abs((rc.sw/rc.sh)-(d0[0]/d0[1]))<1e-9;
+        var maximal = Math.abs(rc.sw-f0[0])<EPS || Math.abs(rc.sh-f0[1])<EPS;
+        if(!(inside&&aspect&&maximal)){ fitOk=false; fitBad={from:f0,to:d0,rect:rc}; }
+      }}
+      out.push({ name:'plate_fit_covers_new_size',
+                 pass: fitOk && plateFit(0,0,10,10)===null, bad:fitBad,
+                 note:'세로/가로/정사각 어느 조합에서도 비율을 지킨 채 목적지를 가득 덮는다' });
+
+      /* §9 시연 억제의 계기가 '근처에 있었나'가 아니라 '실제로 떠올랐나'인지.
+         상승대 안(lift>=lift_eps)이면서도 가라앉는 자리와, 실제로 오르는 자리를
+         각각 찾아 1초씩 태워 본다. */
+      var wasOn2=AudioSys.on; AudioSys.on=false;
+      var weakP=null, strongP=null;
+      for(var sx=0; sx<CFG.world_w && (!weakP||!strongP); sx+=20){
+        for(var sa=60; sa<=CFG.alt_ceiling-60 && (!weakP||!strongP); sa+=20){
+          var lf=liftAt(sx,sa);
+          if(lf<CFG.lift_eps) continue;
+          var rt=vertRate(lf,false,CFG.v_spread);
+          if(rt<0 && !weakP) weakP={x:sx,alt:sa};
+          if(rt>0 && !strongP) strongP={x:sx,alt:sa};
+        }
+      }
+      var burn=function(pt){
+        var bb=newBird(pt.x, pt.alt, 0), T3=0;
+        while(T3<1){ stepBird(bb,dt); bb.x=pt.x; bb.alt=pt.alt; T3+=dt; }
+        return bb;
+      };
+      var wB = weakP?burn(weakP):null, sB = strongP?burn(strongP):null;
+      AudioSys.on=wasOn2;
+      out.push({ name:'demo_gate_counts_rising_only',
+                 pass: !!wB && !!sB && wB.liftS>0.9 && wB.liftWin===0 && sB.liftWin>0.9,
+                 weak_liftS: wB?Math.round(wB.liftS*100)/100:null,
+                 weak_liftWin: wB?Math.round(wB.liftWin*100)/100:null,
+                 strong_liftWin: sB?Math.round(sB.liftWin*100)/100:null,
+                 note:'상승대 안에서 가라앉는 1초는 시연 억제로 치지 않는다' });
+
+      /* 파생값 옆에 원값이 함께 실리는지 */
+      var rb=newBird(0,120,0), esrc=String(endRound);
+      out.push({ name:'raw_values_in_game_complete',
+                 pass: typeof rb.liftNet==='number' && typeof rb.altMax==='number' &&
+                       esrc.indexOf('lift_gain')>0 && esrc.indexOf('lift_net')>0 &&
+                       esrc.indexOf('alt_max')>0,
+                 note:'result 는 파생값이다 — 원값 셋을 같이 실어야 컷을 나중에 다시 그을 수 있다' });
+
+      /* 날씨 순환은 화면 전환이 아니라 완료된 판마다 넘어가는지.
+         이 항은 newRound() 를 한 번 부르고 판 상태(R·cam)를 되돌린다. */
+      var scKey='lw-scene', scWrites=0, realSet=store.set;
+      var savedR=R, savedCam={x:cam.x,alt:cam.alt,zoom:cam.zoom}, savedScene=store.get(scKey);
+      store.set=function(k,v){ if(k===scKey) scWrites++; return realSet.call(store,k,v); };
+      try{ newRound(); }catch(e){}finally{ store.set=realSet; }
+      R=savedR; cam.x=savedCam.x; cam.alt=savedCam.alt; cam.zoom=savedCam.zoom;
+      if(savedScene!==null && store.get(scKey)!==savedScene) realSet.call(store,scKey,savedScene);
+      out.push({ name:'newRound_never_advances_scene',
+                 pass: scWrites===0 && CFG.scenes[0].id==='calm',
+                 note:'제목 화면·Esc 왕복은 순환을 먹지 않는다 — 신규 방문자의 첫 판은 calm' });
+
+      /* seen 은 개수로 접힌 파생값이다. seen_mask 하나로 9종 전부가 되살아나는지
+         512가지 조합을 전수로 확인한다. R.seen 은 재웠다 그대로 돌려놓는다. */
+      var savedSeen=R.seen, maskOk=true, maskBad=null, NS=CFG.sights.length;
+      for(var mi=0; mi<(1<<NS); mi++){
+        var fake={};
+        for(var si=0; si<NS; si++){ if(mi&(1<<si)) fake[CFG.sights[si].id]=true; }
+        R.seen=fake;
+        var mm=seenMask(), cc=seenCount(), pop=0;
+        for(var bi=0; bi<NS; bi++){ if(mm&(1<<bi)) pop++; }
+        if(mm!==mi || cc!==pop){ maskOk=false; maskBad={want:mi,got:mm,seen:cc,pop:pop}; break; }
+      }
+      R.seen=savedSeen;
+      out.push({ name:'seen_mask_recovers_every_id',
+                 pass: maskOk && NS<=30, bad:maskBad, sights:NS,
+                 note:'seen 개수는 seen_mask 의 팝카운트로 되나온다 — 어떤 대상을 봤는지가 남는다' });
+
+      /* 설정 식별자와 숨김 시간이 원값으로 실리는지. game_vote 에는 붙이지 않는다. */
+      var srcS=String(gaRoundStart), srcC=String(gaRoundComplete);
+      out.push({ name:'cfg_ver_and_hidden_s_on_events',
+                 pass: typeof CFG_VER==='string' && CFG_VER.length>0 &&
+                       CFG_VER.indexOf(CFG.version)===0 &&
+                       srcS.indexOf('cfg_ver')>0 && srcC.indexOf('cfg_ver')>0 &&
+                       srcC.indexOf('hidden_s')>0 && typeof gaS.hiddenMs==='number' &&
+                       typeof hiddenMsNow()==='number' && hiddenMsNow()>=0,
+                 cfg_ver:CFG_VER,
+                 note:'컷·계수를 만진 전후를 GA4 에서 가를 수 있고, 벽시계 play_sec 과 판 시계의 차도 설명된다' });
+      out.push({ name:'test_round_is_marked',
+                 pass: CFG_VER === CFG.version + (TB_ON ? CFG.test_suffix : '') &&
+                       (!TB_ON || CFG_VER.indexOf(CFG.test_suffix) > 0),
+                 tb:TB_ON, round_s:CFG.round_s,
+                 note:'?tb= 로 줄인 판은 cfg_ver 꼬리로 실측에서 걸러낸다 — 계측을 끄지는 않는다' });
+
+      /* prefers-reduced-motion 이 실제로 소비되는 곳들 */
+      out.push({ name:'reduced_motion_consumed',
+                 pass: String(drawMotes).indexOf('REDUCED')>0 &&
+                       String(drawReadyHint).indexOf('REDUCED')>0 &&
+                       String(loop).indexOf('REDUCED')>0 &&
+                       CFG.plate_reduced_s===0 && CFG.reduced_ring_k>0 &&
+                       CFG.reduced_ring_alpha>0 && CFG.reduced_ring_alpha<=1,
+                 reduced:REDUCED,
+                 note:'티끌·대기 링·엔딩 세피아 셋에서 소비된다. 파도·구름 그림자·아지랑이는 판 자체라 줄이지 않는다' });
+
+      /* 투표를 키보드로 눌렀을 때 포커스가 <body> 로 떨어지지 않는지.
+         이벤트는 쏘지 않는다 — 규칙 함수만 직접 잰다. 초점은 원래 자리로 돌려놓는다. */
+      var beforeFocus=document.activeElement;
+      var noKey=voteReturnFocus(false), yesKey=voteReturnFocus(true);
+      var againEl=document.getElementById('againBtn');
+      /* 카드 오버레이는 display 가 아니라 visibility 로 숨는다 — offsetParent 로는
+         안 잡힌다. 실제로 초점을 받을 수 있는 상태일 때만 이동을 요구한다. */
+      var reachable=false;
+      try{
+        var cs=window.getComputedStyle(againEl);
+        reachable = !!againEl && againEl.getClientRects().length>0 &&
+                    cs.visibility!=='hidden' && cs.display!=='none';
+      }catch(e){}
+      var moved = !reachable || document.activeElement===againEl;
+      try{ if(beforeFocus && beforeFocus.focus) beforeFocus.focus({preventScroll:true}); }catch(e){}
+      var vq=document.querySelector('#gaVote .ga-vote-q');
+      out.push({ name:'vote_keyboard_keeps_focus',
+                 pass: noKey===null && yesKey===againEl && !!againEl && moved &&
+                       !!vq && vq.getAttribute('aria-live')==='polite',
+                 card_shown:reachable,
+                 note:'키보드 활성화(detail===0)면 다시 날기로 옮기고, 접수 문구는 live 로 읽힌다' });
+      /* 지형 클램프는 바위를 뚫지 않게 밀어낼 뿐이지만, 사면이 솟는 곳에서는 발밑이
+         올라오면서 공기 없이도 고도가 붙는다. 그래서 설계 문장은 '고도는 공기에서만'
+         이 아니라 **'상공대는 공기에서만'** 이 참이다 — 지형에 얹혀 얻는 최대 고도가
+         상공대 바닥보다 낮아야 한다. 계수를 만지면 여기서 가장 먼저 깨진다.
+         (중간대는 지형만으로도 닿는다. 이것은 의도된 것이고 절벽이 상승원인 이유다.) */
+      var gmax=0;
+      for(var gi=0; gi<4000; gi++){ var gv=terrainAt(gi/4000*CFG.world_w); if(gv>gmax) gmax=gv; }
+      out.push({ name:'high_band_is_air_only',
+                 pass: (gmax+CFG.terrain_clear) < CFG.band_high,
+                 floor_max: Math.round(gmax+CFG.terrain_clear),
+                 band_high: CFG.band_high,
+                 note:'지형에 얹혀 얻는 최대 고도 < 상공대 바닥' });
+      try{ console.table(out); }catch(e){}
+      return out;
+    },
+    goto: function(id){
+      if(id==='title') return toTitle();
+      if(id==='ready') return startReady();
+      if(id==='end'){ if(R.phase!=='play'){ startReady(); beginFlight(); } R.clock=CFG.round_s; return; }
+      return null;
+    }
+  };
+
+  boot();
+})();
+</script>
+</body>
+</html>
