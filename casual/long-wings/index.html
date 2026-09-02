@@ -355,26 +355,46 @@
 
   <!-- 엔딩 도감 카드
        ─────────────────────────────────────────────────────────────────────
-       ⚠ 출시 전 사람이 확인할 것 — 아래 수치는 CFG.card 안에 있고, 1910년 도판
-         원 캡션의 값(날개폭 18피트 = 5.5 m, "가장 큰 나는 동물" 등)을 쓰지 않는다.
-         에이전트가 검증한 값이 아니다. 다음 네 항목을 근거와 함께 대조할 것.
+       ⚠ 출시 전 사람이 확인할 것 — 아래 문장은 CFG.card 안에 있고, 에이전트가
+         검증한 값이 아니다. 2026-09-02 출처 감사에서 여덟 항목 중 다섯이
+         반박됐다(when · size 날개폭 · size 몸무게 · infer 먼바다 · skelCap).
+         확인 목록은 네 항목이 아니라 여덟 항목이다 — 목록에 없던 곳
+         (sights · plateCap · credit · 이형 문장)이 정확히 감사에서 빠졌었다.
 
-         (1) 시대 "후기 백악기, 약 8,600만~8,450만 년 전"
-             ← Niobrara Formation(Smoky Hill Chalk) 의 프테라노돈 산출 구간.
-               대조처: Bennett 1994 "Taxonomy and systematics of the late
-               Cretaceous pterosaur Pteranodon" / 해당 층서의 최신 연대 논문.
-         (2) 날개폭 "약 3.8 m ~ 6 m 안팎"
-             ← 소형/대형 형태(morph)의 폭. 대조처: Bennett 1992 (성적 이형 해석),
-               Bennett 2001 골격 기재. 6 m 를 넘는 값은 표본별 논쟁이 있으니
-               "안팎" 표현을 유지할 것.
-         (3) 몸무게 "20~40 kg 언저리, 폭이 넓음"
-             ← 추정치 편차가 큰 항목이다. 단일 값으로 좁히지 말 것.
-               대조처: Witton 2008 이후의 익룡 질량 추정 리뷰.
-         (4) 종(種) 단정 금지
-             ← /assets/lifeform/CREDITS.json 의 경고: perched 실루엣만
-               P. sternbergi 다(≠ longiceps). 카드는 속(屬)까지만 말한다.
+         (1) 시대 "후기 백악기, 약 8,600만~8,450만 년 전"  ← 반박됨
+             앞뒤 양쪽을 잘라냈고 방위 축("남북으로 갈라")도 뒤집혀 읽힌다.
+             바다가 남북으로 뻗어 대륙을 동/서로 가른다. 제안값 8,700만~8,000만
+             (피어 셰일 포함) 또는 8,700만~8,200만 (니오브라라만).
+         (2) 날개폭 "약 3.8 m ~ 6 m 안팎"  ← 반박됨
+             하한이 실제 표본 폭을 잘라낸다. 어린 개체 1.76 m (Yang et al. 2023),
+             큰 개체 7.25 m (Witton & Habib 2010). 온전한 표본은 3.91~6.37 m.
+         (3) 몸무게 "20~40 kg 언저리"  ← 반박됨
+             kg 에 몸집이 안 붙은 것이 결함. Witton 2008: 큰 형태 36.68 kg
+             (b=5.96 m) / 작은 형태 10.53 kg (b=3.7 m).
+         (4) 종(種) 단정 금지  ← 유지
+             /assets/lifeform/CREDITS.json 의 경고: perched 실루엣만
+             P. sternbergi 다(≠ longiceps). 카드는 속(屬)까지만 말한다.
+             다만 "여러 종으로 나뉘고"는 과장 — 화석 대다수가 속까지만 동정된다.
+         (5) infer "뼈의 비율은 바닷새와 닮았다"  ← 반박됨
+             근거로 삼은 Witton & Habib 2010 이 바로 그 항목을
+             "different functional proportions" 라고 부정한다.
+         (6) skelCap "콘도르와 나란히 놓아"  ← 반박됨
+             나란히가 아니라 프테라노돈 날개 안쪽에 겹쳐 그려져 있다. 원 캡션
+             (Fig. 78) 끝줄이 "The Condor's wing should be longer." 라고 자백하는데,
+             배포 크롭이 세로 캡션을 통째로 잘라내 이 카드 문장이 그림의
+             유일한 캡션이다.
+         (7) sights 아홉 줄  ← ledge 수정됨(2026-09-02), circling 미해결
+             "둥지"는 번식 행동 단정인데 프테라노돈의 알·둥지 화석은 없다 →
+             「절벽의 턱」으로 내렸다. "무리"(circling)는 사회성 단정이고
+             문헌이 0건이다 — 화면에 실제로 여러 마리가 뜨므로 보류.
+             infer("먼바다")와 seen-list(절벽·해안선)의 연안/외양 모순도 미해결.
+         (8) credit 연도 "1905·1910"  ← 미확정
+             도판 초출 연도이지 BHL 스캔 판본의 연도가 아니다. 판본 확정은
+             biodiversitylibrary.org 를 사람이 직접 열어야 한다(자동 취득 금지).
+             PhyloPic CC0 세 건은 api.phylopic.org 원본 조회로 통과.
 
          숫자를 고칠 때는 ko·ja·en 세 벌(CFG.card.ko/ja/en)을 함께 고친다.
+         세 벌의 단정 세기도 맞춘다 — en 이 ko/ja 보다 세게 말하는 곳이 있었다.
        ───────────────────────────────────────────────────────────────────── -->
   <div class="overlay" id="cardOv">
     <div class="card" id="dexCard" tabindex="-1">
@@ -721,7 +741,7 @@
         seenLabel:'이번 판에서 본 것',
         credit:'실루엣: PhyloPic (CC0) · 도판: Biodiversity Heritage Library 스캔 (퍼블릭 도메인, 1905·1910). 원장은 /assets/lifeform/CREDITS.json.',
         sights:{ shoal:'물고기 떼 그림자', foamline:'거품 수렴선', spray:'절벽 밑 물보라',
-                 ledge:'절벽의 둥지 턱', circling:'선회하는 무리', shimmer:'달궈진 바위의 아지랑이',
+                 ledge:'절벽의 턱', circling:'선회하는 무리', shimmer:'달궈진 바위의 아지랑이',
                  coastline:'해안선의 생김새', shadow:'물 위의 구름 그림자', sunroad:'물 위에 놓인 햇길' }
       },
       ja:{
@@ -742,7 +762,7 @@
         seenLabel:'このかいで見たもの',
         credit:'シルエット: PhyloPic (CC0) · 図版: Biodiversity Heritage Library スキャン (パブリックドメイン, 1905・1910)。台帳は /assets/lifeform/CREDITS.json。',
         sights:{ shoal:'魚のむれの影', foamline:'あわの収束線', spray:'崖の下のしぶき',
-                 ledge:'崖の巣だな', circling:'旋回するむれ', shimmer:'焼けた岩のかげろう',
+                 ledge:'崖のたな', circling:'旋回するむれ', shimmer:'焼けた岩のかげろう',
                  coastline:'海岸線のかたち', shadow:'水の上の雲の影', sunroad:'水の上の日の道' }
       },
       en:{
@@ -762,8 +782,8 @@
         infer:'Nobody ever watched a Pteranodon fly. Its fossils come from beds laid down far offshore, and its bone proportions resemble the seabirds that cross open ocean today. What we know is the bones; how it flew is what we reason from them.',
         seenLabel:'Seen this round',
         credit:'Silhouettes: PhyloPic (CC0) · Plates: Biodiversity Heritage Library scans (public domain, 1905 & 1910). Ledger at /assets/lifeform/CREDITS.json.',
-        sights:{ shoal:'a shoal of fish below', foamline:'a foam convergence line', spray:'spray at the cliff foot',
-                 ledge:'nesting ledges', circling:'a circling flock', shimmer:'heat shimmer off dark rock',
+        sights:{ shoal:'the shadow of a shoal below', foamline:'a foam convergence line', spray:'spray at the cliff foot',
+                 ledge:'a ledge on the cliff', circling:'a circling flock', shimmer:'heat shimmer off the rock',
                  coastline:'the shape of the coast', shadow:'cloud shadows on the water', sunroad:'the sun laid on the water' }
       }
     },
