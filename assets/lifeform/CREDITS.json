@@ -1,7 +1,8 @@
 {
-  "_note": "CC0 는 저작자 표시를 요구하지 않는다. 이 파일은 준수 의무가 아니라 감사·방어용 원장이다 — 나중에 누가 물었을 때 '어디서 언제 어떤 라이선스로 받았는지'를 대는 근거. 원본은 src/ 에 sha256 과 함께 남아 있고, 파생물은 tools/build-lifeform.sh 로 재생성된다.",
+  "_note": "CC0 는 저작자 표시를 요구하지 않는다. 이 파일은 준수 의무가 아니라 감사·방어용 원장이다 — 나중에 누가 물었을 때 '어디서 언제 어떤 라이선스로 받았는지'를 대는 근거. 원본은 src/ 에 sha256 과 함께 남아 있고, 파생물은 tools/build-lifeform.sh 로 재생성된다. src/ 와 tools/ 는 저장소(git)에만 있고 배포(.assetsignore)에는 실리지 않는다 — sha256 대조는 저장소에서 한다.",
   "_schema": "file, title, artist, contributor, year, license, license_url, page, source, source_id, attribution_required, modifications, retrieved, sha256(원본)",
-  "_verified": "2026-09-01",
+  "_verified": "2026-09-04",
+  "_corrections": "2026-09-04 — Lankester 도판(Extinct animals p.231) source_id BHL20384813 → BHL20384814 (HEAD 로 확인, casual/long-wings/SOURCES.md). 09-01 검증값이 틀렸던 것을 바로잡음.",
   "items": [
     {
       "file": "assets/lifeform/pteranodon-glide-side.svg",
@@ -69,7 +70,7 @@
       "license_url": "https://commons.wikimedia.org/wiki/Template:PD-old",
       "page": "https://commons.wikimedia.org/wiki/File:Extinct_animals_(Page_231)_BHL20384814.jpg",
       "source": "wikimedia-commons",
-      "source_id": "Extinct animals (Page 231) BHL20384813",
+      "source_id": "Extinct animals (Page 231) BHL20384814",
       "attribution_required": false,
       "modifications": "본문·여백 잘라내고 도판만 (124,1150,1562,2140); 그레이스케일; 1200px; 가우시안 0.9; JPEG q76",
       "retrieved": "2026-09-01",

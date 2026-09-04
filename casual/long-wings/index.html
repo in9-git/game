@@ -171,6 +171,8 @@
   .card .sub{font-size:.7rem;font-weight:700;letter-spacing:.1em;color:var(--ink-soft);margin-bottom:14px;}
   .card .desc{font-size:.92rem;line-height:1.65;color:var(--sepia);white-space:pre-line;margin-bottom:12px;}
   .card .quiet{font-size:.76rem;line-height:1.6;color:var(--ink-soft);margin-top:10px;}
+  .card .quiet a{color:inherit;text-decoration:underline;text-underline-offset:.18em;}
+  .card .quiet a:focus-visible{outline:2px solid currentColor;outline-offset:3px;border-radius:2px;}
   .btn{
     font-family:inherit;font-size:1rem;font-weight:800;
     padding:14px 26px;min-height:48px;border:none;border-radius:999px;cursor:pointer;
@@ -350,51 +352,68 @@
       <p class="desc" id="tDesc"></p>
       <button class="btn" id="startBtn"></button>
       <p class="quiet" id="tKeys"></p>
+      <p class="quiet"><a id="tvLink" href="?tv=1">교실 큰 화면으로</a></p>
     </div>
   </div>
 
-  <!-- 엔딩 도감 카드
+  <!-- 엔딩 도감 카드 — 출처 원장 (2026-09-04 오픈판)
        ─────────────────────────────────────────────────────────────────────
-       ⚠ 출시 전 사람이 확인할 것 — 아래 문장은 CFG.card 안에 있고, 에이전트가
-         검증한 값이 아니다. 2026-09-02 출처 감사에서 여덟 항목 중 다섯이
-         반박됐다(when · size 날개폭 · size 몸무게 · infer 먼바다 · skelCap).
-         확인 목록은 네 항목이 아니라 여덟 항목이다 — 목록에 없던 곳
-         (sights · plateCap · credit · 이형 문장)이 정확히 감사에서 빠졌었다.
+       아래 문장은 CFG.card(ko/ja/en 세 벌) 안에 있다. 숫자·단정은 팀장이 직접 읽은
+       1차 출처 안에서만 쓴다 — 에이전트 판정은 측정 전까지 사실이 아니다. 고칠 때는
+       세 벌을 함께 고치고 단정 세기를 맞춘다. 원문 대조표는 이 폴더의 SOURCES.md
+       (.assetsignore 로 배포 제외). 2026-09-02 감사에서 반박된 항목은 아래처럼 바꿨다.
 
-         (1) 시대 "후기 백악기, 약 8,600만~8,450만 년 전"  ← 반박됨
-             앞뒤 양쪽을 잘라냈고 방위 축("남북으로 갈라")도 뒤집혀 읽힌다.
-             바다가 남북으로 뻗어 대륙을 동/서로 가른다. 제안값 8,700만~8,000만
-             (피어 셰일 포함) 또는 8,700만~8,200만 (니오브라라만).
-         (2) 날개폭 "약 3.8 m ~ 6 m 안팎"  ← 반박됨
-             하한이 실제 표본 폭을 잘라낸다. 어린 개체 1.76 m (Yang et al. 2023),
-             큰 개체 7.25 m (Witton & Habib 2010). 온전한 표본은 3.91~6.37 m.
-         (3) 몸무게 "20~40 kg 언저리"  ← 반박됨
-             kg 에 몸집이 안 붙은 것이 결함. Witton 2008: 큰 형태 36.68 kg
-             (b=5.96 m) / 작은 형태 10.53 kg (b=3.7 m).
-         (4) 종(種) 단정 금지  ← 유지
-             /assets/lifeform/CREDITS.json 의 경고: perched 실루엣만
-             P. sternbergi 다(≠ longiceps). 카드는 속(屬)까지만 말한다.
-             다만 "여러 종으로 나뉘고"는 과장 — 화석 대다수가 속까지만 동정된다.
-         (5) infer "뼈의 비율은 바닷새와 닮았다"  ← 반박됨
-             근거로 삼은 Witton & Habib 2010 이 바로 그 항목을
-             "different functional proportions" 라고 부정한다.
-         (6) skelCap "콘도르와 나란히 놓아"  ← 반박됨
-             나란히가 아니라 프테라노돈 날개 안쪽에 겹쳐 그려져 있다. 원 캡션
-             (Fig. 78) 끝줄이 "The Condor's wing should be longer." 라고 자백하는데,
-             배포 크롭이 세로 캡션을 통째로 잘라내 이 카드 문장이 그림의
-             유일한 캡션이다.
-         (7) sights 아홉 줄  ← ledge 수정됨(2026-09-02), circling 미해결
-             "둥지"는 번식 행동 단정인데 프테라노돈의 알·둥지 화석은 없다 →
-             「절벽의 턱」으로 내렸다. "무리"(circling)는 사회성 단정이고
-             문헌이 0건이다 — 화면에 실제로 여러 마리가 뜨므로 보류.
-             infer("먼바다")와 seen-list(절벽·해안선)의 연안/외양 모순도 미해결.
-         (8) credit 연도 "1905·1910"  ← 미확정
-             도판 초출 연도이지 BHL 스캔 판본의 연도가 아니다. 판본 확정은
-             biodiversitylibrary.org 를 사람이 직접 열어야 한다(자동 취득 금지).
-             PhyloPic CC0 세 건은 api.phylopic.org 원본 조회로 통과.
+       (1) when 「대략 8,700만~8,000만 년 전 … 북에서 남으로 이어진 얕은 바다」 ← 적용됨 09-03
+           Hone et al. 2018 PeerJ (PMC6296329) "Late Cretaceous (Coniacian-Campanian)";
+           cretaceousatlas.org/geology "relatively shallow body of marine water called the
+           Western Interior Seaway", "The WIS divided North America in two", 스모키힐 처크
+           "deposited 87-82 million years ago"; 피어 셰일 ~80 Ma (oceansofkansas.com).
+       (2) size 날개폭 「4 m~6 m 남짓 · 2 m 안 되는 어린 개체 · 7 m 조금 넘는 큰 개체」 ← 적용됨 09-04
+           Yang et al. 2023 Proc R Soc B (PMC10354479): 온전한 앞다리 표본 3.91~6.37 m,
+           "the smallest (and incomplete) specimen had an estimated wingspan of 1.76 m",
+           "smaller juveniles (less than 1.76 m wingspan)"; Witton & Habib 2010 "The largest
+           Pteranodon spanned around 7.25 m". 「가장 작은 화석 · 가장 큰 것」은 원문의 the smallest
+           specimen / the largest Pteranodon 을 그대로 옮긴 것 — 09-04 재검토에서 en 만 개수를
+           세던 것을 세 벌 통일했다. 그 밖의 개수(하나·몇)는 원문이 세지 않으므로 쓰지 않는다.
+       (3) size 몸무게 「한 추정으로 큰 쪽 40 kg 미만 · 작은 쪽 10 kg 안팎」 ← 적용됨 09-04
+           Witton 2008 Zitteliana B28: 36.68 kg (large morph) / 10.53 kg (small morph).
+           범위 20~40 은 원문에 없어 뺐다. 「큰 쪽·작은 쪽 두 가지」도 같은 원문의
+           large/small morph(「형」은 아이가 兄 으로 읽어 「쪽」으로). 「재는 방법마다 다르다」는
+           표에 근거 행이 없어 뺐다(09-04 재검토). 「암수」해석은 Bennett 1992 JVP 제목("Sexual dimorphism of
+           Pteranodon …")만 확인했고 본문을 못 읽어 뺐다 — 사람이 논문을 읽으면 넣는다.
+       (4) sci 「머리뼈가 없으면 속까지만」 ← 적용됨 09-04
+           Bennett 2000 KGS "The postcranial skeleton is of no taxonomic value at the species
+           level"; Yang 2023 두 종은 "do not differ in their postcranial skeletal anatomy".
+           어원 「이빨 없는 날개」(그리스어 pteron·an-·odon)는 사전 수준의 사실이라 표 밖 예외.
+           「종을 어떻게 나눌지는 논의 중」은 표에 논쟁 행이 없어 뺐고(09-04 재검토), 「속까지만」은
+           아이가 「안쪽」으로 읽어 「프테라노돈이라는 데까지만」으로 풀었다.
+       (5) infer 「길고 좁았던 날개 … 바닷새에 빗대어 보지만 비율이 다르다는 연구도」 ← 09-04
+           「의견이 갈린다」는 표에 논쟁 행이 없어 뺐고, "different functional proportions" 행을 그대로 옮겼다.
+           Witton & Habib 2010 "different functional proportions" 를 존중해 「뼈 비율이
+           바닷새와 닮았다」를 뺐다. 「길고 좁았던」은 Yang 2023 "aspect ratio increasing
+           from 10.40 to 16.67", "the elongated wing morphology is evidently present in the
+           smallest specimen". Witton 2008 의 "broad, ankle-attaching wings" 는 막이 발목까지
+           닿는다는 뜻이라 충돌하지 않는다.
+       (6) skelCap 「콘도르 골격을 날개 안쪽에 겹쳐」 ← 적용됨 09-03
+           도판 원 캡션(Fig. 78) 끝줄 "The Condor's wing should be longer." 를 그대로 옮겼다
+           (「그렸어야」는 원문에 없어 뺐다). 복원도는 Williston, Smithsonian Report 1901 —
+           원 캡션의 "From the Smithsonian Report, 1901" 은 출전이지 최초 발표가 아니므로 en 의
+           "first" 를 뺐다(09-04 재검토). 책 연도(100년도 더 된)와 그림 연도(1901)는 문장을 나눴다.
+       (7) sights ← ledge 「절벽의 턱」(09-02). circling 「선회하는 무리」는 사회성 단정이지만
+           화면에 실제로 여러 마리가 뜨므로 보류(문헌 0건). 「먼바다」와 절벽·해안선 풍경의
+           연안/외양 긴장도 보류.
+       (8) 도판 연도 ← 카드에서 뺐다 09-04. plateCap/skelCap 은 「100년도 더 된 책」, credit 는
+           책 제목만. archive.org 목록으로 초판 연도(Lankester, Extinct Animals 1905 · Hutchinson,
+           Extinct Monsters and Creatures of Other Days 1910)는 확인했으나 BHL 스캔이 어느
+           판본인지는 사람이 biodiversitylibrary.org 를 열어야 한다(자동 취득 금지).
+           CREDITS.json 의 year 는 초판 연도로 둔다.
+       (9) wing 「네 번째 손가락 … 바깥쪽 앞모서리」 ← 적용됨 09-03
+           Yang 2023 보충자료 AMNH 6158: 날개손가락 1,704 mm > 팔 1,098 mm; Witton 2008
+           "ankle-attaching wings"; 안쪽 앞모서리는 어깨~익수골(Pittman et al. 2021, PMC8612209)
+           이라 「바깥쪽」을 붙였다. 「팔 전체보다 길다」는 이 표본 한 점의 값이라 프테라노돈에
+           한정했고(09-04), 「익룡은 네 번째 손가락으로 난다」는 어원과 같은 사전 수준 예외다.
 
-         숫자를 고칠 때는 ko·ja·en 세 벌(CFG.card.ko/ja/en)을 함께 고친다.
-         세 벌의 단정 세기도 맞춘다 — en 이 ko/ja 보다 세게 말하는 곳이 있었다.
+       인트로 desc 는 en 만 "The air does the lifting." 으로 눌렀다(ko/ja 는 그대로).
        ───────────────────────────────────────────────────────────────────── -->
   <div class="overlay" id="cardOv">
     <div class="card" id="dexCard" tabindex="-1">
@@ -686,6 +705,7 @@
         home:'홈',
         desc:'누르고 있으면 날개를 접어요. 놓으면 펴져요.\n올라가는 일은 공기가 합니다.',
         start:'바다로 나가기',
+        tvOn:'교실 큰 화면으로 (프로젝터용)', tvOff:'보통 화면으로',
         keys:'키보드: Space 또는 ↑ · 두 번째 사람은 J 또는 L · Esc 로 제목 화면',
         again:'다시 날기',
         goHome:'홈으로',
@@ -697,6 +717,7 @@
         home:'ホーム',
         desc:'おしているあいだ、つばさを たたみます。はなすと ひろがります。\nのぼるのは 風の しごとです。',
         start:'海へ でる',
+        tvOn:'教室の大画面へ (プロジェクター用)', tvOff:'ふつうの画面へ',
         keys:'キーボード: Space または ↑ · ふたりめは J か L · Esc でタイトルへ',
         again:'もういちど とぶ',
         goHome:'ホームへ',
@@ -706,8 +727,9 @@
       },
       en:{
         home:'Home',
-        desc:'Hold to fold your wings. Let go to spread them.\nOnly the air can take you up.',
+        desc:'Hold to fold your wings. Let go to spread them.\nThe air does the lifting.',
         start:'Out to sea',
+        tvOn:'Classroom screen (for a projector)', tvOff:'Normal screen',
         keys:'Keyboard: Space or ↑ · second player J or L · Esc for the title screen',
         again:'Fly again',
         goHome:'Home',
@@ -721,25 +743,25 @@
        교육 축 두 개:
          (1) 「익룡의 날개는 새의 날개가 아니다」 — 해부도로 보여준다
          (2) 「바다 위 비행은 추론이다」 — 아는 것과 추론한 것의 구분
-       치수는 1910년 원 캡션 값(날개폭 18피트 등)이 아니라 현대 추정치를 쓴다. */
+       치수는 도판 원 캡션 값(날개폭 18피트 등)이 아니라 현대 추정치를 쓴다. */
     card:{
       ko:{
         name:'프테라노돈',
         sub:'Pteranodon · 백악기의 바다 위',
-        plateCap:'1905년 도판 — 그 시절 사람들이 상상한 비행 자세입니다. 지금 보는 복원과는 다릅니다.',
-        skelCap:'1910년 도판 — 골격 복원(콘도르와 나란히 놓아 크기를 견주었습니다).',
+        plateCap:'100년도 더 된 책의 도판 — 그 시절 사람들이 상상한 비행 자세입니다. 지금 보는 복원과는 다릅니다.',
+        skelCap:'역시 100년도 더 된 책의 도판입니다. 그림 자체는 1901년에 발표된 골격 복원도로, 크기를 견주려고 콘도르의 골격을 날개 안쪽에 겹쳐 그렸습니다. 원래 설명글에도 「콘도르의 날개는 더 길어야 한다」고 적혀 있어, 실제 차이는 그림보다 작습니다.',
         sciLabel:'이름',
-        sci:'프테라노돈속(Pteranodon). 표본에 따라 여러 종으로 나뉘고, 어느 표본이 어느 종인지는 아직 논의 중입니다. 이름은 「이빨 없는 날개」라는 뜻입니다.',
+        sci:'프테라노돈속(Pteranodon). 머리뼈가 없는 화석은 프테라노돈이라는 데까지만 알 수 있고, 어느 종인지는 머리뼈로 가립니다. 이름은 「이빨 없는 날개」라는 뜻입니다.',
         whenLabel:'언제',
-        when:'후기 백악기, 약 8,600만~8,450만 년 전. 지금의 북아메리카 한가운데를 남북으로 갈라놓았던 얕은 바다 위를 날았습니다.',
+        when:'후기 백악기, 대략 8,700만~8,000만 년 전. 그때 북아메리카 한가운데에는 북쪽에서 남쪽으로 길게 이어진 얕은 바다가 있어서, 대륙을 동쪽과 서쪽으로 갈라놓았습니다. 프테라노돈은 그 바다 위를 날았습니다.',
         sizeLabel:'크기',
-        size:'날개폭은 표본에 따라 약 3.8 m 에서 6 m 안팎까지. 큰 개체와 작은 개체의 차이가 뚜렷해서, 같은 종의 암수로 보는 견해가 있습니다. 몸무게 추정치는 20~40 kg 언저리지만 폭이 넓습니다.',
+        size:'날개폭은 뼈가 잘 남은 표본으로 재면 대략 4 m 에서 6 m 남짓이고, 몸집은 큰 쪽과 작은 쪽, 두 가지가 알려져 있습니다. 가장 작은 화석은 어린 개체로 2 m 가 안 되고, 가장 큰 것은 7 m 를 조금 넘게 어림잡습니다. 몸무게는 한 추정으로 큰 쪽이 40 kg 이 채 안 되고, 작은 쪽은 10 kg 안팎입니다.',
         wingLabel:'날개',
-        wing:'익룡의 날개는 새의 날개가 아닙니다. 새는 팔과 손에 깃털을 답니다. 익룡은 네 번째 손가락 하나를 몸통만큼 길게 늘이고, 그 손가락과 몸 사이에 얇은 피부막을 폅니다. 손가락 한 개가 곧 날개의 앞모서리입니다.',
+        wing:'익룡의 날개는 새의 날개가 아닙니다. 새는 팔과 손에 깃털을 답니다. 익룡은 네 번째 손가락 하나를 아주 길게 늘이고, 그 손가락 뒤로 몸과 뒷다리까지 얇은 피부막을 폅니다. 프테라노돈은 그 손가락 하나가 팔 전체보다 깁니다. 날개 바깥쪽의 앞모서리는 그 손가락 한 개가 만듭니다.',
         inferTitle:'바다 위 비행은 추론입니다',
-        infer:'프테라노돈이 나는 모습을 본 사람은 없습니다. 화석은 해안에서 먼 바다 밑에 쌓인 지층에서 나오고, 뼈의 비율은 오늘날 먼바다를 나는 바닷새와 닮았습니다. 우리가 아는 것은 뼈이고, 나는 방식은 거기서 미루어 짚은 것입니다.',
+        infer:'프테라노돈이 나는 모습을 본 사람은 없습니다. 화석은 해안에서 멀리 떨어진 바다 밑에 쌓인 지층에서 나옵니다. 날개가 길고 좁았던 것은 뼈로 알 수 있어서 학자들은 먼바다를 오래 나는 바닷새에 빗대어 보지만, 날개의 비율이 그런 바닷새와는 다르다는 연구도 있습니다. 우리가 아는 것은 뼈이고, 나는 방식은 거기서 미루어 짚은 것입니다.',
         seenLabel:'이번 판에서 본 것',
-        credit:'실루엣: PhyloPic (CC0) · 도판: Biodiversity Heritage Library 스캔 (퍼블릭 도메인, 1905·1910). 원장은 /assets/lifeform/CREDITS.json.',
+        credit:'실루엣: PhyloPic (CC0) · 도판: Lankester 《Extinct Animals》·Hutchinson 《Extinct Monsters and Creatures of Other Days》, Biodiversity Heritage Library 스캔 (퍼블릭 도메인). 원장은 /assets/lifeform/CREDITS.json.',
         sights:{ shoal:'물고기 떼 그림자', foamline:'거품 수렴선', spray:'절벽 밑 물보라',
                  ledge:'절벽의 턱', circling:'선회하는 무리', shimmer:'달궈진 바위의 아지랑이',
                  coastline:'해안선의 생김새', shadow:'물 위의 구름 그림자', sunroad:'물 위에 놓인 햇길' }
@@ -747,20 +769,20 @@
       ja:{
         name:'プテラノドン',
         sub:'Pteranodon · 白亜紀の海の上',
-        plateCap:'1905年の図版 — 当時の人が想像した飛ぶすがたです。いまの復元とはちがいます。',
-        skelCap:'1910年の図版 — 骨格の復元(コンドルとならべて大きさをくらべています)。',
+        plateCap:'100年以上前の本の図版 — 当時の人が想像した飛ぶすがたです。いまの復元とはちがいます。',
+        skelCap:'これも100年以上前の本の図版です。絵そのものは1901年に発表された骨格の復元図で、大きさをくらべるためにコンドルの骨格をつばさの内がわに重ねてあります。もとの説明にも「コンドルのつばさはもっと長いはずだ」と書いてあるので、じっさいの差は絵よりも小さいです。',
         sciLabel:'なまえ',
-        sci:'プテラノドン属(Pteranodon)。標本によっていくつかの種にわけられ、どの標本がどの種かはいまも議論の途中です。名まえは「歯のない翼」という意味です。',
+        sci:'プテラノドン属(Pteranodon)。頭の骨がない化石は、プテラノドンだというところまでしかわからず、どの種かは頭の骨で見分けます。名まえは「歯のない翼」という意味です。',
         whenLabel:'いつ',
-        when:'白亜紀後期、およそ8600万~8450万年前。いまの北アメリカを南北にわけていた浅い海の上を飛んでいました。',
+        when:'白亜紀後期、およそ8700万~8000万年前。そのころ北アメリカのまん中には、北から南へ長くつづくあさい海があって、大陸を東と西にわけていました。プテラノドンはその海の上を飛んでいました。',
         sizeLabel:'おおきさ',
-        size:'翼開長は標本によって約3.8mから6mほど。大きい個体と小さい個体の差がはっきりしていて、同じ種のオスとメスとみる説があります。体重の推定は20~40kgあたりですが、幅がひろいです。',
+        size:'つばさをひろげた長さは、骨がよくのこった標本ではかると、だいたい4mから6mあまりで、体の大きさは大きいほうと小さいほうの二つが知られています。いちばん小さい化石は子どもで2mにとどかず、いちばん大きいものは7mを少しこえると見つもられています。体重は、ある見つもりでは大きいほうが40kgに少したりず、小さいほうは10kgぐらいです。',
         wingLabel:'つばさ',
-        wing:'翼竜の翼は鳥の翼ではありません。鳥は腕と手に羽毛をつけます。翼竜は四番目の指を胴ほどに長くのばし、その指と体のあいだにうすい皮膜をはります。指一本がそのまま翼の前縁です。',
+        wing:'翼竜の翼は鳥の翼ではありません。鳥は腕と手に羽毛をつけます。翼竜は四番目の指をとても長くのばし、その指のうしろから体と後ろあしまで、うすい皮膜をはります。プテラノドンでは、その指一本が腕ぜんたいよりも長いのです。翼の外がわの前のふちは、その指一本でできています。',
         inferTitle:'海の上の飛行は「推論」です',
-        infer:'プテラノドンが飛ぶすがたを見た人はいません。化石は岸から遠い海の底にたまった地層から出てきて、骨の比率はいまの外洋の海鳥に似ています。わかっているのは骨で、飛びかたはそこから推しはかったものです。',
+        infer:'プテラノドンが飛ぶすがたを見た人はいません。化石は岸から遠くはなれた海の底にたまった地層から出てきます。つばさが長くほそかったことは骨からわかるので、学者は外洋を長く飛ぶ海鳥にたとえてみますが、つばさの割合はそうした海鳥とはちがうという研究もあります。わかっているのは骨で、飛びかたはそこから推しはかったものです。',
         seenLabel:'このかいで見たもの',
-        credit:'シルエット: PhyloPic (CC0) · 図版: Biodiversity Heritage Library スキャン (パブリックドメイン, 1905・1910)。台帳は /assets/lifeform/CREDITS.json。',
+        credit:'シルエット: PhyloPic (CC0) · 図版: Lankester《Extinct Animals》・Hutchinson《Extinct Monsters and Creatures of Other Days》, Biodiversity Heritage Library スキャン (パブリックドメイン)。台帳は /assets/lifeform/CREDITS.json。',
         sights:{ shoal:'魚のむれの影', foamline:'あわの収束線', spray:'崖の下のしぶき',
                  ledge:'崖のたな', circling:'旋回するむれ', shimmer:'焼けた岩のかげろう',
                  coastline:'海岸線のかたち', shadow:'水の上の雲の影', sunroad:'水の上の日の道' }
@@ -768,20 +790,20 @@
       en:{
         name:'Pteranodon',
         sub:'Pteranodon · over a Cretaceous sea',
-        plateCap:'Plate from 1905 — how people then imagined it in flight. Not how it is reconstructed today.',
-        skelCap:'Plate from 1910 — skeletal reconstruction, set beside a condor for scale.',
+        plateCap:'A plate from a book more than a century old — how people then imagined it in flight. Not how it is reconstructed today.',
+        skelCap:'Also a plate from a book more than a century old. The drawing itself is a skeletal reconstruction published in 1901, with a condor skeleton drawn inside the wing for scale. The original caption says the condor\'s wing should be longer, so the real difference is smaller than it looks.',
         sciLabel:'Name',
-        sci:'The genus Pteranodon. Specimens are split into several species, and which specimen belongs where is still argued about. The name means "toothless wing".',
+        sci:'The genus Pteranodon. Without the skull a fossil can only be placed as Pteranodon; which species it belongs to comes down to the skull. The name means "toothless wing".',
         whenLabel:'When',
-        when:'Late Cretaceous, roughly 86 to 84.5 million years ago, over the shallow sea that once cut North America in two from north to south.',
+        when:'Late Cretaceous, roughly 87 to 80 million years ago. Back then a shallow sea ran the length of North America from north to south, splitting the continent into an eastern half and a western half. Pteranodon flew over that sea.',
         sizeLabel:'Size',
-        size:'Wingspan runs from about 3.8 m to around 6 m depending on the specimen. Large and small individuals differ sharply, which some read as males and females of one species. Mass estimates sit near 20–40 kg, but the range is wide.',
+        size:'Measured from specimens with the bones well preserved, the wingspan runs from about 4 m to a little over 6 m, and two body sizes are known, a large form and a small form. The smallest fossil is a young one under 2 m, and the largest is put at a little over 7 m. By one estimate the large form came to a little under 40 kg, and the small form to about 10 kg.',
         wingLabel:'Wing',
-        wing:'A pterosaur wing is not a bird wing. A bird carries feathers on its arm and hand. A pterosaur stretched its fourth finger to the length of its body and spread a thin skin membrane between that finger and its side. One finger is the whole leading edge.',
+        wing:'A pterosaur wing is not a bird wing. A bird carries feathers on its arm and hand. A pterosaur stretched its fourth finger out very long, and behind that finger a thin skin membrane ran back to its body and hind legs. In Pteranodon that one finger is longer than the whole arm. The outer leading edge of the wing is that one finger.',
         inferTitle:'Flight over the sea is an inference',
-        infer:'Nobody ever watched a Pteranodon fly. Its fossils come from beds laid down far offshore, and its bone proportions resemble the seabirds that cross open ocean today. What we know is the bones; how it flew is what we reason from them.',
+        infer:'Nobody ever watched a Pteranodon fly. Its fossils come from beds laid down far offshore. The bones show the wings were long and narrow, so researchers compare it to seabirds that cross open ocean, though its wing proportions have been found to differ from theirs. What we know is the bones; how it flew is what we reason from them.',
         seenLabel:'Seen this round',
-        credit:'Silhouettes: PhyloPic (CC0) · Plates: Biodiversity Heritage Library scans (public domain, 1905 & 1910). Ledger at /assets/lifeform/CREDITS.json.',
+        credit:'Silhouettes: PhyloPic (CC0) · Plates: Lankester, Extinct Animals, and Hutchinson, Extinct Monsters and Creatures of Other Days, from Biodiversity Heritage Library scans (public domain). Ledger at /assets/lifeform/CREDITS.json.',
         sights:{ shoal:'the shadow of a shoal below', foamline:'a foam convergence line', spray:'spray at the cliff foot',
                  ledge:'a ledge on the cliff', circling:'a circling flock', shimmer:'heat shimmer off the rock',
                  coastline:'the shape of the coast', shadow:'cloud shadows on the water', sunroad:'the sun laid on the water' }
@@ -1702,7 +1724,7 @@
     ctx.fillRect(cx, 0, s.rw*cam.zoom+40, H);
     ctx.restore();
 
-    /* 절벽의 둥지 턱 — 중간대에서 보이는 것 */
+    /* 절벽의 턱 — 중간대에서 보이는 것(둥지가 아니다: 알·둥지 화석 근거 없음) */
     if(cam.zoom>0.48){
       var nn=mulberry(s.seed*29+1);
       for(var n=0;n<5;n++){
@@ -2167,6 +2189,8 @@
      합류 시점에 이벤트를 하나 더 쏘거나 필드명을 바꾸는 것은 포탈 계측 표준 v1
      (step 은 start|replay 둘뿐, mode 는 두 이벤트에 공통)을 어기므로,
      표준 개정 없이 여기서 임의로 바꾸지 않는다. */
+  /* ?tv=1 은 제목 화면의 「교실 큰 화면으로」 링크로도 들어온다(09-04). 그래서 class 는
+     '큰 화면 모드를 켰다'이지 교실의 증명이 아니다 — 필드는 표준 v1 대로 두고 해석만 그렇게 한다. */
   function modeNow(){
     if(TV) return 'class';
     return (R && R.p2Joined) ? 'hotseat' : 'solo';
@@ -2236,6 +2260,8 @@
     $('tSub').textContent=otherNames();
     $('tDesc').textContent=u.desc;
     $('startBtn').textContent=u.start;
+    var tvOn=document.body.classList.contains('tv'), tl=$('tvLink');
+    if(tl){ tl.textContent= tvOn? u.tvOff : u.tvOn; tl.setAttribute('href', tvOn? './' : '?tv=1'); }
     $('tKeys').textContent=u.keys;
     $('homeTxt').textContent=u.home;
     $('againBtn').textContent=u.again;

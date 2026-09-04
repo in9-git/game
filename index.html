@@ -421,7 +421,7 @@ body {
         <button onclick="setLang('en')" data-lang="en">EN</button>
       </div>
       <div class="header-stats">
-        <span data-i18n="games">게임 <span class="stat-num" id="totalGames">23</span></span>
+        <span data-i18n="games">게임 <span class="stat-num" id="totalGames">24</span></span>
         <span data-i18n="categories">카테고리 <span class="stat-num">8</span></span>
       </div>
     </div>
@@ -507,7 +507,7 @@ body {
     <div class="cat-card" data-filter="all" onclick="filterGames('all')">
       <div class="cat-icon">🎮</div>
       <div class="cat-name" id="cat-all">전체</div>
-      <div class="cat-count">23</div>
+      <div class="cat-count">24</div>
     </div>
     <div class="cat-card" data-filter="board" onclick="filterGames('board')">
       <div class="cat-icon">♟️</div>
@@ -522,7 +522,7 @@ body {
     <div class="cat-card" data-filter="simulation" onclick="filterGames('simulation')">
       <div class="cat-icon">🏗️</div>
       <div class="cat-name" id="cat-sim">시뮬레이션</div>
-      <div class="cat-count">6</div>
+      <div class="cat-count">7</div>
     </div>
     <div class="cat-card" data-filter="strategy" onclick="filterGames('strategy')">
       <div class="cat-icon">🧠</div>
@@ -532,7 +532,7 @@ body {
     <div class="cat-card" data-filter="casual" onclick="filterGames('casual')">
       <div class="cat-icon">☕</div>
       <div class="cat-name" id="cat-casual">캐주얼</div>
-      <div class="cat-count">14</div>
+      <div class="cat-count">15</div>
     </div>
     <div class="cat-card" data-filter="action" onclick="filterGames('action')">
       <div class="cat-icon">⚔️</div>
@@ -562,6 +562,14 @@ body {
         <div class="game-card-title">애기장기</div>
         <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">ベビー将棋 / Baby Janggi</div>
         <div class="game-card-desc">AI 훈수와 함께하는 한국 전통 장기</div>
+      </div>
+    </a><a class="game-card" href="casual/long-wings/" data-cat="casual,simulation">
+      <div class="game-card-banner" style="background:linear-gradient(135deg,#5c94b6,#e0b690);"><img class="game-card-banner-piece" src="assets/lifeform/pteranodon-glide-side.svg" alt=""></div>
+      <div class="game-card-body">
+        <div class="card-tags" style="margin-bottom:8px;"><span class="tag tag-new">NEW</span></div>
+        <div class="game-card-title">긴 날개, 얕은 바다</div>
+        <div class="game-card-desc" style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">ながいつばさ、あさいうみ / Long Wings, Shallow Sea</div>
+        <div class="game-card-desc">누르면 접고, 놓으면 편다 — 백악기 바다 위 100초</div>
       </div>
     </a><a class="game-card" href="casual/zen-garden/" data-cat="casual,simulation">
       <div class="game-card-banner" style="background:linear-gradient(135deg,#e8dcc8,#6a5138);">🪷</div>
@@ -883,6 +891,11 @@ const CATALOG = [
     ko:{t:'애기장기', d:'AI 훈수와 함께하는 한국 전통 장기'},
     ja:{t:'ベビー将棋', d:'AIヒント付き韓国伝統将棋'},
     en:{t:'Baby Janggi', d:'Korean chess with AI hints'} },
+  { href:'casual/long-wings/', cat:'casual,simulation', bg:'linear-gradient(135deg,#5c94b6,#e0b690)',
+    img:'assets/lifeform/pteranodon-glide-side.svg', tags:['new'],
+    ko:{t:'긴 날개, 얕은 바다', d:'누르면 접고, 놓으면 편다 — 백악기 바다 위 100초'},
+    ja:{t:'ながいつばさ、あさいうみ', d:'おすとたたみ、はなすとひろがる — 白亜紀の海の上の100秒'},
+    en:{t:'Long Wings, Shallow Sea', d:'Hold to fold, let go to spread — 100 seconds over a Cretaceous sea'} },
   { href:'casual/zen-garden/', cat:'casual,simulation', bg:'linear-gradient(135deg,#e8dcc8,#6a5138)',
     emoji:'🪷', tags:['new'],
     ko:{t:'모래정원 빗질', d:'갈퀴로 모래에 물결을 그리는 고요한 정원'},
