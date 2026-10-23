@@ -16,6 +16,8 @@ puzzle/seeing/SPEC.md
 casual/long-wings/SOURCES.md
 board/janggi/engine-test.html
 casual/bousou-kitchen-v2/
+# 로고 시안 — 저장소에서 지웠지만 로컬 폴더가 남아 있어도 올라가지 않게
+assets/design/
 # 도판 원본 스캔 — 파생물 재생성과 감사용으로 git 에는 두되 배포하지 않는다
 assets/lifeform/src/
 tools/
