@@ -90,12 +90,16 @@ SOFTWARE.
 
 ## 7. Quoted text
 
-- `simulation/sagwan/chapters/sejong.json`: short quotations from the Korean
-  translation of the *Annals of the Joseon Dynasty* (조선왕조실록), as published
-  by the National Institute of Korean History at https://sillok.history.go.kr.
+- `simulation/sagwan/chapters/sejong.json`: short quotations from, and
+  paraphrases of, the Korean translation of the *Annals of the Joseon Dynasty*
+  (조선왕조실록, https://sillok.history.go.kr) and the other historical sources
+  named in each scene's `relic.source`.
 - `casual/long-wings/SOURCES.md` and `casual/long-wings/index.html`: short
-  quotations from the papers and websites listed in `SOURCES.md`. Quoted
-  passages remain the copyright of their authors.
+  quotations from Yang et al. 2023 (Proc. R. Soc. B), Witton 2008 (Zitteliana),
+  Witton & Habib 2010 (PLOS ONE), Pittman et al. 2021, Hone et al. 2018 (PeerJ),
+  Bennett 2000 (Kansas Geological Survey), cretaceousatlas.org,
+  oceansofkansas.com and paleobiodb.org. Quoted passages remain the copyright
+  of their authors.
 
 ## 8. Trademarks
 

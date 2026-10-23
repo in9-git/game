@@ -1,7 +1,7 @@
 # Janggi engine — Fairy-Stockfish (GPL-3.0)
 
-The three files in this directory are **not** covered by the repository's MIT
-License. They are an unmodified copy of the npm package
+The three engine files listed below are **not** covered by the repository's MIT
+License. They are unmodified copies of the files of the same name in the npm package
 [`fairy-stockfish-nnue.wasm`](https://www.npmjs.com/package/fairy-stockfish-nnue.wasm)
 version **1.1.11**, licensed under the **GNU General Public License v3.0**
 (full text: [`COPYING`](COPYING)).
@@ -18,5 +18,7 @@ version **1.1.11**, licensed under the **GNU General Public License v3.0**
   - WASM build: https://github.com/fairy-stockfish/fairy-stockfish.wasm (1.1.11)
   - Engine: https://github.com/fairy-stockfish/Fairy-Stockfish
 
-The janggi page (`../index.html`, MIT) runs this engine as a separate program in
-a Web Worker and talks to it only through UCI text commands.
+The janggi page (`../index.html`, MIT) loads this unmodified engine at runtime
+from these separate files and talks to it only through UCI text commands
+(`postMessage` / `addMessageListener`); the engine runs its search in Web Worker
+threads (`stockfish.worker.js`).
