@@ -6,6 +6,8 @@ package-lock.json
 wrangler.jsonc
 .assetsignore
 .dev.vars*
+# wrangler dev 의 로컬 상태(Durable Object·캐시 SQLite)
+.wrangler
 .git
 .gitignore
 .claude
